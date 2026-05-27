@@ -31,11 +31,11 @@ These may become useful after the deterministic Java/Spring core is proven:
 - Gradle support.
 - Kotlin support for Spring projects.
 - Deeper Spring Boot auto-configuration analysis.
-- JPA relationship mapping.
+- Full JPA/ORM relationship mapping and runtime persistence semantics beyond direct
+  annotation extraction.
 - Test coverage inference.
 - Change-impact analysis.
 - IDE integration.
 - Hosted collaboration features.
 
 None of these should be implemented before v0.1 has stable local scanning, evidence-backed outputs, and tests against fixture Spring projects.
-

@@ -16,18 +16,18 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-During the incremental Stage 4.1 implementation, `scan <path>` writes
+During the incremental Stage 5.1 implementation, `scan <path>` writes
 `project-map.json`, `endpoints.md`, and `evidence-index.jsonl` when a Maven-style
 `src/main/java` source root exists. `agent-guide.md` is stabilized in a later roadmap
 stage and is not emitted by this slice.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. In Stage 4.1 it contains
+`project-map.json` is the machine-readable project memory file. In Stage 5.1 it contains
 the minimal stable v0.1 slice for the currently supported local single-module
-Maven-style Spring MVC endpoint and direct Spring component scan.
+Maven-style Spring MVC endpoint, direct Spring component, and direct JPA entity scan.
 
-Stage 4.1 writes this top-level object:
+Stage 5.1 writes this top-level object:
 
 ```json
 {
@@ -83,6 +83,41 @@ Stage 4.1 writes this top-level object:
         ]
       }
     ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:com.example.orders.Order",
+        "class_name": "com.example.orders.Order",
+        "table_name": "orders",
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/orders/Order.java:16-16:com.example.orders.Order:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "java_type": "Customer",
+            "target_resolution": "declared_type_only",
+            "uncertainty": "target_type_not_resolved",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/orders/Order.java:19-19:com.example.orders.Order:@ManyToOne:field:customer"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/orders/Order.java:12-12:com.example.orders.Order:@Entity",
+          "ev:src/main/java/com/example/orders/Order.java:13-13:com.example.orders.Order:@Table"
+        ]
+      }
+    ]
   }
 }
 ```
@@ -96,9 +131,9 @@ Field rules:
 - `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
 - `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
   when present and is an empty array otherwise.
-- `project.source_roots` contains detected standard production source roots. Stage 4.1
+- `project.source_roots` contains detected standard production source roots. Stage 5.1
   supports `src/main/java`.
-- `project.test_roots` contains detected standard test source roots. Stage 4.1 supports
+- `project.test_roots` contains detected standard test source roots. Stage 5.1 supports
   `src/test/java`.
 - `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
   controller class, and handler method.
@@ -121,15 +156,45 @@ Field rules:
 - `component.class_name` is the fully qualified Java class name when resolvable from the
   source file package and class declaration.
 - `component.stereotypes` contains directly present supported class-level annotation
-  symbols with `@`. Stage 4.1 supports `@Component`, `@Service`, `@Repository`,
+  symbols with `@`. Stage 5.1 supports `@Component`, `@Service`, `@Repository`,
   `@Controller`, `@RestController`, and `@Configuration`.
 - `component.evidence_ids` references annotation evidence for the direct stereotype
   annotations and must resolve to records in `evidence-index.jsonl`.
+- `entities.analysis_status` is `"analyzed"` when the supported `src/main/java` source
+  root exists and the direct JPA entity analyzer runs.
+- `entities.items` contains direct JPA entity facts sorted deterministically by
+  `class_name` and `id`.
+- `entity.id` is `entity:<class_name>`.
+- `entity.class_name` is the fully qualified Java class name when resolvable from the
+  source file package and class declaration.
+- `entity.table_name` is the literal string from direct class-level
+  `@Table(name = "...")` when present and deterministically extractable, otherwise
+  `null`.
+- `entity.identifier_fields` contains field-level direct `@Id` facts sorted by
+  `field_name` and `java_type`.
+- `identifier_field.field_name` is the declared Java field name.
+- `identifier_field.java_type` is the declared Java field type string.
+- `identifier_field.evidence_ids` references field-level `@Id` annotation evidence and
+  must resolve to records in `evidence-index.jsonl`.
+- `entity.relationships` contains field-level direct JPA relationship annotation facts
+  sorted by `field_name`, `annotation`, and `java_type`. Stage 5.1 supports
+  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
+- `relationship.field_name` is the declared Java field name.
+- `relationship.annotation` is the direct relationship annotation symbol with `@`.
+- `relationship.java_type` is the declared Java field type string. It is not a resolved
+  target class.
+- `relationship.target_resolution` is `"declared_type_only"` in Stage 5.1.
+- `relationship.uncertainty` is `"target_type_not_resolved"` in Stage 5.1.
+- `relationship.evidence_ids` references field-level relationship annotation evidence
+  and must resolve to records in `evidence-index.jsonl`.
+- `entity.evidence_ids` references class-level direct `@Entity` evidence and direct
+  `@Table` evidence when present. These IDs must resolve to records in
+  `evidence-index.jsonl`.
 
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-Stage 4.1 emits a stable field order:
+Stage 5.1 emits a stable field order:
 
 ```json
 {"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
@@ -138,7 +203,7 @@ Stage 4.1 emits a stable field order:
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
 
-Stage 4.1 emits:
+Stage 5.1 emits:
 
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
@@ -147,6 +212,11 @@ Stage 4.1 emits:
   Java class declarations. `@Controller` and `@RestController` evidence IDs use the same
   annotation ID convention as endpoint evidence so the same source annotation is not
   duplicated in `evidence-index.jsonl`.
+- `annotation` evidence for direct JPA annotations that support entity facts, including
+  class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
+  relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
+  Field-level evidence IDs include a `field:<field_name>` discriminator because the
+  evidence record field set does not add a separate field-name property in Stage 5.1.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as

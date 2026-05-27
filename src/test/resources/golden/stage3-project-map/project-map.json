@@ -132,5 +132,88 @@
         ]
       }
     ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:com.example.domain.ProjectCustomer",
+        "class_name": "com.example.domain.ProjectCustomer",
+        "table_name": null,
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:15-15:com.example.domain.ProjectCustomer:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:13-13:com.example.domain.ProjectCustomer:@Entity"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectOrder",
+        "class_name": "com.example.domain.ProjectOrder",
+        "table_name": "orders",
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectOrder:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "java_type": "ProjectCustomer",
+            "target_resolution": "declared_type_only",
+            "uncertainty": "target_type_not_resolved",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:25-25:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
+            ]
+          },
+          {
+            "field_name": "invoice",
+            "annotation": "@OneToOne",
+            "java_type": "ProjectInvoice",
+            "target_resolution": "declared_type_only",
+            "uncertainty": "target_type_not_resolved",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:31-31:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
+            ]
+          },
+          {
+            "field_name": "lines",
+            "annotation": "@OneToMany",
+            "java_type": "List<ProjectOrderLine>",
+            "target_resolution": "declared_type_only",
+            "uncertainty": "target_type_not_resolved",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+            ]
+          },
+          {
+            "field_name": "tags",
+            "annotation": "@ManyToMany",
+            "java_type": "Set<ProjectTag>",
+            "target_resolution": "declared_type_only",
+            "uncertainty": "target_type_not_resolved",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:19-19:com.example.domain.ProjectOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectOrder:@Table"
+        ]
+      }
+    ]
   }
 }

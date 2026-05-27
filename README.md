@@ -52,7 +52,7 @@ rewritten deterministically when a supported source root exists.
 
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
 implementation analyzes Spring MVC controllers and direct Spring stereotype components,
-then writes:
+plus direct JPA entity annotations, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -63,9 +63,9 @@ then writes:
 `project-map.json` is the minimal stable machine-readable project map for the currently
 supported single-module scan. It includes detected root `pom.xml` build metadata when
 present, standard Maven source roots, Spring MVC endpoint facts, direct component
-inventory, and evidence ID references. `endpoints.md` is a deterministic endpoint
-inventory. `evidence-index.jsonl` contains source-backed evidence records referenced by
-generated facts.
+inventory, direct JPA entity facts, and evidence ID references. `endpoints.md` is a
+deterministic endpoint inventory. `evidence-index.jsonl` contains source-backed evidence
+records referenced by generated facts.
 
 ## Intended Usage
 
@@ -109,8 +109,10 @@ Stage 3.1 stabilizes minimal `project-map.json` and `evidence-index.jsonl` outpu
 the currently supported single-module Maven/Spring MVC scan.
 Stage 4.1 adds a deterministic direct Spring stereotype component inventory to
 `project-map.json`.
+Stage 5.1 adds a deterministic direct JPA entity inventory to `project-map.json` with
+annotation evidence in `evidence-index.jsonl`.
 
-Current Stage 4.1 limitations:
+Current Stage 5.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
 - Component inventory is limited to direct class-level `@Component`, `@Service`,
@@ -118,7 +120,15 @@ Current Stage 4.1 limitations:
   `src/main/java`.
 - Component analysis does not model Spring component scanning semantics, bean lifecycle,
   bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
+- Entity analysis is limited to direct class-level `@Entity`, direct class-level
+  `@Table(name = "...")`, field-level `@Id`, and field-level `@ManyToOne`,
+  `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
+- Entity analysis does not implement getter/property-access mapping, embedded IDs,
+  generated values, column or join-column details, repository analysis, schema
+  generation, transactional semantics, symbol solving, or ORM runtime behavior.
+- Relationship facts preserve the declared field type only and explicitly mark target
+  type resolution as uncertain.
 - `agent-guide.md` is not created yet.
 - `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
-  plus Spring MVC endpoint and component stereotype annotation evidence.
+  plus Spring MVC endpoint, component stereotype, and JPA annotation evidence.
 - The CLI uses only Java standard library argument handling.

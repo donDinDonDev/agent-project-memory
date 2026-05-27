@@ -15,6 +15,7 @@ v0.1 includes:
 - Java source root detection.
 - Spring MVC endpoint extraction.
 - Basic Spring component inventory.
+- Basic direct JPA entity extraction.
 - Evidence index.
 - `project-map.json`.
 - `endpoints.md`.
@@ -35,6 +36,7 @@ The repository may include:
 - Java source roots such as `src/main/java`.
 - Spring MVC controllers.
 - Spring components and services.
+- JPA entities with direct annotations.
 - Local Markdown documentation.
 - Tests under standard Maven test roots.
 
@@ -67,6 +69,7 @@ v0.1 does not include:
 - PDF parsing.
 - Automatic code modification.
 - Complete Spring runtime behavior reconstruction.
+- Full ORM runtime behavior reconstruction.
 - Full dependency graph analysis.
 - Full test coverage analysis.
 
@@ -79,6 +82,9 @@ v0.1 is acceptable when:
 - Java source root detection identifies standard Maven source and test roots.
 - Spring MVC endpoint extraction detects common controller annotations and request mapping annotations.
 - Basic Spring component inventory detects common stereotypes such as `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController`.
+- Basic direct JPA entity extraction detects direct `@Entity`, direct `@Table(name = "...")`,
+  field-level `@Id`, and direct field-level relationship annotations while marking
+  unresolved relationship targets as uncertain.
 - `evidence-index.jsonl` contains evidence entries for important generated facts.
 - `project-map.json` references evidence IDs for extracted facts.
 - `endpoints.md` lists detected endpoints with evidence references.
@@ -86,4 +92,3 @@ v0.1 is acceptable when:
 - Fixture tests compare generated facts with expected output.
 - No source code is sent to external services by default.
 - The core analyzer does not depend on external APIs.
-

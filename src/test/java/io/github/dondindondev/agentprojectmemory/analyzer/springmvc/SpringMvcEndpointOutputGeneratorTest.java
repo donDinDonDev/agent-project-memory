@@ -62,7 +62,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(12, projectMapEvidenceIds.size()),
+        () -> assertEquals(21, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -127,6 +127,38 @@ final class SpringMvcEndpointOutputGeneratorTest {
         .count();
 
     assertEquals(1, evidenceLineCount);
+  }
+
+  @Test
+  void projectMapIncludesAnalyzedEntityInventoryWithRelationshipUncertainty() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+
+    assertAll(
+        () -> assertTrue(projectMap.contains("\"entities\": {")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"entity:com.example.domain.ProjectCustomer\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"entity:com.example.domain.ProjectOrder\"")),
+        () -> assertTrue(projectMap.contains("\"table_name\": \"orders\"")),
+        () -> assertTrue(projectMap.contains("\"field_name\": \"id\"")),
+        () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToOne\"")),
+        () -> assertTrue(projectMap.contains("\"java_type\": \"ProjectCustomer\"")),
+        () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToMany\"")),
+        () -> assertTrue(projectMap.contains("\"java_type\": \"List<ProjectOrderLine>\"")),
+        () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToOne\"")),
+        () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToMany\"")),
+        () -> assertTrue(projectMap.contains("\"target_resolution\": \"declared_type_only\"")),
+        () -> assertTrue(projectMap.contains("\"uncertainty\": \"target_type_not_resolved\"")),
+        () -> assertTrue(projectMap.indexOf(
+            "\"class_name\": \"com.example.domain.ProjectCustomer\"")
+            < projectMap.indexOf("\"class_name\": \"com.example.domain.ProjectOrder\"")));
   }
 
   private Set<String> projectMapEvidenceIds(String projectMap) {

@@ -30,13 +30,19 @@ later roadmap item and is not implemented in the current slice.
 ### Java/Spring Analyzer
 
 Uses JavaParser first to inspect Java source files. The current implementation extracts
-Spring MVC endpoint facts and direct Spring stereotype component facts from supported
-production source roots.
+Spring MVC endpoint facts, direct Spring stereotype component facts, and direct JPA
+entity facts from supported production source roots.
 
 The basic component analyzer records only directly present class-level stereotypes such
 as `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
 `@Configuration`. It does not reconstruct Spring component scanning, bean lifecycle,
 bean names, scopes, autowiring, conditional configuration, or other runtime behavior.
+
+The basic JPA entity analyzer records only directly present class-level `@Entity`,
+class-level `@Table(name = "...")`, field-level `@Id`, and field-level relationship
+annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relationship
+facts preserve the declared field type and explicitly mark target resolution as
+uncertain because no Java symbol solving or ORM runtime reconstruction is performed.
 
 Future deeper analyzers may be added, but they must preserve deterministic evidence-backed behavior.
 

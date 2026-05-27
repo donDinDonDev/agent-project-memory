@@ -1,5 +1,11 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -41,23 +47,42 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final Comparator<SpringComponentFact> COMPONENT_ORDER = Comparator
       .comparing(SpringComponentFact::className)
       .thenComparing(SpringComponentFact::id);
+  private static final Comparator<JpaEntityFact> ENTITY_ORDER = Comparator
+      .comparing(JpaEntityFact::className)
+      .thenComparing(JpaEntityFact::id);
+  private static final Comparator<JpaIdentifierFieldFact> IDENTIFIER_FIELD_ORDER = Comparator
+      .comparing(JpaIdentifierFieldFact::fieldName)
+      .thenComparing(JpaIdentifierFieldFact::javaType);
+  private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
+      .comparing(JpaRelationshipFact::fieldName)
+      .thenComparing(JpaRelationshipFact::annotation)
+      .thenComparing(JpaRelationshipFact::javaType);
 
   private final SpringMvcEndpointAnalyzer analyzer;
   private final SpringComponentAnalyzer componentAnalyzer;
+  private final JpaEntityAnalyzer entityAnalyzer;
 
   public SpringMvcEndpointOutputGenerator() {
-    this(new SpringMvcEndpointAnalyzer(), new SpringComponentAnalyzer());
+    this(new SpringMvcEndpointAnalyzer(), new SpringComponentAnalyzer(), new JpaEntityAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(SpringMvcEndpointAnalyzer analyzer) {
-    this(analyzer, new SpringComponentAnalyzer());
+    this(analyzer, new SpringComponentAnalyzer(), new JpaEntityAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(
       SpringMvcEndpointAnalyzer analyzer,
       SpringComponentAnalyzer componentAnalyzer) {
+    this(analyzer, componentAnalyzer, new JpaEntityAnalyzer());
+  }
+
+  SpringMvcEndpointOutputGenerator(
+      SpringMvcEndpointAnalyzer analyzer,
+      SpringComponentAnalyzer componentAnalyzer,
+      JpaEntityAnalyzer entityAnalyzer) {
     this.analyzer = Objects.requireNonNull(analyzer, "analyzer");
     this.componentAnalyzer = Objects.requireNonNull(componentAnalyzer, "componentAnalyzer");
+    this.entityAnalyzer = Objects.requireNonNull(entityAnalyzer, "entityAnalyzer");
   }
 
   public Result generate(Path repositoryRoot, Path outputDirectory) throws IOException {
@@ -67,7 +92,7 @@ public final class SpringMvcEndpointOutputGenerator {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path sourceRoot = normalizedRepositoryRoot.resolve(MAIN_SOURCE_ROOT);
     if (!Files.isDirectory(sourceRoot)) {
-      return new Result(false, 0, 0, 0);
+      return new Result(false, 0, 0, 0, 0);
     }
 
     ProjectLayout layout = detectLayout(normalizedRepositoryRoot);
@@ -77,10 +102,14 @@ public final class SpringMvcEndpointOutputGenerator {
     SpringComponentAnalysis componentAnalysis = componentAnalyzer.analyze(
         normalizedRepositoryRoot,
         List.of(sourceRoot));
+    JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        List.of(sourceRoot));
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         analysis.evidence(),
-        componentAnalysis.evidence());
+        componentAnalysis.evidence(),
+        entityAnalysis.evidence());
 
     Files.writeString(
         outputDirectory.resolve(ENDPOINTS_FILE_NAME),
@@ -92,13 +121,14 @@ public final class SpringMvcEndpointOutputGenerator {
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(PROJECT_MAP_FILE_NAME),
-        projectMapJson(layout, analysis, componentAnalysis),
+        projectMapJson(layout, analysis, componentAnalysis, entityAnalysis),
         StandardCharsets.UTF_8);
 
     return new Result(
         true,
         analysis.endpoints().size(),
         componentAnalysis.components().size(),
+        entityAnalysis.entities().size(),
         evidenceRecords.size());
   }
 
@@ -183,7 +213,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private String projectMapJson(
       ProjectLayout layout,
       SpringMvcEndpointAnalysis analysis,
-      SpringComponentAnalysis componentAnalysis) {
+      SpringComponentAnalysis componentAnalysis,
+      JpaEntityAnalysis entityAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", "0.1", true);
@@ -216,6 +247,10 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("  \"components\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", "analyzed", true);
     appendComponents(json, componentAnalysis.components());
+    json.append("  },\n");
+    json.append("  \"entities\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", "analyzed", true);
+    appendEntities(json, entityAnalysis.entities());
     json.append("  }\n");
     json.append("}\n");
     return json.toString();
@@ -315,6 +350,98 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("\n");
   }
 
+  private void appendEntities(StringBuilder json, List<JpaEntityFact> entities) {
+    json.append("    \"items\": [");
+    List<JpaEntityFact> sortedEntities = sortedEntities(entities);
+    if (sortedEntities.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedEntities.size(); index++) {
+      appendEntity(json, sortedEntities.get(index), index < sortedEntities.size() - 1);
+    }
+    json.append("    ]\n");
+  }
+
+  private void appendEntity(
+      StringBuilder json,
+      JpaEntityFact entity,
+      boolean trailingComma) {
+    json.append("      {\n");
+    appendIndentedStringField(json, 4, "id", entity.id(), true);
+    appendIndentedStringField(json, 4, "class_name", entity.className(), true);
+    appendIndentedNullableStringField(json, 4, "table_name", entity.tableName(), true);
+    appendIdentifierFields(json, entity.identifierFields());
+    appendRelationships(json, entity.relationships());
+    appendIndentedStringArrayField(json, 4, "evidence_ids", entity.evidenceIds(), false);
+    json.append("      }");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
+  }
+
+  private void appendIdentifierFields(
+      StringBuilder json,
+      List<JpaIdentifierFieldFact> identifierFields) {
+    json.append("        \"identifier_fields\": [");
+    List<JpaIdentifierFieldFact> sortedIdentifierFields = identifierFields.stream()
+        .sorted(IDENTIFIER_FIELD_ORDER)
+        .toList();
+    if (sortedIdentifierFields.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedIdentifierFields.size(); index++) {
+      JpaIdentifierFieldFact identifierField = sortedIdentifierFields.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "field_name", identifierField.fieldName(), true);
+      appendIndentedStringField(json, 6, "java_type", identifierField.javaType(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", identifierField.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedIdentifierFields.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendRelationships(
+      StringBuilder json,
+      List<JpaRelationshipFact> relationships) {
+    json.append("        \"relationships\": [");
+    List<JpaRelationshipFact> sortedRelationships = relationships.stream()
+        .sorted(RELATIONSHIP_ORDER)
+        .toList();
+    if (sortedRelationships.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedRelationships.size(); index++) {
+      JpaRelationshipFact relationship = sortedRelationships.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "field_name", relationship.fieldName(), true);
+      appendIndentedStringField(json, 6, "annotation", relationship.annotation(), true);
+      appendIndentedStringField(json, 6, "java_type", relationship.javaType(), true);
+      appendIndentedStringField(json, 6, "target_resolution", relationship.targetResolution(), true);
+      appendIndentedStringField(json, 6, "uncertainty", relationship.uncertainty(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", relationship.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedRelationships.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
   private String endpointId(SpringMvcEndpointFact endpoint) {
     return "endpoint:" + endpoint.controllerClass() + "#" + endpoint.handlerMethod();
   }
@@ -391,16 +518,26 @@ public final class SpringMvcEndpointOutputGenerator {
         .toList();
   }
 
+  private List<JpaEntityFact> sortedEntities(List<JpaEntityFact> entities) {
+    return entities.stream()
+        .sorted(ENTITY_ORDER)
+        .toList();
+  }
+
   private List<EvidenceRecord> evidenceRecords(
       ProjectLayout layout,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
-      List<SpringComponentEvidence> componentEvidenceRecords) {
+      List<SpringComponentEvidence> componentEvidenceRecords,
+      List<JpaEntityEvidence> entityEvidenceRecords) {
     Map<String, EvidenceRecord> uniqueRecords = new LinkedHashMap<>();
     layout.buildFileEvidence().ifPresent(evidence -> uniqueRecords.put(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     componentEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    entityEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
 
@@ -424,6 +561,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(SpringComponentEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        ANNOTATION_SOURCE_TYPE,
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.annotationSymbol(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(JpaEntityEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         ANNOTATION_SOURCE_TYPE,
@@ -618,7 +769,12 @@ public final class SpringMvcEndpointOutputGenerator {
     return value;
   }
 
-  public record Result(boolean generated, int endpointCount, int componentCount, int evidenceCount) {
+  public record Result(
+      boolean generated,
+      int endpointCount,
+      int componentCount,
+      int entityCount,
+      int evidenceCount) {
   }
 
   private record EndpointRow(String methodLabel, String path, SpringMvcEndpointFact endpoint) {
