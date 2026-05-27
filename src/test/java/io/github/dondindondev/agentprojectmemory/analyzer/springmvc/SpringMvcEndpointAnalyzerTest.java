@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Path;
@@ -39,6 +40,35 @@ final class SpringMvcEndpointAnalyzerTest {
         () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
         () -> assertEquals(List.of("/home"), endpoint.paths()),
         () -> assertEquals("String", endpoint.declaredResponseType()));
+  }
+
+  @Test
+  void controllerAnnotationEvidenceIsAttachedToEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact restEndpoint = endpoint(
+        analysis,
+        "com.example.web.SimpleRestController",
+        "health");
+    SpringMvcEndpointEvidence restControllerEvidence = controllerAnnotationEvidenceForEndpoint(
+        analysis,
+        restEndpoint,
+        "@RestController");
+    SpringMvcEndpointFact controllerEndpoint = endpoint(analysis, "com.example.web.UiController", "home");
+    SpringMvcEndpointEvidence controllerEvidence = controllerAnnotationEvidenceForEndpoint(
+        analysis,
+        controllerEndpoint,
+        "@Controller");
+
+    assertAll(
+        () -> assertTrue(restEndpoint.evidenceIds().contains(restControllerEvidence.id())),
+        () -> assertEquals("com.example.web.SimpleRestController", restControllerEvidence.className()),
+        () -> assertNull(restControllerEvidence.methodName()),
+        () -> assertTrue(restControllerEvidence.excerpt().contains("@RestController")),
+        () -> assertTrue(controllerEndpoint.evidenceIds().contains(controllerEvidence.id())),
+        () -> assertEquals("com.example.web.UiController", controllerEvidence.className()),
+        () -> assertNull(controllerEvidence.methodName()),
+        () -> assertTrue(controllerEvidence.excerpt().contains("@Controller")));
   }
 
   @Test
@@ -413,5 +443,16 @@ final class SpringMvcEndpointAnalyzerTest {
     return analysis.evidence().stream()
         .filter(evidence -> endpoint.evidenceIds().contains(evidence.id()))
         .toList();
+  }
+
+  private SpringMvcEndpointEvidence controllerAnnotationEvidenceForEndpoint(
+      SpringMvcEndpointAnalysis analysis,
+      SpringMvcEndpointFact endpoint,
+      String annotationSymbol) {
+    return evidenceForEndpoint(analysis, endpoint).stream()
+        .filter(evidence -> annotationSymbol.equals(evidence.annotationSymbol()))
+        .filter(evidence -> evidence.methodName() == null)
+        .findFirst()
+        .orElseThrow();
   }
 }

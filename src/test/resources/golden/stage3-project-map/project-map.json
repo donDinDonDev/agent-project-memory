@@ -1,0 +1,85 @@
+{
+  "schema_version": "0.1",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ]
+  },
+  "endpoints": [
+    {
+      "id": "endpoint:com.example.web.ProjectMapController#createItem",
+      "controller_class": "com.example.web.ProjectMapController",
+      "handler_method": "createItem",
+      "http_methods": [
+        "POST"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/api/items"
+      ],
+      "request_parameters": [],
+      "request_body_type": "CreateItemRequest",
+      "response_type": "ItemResponse",
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:22-22:com.example.web.ProjectMapController#createItem:@RequestBody:parameter:0:request"
+      ]
+    },
+    {
+      "id": "endpoint:com.example.web.ProjectMapController#getItem",
+      "controller_class": "com.example.web.ProjectMapController",
+      "handler_method": "getItem",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/api/items/{id}"
+      ],
+      "request_parameters": [
+        {
+          "name": "id",
+          "source": "path_variable",
+          "java_type": "Long",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id"
+          ]
+        },
+        {
+          "name": "expand",
+          "source": "request_param",
+          "java_type": "String",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand"
+          ]
+        }
+      ],
+      "request_body_type": null,
+      "response_type": "ItemResponse",
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand"
+      ]
+    }
+  ],
+  "components": {
+    "analysis_status": "not_analyzed",
+    "items": []
+  }
+}

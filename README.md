@@ -33,7 +33,7 @@ Build the packaged CLI jar:
 mvn package
 ```
 
-## Stage 2 Usage
+## Current Usage
 
 The current CLI exposes the intended command shape:
 
@@ -47,19 +47,23 @@ java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /path/to/java-spri
 <path>/.project-memory/
 ```
 
-Existing unrelated contents inside `.project-memory/` are preserved. Generated Stage 2
-files are rewritten deterministically when a supported source root exists.
+Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
+rewritten deterministically when a supported source root exists.
 
-When the scanned path has a Maven-style Java source root at `src/main/java`, the Stage 2
-implementation also analyzes Spring MVC controllers and writes:
+When the scanned path has a Maven-style Java source root at `src/main/java`, the current
+implementation analyzes Spring MVC controllers and writes:
 
 ```text
+<path>/.project-memory/project-map.json
 <path>/.project-memory/endpoints.md
 <path>/.project-memory/evidence-index.jsonl
 ```
 
-`endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
-source-backed annotation evidence referenced by the endpoint inventory.
+`project-map.json` is the minimal stable machine-readable project map for the currently
+supported single-module scan. It includes detected root `pom.xml` build metadata when
+present, standard Maven source roots, Spring MVC endpoint facts, and evidence ID
+references. `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl`
+contains source-backed evidence records referenced by generated facts.
 
 ## Intended Usage
 
@@ -99,10 +103,14 @@ AI may become an optional presentation or summarization layer later, but the cor
 Stage 1 is implemented as a minimal Java 21 Maven CLI skeleton.
 Stage 2 implements a JavaParser-backed Spring MVC endpoint analyzer and wires it into
 `scan <path>` for Maven-style `src/main/java` source roots.
+Stage 3.1 stabilizes minimal `project-map.json` and `evidence-index.jsonl` output for
+the currently supported single-module Maven/Spring MVC scan.
 
-Current Stage 2 limitations:
+Current Stage 3.1 limitations:
 
-- No Maven project detection is implemented yet.
-- `project-map.json` and `agent-guide.md` are not created yet.
-- `evidence-index.jsonl` currently contains Spring MVC endpoint annotation evidence only.
+- Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
+- `components` in `project-map.json` is explicitly marked `not_analyzed` with an empty item list.
+- `agent-guide.md` is not created yet.
+- `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
+  and Spring MVC endpoint annotation evidence.
 - The CLI uses only Java standard library argument handling.

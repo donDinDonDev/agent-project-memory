@@ -80,11 +80,18 @@ final class SpringMvcEndpointAnalyzer {
     List<String> sourceLines = Files.readAllLines(javaFile);
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
-      if (type.isInterface() || !isController(type)) {
+      if (type.isInterface()) {
+        continue;
+      }
+      List<AnnotationExpr> controllerAnnotations = controllerAnnotations(type.getAnnotations());
+      if (controllerAnnotations.isEmpty()) {
         continue;
       }
 
       String controllerClass = qualifiedClassName(packageName, type.getNameAsString());
+      List<SpringMvcEndpointEvidence> controllerAnnotationEvidence = controllerAnnotations.stream()
+          .map(annotation -> mappingEvidence(sourcePath, controllerClass, null, annotation, sourceLines))
+          .toList();
       Optional<AnnotationExpr> requestMapping = findAnnotation(type.getAnnotations(), REQUEST_MAPPING);
       ExtractedPaths classPathExtraction = requestMapping
           .map(this::literalPathValues)
@@ -120,11 +127,16 @@ final class SpringMvcEndpointAnalyzer {
             method.getNameAsString(),
             methodMappingAnnotation,
             sourceLines);
+        controllerAnnotationEvidence.forEach(
+            controllerEvidence -> addEvidenceIfAbsent(evidence, controllerEvidence));
         addEvidenceIfAbsent(evidence, requestMappingEvidence);
         evidence.add(methodMappingEvidence);
         evidence.addAll(requestMetadata.evidence());
 
         List<String> evidenceIds = new ArrayList<>();
+        controllerAnnotationEvidence.stream()
+            .map(SpringMvcEndpointEvidence::id)
+            .forEach(evidenceIds::add);
         if (requestMappingEvidence != null) {
           evidenceIds.add(requestMappingEvidence.id());
         }
@@ -166,9 +178,13 @@ final class SpringMvcEndpointAnalyzer {
     }
   }
 
-  private boolean isController(ClassOrInterfaceDeclaration type) {
-    return findAnnotation(type.getAnnotations(), CONTROLLER).isPresent()
-        || findAnnotation(type.getAnnotations(), REST_CONTROLLER).isPresent();
+  private List<AnnotationExpr> controllerAnnotations(List<AnnotationExpr> annotations) {
+    return annotations.stream()
+        .filter(annotation -> {
+          String simpleName = simpleAnnotationName(annotation);
+          return CONTROLLER.equals(simpleName) || REST_CONTROLLER.equals(simpleName);
+        })
+        .toList();
   }
 
   private Optional<AnnotationExpr> findMethodMapping(List<AnnotationExpr> annotations) {

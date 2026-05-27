@@ -101,19 +101,26 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanMavenStyleSourceRootGeneratesEndpointsAndEvidenceIndex() throws Exception {
+  void scanMavenStyleSourceRootGeneratesProjectMapEndpointsAndEvidenceIndex() throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
     copyDirectory(fixtureRoot(), projectPath);
 
     CliResult result = runCli("scan", projectPath.toString());
     Path outputDirectory = projectPath.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated project-map.json")),
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.1\"")),
+        () -> assertTrue(projectMap.contains("\"source_roots\": [")),
+        () -> assertTrue(projectMap.contains("\"src/main/java\"")),
+        () -> assertTrue(projectMap.contains("\"endpoints\": [")),
+        () -> assertTrue(projectMap.contains("\"controller_class\": \"com.example.web.SimpleRestController\"")),
         () -> assertTrue(endpoints.contains("# Endpoints")),
         () -> assertTrue(endpoints.contains("## GET /health")),
         () -> assertTrue(endpoints.contains("- Controller: `com.example.web.SimpleRestController`")),
@@ -124,7 +131,6 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(evidenceIndex.contains(
             "\"path\":\"src/main/java/com/example/web/SimpleRestController.java\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@GetMapping\"")),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
   }
 

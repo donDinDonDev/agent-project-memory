@@ -16,22 +16,31 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-During the incremental Stage 2 implementation, `scan <path>` writes `endpoints.md`
-and `evidence-index.jsonl` when a Maven-style `src/main/java` source root exists.
-`project-map.json` and `agent-guide.md` are stabilized in later roadmap stages.
+During the incremental Stage 3.1 implementation, `scan <path>` writes
+`project-map.json`, `endpoints.md`, and `evidence-index.jsonl` when a Maven-style
+`src/main/java` source root exists. `agent-guide.md` is stabilized in a later roadmap
+stage and is not emitted by this slice.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. It contains detected project metadata, build layout, Spring endpoints, component inventory, and references to evidence entries.
+`project-map.json` is the machine-readable project memory file. In Stage 3.1 it contains
+the minimal stable v0.1 slice for the currently supported local single-module
+Maven-style Spring MVC scan.
 
-Rough endpoint fact example:
+Stage 3.1 writes this top-level object:
 
 ```json
 {
   "schema_version": "0.1",
   "project": {
     "root": ".",
-    "build_system": "maven",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
     "source_roots": ["src/main/java"],
     "test_roots": ["src/test/java"]
   },
@@ -39,49 +48,86 @@ Rough endpoint fact example:
     {
       "id": "endpoint:com.example.orders.OrderController#getOrder",
       "controller_class": "com.example.orders.OrderController",
-      "method_name": "getOrder",
+      "handler_method": "getOrder",
       "http_methods": ["GET"],
+      "http_method_semantics": "declared",
       "paths": ["/orders/{id}"],
       "request_parameters": [
         {
           "name": "id",
           "source": "path_variable",
-          "java_type": "java.lang.Long"
+          "java_type": "java.lang.Long",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/orders/OrderController.java:21-21:com.example.orders.OrderController#getOrder:@PathVariable:parameter:0:id"
+          ]
         }
       ],
       "request_body_type": null,
       "response_type": "com.example.orders.OrderDto",
       "evidence_ids": [
-        "ev:src/main/java/com/example/orders/OrderController.java:12-24"
+        "ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController",
+        "ev:src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping",
+        "ev:src/main/java/com/example/orders/OrderController.java:21-21:com.example.orders.OrderController#getOrder:@PathVariable:parameter:0:id"
       ]
     }
   ],
-  "components": [
-    {
-      "id": "component:com.example.orders.OrderService",
-      "class_name": "com.example.orders.OrderService",
-      "stereotypes": ["Service"],
-      "evidence_ids": [
-        "ev:src/main/java/com/example/orders/OrderService.java:8-8"
-      ]
-    }
-  ]
+  "components": {
+    "analysis_status": "not_analyzed",
+    "items": []
+  }
 }
 ```
 
-The exact schema will be stabilized during implementation, but every important fact must have evidence IDs.
+Field rules:
+
+- `schema_version` is the string `"0.1"` for this output contract slice.
+- `project.root` is `"."` because the output is relative to the scanned repository root.
+- `project.build.system` is `"maven"` when a root `pom.xml` file is detected and
+  `"not_detected"` otherwise.
+- `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
+- `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
+  when present and is an empty array otherwise.
+- `project.source_roots` contains detected standard production source roots. Stage 3.1
+  supports `src/main/java`.
+- `project.test_roots` contains detected standard test source roots. Stage 3.1 supports
+  `src/test/java`.
+- `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
+  controller class, and handler method.
+- `endpoint.id` is `endpoint:<controller_class>#<handler_method>` in this slice.
+- `http_methods` contains directly extracted methods when available. It is an empty array
+  when the source did not declare a method or used an unsupported expression.
+- `http_method_semantics` is one of `"declared"`, `"not_declared"`, or `"unsupported"`.
+- `request_parameters` is an empty array when no supported request parameter annotations
+  are detected.
+- `request_body_type` is a Java type string when a supported `@RequestBody` parameter is
+  detected and `null` otherwise.
+- `response_type` is the declared Java return type when available.
+- Endpoint and request-parameter `evidence_ids` must resolve to records in
+  `evidence-index.jsonl`.
+- `components.analysis_status` is `"not_analyzed"` and `components.items` is an empty
+  array in Stage 3.1. Stage 3.1 does not implement component inventory.
 
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-
-Rough evidence entry example:
+Stage 3.1 emits a stable field order:
 
 ```json
-{"id":"ev:src/main/java/com/example/orders/OrderController.java:12-24","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":"getOrder","symbol_name":"@GetMapping","line_start":20,"line_end":20,"excerpt":"@GetMapping(\"/orders/{id}\")","confidence":"high"}
+{"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
+{"id":"ev:src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":"getOrder","symbol_name":"@GetMapping","line_start":20,"line_end":20,"excerpt":"@GetMapping(\"/orders/{id}\")","confidence":"high"}
 ```
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
+
+Stage 3.1 emits:
+
+- `build_file` evidence for root `pom.xml` when present.
+- `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
+  and request body annotations.
+
+Evidence entries are sorted deterministically by path, line range, class, method, symbol,
+and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
+empty arrays in `project-map.json`.
 
 ## `endpoints.md`
 
@@ -110,7 +156,7 @@ Example shape:
 ## GET /orders/{id}
 
 - Controller: `com.example.orders.OrderController`
-- Method: `getOrder`
+- Handler: `getOrder`
 - Response: `com.example.orders.OrderDto`
 - Evidence: `src/main/java/com/example/orders/OrderController.java:20`
 ```

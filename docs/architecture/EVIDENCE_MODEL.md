@@ -47,6 +47,12 @@ Evidence entries use these fields:
 
 Additional fields may be added later only when `OUTPUT_CONTRACT.md` and this document are updated.
 
+Stage 3.1 always emits this field set in `evidence-index.jsonl`. Fields that are not
+applicable to a source type are emitted as JSON `null`, not omitted. For example,
+`build_file` evidence for `pom.xml` has `class_name` and `method_name` set to `null`.
+When a line range is unavailable, `line_start` and `line_end` are `null`; when a repeated
+value has no entries in `project-map.json`, it is emitted as an empty array.
+
 ## Fact Categories
 
 ### Extracted Facts
@@ -60,6 +66,21 @@ Examples:
 - A Maven project with a root `pom.xml`.
 
 Extracted facts should use strong evidence references and high confidence.
+
+### Stage 3.1 Emitted Evidence
+
+The Stage 3.1 implementation emits only these evidence records:
+
+- `build_file` for a root `pom.xml` when present. The evidence path is `pom.xml`,
+  `symbol_name` is `pom.xml`, `class_name` and `method_name` are `null`, and confidence is
+  `high`.
+- `annotation` for extracted Spring MVC annotations that support endpoint facts, including
+  controller stereotype annotations `@Controller` and `@RestController`, class-level
+  `@RequestMapping`, method-level mapping annotations, `@PathVariable`, `@RequestParam`,
+  and `@RequestBody`.
+
+Stage 3.1 does not emit evidence records for component inventory, Maven modules,
+connectors, generated guidance, or LLM output.
 
 ### Inferred Relations
 
@@ -90,4 +111,3 @@ Uncertain signals should be labeled with lower confidence and should not be used
 - Do not treat LLM output as evidence.
 - Prefer exact source references over broad summaries.
 - When line numbers are unavailable, make that explicit in the evidence entry and use the most precise available symbol reference.
-

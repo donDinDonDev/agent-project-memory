@@ -87,6 +87,7 @@ public final class AgentProjectMemoryCli {
           projectPath,
           outputDirectory);
       if (result.generated()) {
+        out.println("Generated project-map.json with " + result.endpointCount() + " endpoint facts.");
         out.println("Generated endpoints.md with " + result.endpointCount() + " endpoint facts.");
         out.println(
             "Generated evidence-index.jsonl with "
