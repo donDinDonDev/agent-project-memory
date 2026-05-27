@@ -38,15 +38,26 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparing(endpoint -> endpoint.httpMethodSemantics().name())
       .thenComparing(SpringMvcEndpointFact::controllerClass)
       .thenComparing(SpringMvcEndpointFact::handlerMethod);
+  private static final Comparator<SpringComponentFact> COMPONENT_ORDER = Comparator
+      .comparing(SpringComponentFact::className)
+      .thenComparing(SpringComponentFact::id);
 
   private final SpringMvcEndpointAnalyzer analyzer;
+  private final SpringComponentAnalyzer componentAnalyzer;
 
   public SpringMvcEndpointOutputGenerator() {
-    this(new SpringMvcEndpointAnalyzer());
+    this(new SpringMvcEndpointAnalyzer(), new SpringComponentAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(SpringMvcEndpointAnalyzer analyzer) {
+    this(analyzer, new SpringComponentAnalyzer());
+  }
+
+  SpringMvcEndpointOutputGenerator(
+      SpringMvcEndpointAnalyzer analyzer,
+      SpringComponentAnalyzer componentAnalyzer) {
     this.analyzer = Objects.requireNonNull(analyzer, "analyzer");
+    this.componentAnalyzer = Objects.requireNonNull(componentAnalyzer, "componentAnalyzer");
   }
 
   public Result generate(Path repositoryRoot, Path outputDirectory) throws IOException {
@@ -56,14 +67,20 @@ public final class SpringMvcEndpointOutputGenerator {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path sourceRoot = normalizedRepositoryRoot.resolve(MAIN_SOURCE_ROOT);
     if (!Files.isDirectory(sourceRoot)) {
-      return new Result(false, 0, 0);
+      return new Result(false, 0, 0, 0);
     }
 
     ProjectLayout layout = detectLayout(normalizedRepositoryRoot);
     SpringMvcEndpointAnalysis analysis = analyzer.analyze(
         normalizedRepositoryRoot,
         List.of(sourceRoot));
-    List<EvidenceRecord> evidenceRecords = evidenceRecords(layout, analysis.evidence());
+    SpringComponentAnalysis componentAnalysis = componentAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        List.of(sourceRoot));
+    List<EvidenceRecord> evidenceRecords = evidenceRecords(
+        layout,
+        analysis.evidence(),
+        componentAnalysis.evidence());
 
     Files.writeString(
         outputDirectory.resolve(ENDPOINTS_FILE_NAME),
@@ -75,10 +92,14 @@ public final class SpringMvcEndpointOutputGenerator {
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(PROJECT_MAP_FILE_NAME),
-        projectMapJson(layout, analysis),
+        projectMapJson(layout, analysis, componentAnalysis),
         StandardCharsets.UTF_8);
 
-    return new Result(true, analysis.endpoints().size(), evidenceRecords.size());
+    return new Result(
+        true,
+        analysis.endpoints().size(),
+        componentAnalysis.components().size(),
+        evidenceRecords.size());
   }
 
   private ProjectLayout detectLayout(Path repositoryRoot) throws IOException {
@@ -159,7 +180,10 @@ public final class SpringMvcEndpointOutputGenerator {
     return markdown.toString();
   }
 
-  private String projectMapJson(ProjectLayout layout, SpringMvcEndpointAnalysis analysis) {
+  private String projectMapJson(
+      ProjectLayout layout,
+      SpringMvcEndpointAnalysis analysis,
+      SpringComponentAnalysis componentAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", "0.1", true);
@@ -190,8 +214,8 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("  ],\n");
     }
     json.append("  \"components\": {\n");
-    appendIndentedStringField(json, 2, "analysis_status", "not_analyzed", true);
-    json.append("    \"items\": []\n");
+    appendIndentedStringField(json, 2, "analysis_status", "analyzed", true);
+    appendComponents(json, componentAnalysis.components());
     json.append("  }\n");
     json.append("}\n");
     return json.toString();
@@ -258,6 +282,37 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("\n");
     }
     json.append("      ],\n");
+  }
+
+  private void appendComponents(StringBuilder json, List<SpringComponentFact> components) {
+    json.append("    \"items\": [");
+    List<SpringComponentFact> sortedComponents = sortedComponents(components);
+    if (sortedComponents.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedComponents.size(); index++) {
+      appendComponent(json, sortedComponents.get(index), index < sortedComponents.size() - 1);
+    }
+    json.append("    ]\n");
+  }
+
+  private void appendComponent(
+      StringBuilder json,
+      SpringComponentFact component,
+      boolean trailingComma) {
+    json.append("      {\n");
+    appendIndentedStringField(json, 4, "id", component.id(), true);
+    appendIndentedStringField(json, 4, "class_name", component.className(), true);
+    appendIndentedStringArrayField(json, 4, "stereotypes", component.stereotypes(), true);
+    appendIndentedStringArrayField(json, 4, "evidence_ids", component.evidenceIds(), false);
+    json.append("      }");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
   }
 
   private String endpointId(SpringMvcEndpointFact endpoint) {
@@ -330,12 +385,22 @@ public final class SpringMvcEndpointOutputGenerator {
         .toList();
   }
 
+  private List<SpringComponentFact> sortedComponents(List<SpringComponentFact> components) {
+    return components.stream()
+        .sorted(COMPONENT_ORDER)
+        .toList();
+  }
+
   private List<EvidenceRecord> evidenceRecords(
       ProjectLayout layout,
-      List<SpringMvcEndpointEvidence> endpointEvidenceRecords) {
+      List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
+      List<SpringComponentEvidence> componentEvidenceRecords) {
     Map<String, EvidenceRecord> uniqueRecords = new LinkedHashMap<>();
     layout.buildFileEvidence().ifPresent(evidence -> uniqueRecords.put(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    componentEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
 
@@ -345,6 +410,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(SpringMvcEndpointEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        ANNOTATION_SOURCE_TYPE,
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.annotationSymbol(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(SpringComponentEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         ANNOTATION_SOURCE_TYPE,
@@ -539,7 +618,7 @@ public final class SpringMvcEndpointOutputGenerator {
     return value;
   }
 
-  public record Result(boolean generated, int endpointCount, int evidenceCount) {
+  public record Result(boolean generated, int endpointCount, int componentCount, int evidenceCount) {
   }
 
   private record EndpointRow(String methodLabel, String path, SpringMvcEndpointFact endpoint) {

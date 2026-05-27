@@ -87,7 +87,12 @@ public final class AgentProjectMemoryCli {
           projectPath,
           outputDirectory);
       if (result.generated()) {
-        out.println("Generated project-map.json with " + result.endpointCount() + " endpoint facts.");
+        out.println(
+            "Generated project-map.json with "
+                + result.endpointCount()
+                + " endpoint facts and "
+                + result.componentCount()
+                + " component facts.");
         out.println("Generated endpoints.md with " + result.endpointCount() + " endpoint facts.");
         out.println(
             "Generated evidence-index.jsonl with "
@@ -95,7 +100,7 @@ public final class AgentProjectMemoryCli {
                 + " evidence records.");
       }
     } catch (IOException ex) {
-      return scanError("Could not generate endpoint output: " + ex.getMessage());
+      return scanError("Could not generate project memory output: " + ex.getMessage());
     }
 
     return SUCCESS;

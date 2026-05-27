@@ -51,7 +51,8 @@ Existing unrelated contents inside `.project-memory/` are preserved. Generated f
 rewritten deterministically when a supported source root exists.
 
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
-implementation analyzes Spring MVC controllers and writes:
+implementation analyzes Spring MVC controllers and direct Spring stereotype components,
+then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -61,9 +62,10 @@ implementation analyzes Spring MVC controllers and writes:
 
 `project-map.json` is the minimal stable machine-readable project map for the currently
 supported single-module scan. It includes detected root `pom.xml` build metadata when
-present, standard Maven source roots, Spring MVC endpoint facts, and evidence ID
-references. `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl`
-contains source-backed evidence records referenced by generated facts.
+present, standard Maven source roots, Spring MVC endpoint facts, direct component
+inventory, and evidence ID references. `endpoints.md` is a deterministic endpoint
+inventory. `evidence-index.jsonl` contains source-backed evidence records referenced by
+generated facts.
 
 ## Intended Usage
 
@@ -105,12 +107,18 @@ Stage 2 implements a JavaParser-backed Spring MVC endpoint analyzer and wires it
 `scan <path>` for Maven-style `src/main/java` source roots.
 Stage 3.1 stabilizes minimal `project-map.json` and `evidence-index.jsonl` output for
 the currently supported single-module Maven/Spring MVC scan.
+Stage 4.1 adds a deterministic direct Spring stereotype component inventory to
+`project-map.json`.
 
-Current Stage 3.1 limitations:
+Current Stage 4.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
-- `components` in `project-map.json` is explicitly marked `not_analyzed` with an empty item list.
+- Component inventory is limited to direct class-level `@Component`, `@Service`,
+  `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations under
+  `src/main/java`.
+- Component analysis does not model Spring component scanning semantics, bean lifecycle,
+  bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
 - `agent-guide.md` is not created yet.
 - `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
-  and Spring MVC endpoint annotation evidence.
+  plus Spring MVC endpoint and component stereotype annotation evidence.
 - The CLI uses only Java standard library argument handling.

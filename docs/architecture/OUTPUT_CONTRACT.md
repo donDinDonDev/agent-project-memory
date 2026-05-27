@@ -16,18 +16,18 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-During the incremental Stage 3.1 implementation, `scan <path>` writes
+During the incremental Stage 4.1 implementation, `scan <path>` writes
 `project-map.json`, `endpoints.md`, and `evidence-index.jsonl` when a Maven-style
 `src/main/java` source root exists. `agent-guide.md` is stabilized in a later roadmap
 stage and is not emitted by this slice.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. In Stage 3.1 it contains
+`project-map.json` is the machine-readable project memory file. In Stage 4.1 it contains
 the minimal stable v0.1 slice for the currently supported local single-module
-Maven-style Spring MVC scan.
+Maven-style Spring MVC endpoint and direct Spring component scan.
 
-Stage 3.1 writes this top-level object:
+Stage 4.1 writes this top-level object:
 
 ```json
 {
@@ -72,8 +72,17 @@ Stage 3.1 writes this top-level object:
     }
   ],
   "components": {
-    "analysis_status": "not_analyzed",
-    "items": []
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.orders.OrderService",
+        "class_name": "com.example.orders.OrderService",
+        "stereotypes": ["@Service"],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/orders/OrderService.java:12-12:com.example.orders.OrderService:@Service"
+        ]
+      }
+    ]
   }
 }
 ```
@@ -87,9 +96,9 @@ Field rules:
 - `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
 - `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
   when present and is an empty array otherwise.
-- `project.source_roots` contains detected standard production source roots. Stage 3.1
+- `project.source_roots` contains detected standard production source roots. Stage 4.1
   supports `src/main/java`.
-- `project.test_roots` contains detected standard test source roots. Stage 3.1 supports
+- `project.test_roots` contains detected standard test source roots. Stage 4.1 supports
   `src/test/java`.
 - `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
   controller class, and handler method.
@@ -104,13 +113,23 @@ Field rules:
 - `response_type` is the declared Java return type when available.
 - Endpoint and request-parameter `evidence_ids` must resolve to records in
   `evidence-index.jsonl`.
-- `components.analysis_status` is `"not_analyzed"` and `components.items` is an empty
-  array in Stage 3.1. Stage 3.1 does not implement component inventory.
+- `components.analysis_status` is `"analyzed"` when the supported `src/main/java` source
+  root exists and the direct component analyzer runs.
+- `components.items` contains direct Spring stereotype component facts sorted
+  deterministically by `class_name` and `id`.
+- `component.id` is `component:<class_name>`.
+- `component.class_name` is the fully qualified Java class name when resolvable from the
+  source file package and class declaration.
+- `component.stereotypes` contains directly present supported class-level annotation
+  symbols with `@`. Stage 4.1 supports `@Component`, `@Service`, `@Repository`,
+  `@Controller`, `@RestController`, and `@Configuration`.
+- `component.evidence_ids` references annotation evidence for the direct stereotype
+  annotations and must resolve to records in `evidence-index.jsonl`.
 
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-Stage 3.1 emits a stable field order:
+Stage 4.1 emits a stable field order:
 
 ```json
 {"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
@@ -119,11 +138,15 @@ Stage 3.1 emits a stable field order:
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
 
-Stage 3.1 emits:
+Stage 4.1 emits:
 
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
   and request body annotations.
+- `annotation` evidence for direct supported Spring component stereotype annotations on
+  Java class declarations. `@Controller` and `@RestController` evidence IDs use the same
+  annotation ID convention as endpoint evidence so the same source annotation is not
+  duplicated in `evidence-index.jsonl`.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as

@@ -47,7 +47,7 @@ Evidence entries use these fields:
 
 Additional fields may be added later only when `OUTPUT_CONTRACT.md` and this document are updated.
 
-Stage 3.1 always emits this field set in `evidence-index.jsonl`. Fields that are not
+Stage 4.1 always emits this field set in `evidence-index.jsonl`. Fields that are not
 applicable to a source type are emitted as JSON `null`, not omitted. For example,
 `build_file` evidence for `pom.xml` has `class_name` and `method_name` set to `null`.
 When a line range is unavailable, `line_start` and `line_end` are `null`; when a repeated
@@ -67,9 +67,9 @@ Examples:
 
 Extracted facts should use strong evidence references and high confidence.
 
-### Stage 3.1 Emitted Evidence
+### Stage 4.1 Emitted Evidence
 
-The Stage 3.1 implementation emits only these evidence records:
+The Stage 4.1 implementation emits only these evidence records:
 
 - `build_file` for a root `pom.xml` when present. The evidence path is `pom.xml`,
   `symbol_name` is `pom.xml`, `class_name` and `method_name` are `null`, and confidence is
@@ -78,9 +78,17 @@ The Stage 3.1 implementation emits only these evidence records:
   controller stereotype annotations `@Controller` and `@RestController`, class-level
   `@RequestMapping`, method-level mapping annotations, `@PathVariable`, `@RequestParam`,
   and `@RequestBody`.
+- `annotation` for direct supported Spring component stereotype annotations on Java class
+  declarations under supported production source roots. Stage 4.1 supports `@Component`,
+  `@Service`, `@Repository`, `@Controller`, `@RestController`, and `@Configuration`.
+  Component stereotype evidence uses `class_name` for the annotated type, `method_name`
+  as `null`, `symbol_name` as the annotation symbol, the annotation line range, the
+  annotation excerpt, and `high` confidence. When the same `@Controller` or
+  `@RestController` annotation supports both endpoint and component facts, both facts
+  reference the same evidence ID and `evidence-index.jsonl` emits a single record.
 
-Stage 3.1 does not emit evidence records for component inventory, Maven modules,
-connectors, generated guidance, or LLM output.
+Stage 4.1 does not emit evidence records for Maven modules, connectors, generated
+guidance, or LLM output.
 
 ### Inferred Relations
 

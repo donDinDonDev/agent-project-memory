@@ -22,11 +22,21 @@ Walks the local repository, applies ignore rules, identifies candidate project f
 
 ### Build Detector
 
-Detects Maven project structure, including root `pom.xml`, modules, source roots, test roots, and build metadata needed by analyzers.
+Detects Maven project structure and build metadata needed by analyzers. The current
+implementation detects a root `pom.xml` when present and standard single-module Maven
+source roots such as `src/main/java` and `src/test/java`. Full Maven module parsing is a
+later roadmap item and is not implemented in the current slice.
 
 ### Java/Spring Analyzer
 
-Uses JavaParser first to inspect Java source files. v0.1 focuses on Spring MVC endpoints and basic Spring component inventory.
+Uses JavaParser first to inspect Java source files. The current implementation extracts
+Spring MVC endpoint facts and direct Spring stereotype component facts from supported
+production source roots.
+
+The basic component analyzer records only directly present class-level stereotypes such
+as `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
+`@Configuration`. It does not reconstruct Spring component scanning, bean lifecycle,
+bean names, scopes, autowiring, conditional configuration, or other runtime behavior.
 
 Future deeper analyzers may be added, but they must preserve deterministic evidence-backed behavior.
 
@@ -83,4 +93,3 @@ local repository
 - Facts must be traceable to evidence.
 - Output contracts must be explicit and documented.
 - Optional future integrations must be adapters around the core, not dependencies inside it.
-

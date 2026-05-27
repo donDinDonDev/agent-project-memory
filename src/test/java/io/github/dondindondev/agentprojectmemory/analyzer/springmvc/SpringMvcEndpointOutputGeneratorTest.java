@@ -62,10 +62,71 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(8, projectMapEvidenceIds.size()),
+        () -> assertEquals(12, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
+  }
+
+  @Test
+  void projectMapIncludesAnalyzedComponentInventoryWithoutDroppingEndpoints() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+
+    assertAll(
+        () -> assertTrue(projectMap.contains("\"analysis_status\": \"analyzed\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"component:com.example.components.AppConfiguration\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"component:com.example.components.InventoryComponent\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"component:com.example.components.InventoryRepository\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"component:com.example.components.InventoryService\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"component:com.example.web.ProjectMapController\"")),
+        () -> assertTrue(projectMap.indexOf(
+            "\"class_name\": \"com.example.components.AppConfiguration\"")
+            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryComponent\"")),
+        () -> assertTrue(projectMap.indexOf(
+            "\"class_name\": \"com.example.components.InventoryComponent\"")
+            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryRepository\"")),
+        () -> assertTrue(projectMap.indexOf(
+            "\"class_name\": \"com.example.components.InventoryRepository\"")
+            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryService\"")),
+        () -> assertTrue(projectMap.indexOf(
+            "\"class_name\": \"com.example.components.InventoryService\"")
+            < projectMap.indexOf("\"class_name\": \"com.example.web.ProjectMapController\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"endpoint:com.example.web.ProjectMapController#getItem\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"endpoint:com.example.web.ProjectMapController#createItem\"")));
+  }
+
+  @Test
+  void componentRestControllerEvidenceReusesEndpointAnnotationEvidenceId() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String restControllerEvidenceId =
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:"
+            + "com.example.web.ProjectMapController:@RestController";
+    long evidenceLineCount = evidenceIndex.lines()
+        .filter(line -> line.contains("\"id\":\"" + restControllerEvidenceId + "\""))
+        .count();
+
+    assertEquals(1, evidenceLineCount);
   }
 
   private Set<String> projectMapEvidenceIds(String projectMap) {

@@ -79,7 +79,58 @@
     }
   ],
   "components": {
-    "analysis_status": "not_analyzed",
-    "items": []
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.components.AppConfiguration",
+        "class_name": "com.example.components.AppConfiguration",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryComponent",
+        "class_name": "com.example.components.InventoryComponent",
+        "stereotypes": [
+          "@Component"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:8-8:com.example.components.InventoryComponent:@Component"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryRepository",
+        "class_name": "com.example.components.InventoryRepository",
+        "stereotypes": [
+          "@Repository"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryService",
+        "class_name": "com.example.components.InventoryService",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.web.ProjectMapController",
+        "class_name": "com.example.web.ProjectMapController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController"
+        ]
+      }
+    ]
   }
 }
