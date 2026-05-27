@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -15,10 +16,21 @@ public final class AgentProjectMemoryCli {
 
   private final PrintWriter out;
   private final PrintWriter err;
+  private final SpringMvcEndpointOutputGenerator endpointOutputGenerator;
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
+    this(out, err, new SpringMvcEndpointOutputGenerator());
+  }
+
+  AgentProjectMemoryCli(
+      PrintWriter out,
+      PrintWriter err,
+      SpringMvcEndpointOutputGenerator endpointOutputGenerator) {
     this.out = Objects.requireNonNull(out, "out");
     this.err = Objects.requireNonNull(err, "err");
+    this.endpointOutputGenerator = Objects.requireNonNull(
+        endpointOutputGenerator,
+        "endpointOutputGenerator");
   }
 
   public int run(String[] args) {
@@ -69,6 +81,22 @@ public final class AgentProjectMemoryCli {
     }
 
     out.println("Prepared " + outputDirectory.toAbsolutePath().normalize());
+
+    try {
+      SpringMvcEndpointOutputGenerator.Result result = endpointOutputGenerator.generate(
+          projectPath,
+          outputDirectory);
+      if (result.generated()) {
+        out.println("Generated endpoints.md with " + result.endpointCount() + " endpoint facts.");
+        out.println(
+            "Generated evidence-index.jsonl with "
+                + result.evidenceCount()
+                + " evidence records.");
+      }
+    } catch (IOException ex) {
+      return scanError("Could not generate endpoint output: " + ex.getMessage());
+    }
+
     return SUCCESS;
   }
 

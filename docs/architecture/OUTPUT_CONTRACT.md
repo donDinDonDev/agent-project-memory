@@ -6,7 +6,7 @@ Any output field addition, removal, rename, or semantic change requires updating
 
 ## Directory Structure
 
-The first scan output is:
+The v0.1 target scan output is:
 
 ```text
 .project-memory/
@@ -15,6 +15,10 @@ The first scan output is:
   endpoints.md
   agent-guide.md
 ```
+
+During the incremental Stage 2 implementation, `scan <path>` writes `endpoints.md`
+and `evidence-index.jsonl` when a Maven-style `src/main/java` source root exists.
+`project-map.json` and `agent-guide.md` are stabilized in later roadmap stages.
 
 ## `project-map.json`
 
@@ -93,6 +97,11 @@ It should include:
 - Response type when detected.
 - Evidence reference.
 
+If a `@RequestMapping` endpoint does not declare an HTTP method, the Markdown output
+must say that the method was not declared instead of inventing one. If a method
+expression is present but unsupported by deterministic source extraction, the output
+must mark it as unsupported.
+
 Example shape:
 
 ```md
@@ -130,4 +139,3 @@ It must not claim architecture that is not backed by evidence or explicitly mark
 - Generated facts must reference evidence IDs where possible.
 - Markdown outputs should remain readable without hiding evidence.
 - JSON outputs should remain stable enough for tests and downstream tools.
-

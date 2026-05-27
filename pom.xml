@@ -49,15 +49,69 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <version>3.4.1</version>
-        <configuration>
-          <archive>
-            <manifest>
-              <mainClass>io.github.dondindondev.agentprojectmemory.Main</mainClass>
-            </manifest>
-          </archive>
-        </configuration>
+        <artifactId>maven-shade-plugin</artifactId>
+        <version>3.6.0</version>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <createDependencyReducedPom>false</createDependencyReducedPom>
+              <transformers>
+                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                  <mainClass>io.github.dondindondev.agentprojectmemory.Main</mainClass>
+                </transformer>
+              </transformers>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>3.1.0</version>
+        <executions>
+          <execution>
+            <id>packaged-cli-smoke-test</id>
+            <phase>package</phase>
+            <goals>
+              <goal>run</goal>
+            </goals>
+            <configuration>
+              <target name="packaged-cli-smoke-test">
+                <property
+                    name="smoke.project"
+                    value="${project.build.directory}/packaged-cli-smoke/springmvc-endpoints"/>
+                <delete dir="${project.build.directory}/packaged-cli-smoke"/>
+                <mkdir dir="${smoke.project}"/>
+                <copy todir="${smoke.project}">
+                  <fileset dir="${project.basedir}/src/test/resources/fixtures/springmvc-endpoints"/>
+                </copy>
+                <java
+                    jar="${project.build.directory}/${project.build.finalName}.jar"
+                    fork="true"
+                    failonerror="true">
+                  <arg value="scan"/>
+                  <arg value="${smoke.project}"/>
+                </java>
+                <available
+                    file="${smoke.project}/.project-memory/endpoints.md"
+                    property="smoke.endpoints.generated"/>
+                <available
+                    file="${smoke.project}/.project-memory/evidence-index.jsonl"
+                    property="smoke.evidence.generated"/>
+                <fail
+                    unless="smoke.endpoints.generated"
+                    message="Packaged CLI smoke test did not generate endpoints.md"/>
+                <fail
+                    unless="smoke.evidence.generated"
+                    message="Packaged CLI smoke test did not generate evidence-index.jsonl"/>
+              </target>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

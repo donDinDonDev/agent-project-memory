@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -99,6 +101,34 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanMavenStyleSourceRootGeneratesEndpointsAndEvidenceIndex() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+
+    CliResult result = runCli("scan", projectPath.toString());
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
+        () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
+        () -> assertTrue(endpoints.contains("# Endpoints")),
+        () -> assertTrue(endpoints.contains("## GET /health")),
+        () -> assertTrue(endpoints.contains("- Controller: `com.example.web.SimpleRestController`")),
+        () -> assertTrue(endpoints.contains("- Handler: `health`")),
+        () -> assertTrue(endpoints.contains("- Response: `String`")),
+        () -> assertTrue(endpoints.contains("- Evidence: `ev:")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"annotation\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"path\":\"src/main/java/com/example/web/SimpleRestController.java\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@GetMapping\"")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanReturnsNonZeroWhenProjectMemoryPathIsAFile() throws Exception {
     Path conflictingOutputPath = tempDir.resolve(".project-memory");
     Files.writeString(conflictingOutputPath, "not a directory");
@@ -119,6 +149,25 @@ final class AgentProjectMemoryCliTest {
         .run(args);
 
     return new CliResult(exitCode, stdout.toString(), stderr.toString());
+  }
+
+  private Path fixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/springmvc-endpoints")).toURI());
+  }
+
+  private void copyDirectory(Path source, Path target) throws Exception {
+    try (var paths = Files.walk(source)) {
+      for (Path sourcePath : paths.toList()) {
+        Path targetPath = target.resolve(source.relativize(sourcePath));
+        if (Files.isDirectory(sourcePath)) {
+          Files.createDirectories(targetPath);
+        } else {
+          Files.createDirectories(targetPath.getParent());
+          Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
+        }
+      }
+    }
   }
 
   private record CliResult(int exitCode, String stdout, String stderr) {
