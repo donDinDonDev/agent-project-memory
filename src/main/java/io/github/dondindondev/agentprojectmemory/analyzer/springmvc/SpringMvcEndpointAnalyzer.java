@@ -24,7 +24,20 @@ final class SpringMvcEndpointAnalyzer {
   private static final String REST_CONTROLLER = "RestController";
   private static final String REQUEST_MAPPING = "RequestMapping";
   private static final String GET_MAPPING = "GetMapping";
+  private static final String POST_MAPPING = "PostMapping";
+  private static final String PUT_MAPPING = "PutMapping";
+  private static final String PATCH_MAPPING = "PatchMapping";
+  private static final String DELETE_MAPPING = "DeleteMapping";
   private static final String HIGH_CONFIDENCE = "high";
+  private static final List<String> REQUEST_METHOD_NAMES = List.of(
+      "GET",
+      "HEAD",
+      "POST",
+      "PUT",
+      "PATCH",
+      "DELETE",
+      "OPTIONS",
+      "TRACE");
 
   SpringMvcEndpointAnalysis analyze(Path repositoryRoot, List<Path> sourceRoots) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
@@ -79,35 +92,38 @@ final class SpringMvcEndpointAnalyzer {
           .orElse(null);
 
       for (MethodDeclaration method : type.getMethods()) {
-        Optional<AnnotationExpr> getMapping = findAnnotation(method.getAnnotations(), GET_MAPPING);
-        if (getMapping.isEmpty()) {
+        Optional<AnnotationExpr> methodMapping = findMethodMapping(method.getAnnotations());
+        if (methodMapping.isEmpty()) {
           continue;
         }
 
-        ExtractedPaths methodPathExtraction = literalPathValues(getMapping.orElseThrow());
-        if (!methodPathExtraction.hasPaths()) {
+        AnnotationExpr methodMappingAnnotation = methodMapping.orElseThrow();
+        ExtractedPaths methodPathExtraction = literalPathValues(methodMappingAnnotation);
+        if (methodPathExtraction.isDeclaredButUnsupported()) {
           continue;
         }
-        SpringMvcEndpointEvidence getMappingEvidence = mappingEvidence(
+        ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
+        SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
             sourcePath,
             controllerClass,
             method.getNameAsString(),
-            getMapping.orElseThrow(),
+            methodMappingAnnotation,
             sourceLines);
         addEvidenceIfAbsent(evidence, requestMappingEvidence);
-        evidence.add(getMappingEvidence);
+        evidence.add(methodMappingEvidence);
 
         List<String> evidenceIds = new ArrayList<>();
         if (requestMappingEvidence != null) {
           evidenceIds.add(requestMappingEvidence.id());
         }
-        evidenceIds.add(getMappingEvidence.id());
+        evidenceIds.add(methodMappingEvidence.id());
 
         endpoints.add(new SpringMvcEndpointFact(
             controllerClass,
             method.getNameAsString(),
-            "GET",
-            combinePaths(classPaths, methodPathExtraction.paths()),
+            httpMethods.methods(),
+            httpMethods.semantics(),
+            combinePaths(classPaths, methodPathExtraction.pathsOrDefaultRoot()),
             method.getType().asString(),
             evidenceIds));
       }
@@ -136,6 +152,21 @@ final class SpringMvcEndpointAnalyzer {
         || findAnnotation(type.getAnnotations(), REST_CONTROLLER).isPresent();
   }
 
+  private Optional<AnnotationExpr> findMethodMapping(List<AnnotationExpr> annotations) {
+    return annotations.stream()
+        .filter(annotation -> isSupportedMethodMapping(simpleAnnotationName(annotation)))
+        .findFirst();
+  }
+
+  private boolean isSupportedMethodMapping(String simpleName) {
+    return REQUEST_MAPPING.equals(simpleName)
+        || GET_MAPPING.equals(simpleName)
+        || POST_MAPPING.equals(simpleName)
+        || PUT_MAPPING.equals(simpleName)
+        || PATCH_MAPPING.equals(simpleName)
+        || DELETE_MAPPING.equals(simpleName);
+  }
+
   private Optional<AnnotationExpr> findAnnotation(List<AnnotationExpr> annotations, String simpleName) {
     return annotations.stream()
         .filter(annotation -> simpleAnnotationName(annotation).equals(simpleName))
@@ -149,6 +180,73 @@ final class SpringMvcEndpointAnalyzer {
       return name.substring(lastDot + 1);
     }
     return name;
+  }
+
+  private ExtractedHttpMethods httpMethods(AnnotationExpr annotation) {
+    return switch (simpleAnnotationName(annotation)) {
+      case GET_MAPPING -> ExtractedHttpMethods.declared(List.of("GET"));
+      case POST_MAPPING -> ExtractedHttpMethods.declared(List.of("POST"));
+      case PUT_MAPPING -> ExtractedHttpMethods.declared(List.of("PUT"));
+      case PATCH_MAPPING -> ExtractedHttpMethods.declared(List.of("PATCH"));
+      case DELETE_MAPPING -> ExtractedHttpMethods.declared(List.of("DELETE"));
+      case REQUEST_MAPPING -> requestMappingHttpMethods(annotation);
+      default -> ExtractedHttpMethods.unsupported();
+    };
+  }
+
+  private ExtractedHttpMethods requestMappingHttpMethods(AnnotationExpr annotation) {
+    if (!annotation.isNormalAnnotationExpr()) {
+      return ExtractedHttpMethods.notDeclared();
+    }
+
+    return annotation.asNormalAnnotationExpr().getPairs().stream()
+        .filter(pair -> "method".equals(pair.getNameAsString()))
+        .findFirst()
+        .map(pair -> requestMethodValues(pair.getValue()))
+        .orElseGet(ExtractedHttpMethods::notDeclared);
+  }
+
+  private ExtractedHttpMethods requestMethodValues(Expression expression) {
+    if (expression.isArrayInitializerExpr()) {
+      ArrayInitializerExpr array = expression.asArrayInitializerExpr();
+      LinkedHashSet<String> methods = new LinkedHashSet<>();
+      for (Expression value : array.getValues()) {
+        Optional<String> requestMethod = requestMethodName(value);
+        if (requestMethod.isEmpty()) {
+          return ExtractedHttpMethods.unsupported();
+        }
+        methods.add(requestMethod.orElseThrow());
+      }
+      return ExtractedHttpMethods.declared(List.copyOf(methods));
+    }
+
+    return requestMethodName(expression)
+        .map(method -> ExtractedHttpMethods.declared(List.of(method)))
+        .orElseGet(ExtractedHttpMethods::unsupported);
+  }
+
+  private Optional<String> requestMethodName(Expression expression) {
+    if (expression.isFieldAccessExpr()) {
+      String scope = expression.asFieldAccessExpr().getScope().toString();
+      String methodName = expression.asFieldAccessExpr().getNameAsString();
+      if (isRequestMethodScope(scope) && REQUEST_METHOD_NAMES.contains(methodName)) {
+        return Optional.of(methodName);
+      }
+    }
+
+    if (expression.isNameExpr()) {
+      String methodName = expression.asNameExpr().getNameAsString();
+      if (REQUEST_METHOD_NAMES.contains(methodName)) {
+        return Optional.of(methodName);
+      }
+    }
+
+    return Optional.empty();
+  }
+
+  private boolean isRequestMethodScope(String scope) {
+    return "RequestMethod".equals(scope)
+        || "org.springframework.web.bind.annotation.RequestMethod".equals(scope);
   }
 
   private ExtractedPaths literalPathValues(AnnotationExpr annotation) {
@@ -317,6 +415,26 @@ final class SpringMvcEndpointAnalyzer {
     return path;
   }
 
+  private record ExtractedHttpMethods(
+      SpringMvcHttpMethodSemantics semantics,
+      List<String> methods) {
+    private ExtractedHttpMethods {
+      methods = List.copyOf(methods);
+    }
+
+    private static ExtractedHttpMethods declared(List<String> methods) {
+      return new ExtractedHttpMethods(SpringMvcHttpMethodSemantics.DECLARED, methods);
+    }
+
+    private static ExtractedHttpMethods notDeclared() {
+      return new ExtractedHttpMethods(SpringMvcHttpMethodSemantics.NOT_DECLARED, List.of());
+    }
+
+    private static ExtractedHttpMethods unsupported() {
+      return new ExtractedHttpMethods(SpringMvcHttpMethodSemantics.UNSUPPORTED, List.of());
+    }
+  }
+
   private record ExtractedPaths(boolean pathDeclared, List<String> paths) {
     private ExtractedPaths {
       paths = List.copyOf(paths);
@@ -332,10 +450,6 @@ final class SpringMvcEndpointAnalyzer {
 
     private static ExtractedPaths declared(List<String> paths) {
       return new ExtractedPaths(true, paths);
-    }
-
-    private boolean hasPaths() {
-      return !paths.isEmpty();
     }
 
     private boolean isDeclaredButUnsupported() {

@@ -21,7 +21,8 @@ final class SpringMvcEndpointAnalyzerTest {
     SpringMvcEndpointFact endpoint = endpoint(analysis, "com.example.web.SimpleRestController", "health");
 
     assertAll(
-        () -> assertEquals("GET", endpoint.httpMethod()),
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
         () -> assertEquals(List.of("/health"), endpoint.paths()),
         () -> assertEquals("String", endpoint.declaredResponseType()),
         () -> assertFalse(endpoint.evidenceIds().isEmpty()));
@@ -34,9 +35,111 @@ final class SpringMvcEndpointAnalyzerTest {
     SpringMvcEndpointFact endpoint = endpoint(analysis, "com.example.web.UiController", "home");
 
     assertAll(
-        () -> assertEquals("GET", endpoint.httpMethod()),
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
         () -> assertEquals(List.of("/home"), endpoint.paths()),
         () -> assertEquals("String", endpoint.declaredResponseType()));
+  }
+
+  @Test
+  void requestMappingWithoutMethodUsesExplicitUndeclaredMethodSemantics() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "requestMappingWithoutMethod");
+
+    assertAll(
+        () -> assertEquals(List.of(), endpoint.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.NOT_DECLARED, endpoint.httpMethodSemantics()),
+        () -> assertEquals(List.of("/coverage/request"), endpoint.paths()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@RequestMapping".equals(evidence.annotationSymbol())
+                && "requestMappingWithoutMethod".equals(evidence.methodName()))));
+  }
+
+  @Test
+  void requestMappingWithGetMethodIsDetected() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "requestMappingGet");
+
+    assertAll(
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
+        () -> assertEquals(List.of("/coverage"), endpoint.paths()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@RequestMapping".equals(evidence.annotationSymbol())
+                && "requestMappingGet".equals(evidence.methodName()))));
+  }
+
+  @Test
+  void requestMappingWithMethodArrayPreservesAllMethods() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "requestMappingMultipleMethods");
+
+    assertAll(
+        () -> assertEquals(List.of("GET", "POST"), endpoint.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
+        () -> assertEquals(List.of("/coverage/request-both"), endpoint.paths()));
+  }
+
+  @Test
+  void postPutPatchAndDeleteMappingsAreDetected() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact post = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "postMappingValueAlias");
+    SpringMvcEndpointFact put = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "putMappingPathAlias");
+    SpringMvcEndpointFact patch = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "patchMapping");
+    SpringMvcEndpointFact delete = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "deleteMappingArray");
+
+    assertAll(
+        () -> assertEquals(List.of("POST"), post.httpMethods()),
+        () -> assertEquals(List.of("/coverage/post-value"), post.paths()),
+        () -> assertEquals(List.of("PUT"), put.httpMethods()),
+        () -> assertEquals(List.of("/coverage/put-path"), put.paths()),
+        () -> assertEquals(List.of("PATCH"), patch.httpMethods()),
+        () -> assertEquals(List.of("/coverage/patch"), patch.paths()),
+        () -> assertEquals(List.of("DELETE"), delete.httpMethods()),
+        () -> assertEquals(List.of("/coverage/delete", "/coverage/remove"), delete.paths()));
+  }
+
+  @Test
+  void valueAndPathAliasesAreSupportedForMethodMappings() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact get = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "getMappingPathAlias");
+    SpringMvcEndpointFact post = endpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "postMappingValueAlias");
+
+    assertAll(
+        () -> assertEquals(List.of("/coverage/get-path"), get.paths()),
+        () -> assertEquals(List.of("/coverage/post-value"), post.paths()));
   }
 
   @Test
@@ -65,6 +168,26 @@ final class SpringMvcEndpointAnalyzerTest {
         .filter(endpoint -> endpoint.controllerClass().equals("com.example.web.PathVariantsController"))
         .flatMap(endpoint -> endpoint.paths().stream())
         .anyMatch("/"::equals));
+  }
+
+  @Test
+  void requestMappingWithNonLiteralPathIsSkipped() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "nonLiteralRequestMappingPath"));
+  }
+
+  @Test
+  void unsupportedCustomComposedAnnotationIsIgnored() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.HttpMethodMappingController",
+        "customComposedMapping"));
   }
 
   @Test
