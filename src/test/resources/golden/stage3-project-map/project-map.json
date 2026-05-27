@@ -215,5 +215,30 @@
         ]
       }
     ]
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "class_name": "com.example.web.ProjectMapControllerTest",
+        "source_path": "src/test/java/com/example/web/ProjectMapControllerTest.java",
+        "framework_signals": [],
+        "tested_subjects": [
+          {
+            "class_name": "com.example.web.ProjectMapController",
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file",
+              "ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file"
+        ]
+      }
+    ]
   }
 }

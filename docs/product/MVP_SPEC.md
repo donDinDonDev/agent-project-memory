@@ -16,6 +16,7 @@ v0.1 includes:
 - Spring MVC endpoint extraction.
 - Basic Spring component inventory.
 - Basic direct JPA entity extraction.
+- Minimal deterministic tests inventory.
 - Evidence index.
 - `project-map.json`.
 - `endpoints.md`.
@@ -72,6 +73,8 @@ v0.1 does not include:
 - Full ORM runtime behavior reconstruction.
 - Full dependency graph analysis.
 - Full test coverage analysis.
+- Test execution analysis, CI integration, mutation testing, or runtime test behavior analysis.
+- Call graph or symbol-solving based test-subject resolution.
 
 ## Acceptance Criteria
 
@@ -85,6 +88,16 @@ v0.1 is acceptable when:
 - Basic direct JPA entity extraction detects direct `@Entity`, direct `@Table(name = "...")`,
   field-level `@Id`, and direct field-level relationship annotations while marking
   unresolved relationship targets as uncertain.
+- Minimal tests inventory detects Java test classes under standard single-module Maven
+  `src/test/java`.
+- Minimal tests inventory records test class names, repository-relative source paths,
+  directly visible framework signals when supported, and evidence IDs.
+- Likely tested-subject relations are emitted only as conservative inferred relations,
+  based on naming conventions and evidence for both the test class and candidate
+  production class.
+- Minimal tests inventory does not claim full test coverage, test execution results,
+  behavioral assertion analysis, CI results, call graph resolution, symbol solving, or
+  complete tested-subject mapping.
 - `evidence-index.jsonl` contains evidence entries for important generated facts.
 - `project-map.json` references evidence IDs for extracted facts.
 - `endpoints.md` lists detected endpoints with evidence references.

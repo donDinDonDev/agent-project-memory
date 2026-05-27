@@ -16,18 +16,19 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-During the incremental Stage 5.1 implementation, `scan <path>` writes
+During the incremental Stage 6.1 implementation, `scan <path>` writes
 `project-map.json`, `endpoints.md`, and `evidence-index.jsonl` when a Maven-style
 `src/main/java` source root exists. `agent-guide.md` is stabilized in a later roadmap
 stage and is not emitted by this slice.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. In Stage 5.1 it contains
+`project-map.json` is the machine-readable project memory file. In Stage 6.1 it contains
 the minimal stable v0.1 slice for the currently supported local single-module
-Maven-style Spring MVC endpoint, direct Spring component, and direct JPA entity scan.
+Maven-style Spring MVC endpoint, direct Spring component, direct JPA entity, and tests
+inventory scan.
 
-Stage 5.1 writes this top-level object:
+Stage 6.1 writes this top-level object:
 
 ```json
 {
@@ -118,6 +119,39 @@ Stage 5.1 writes this top-level object:
         ]
       }
     ]
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "class_name": "com.example.orders.OrderControllerTest",
+        "source_path": "src/test/java/com/example/orders/OrderControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/orders/OrderControllerTest.java:3-3:com.example.orders.OrderControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:src/test/java/com/example/orders/OrderControllerTest.java:7-7:com.example.orders.OrderControllerTest#returnsOrder:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "class_name": "com.example.orders.OrderController",
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/orders/OrderControllerTest.java:5-5:com.example.orders.OrderControllerTest:test_file",
+              "ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/orders/OrderControllerTest.java:5-5:com.example.orders.OrderControllerTest:test_file"
+        ]
+      }
+    ]
   }
 }
 ```
@@ -131,9 +165,9 @@ Field rules:
 - `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
 - `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
   when present and is an empty array otherwise.
-- `project.source_roots` contains detected standard production source roots. Stage 5.1
+- `project.source_roots` contains detected standard production source roots. Stage 6.1
   supports `src/main/java`.
-- `project.test_roots` contains detected standard test source roots. Stage 5.1 supports
+- `project.test_roots` contains detected standard test source roots. Stage 6.1 supports
   `src/test/java`.
 - `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
   controller class, and handler method.
@@ -190,11 +224,45 @@ Field rules:
 - `entity.evidence_ids` references class-level direct `@Entity` evidence and direct
   `@Table` evidence when present. These IDs must resolve to records in
   `evidence-index.jsonl`.
+- `tests.analysis_status` is `"analyzed"` when the supported `src/test/java` source root
+  exists and the tests inventory analyzer runs. It is `"not_detected"` when no supported
+  test root is present in the current single-module scan.
+- `tests.items` contains Java class declarations under supported test roots, sorted
+  deterministically by `class_name` and `source_path`. Interfaces are not emitted.
+- `test.class_name` is the fully qualified Java class name when resolvable from the
+  source file package and class declaration.
+- `test.source_path` is the repository-relative Java source path.
+- `test.framework_signals` contains only directly visible framework signals from imports
+  or annotations in the test source file. Stage 6.1 emits signal names `"JUnit Jupiter"`,
+  `"JUnit 4"`, and `"Spring Test"` when detectable. It is empty when no supported direct
+  signal is visible.
+- `framework_signal.name` is the detected framework family name.
+- `framework_signal.evidence_ids` references direct import or annotation evidence and
+  must resolve to records in `evidence-index.jsonl`.
+- `test.tested_subjects` contains only naming-convention relations inferred by stripping
+  supported test suffixes such as `Test`, `Tests`, or `IT` and matching the resulting
+  simple name against production classes under `src/main/java`. It is empty when no
+  production class match is found.
+- `tested_subject.class_name` is a candidate production class name.
+- `tested_subject.support_type` is `"inferred"` for Stage 6.1 naming-convention
+  relations.
+- `tested_subject.confidence` is `"medium"` for a single naming-convention production
+  class match and `"low"` for duplicate or ambiguous production class matches.
+- `tested_subject.uncertainty` is `null` for a single naming-convention match and
+  `"ambiguous_subject_name"` when multiple production classes share the candidate simple
+  name.
+- `tested_subject.evidence_ids` references the test class evidence and candidate
+  production class evidence that led to the inferred relation. These IDs must resolve to
+  records in `evidence-index.jsonl`.
+- `test.evidence_ids` references direct test class evidence and must resolve to records
+  in `evidence-index.jsonl`.
+- The tests inventory does not claim code coverage, test execution results, direct
+  behavioral assertion analysis, call graph resolution, or complete subject mapping.
 
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-Stage 5.1 emits a stable field order:
+Stage 6.1 emits a stable field order:
 
 ```json
 {"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
@@ -203,7 +271,7 @@ Stage 5.1 emits a stable field order:
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
 
-Stage 5.1 emits:
+Stage 6.1 emits:
 
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
@@ -216,7 +284,12 @@ Stage 5.1 emits:
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
   Field-level evidence IDs include a `field:<field_name>` discriminator because the
-  evidence record field set does not add a separate field-name property in Stage 5.1.
+  current evidence record field set does not add a separate field-name property.
+- `test_file` evidence for Java class declarations under supported test roots.
+- `code_symbol` evidence for production class declarations that are referenced by
+  inferred `tested_subjects` relations.
+- `code_symbol` evidence for directly visible test framework imports.
+- `annotation` evidence for directly visible test framework annotations.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as

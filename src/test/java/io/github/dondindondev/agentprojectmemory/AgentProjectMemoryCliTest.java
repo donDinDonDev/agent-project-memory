@@ -121,6 +121,8 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(projectMap.contains("\"src/main/java\"")),
         () -> assertTrue(projectMap.contains("\"endpoints\": [")),
         () -> assertTrue(projectMap.contains("\"entities\": {")),
+        () -> assertTrue(projectMap.contains("\"tests\": {")),
+        () -> assertTrue(projectMap.contains("\"analysis_status\": \"not_detected\"")),
         () -> assertTrue(projectMap.contains("\"controller_class\": \"com.example.web.SimpleRestController\"")),
         () -> assertTrue(endpoints.contains("# Endpoints")),
         () -> assertTrue(endpoints.contains("## GET /health")),

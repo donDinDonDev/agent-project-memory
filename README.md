@@ -52,7 +52,7 @@ rewritten deterministically when a supported source root exists.
 
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
 implementation analyzes Spring MVC controllers and direct Spring stereotype components,
-plus direct JPA entity annotations, then writes:
+direct JPA entity annotations, and standard Maven test-root classes, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -63,7 +63,8 @@ plus direct JPA entity annotations, then writes:
 `project-map.json` is the minimal stable machine-readable project map for the currently
 supported single-module scan. It includes detected root `pom.xml` build metadata when
 present, standard Maven source roots, Spring MVC endpoint facts, direct component
-inventory, direct JPA entity facts, and evidence ID references. `endpoints.md` is a
+inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID references.
+`endpoints.md` is a
 deterministic endpoint inventory. `evidence-index.jsonl` contains source-backed evidence
 records referenced by generated facts.
 
@@ -111,8 +112,11 @@ Stage 4.1 adds a deterministic direct Spring stereotype component inventory to
 `project-map.json`.
 Stage 5.1 adds a deterministic direct JPA entity inventory to `project-map.json` with
 annotation evidence in `evidence-index.jsonl`.
+Stage 6.1 adds a minimal deterministic tests inventory to `project-map.json`, including
+test-root class declarations, directly visible framework signals, and naming-convention
+tested-subject inferences with explicit uncertainty for ambiguous matches.
 
-Current Stage 5.1 limitations:
+Current Stage 6.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
 - Component inventory is limited to direct class-level `@Component`, `@Service`,
@@ -128,7 +132,16 @@ Current Stage 5.1 limitations:
   generation, transactional semantics, symbol solving, or ORM runtime behavior.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
+- Tests inventory is limited to Java classes under standard single-module Maven
+  `src/test/java`.
+- Test framework signals are limited to directly visible imports and annotations for
+  JUnit Jupiter, JUnit 4, and Spring Test signals.
+- Tested-subject relations are inferred only from test class naming conventions against
+  production classes under `src/main/java`; ambiguous simple-name matches are marked with
+  low confidence and explicit uncertainty.
+- Tests inventory does not claim code coverage, test execution results, behavioral
+  assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
 - `agent-guide.md` is not created yet.
 - `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
-  plus Spring MVC endpoint, component stereotype, and JPA annotation evidence.
+  plus Spring MVC endpoint, component stereotype, JPA annotation, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.

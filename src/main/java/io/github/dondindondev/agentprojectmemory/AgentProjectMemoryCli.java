@@ -94,7 +94,9 @@ public final class AgentProjectMemoryCli {
                 + result.componentCount()
                 + " component facts and "
                 + result.entityCount()
-                + " entity facts.");
+                + " entity facts and "
+                + result.testCount()
+                + " test facts.");
         out.println("Generated endpoints.md with " + result.endpointCount() + " endpoint facts.");
         out.println(
             "Generated evidence-index.jsonl with "

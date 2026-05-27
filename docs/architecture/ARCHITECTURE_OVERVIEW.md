@@ -44,6 +44,16 @@ annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relation
 facts preserve the declared field type and explicitly mark target resolution as
 uncertain because no Java symbol solving or ORM runtime reconstruction is performed.
 
+The tests inventory analyzer records Java class declarations under standard Maven
+`src/test/java` roots, directly visible test framework signals from imports and
+annotations, and likely tested-subject relations inferred only from class naming
+conventions against production classes under `src/main/java`. Naming-convention
+relations are explicitly marked as inferred. Duplicate production class simple-name
+matches are emitted with low confidence and explicit uncertainty. The analyzer does not
+perform coverage analysis, test execution analysis, behavioral assertion analysis, call
+graph construction, symbol solving, Gradle/Kotlin test-root discovery, or complete
+subject mapping.
+
 Future deeper analyzers may be added, but they must preserve deterministic evidence-backed behavior.
 
 ### Project Graph Builder

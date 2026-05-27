@@ -62,7 +62,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(21, projectMapEvidenceIds.size()),
+        () -> assertEquals(23, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -159,6 +159,35 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(projectMap.indexOf(
             "\"class_name\": \"com.example.domain.ProjectCustomer\"")
             < projectMap.indexOf("\"class_name\": \"com.example.domain.ProjectOrder\"")));
+  }
+
+  @Test
+  void projectMapIncludesAnalyzedTestsInventoryWithResolvedEvidence() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertTrue(projectMap.contains("\"tests\": {")),
+        () -> assertTrue(projectMap.contains("\"class_name\": \"com.example.web.ProjectMapControllerTest\"")),
+        () -> assertTrue(projectMap.contains("\"source_path\": "
+            + "\"src/test/java/com/example/web/ProjectMapControllerTest.java\"")),
+        () -> assertTrue(projectMap.contains("\"framework_signals\": []")),
+        () -> assertTrue(projectMap.contains(
+            "\"class_name\": \"com.example.web.ProjectMapController\"")),
+        () -> assertTrue(projectMap.contains("\"support_type\": \"inferred\"")),
+        () -> assertTrue(projectMap.contains("\"confidence\": \"medium\"")),
+        () -> assertTrue(projectMap.contains("\"uncertainty\": null")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"test_file\"")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"code_symbol\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"path\":\"src/test/java/com/example/web/ProjectMapControllerTest.java\"")));
   }
 
   private Set<String> projectMapEvidenceIds(String projectMap) {

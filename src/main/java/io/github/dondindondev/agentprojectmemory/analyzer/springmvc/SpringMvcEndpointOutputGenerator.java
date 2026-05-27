@@ -6,6 +6,12 @@ import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestedSubjectFact;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -57,32 +63,58 @@ public final class SpringMvcEndpointOutputGenerator {
       .comparing(JpaRelationshipFact::fieldName)
       .thenComparing(JpaRelationshipFact::annotation)
       .thenComparing(JpaRelationshipFact::javaType);
+  private static final Comparator<TestClassFact> TEST_CLASS_ORDER = Comparator
+      .comparing(TestClassFact::className)
+      .thenComparing(TestClassFact::sourcePath);
+  private static final Comparator<TestFrameworkSignalFact> TEST_FRAMEWORK_SIGNAL_ORDER = Comparator
+      .comparing(TestFrameworkSignalFact::name);
+  private static final Comparator<TestedSubjectFact> TESTED_SUBJECT_ORDER = Comparator
+      .comparing(TestedSubjectFact::className)
+      .thenComparing(TestedSubjectFact::supportType)
+      .thenComparing(TestedSubjectFact::confidence)
+      .thenComparing(subject -> nullSafe(subject.uncertainty()));
 
   private final SpringMvcEndpointAnalyzer analyzer;
   private final SpringComponentAnalyzer componentAnalyzer;
   private final JpaEntityAnalyzer entityAnalyzer;
+  private final TestInventoryAnalyzer testInventoryAnalyzer;
 
   public SpringMvcEndpointOutputGenerator() {
-    this(new SpringMvcEndpointAnalyzer(), new SpringComponentAnalyzer(), new JpaEntityAnalyzer());
+    this(
+        new SpringMvcEndpointAnalyzer(),
+        new SpringComponentAnalyzer(),
+        new JpaEntityAnalyzer(),
+        new TestInventoryAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(SpringMvcEndpointAnalyzer analyzer) {
-    this(analyzer, new SpringComponentAnalyzer(), new JpaEntityAnalyzer());
+    this(analyzer, new SpringComponentAnalyzer(), new JpaEntityAnalyzer(), new TestInventoryAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(
       SpringMvcEndpointAnalyzer analyzer,
       SpringComponentAnalyzer componentAnalyzer) {
-    this(analyzer, componentAnalyzer, new JpaEntityAnalyzer());
+    this(analyzer, componentAnalyzer, new JpaEntityAnalyzer(), new TestInventoryAnalyzer());
   }
 
   SpringMvcEndpointOutputGenerator(
       SpringMvcEndpointAnalyzer analyzer,
       SpringComponentAnalyzer componentAnalyzer,
       JpaEntityAnalyzer entityAnalyzer) {
+    this(analyzer, componentAnalyzer, entityAnalyzer, new TestInventoryAnalyzer());
+  }
+
+  SpringMvcEndpointOutputGenerator(
+      SpringMvcEndpointAnalyzer analyzer,
+      SpringComponentAnalyzer componentAnalyzer,
+      JpaEntityAnalyzer entityAnalyzer,
+      TestInventoryAnalyzer testInventoryAnalyzer) {
     this.analyzer = Objects.requireNonNull(analyzer, "analyzer");
     this.componentAnalyzer = Objects.requireNonNull(componentAnalyzer, "componentAnalyzer");
     this.entityAnalyzer = Objects.requireNonNull(entityAnalyzer, "entityAnalyzer");
+    this.testInventoryAnalyzer = Objects.requireNonNull(
+        testInventoryAnalyzer,
+        "testInventoryAnalyzer");
   }
 
   public Result generate(Path repositoryRoot, Path outputDirectory) throws IOException {
@@ -92,10 +124,13 @@ public final class SpringMvcEndpointOutputGenerator {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path sourceRoot = normalizedRepositoryRoot.resolve(MAIN_SOURCE_ROOT);
     if (!Files.isDirectory(sourceRoot)) {
-      return new Result(false, 0, 0, 0, 0);
+      return new Result(false, 0, 0, 0, 0, 0);
     }
 
     ProjectLayout layout = detectLayout(normalizedRepositoryRoot);
+    List<Path> testSourceRoots = layout.testRoots().stream()
+        .map(normalizedRepositoryRoot::resolve)
+        .toList();
     SpringMvcEndpointAnalysis analysis = analyzer.analyze(
         normalizedRepositoryRoot,
         List.of(sourceRoot));
@@ -105,11 +140,16 @@ public final class SpringMvcEndpointOutputGenerator {
     JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(
         normalizedRepositoryRoot,
         List.of(sourceRoot));
+    TestInventoryAnalysis testAnalysis = testInventoryAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        List.of(sourceRoot),
+        testSourceRoots);
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         analysis.evidence(),
         componentAnalysis.evidence(),
-        entityAnalysis.evidence());
+        entityAnalysis.evidence(),
+        testAnalysis.evidence());
 
     Files.writeString(
         outputDirectory.resolve(ENDPOINTS_FILE_NAME),
@@ -121,7 +161,7 @@ public final class SpringMvcEndpointOutputGenerator {
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(PROJECT_MAP_FILE_NAME),
-        projectMapJson(layout, analysis, componentAnalysis, entityAnalysis),
+        projectMapJson(layout, analysis, componentAnalysis, entityAnalysis, testAnalysis),
         StandardCharsets.UTF_8);
 
     return new Result(
@@ -129,6 +169,7 @@ public final class SpringMvcEndpointOutputGenerator {
         analysis.endpoints().size(),
         componentAnalysis.components().size(),
         entityAnalysis.entities().size(),
+        testAnalysis.tests().size(),
         evidenceRecords.size());
   }
 
@@ -214,7 +255,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ProjectLayout layout,
       SpringMvcEndpointAnalysis analysis,
       SpringComponentAnalysis componentAnalysis,
-      JpaEntityAnalysis entityAnalysis) {
+      JpaEntityAnalysis entityAnalysis,
+      TestInventoryAnalysis testAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", "0.1", true);
@@ -251,6 +293,10 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("  \"entities\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", "analyzed", true);
     appendEntities(json, entityAnalysis.entities());
+    json.append("  },\n");
+    json.append("  \"tests\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", testAnalysis.analysisStatus(), true);
+    appendTests(json, testAnalysis.tests());
     json.append("  }\n");
     json.append("}\n");
     return json.toString();
@@ -442,6 +488,97 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("        ],\n");
   }
 
+  private void appendTests(StringBuilder json, List<TestClassFact> tests) {
+    json.append("    \"items\": [");
+    List<TestClassFact> sortedTests = tests.stream()
+        .sorted(TEST_CLASS_ORDER)
+        .toList();
+    if (sortedTests.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedTests.size(); index++) {
+      appendTest(json, sortedTests.get(index), index < sortedTests.size() - 1);
+    }
+    json.append("    ]\n");
+  }
+
+  private void appendTest(
+      StringBuilder json,
+      TestClassFact test,
+      boolean trailingComma) {
+    json.append("      {\n");
+    appendIndentedStringField(json, 4, "class_name", test.className(), true);
+    appendIndentedStringField(json, 4, "source_path", test.sourcePath(), true);
+    appendFrameworkSignals(json, test.frameworkSignals());
+    appendTestedSubjects(json, test.testedSubjects());
+    appendIndentedStringArrayField(json, 4, "evidence_ids", test.evidenceIds(), false);
+    json.append("      }");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
+  }
+
+  private void appendFrameworkSignals(
+      StringBuilder json,
+      List<TestFrameworkSignalFact> frameworkSignals) {
+    json.append("        \"framework_signals\": [");
+    List<TestFrameworkSignalFact> sortedSignals = frameworkSignals.stream()
+        .sorted(TEST_FRAMEWORK_SIGNAL_ORDER)
+        .toList();
+    if (sortedSignals.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedSignals.size(); index++) {
+      TestFrameworkSignalFact signal = sortedSignals.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "name", signal.name(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", signal.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedSignals.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendTestedSubjects(
+      StringBuilder json,
+      List<TestedSubjectFact> testedSubjects) {
+    json.append("        \"tested_subjects\": [");
+    List<TestedSubjectFact> sortedSubjects = testedSubjects.stream()
+        .sorted(TESTED_SUBJECT_ORDER)
+        .toList();
+    if (sortedSubjects.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedSubjects.size(); index++) {
+      TestedSubjectFact subject = sortedSubjects.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "class_name", subject.className(), true);
+      appendIndentedStringField(json, 6, "support_type", subject.supportType(), true);
+      appendIndentedStringField(json, 6, "confidence", subject.confidence(), true);
+      appendIndentedNullableStringField(json, 6, "uncertainty", subject.uncertainty(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", subject.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedSubjects.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
   private String endpointId(SpringMvcEndpointFact endpoint) {
     return "endpoint:" + endpoint.controllerClass() + "#" + endpoint.handlerMethod();
   }
@@ -528,7 +665,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ProjectLayout layout,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
-      List<JpaEntityEvidence> entityEvidenceRecords) {
+      List<JpaEntityEvidence> entityEvidenceRecords,
+      List<TestInventoryEvidence> testEvidenceRecords) {
     Map<String, EvidenceRecord> uniqueRecords = new LinkedHashMap<>();
     layout.buildFileEvidence().ifPresent(evidence -> uniqueRecords.put(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -538,6 +676,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     entityEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    testEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
 
@@ -582,6 +723,20 @@ public final class SpringMvcEndpointOutputGenerator {
         evidence.className(),
         evidence.methodName(),
         evidence.annotationSymbol(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(TestInventoryEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
         evidence.lineStart(),
         evidence.lineEnd(),
         evidence.excerpt(),
@@ -774,6 +929,7 @@ public final class SpringMvcEndpointOutputGenerator {
       int endpointCount,
       int componentCount,
       int entityCount,
+      int testCount,
       int evidenceCount) {
   }
 

@@ -47,7 +47,7 @@ Evidence entries use these fields:
 
 Additional fields may be added later only when `OUTPUT_CONTRACT.md` and this document are updated.
 
-Stage 5.1 always emits this field set in `evidence-index.jsonl`. Fields that are not
+The current implementation emits this field set in `evidence-index.jsonl`. Fields that are not
 applicable to a source type are emitted as JSON `null`, not omitted. For example,
 `build_file` evidence for `pom.xml` has `class_name` and `method_name` set to `null`.
 When a line range is unavailable, `line_start` and `line_end` are `null`; when a repeated
@@ -69,9 +69,9 @@ Examples:
 
 Extracted facts should use strong evidence references and high confidence.
 
-### Stage 5.1 Emitted Evidence
+### Stage 6.1 Emitted Evidence
 
-The Stage 5.1 implementation emits only these evidence records:
+The Stage 6.1 implementation emits these evidence records:
 
 - `build_file` for a root `pom.xml` when present. The evidence path is `pom.xml`,
   `symbol_name` is `pom.xml`, `class_name` and `method_name` are `null`, and confidence is
@@ -96,9 +96,11 @@ The Stage 5.1 implementation emits only these evidence records:
   range, the annotation excerpt, and `high` confidence. Field-level JPA annotation
   evidence IDs include a `field:<field_name>` discriminator while preserving the global
   evidence field set.
+- Test inventory evidence described in the Stage 6.1 Test Evidence section below.
 
-Stage 5.1 does not emit evidence records for Maven modules, connectors, generated
-guidance, or LLM output.
+Stage 6.1 does not emit evidence records for Maven modules, connectors, generated
+guidance, coverage data, test execution results, behavioral assertion analysis, or LLM
+output.
 
 ### Inferred Relations
 
@@ -110,6 +112,9 @@ Examples:
 - A service injected into a controller is likely involved in handling that controller's endpoints.
 
 Inferred relations must be marked as inferred and must preserve the evidence that led to the relation.
+Stage 6.1 tests inventory uses only naming-convention inferred relations for
+`tested_subjects`; it does not use call graphs, assertions, runtime execution, or coverage
+data.
 
 ### Uncertain Signals
 
@@ -136,6 +141,45 @@ This is an extracted annotation fact with an explicitly uncertain target, not a 
 mapping. The analyzer does not interpret `mappedBy`, `@JoinColumn`, cascade, fetch,
 collection element types, runtime proxies, persistence provider behavior, or database
 schema semantics in this stage.
+
+### Stage 6.1 Test Evidence
+
+The Stage 6.1 tests inventory emits only these additional evidence records:
+
+- `test_file` for Java class declarations under supported Maven test roots. The evidence
+  path points to `src/test/java/...`, `class_name` is the detected test-root class,
+  `method_name` is `null`, `symbol_name` is the fully qualified class name, and confidence
+  is `high`.
+- `code_symbol` for production class declarations under `src/main/java` when they are
+  referenced by an inferred `tested_subjects` relation. This evidence supports the
+  candidate production class side of the naming convention; it is not coverage evidence.
+- `code_symbol` for directly visible imports that indicate supported test framework
+  signals, such as JUnit Jupiter, JUnit 4, or Spring Test imports.
+- `annotation` for directly visible annotations that indicate supported test framework
+  signals, such as JUnit `@Test` annotations when resolvable from imports or fully
+  qualified annotation names, and direct Spring test annotations.
+
+Test evidence uses the same stable evidence field set as the rest of
+`evidence-index.jsonl`; no new global evidence fields are introduced in Stage 6.1.
+
+### Stage 6.1 Tested-Subject Relations
+
+Stage 6.1 infers likely tested subjects only from test class naming conventions. The
+analyzer strips supported suffixes such as `Test`, `Tests`, or `IT` from the test class
+simple name and matches the result against production class simple names under
+`src/main/java`.
+
+Every emitted tested-subject relation includes:
+
+- `support_type: "inferred"`.
+- `confidence: "medium"` when exactly one production class has the candidate simple name.
+- `confidence: "low"` and `uncertainty: "ambiguous_subject_name"` when multiple
+  production classes share the candidate simple name.
+- Evidence IDs for the test class declaration and the candidate production class
+  declaration.
+
+These relations are orientation hints. They do not claim complete subject mapping, test
+execution, code coverage, assertion behavior, or runtime verification.
 
 ## Evidence Discipline
 
