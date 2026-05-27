@@ -85,11 +85,12 @@ AI may become an optional presentation or summarization layer later, but the cor
 ## Project Status
 
 Stage 1 is implemented as a minimal Java 21 Maven CLI skeleton.
+Stage 2 has started with an internal JavaParser-backed Spring MVC endpoint analyzer foundation.
 
 Current Stage 1 limitations:
 
 - No Maven project detection is implemented yet.
-- No Java or Spring analyzer is implemented yet.
+- The internal Spring MVC analyzer is not wired into `scan` yet.
 - No evidence records are generated yet.
 - `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md` are not created yet.
 - The CLI uses only Java standard library argument handling.
