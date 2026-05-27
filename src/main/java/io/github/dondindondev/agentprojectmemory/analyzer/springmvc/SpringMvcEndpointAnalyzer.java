@@ -5,6 +5,7 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
@@ -28,6 +29,11 @@ final class SpringMvcEndpointAnalyzer {
   private static final String PUT_MAPPING = "PutMapping";
   private static final String PATCH_MAPPING = "PatchMapping";
   private static final String DELETE_MAPPING = "DeleteMapping";
+  private static final String PATH_VARIABLE = "PathVariable";
+  private static final String REQUEST_PARAM = "RequestParam";
+  private static final String REQUEST_BODY = "RequestBody";
+  private static final String PATH_VARIABLE_SOURCE = "path_variable";
+  private static final String REQUEST_PARAM_SOURCE = "request_param";
   private static final String HIGH_CONFIDENCE = "high";
   private static final List<String> REQUEST_METHOD_NAMES = List.of(
       "GET",
@@ -103,6 +109,11 @@ final class SpringMvcEndpointAnalyzer {
           continue;
         }
         ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
+        ExtractedRequestMetadata requestMetadata = requestMetadata(
+            sourcePath,
+            controllerClass,
+            method,
+            sourceLines);
         SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
             sourcePath,
             controllerClass,
@@ -111,12 +122,17 @@ final class SpringMvcEndpointAnalyzer {
             sourceLines);
         addEvidenceIfAbsent(evidence, requestMappingEvidence);
         evidence.add(methodMappingEvidence);
+        evidence.addAll(requestMetadata.evidence());
 
         List<String> evidenceIds = new ArrayList<>();
         if (requestMappingEvidence != null) {
           evidenceIds.add(requestMappingEvidence.id());
         }
         evidenceIds.add(methodMappingEvidence.id());
+        requestMetadata.requestParameters().stream()
+            .flatMap(parameter -> parameter.evidenceIds().stream())
+            .forEach(evidenceIds::add);
+        evidenceIds.addAll(requestMetadata.requestBodyEvidenceIds());
 
         endpoints.add(new SpringMvcEndpointFact(
             controllerClass,
@@ -124,6 +140,9 @@ final class SpringMvcEndpointAnalyzer {
             httpMethods.methods(),
             httpMethods.semantics(),
             combinePaths(classPaths, methodPathExtraction.pathsOrDefaultRoot()),
+            requestMetadata.requestParameters(),
+            requestMetadata.requestBodyType(),
+            requestMetadata.requestBodyEvidenceIds(),
             method.getType().asString(),
             evidenceIds));
       }
@@ -171,6 +190,127 @@ final class SpringMvcEndpointAnalyzer {
     return annotations.stream()
         .filter(annotation -> simpleAnnotationName(annotation).equals(simpleName))
         .findFirst();
+  }
+
+  private ExtractedRequestMetadata requestMetadata(
+      String sourcePath,
+      String controllerClass,
+      MethodDeclaration method,
+      List<String> sourceLines) {
+    List<SpringMvcRequestParameterFact> requestParameters = new ArrayList<>();
+    List<String> requestBodyEvidenceIds = new ArrayList<>();
+    List<SpringMvcEndpointEvidence> evidence = new ArrayList<>();
+    String requestBodyType = null;
+
+    for (int index = 0; index < method.getParameters().size(); index++) {
+      Parameter parameter = method.getParameter(index);
+      Optional<AnnotationExpr> pathVariable = findAnnotation(parameter.getAnnotations(), PATH_VARIABLE);
+      if (pathVariable.isPresent()) {
+        addRequestParameterFact(
+            sourcePath,
+            controllerClass,
+            method,
+            sourceLines,
+            requestParameters,
+            evidence,
+            parameter,
+            pathVariable.orElseThrow(),
+            index,
+            PATH_VARIABLE_SOURCE);
+      }
+
+      Optional<AnnotationExpr> requestParam = findAnnotation(parameter.getAnnotations(), REQUEST_PARAM);
+      if (requestParam.isPresent()) {
+        addRequestParameterFact(
+            sourcePath,
+            controllerClass,
+            method,
+            sourceLines,
+            requestParameters,
+            evidence,
+            parameter,
+            requestParam.orElseThrow(),
+            index,
+            REQUEST_PARAM_SOURCE);
+      }
+
+      Optional<AnnotationExpr> requestBody = findAnnotation(parameter.getAnnotations(), REQUEST_BODY);
+      if (requestBody.isPresent() && requestBodyType == null) {
+        SpringMvcEndpointEvidence requestBodyEvidence = parameterAnnotationEvidence(
+            sourcePath,
+            controllerClass,
+            method.getNameAsString(),
+            parameter,
+            requestBody.orElseThrow(),
+            sourceLines,
+            index);
+        evidence.add(requestBodyEvidence);
+        requestBodyType = parameter.getType().asString();
+        requestBodyEvidenceIds.add(requestBodyEvidence.id());
+      }
+    }
+
+    return new ExtractedRequestMetadata(
+        requestParameters,
+        requestBodyType,
+        requestBodyEvidenceIds,
+        evidence);
+  }
+
+  private void addRequestParameterFact(
+      String sourcePath,
+      String controllerClass,
+      MethodDeclaration method,
+      List<String> sourceLines,
+      List<SpringMvcRequestParameterFact> requestParameters,
+      List<SpringMvcEndpointEvidence> evidence,
+      Parameter parameter,
+      AnnotationExpr annotation,
+      int parameterIndex,
+      String source) {
+    Optional<String> metadataName = requestMetadataName(annotation, parameter);
+    if (metadataName.isEmpty()) {
+      return;
+    }
+
+    SpringMvcEndpointEvidence parameterEvidence = parameterAnnotationEvidence(
+        sourcePath,
+        controllerClass,
+        method.getNameAsString(),
+        parameter,
+        annotation,
+        sourceLines,
+        parameterIndex);
+    evidence.add(parameterEvidence);
+    requestParameters.add(new SpringMvcRequestParameterFact(
+        metadataName.orElseThrow(),
+        source,
+        parameter.getType().asString(),
+        List.of(parameterEvidence.id())));
+  }
+
+  private Optional<String> requestMetadataName(AnnotationExpr annotation, Parameter parameter) {
+    if (annotation.isSingleMemberAnnotationExpr()) {
+      return literalStringValue(annotation.asSingleMemberAnnotationExpr().getMemberValue());
+    }
+
+    if (annotation.isNormalAnnotationExpr()) {
+      for (var pair : annotation.asNormalAnnotationExpr().getPairs()) {
+        String memberName = pair.getNameAsString();
+        if ("value".equals(memberName) || "name".equals(memberName)) {
+          return literalStringValue(pair.getValue());
+        }
+      }
+    }
+
+    return Optional.of(parameter.getNameAsString());
+  }
+
+  private Optional<String> literalStringValue(Expression expression) {
+    if (expression.isStringLiteralExpr()) {
+      return Optional.of(expression.asStringLiteralExpr().asString());
+    }
+    return Optional.empty();
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
@@ -310,7 +450,32 @@ final class SpringMvcEndpointAnalyzer {
     Integer lineEnd = annotation.getRange().map(range -> range.end.line).orElse(null);
 
     return new SpringMvcEndpointEvidence(
-        evidenceId(sourcePath, className, methodName, annotationSymbol, lineStart, lineEnd),
+        evidenceId(sourcePath, className, methodName, annotationSymbol, lineStart, lineEnd, null),
+        sourcePath,
+        className,
+        methodName,
+        annotationSymbol,
+        lineStart,
+        lineEnd,
+        excerpt(annotation, sourceLines),
+        HIGH_CONFIDENCE);
+  }
+
+  private SpringMvcEndpointEvidence parameterAnnotationEvidence(
+      String sourcePath,
+      String className,
+      String methodName,
+      Parameter parameter,
+      AnnotationExpr annotation,
+      List<String> sourceLines,
+      int parameterIndex) {
+    String annotationSymbol = "@" + simpleAnnotationName(annotation);
+    Integer lineStart = annotation.getRange().map(range -> range.begin.line).orElse(null);
+    Integer lineEnd = annotation.getRange().map(range -> range.end.line).orElse(null);
+    String discriminator = "parameter:" + parameterIndex + ":" + parameter.getNameAsString();
+
+    return new SpringMvcEndpointEvidence(
+        evidenceId(sourcePath, className, methodName, annotationSymbol, lineStart, lineEnd, discriminator),
         sourcePath,
         className,
         methodName,
@@ -327,10 +492,15 @@ final class SpringMvcEndpointAnalyzer {
       String methodName,
       String annotationSymbol,
       Integer lineStart,
-      Integer lineEnd) {
+      Integer lineEnd,
+      String discriminator) {
     String lineRange = lineStart == null || lineEnd == null ? "unknown" : lineStart + "-" + lineEnd;
     String symbolOwner = methodName == null ? className : className + "#" + methodName;
-    return "ev:" + sourcePath + ":" + lineRange + ":" + symbolOwner + ":" + annotationSymbol;
+    String id = "ev:" + sourcePath + ":" + lineRange + ":" + symbolOwner + ":" + annotationSymbol;
+    if (discriminator == null || discriminator.isBlank()) {
+      return id;
+    }
+    return id + ":" + discriminator;
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {
@@ -432,6 +602,18 @@ final class SpringMvcEndpointAnalyzer {
 
     private static ExtractedHttpMethods unsupported() {
       return new ExtractedHttpMethods(SpringMvcHttpMethodSemantics.UNSUPPORTED, List.of());
+    }
+  }
+
+  private record ExtractedRequestMetadata(
+      List<SpringMvcRequestParameterFact> requestParameters,
+      String requestBodyType,
+      List<String> requestBodyEvidenceIds,
+      List<SpringMvcEndpointEvidence> evidence) {
+    private ExtractedRequestMetadata {
+      requestParameters = List.copyOf(requestParameters);
+      requestBodyEvidenceIds = List.copyOf(requestBodyEvidenceIds);
+      evidence = List.copyOf(evidence);
     }
   }
 

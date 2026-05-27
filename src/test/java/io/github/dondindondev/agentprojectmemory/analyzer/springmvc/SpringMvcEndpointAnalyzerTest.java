@@ -160,6 +160,95 @@ final class SpringMvcEndpointAnalyzerTest {
   }
 
   @Test
+  void pathVariableAndRequestParamMetadataAreDetected() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.RequestMetadataController",
+        "getOrder");
+    SpringMvcRequestParameterFact pathVariable = requestParameter(
+        endpoint,
+        "path_variable",
+        "id");
+    SpringMvcRequestParameterFact status = requestParameter(
+        endpoint,
+        "request_param",
+        "status");
+    SpringMvcRequestParameterFact page = requestParameter(
+        endpoint,
+        "request_param",
+        "page");
+
+    assertAll(
+        () -> assertEquals(List.of("/orders/{id}"), endpoint.paths()),
+        () -> assertEquals("Long", pathVariable.javaType()),
+        () -> assertEquals("String", status.javaType()),
+        () -> assertEquals("int", page.javaType()),
+        () -> assertFalse(pathVariable.evidenceIds().isEmpty()),
+        () -> assertFalse(status.evidenceIds().isEmpty()),
+        () -> assertFalse(page.evidenceIds().isEmpty()));
+  }
+
+  @Test
+  void requestBodyTypeAndEvidenceAreDetected() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.RequestMetadataController",
+        "createOrder");
+
+    assertAll(
+        () -> assertEquals("CreateOrderRequest", endpoint.requestBodyType()),
+        () -> assertFalse(endpoint.requestBodyEvidenceIds().isEmpty()),
+        () -> assertTrue(endpoint.evidenceIds().containsAll(endpoint.requestBodyEvidenceIds())),
+        () -> assertTrue(endpoint.requestBodyEvidenceIds().stream()
+            .allMatch(evidenceId -> analysis.evidence().stream()
+                .anyMatch(evidence -> evidence.id().equals(evidenceId)
+                    && "@RequestBody".equals(evidence.annotationSymbol())
+                    && "createOrder".equals(evidence.methodName())))));
+  }
+
+  @Test
+  void requestMetadataEvidenceIdsArePreservedOnEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.RequestMetadataController",
+        "getOrder");
+    List<String> metadataEvidenceIds = endpoint.requestParameters().stream()
+        .flatMap(parameter -> parameter.evidenceIds().stream())
+        .toList();
+
+    assertAll(
+        () -> assertEquals(3, metadataEvidenceIds.size()),
+        () -> assertEquals(3, metadataEvidenceIds.stream().distinct().count()),
+        () -> assertTrue(endpoint.evidenceIds().containsAll(metadataEvidenceIds)),
+        () -> assertTrue(metadataEvidenceIds.stream()
+            .allMatch(evidenceId -> analysis.evidence().stream()
+                .anyMatch(evidence -> evidence.id().equals(evidenceId)
+                    && "getOrder".equals(evidence.methodName())
+                    && ("@PathVariable".equals(evidence.annotationSymbol())
+                        || "@RequestParam".equals(evidence.annotationSymbol()))))));
+  }
+
+  @Test
+  void nonLiteralRequestParamNameIsSkippedWithoutDroppingEndpoint() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.RequestMetadataController",
+        "unsupportedRequestParamName");
+
+    assertAll(
+        () -> assertEquals(List.of("/orders/search"), endpoint.paths()),
+        () -> assertTrue(endpoint.requestParameters().isEmpty()));
+  }
+
+  @Test
   void getMappingWithConstantPathIsSkipped() throws Exception {
     SpringMvcEndpointAnalysis analysis = analyzeFixture();
 
@@ -305,6 +394,17 @@ final class SpringMvcEndpointAnalyzerTest {
     return analysis.endpoints().stream()
         .anyMatch(candidate -> candidate.controllerClass().equals(controllerClass)
             && candidate.handlerMethod().equals(handlerMethod));
+  }
+
+  private SpringMvcRequestParameterFact requestParameter(
+      SpringMvcEndpointFact endpoint,
+      String source,
+      String name) {
+    return endpoint.requestParameters().stream()
+        .filter(candidate -> candidate.source().equals(source))
+        .filter(candidate -> candidate.name().equals(name))
+        .findFirst()
+        .orElseThrow();
   }
 
   private List<SpringMvcEndpointEvidence> evidenceForEndpoint(

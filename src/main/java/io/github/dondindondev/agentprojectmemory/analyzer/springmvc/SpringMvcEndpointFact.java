@@ -8,11 +8,16 @@ record SpringMvcEndpointFact(
     List<String> httpMethods,
     SpringMvcHttpMethodSemantics httpMethodSemantics,
     List<String> paths,
+    List<SpringMvcRequestParameterFact> requestParameters,
+    String requestBodyType,
+    List<String> requestBodyEvidenceIds,
     String declaredResponseType,
     List<String> evidenceIds) {
   SpringMvcEndpointFact {
     httpMethods = List.copyOf(httpMethods);
     paths = List.copyOf(paths);
+    requestParameters = List.copyOf(requestParameters);
+    requestBodyEvidenceIds = List.copyOf(requestBodyEvidenceIds);
     evidenceIds = List.copyOf(evidenceIds);
   }
 }
