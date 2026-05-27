@@ -1,0 +1,89 @@
+# MVP Spec
+
+## Version
+
+v0.1 is the first implementation milestone for `agent-project-memory`.
+
+The MVP is a local-first Java 21 CLI/devtool that scans a Maven-based Java/Spring repository and writes evidence-backed project memory files under `.project-memory/`.
+
+## In Scope
+
+v0.1 includes:
+
+- Local repository scan.
+- Maven project detection.
+- Java source root detection.
+- Spring MVC endpoint extraction.
+- Basic Spring component inventory.
+- Evidence index.
+- `project-map.json`.
+- `endpoints.md`.
+- `agent-guide.md`.
+- Sample fixture tests.
+
+## Expected Inputs
+
+The first supported input is a local repository path, eventually invoked as:
+
+```sh
+agent-project-memory scan .
+```
+
+The repository may include:
+
+- Maven build files such as `pom.xml`.
+- Java source roots such as `src/main/java`.
+- Spring MVC controllers.
+- Spring components and services.
+- Local Markdown documentation.
+- Tests under standard Maven test roots.
+
+## Expected Outputs
+
+The scan writes:
+
+```text
+.project-memory/project-map.json
+.project-memory/evidence-index.jsonl
+.project-memory/endpoints.md
+.project-memory/agent-guide.md
+```
+
+Output shape is governed by `docs/architecture/OUTPUT_CONTRACT.md`.
+
+Evidence shape is governed by `docs/architecture/EVIDENCE_MODEL.md`.
+
+## Out Of Scope
+
+v0.1 does not include:
+
+- SaaS.
+- Web UI.
+- Chat.
+- LLM calls in the core analyzer.
+- YouTrack, Jira, Confluence, GitHub, or GitLab connectors.
+- Generic RAG.
+- Multi-language analysis.
+- PDF parsing.
+- Automatic code modification.
+- Complete Spring runtime behavior reconstruction.
+- Full dependency graph analysis.
+- Full test coverage analysis.
+
+## Acceptance Criteria
+
+v0.1 is acceptable when:
+
+- The tool can scan a local Maven Java/Spring fixture project.
+- Maven project detection identifies at least root `pom.xml` and Maven module boundaries when present.
+- Java source root detection identifies standard Maven source and test roots.
+- Spring MVC endpoint extraction detects common controller annotations and request mapping annotations.
+- Basic Spring component inventory detects common stereotypes such as `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController`.
+- `evidence-index.jsonl` contains evidence entries for important generated facts.
+- `project-map.json` references evidence IDs for extracted facts.
+- `endpoints.md` lists detected endpoints with evidence references.
+- `agent-guide.md` summarizes how a coding agent should approach the project based on extracted facts, without inventing unsupported architecture.
+- Fixture tests compare generated facts with expected output.
+- No source code is sent to external services by default.
+- The core analyzer does not depend on external APIs.
+
