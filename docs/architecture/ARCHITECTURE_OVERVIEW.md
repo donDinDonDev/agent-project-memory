@@ -72,7 +72,14 @@ Writes machine-readable memory artifacts such as `project-map.json` and `evidenc
 
 Writes human-readable and agent-oriented Markdown artifacts such as `endpoints.md` and `agent-guide.md`.
 
-These files must not invent architecture beyond the extracted facts and documented inferences.
+`endpoints.md` is generated directly from deterministic endpoint facts. `agent-guide.md`
+is generated from `project-map.json` and `evidence-index.jsonl`, or from the same
+structured in-memory facts that are serialized to those files. The guide generator does
+not re-analyze source files, call LLMs, call external services, or ingest local
+documentation.
+
+These files must not invent architecture beyond the extracted facts, documented
+inferences, and explicitly labeled uncertainty.
 
 ### Future Docs/Issues Ingestors
 

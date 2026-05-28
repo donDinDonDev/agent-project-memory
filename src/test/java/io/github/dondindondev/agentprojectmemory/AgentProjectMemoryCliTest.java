@@ -101,7 +101,8 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanMavenStyleSourceRootGeneratesProjectMapEndpointsAndEvidenceIndex() throws Exception {
+  void scanMavenStyleSourceRootGeneratesProjectMapEndpointsEvidenceIndexAndAgentGuide()
+      throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
     copyDirectory(fixtureRoot(), projectPath);
 
@@ -110,12 +111,14 @@ final class AgentProjectMemoryCliTest {
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
+        () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
         () -> assertTrue(projectMap.contains("\"schema_version\": \"0.1\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": [")),
         () -> assertTrue(projectMap.contains("\"src/main/java\"")),
@@ -134,7 +137,10 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(evidenceIndex.contains(
             "\"path\":\"src/main/java/com/example/web/SimpleRestController.java\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@GetMapping\"")),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+        () -> assertTrue(agentGuide.contains("# Agent Guide")),
+        () -> assertTrue(agentGuide.contains("## Detected Project Layout")),
+        () -> assertTrue(agentGuide.contains("## Detected Spring MVC Endpoints")),
+        () -> assertTrue(agentGuide.contains("Generated deterministically from `project-map.json`")));
   }
 
   @Test

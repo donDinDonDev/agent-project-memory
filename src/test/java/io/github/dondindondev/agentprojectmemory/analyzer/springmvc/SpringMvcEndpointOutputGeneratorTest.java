@@ -27,7 +27,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private final SpringMvcEndpointOutputGenerator generator = new SpringMvcEndpointOutputGenerator();
 
   @Test
-  void generatedProjectMapAndEvidenceIndexMatchGoldenFiles() throws Exception {
+  void generatedProjectMapEvidenceIndexAndAgentGuideMatchGoldenFiles() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
     copyDirectory(fixtureRoot(), projectPath);
@@ -44,7 +44,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
             Files.readString(outputDirectory.resolve("project-map.json"))),
         () -> assertEquals(
             expected("evidence-index.jsonl"),
-            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))));
+            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(
+            expected("agent-guide.md"),
+            Files.readString(outputDirectory.resolve("agent-guide.md"))));
   }
 
   @Test
@@ -66,6 +69,24 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
+  }
+
+  @Test
+  void fullScanOutputWritesAgentGuide() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertTrue(Files.readString(outputDirectory.resolve("agent-guide.md"))
+            .contains("# Agent Guide")));
   }
 
   @Test

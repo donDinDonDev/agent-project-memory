@@ -12,6 +12,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAna
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestedSubjectFact;
+import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -33,6 +34,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String PROJECT_MAP_FILE_NAME = "project-map.json";
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
+  private static final String AGENT_GUIDE_FILE_NAME = "agent-guide.md";
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String HIGH_CONFIDENCE = "high";
@@ -78,30 +80,47 @@ public final class SpringMvcEndpointOutputGenerator {
   private final SpringComponentAnalyzer componentAnalyzer;
   private final JpaEntityAnalyzer entityAnalyzer;
   private final TestInventoryAnalyzer testInventoryAnalyzer;
+  private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
     this(
         new SpringMvcEndpointAnalyzer(),
         new SpringComponentAnalyzer(),
         new JpaEntityAnalyzer(),
-        new TestInventoryAnalyzer());
+        new TestInventoryAnalyzer(),
+        new AgentGuideGenerator());
   }
 
   SpringMvcEndpointOutputGenerator(SpringMvcEndpointAnalyzer analyzer) {
-    this(analyzer, new SpringComponentAnalyzer(), new JpaEntityAnalyzer(), new TestInventoryAnalyzer());
+    this(
+        analyzer,
+        new SpringComponentAnalyzer(),
+        new JpaEntityAnalyzer(),
+        new TestInventoryAnalyzer(),
+        new AgentGuideGenerator());
   }
 
   SpringMvcEndpointOutputGenerator(
       SpringMvcEndpointAnalyzer analyzer,
       SpringComponentAnalyzer componentAnalyzer) {
-    this(analyzer, componentAnalyzer, new JpaEntityAnalyzer(), new TestInventoryAnalyzer());
+    this(
+        analyzer,
+        componentAnalyzer,
+        new JpaEntityAnalyzer(),
+        new TestInventoryAnalyzer(),
+        new AgentGuideGenerator());
   }
 
   SpringMvcEndpointOutputGenerator(
       SpringMvcEndpointAnalyzer analyzer,
       SpringComponentAnalyzer componentAnalyzer,
       JpaEntityAnalyzer entityAnalyzer) {
-    this(analyzer, componentAnalyzer, entityAnalyzer, new TestInventoryAnalyzer());
+    this(
+        analyzer,
+        componentAnalyzer,
+        entityAnalyzer,
+        new TestInventoryAnalyzer(),
+        new AgentGuideGenerator());
   }
 
   SpringMvcEndpointOutputGenerator(
@@ -109,12 +128,27 @@ public final class SpringMvcEndpointOutputGenerator {
       SpringComponentAnalyzer componentAnalyzer,
       JpaEntityAnalyzer entityAnalyzer,
       TestInventoryAnalyzer testInventoryAnalyzer) {
+    this(
+        analyzer,
+        componentAnalyzer,
+        entityAnalyzer,
+        testInventoryAnalyzer,
+        new AgentGuideGenerator());
+  }
+
+  SpringMvcEndpointOutputGenerator(
+      SpringMvcEndpointAnalyzer analyzer,
+      SpringComponentAnalyzer componentAnalyzer,
+      JpaEntityAnalyzer entityAnalyzer,
+      TestInventoryAnalyzer testInventoryAnalyzer,
+      AgentGuideGenerator agentGuideGenerator) {
     this.analyzer = Objects.requireNonNull(analyzer, "analyzer");
     this.componentAnalyzer = Objects.requireNonNull(componentAnalyzer, "componentAnalyzer");
     this.entityAnalyzer = Objects.requireNonNull(entityAnalyzer, "entityAnalyzer");
     this.testInventoryAnalyzer = Objects.requireNonNull(
         testInventoryAnalyzer,
         "testInventoryAnalyzer");
+    this.agentGuideGenerator = Objects.requireNonNull(agentGuideGenerator, "agentGuideGenerator");
   }
 
   public Result generate(Path repositoryRoot, Path outputDirectory) throws IOException {
@@ -150,6 +184,13 @@ public final class SpringMvcEndpointOutputGenerator {
         componentAnalysis.evidence(),
         entityAnalysis.evidence(),
         testAnalysis.evidence());
+    String evidenceIndexJsonl = evidenceIndexJsonl(evidenceRecords);
+    String projectMapJson = projectMapJson(
+        layout,
+        analysis,
+        componentAnalysis,
+        entityAnalysis,
+        testAnalysis);
 
     Files.writeString(
         outputDirectory.resolve(ENDPOINTS_FILE_NAME),
@@ -157,11 +198,15 @@ public final class SpringMvcEndpointOutputGenerator {
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(EVIDENCE_INDEX_FILE_NAME),
-        evidenceIndexJsonl(evidenceRecords),
+        evidenceIndexJsonl,
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(PROJECT_MAP_FILE_NAME),
-        projectMapJson(layout, analysis, componentAnalysis, entityAnalysis, testAnalysis),
+        projectMapJson,
+        StandardCharsets.UTF_8);
+    Files.writeString(
+        outputDirectory.resolve(AGENT_GUIDE_FILE_NAME),
+        agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl),
         StandardCharsets.UTF_8);
 
     return new Result(

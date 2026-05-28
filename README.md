@@ -58,15 +58,17 @@ direct JPA entity annotations, and standard Maven test-root classes, then writes
 <path>/.project-memory/project-map.json
 <path>/.project-memory/endpoints.md
 <path>/.project-memory/evidence-index.jsonl
+<path>/.project-memory/agent-guide.md
 ```
 
 `project-map.json` is the minimal stable machine-readable project map for the currently
 supported single-module scan. It includes detected root `pom.xml` build metadata when
 present, standard Maven source roots, Spring MVC endpoint facts, direct component
 inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID references.
-`endpoints.md` is a
-deterministic endpoint inventory. `evidence-index.jsonl` contains source-backed evidence
-records referenced by generated facts.
+`endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
+source-backed evidence records referenced by generated facts. `agent-guide.md` is a
+deterministic orientation guide generated only from the structured project-map facts and
+evidence index.
 
 ## Intended Usage
 
@@ -115,8 +117,10 @@ annotation evidence in `evidence-index.jsonl`.
 Stage 6.1 adds a minimal deterministic tests inventory to `project-map.json`, including
 test-root class declarations, directly visible framework signals, and naming-convention
 tested-subject inferences with explicit uncertainty for ambiguous matches.
+Stage 7.1 adds deterministic `agent-guide.md` generation from `project-map.json` and
+`evidence-index.jsonl` facts without re-analyzing source files or calling LLMs.
 
-Current Stage 6.1 limitations:
+Current Stage 7.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
 - Component inventory is limited to direct class-level `@Component`, `@Service`,
@@ -141,7 +145,9 @@ Current Stage 6.1 limitations:
   low confidence and explicit uncertainty.
 - Tests inventory does not claim code coverage, test execution results, behavioral
   assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
-- `agent-guide.md` is not created yet.
+- `agent-guide.md` is generated from existing deterministic output facts only. It does not
+  ingest local documentation, summarize source files, infer architecture layers, or add
+  claims beyond extracted facts, explicit inferences, and known uncertainty labels.
 - `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
   plus Spring MVC endpoint, component stereotype, JPA annotation, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.

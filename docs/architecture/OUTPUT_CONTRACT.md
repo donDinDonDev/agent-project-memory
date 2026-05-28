@@ -16,19 +16,18 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-During the incremental Stage 6.1 implementation, `scan <path>` writes
-`project-map.json`, `endpoints.md`, and `evidence-index.jsonl` when a Maven-style
-`src/main/java` source root exists. `agent-guide.md` is stabilized in a later roadmap
-stage and is not emitted by this slice.
+In the current Stage 7.1 implementation, `scan <path>` writes all four files when a
+Maven-style `src/main/java` source root exists. Unsupported directories still only get a
+prepared `.project-memory/` directory and do not get contract output files.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. In Stage 6.1 it contains
-the minimal stable v0.1 slice for the currently supported local single-module
+`project-map.json` is the machine-readable project memory file. It contains the minimal
+stable v0.1 slice for the currently supported local single-module
 Maven-style Spring MVC endpoint, direct Spring component, direct JPA entity, and tests
 inventory scan.
 
-Stage 6.1 writes this top-level object:
+The current implementation writes this top-level object:
 
 ```json
 {
@@ -331,18 +330,58 @@ Example shape:
 
 `agent-guide.md` is a concise orientation file for AI coding agents and developers.
 
-It should be generated from `project-map.json` and `evidence-index.jsonl`, not from unsupported guesses.
+It is generated from `project-map.json` and `evidence-index.jsonl`, or from the same
+structured in-memory facts that are serialized to those files. The guide generator must
+not walk source files, call LLMs, call external services, ingest local documentation, or
+invent architecture not represented by deterministic facts.
 
-It may include:
+The minimal stable Stage 7.1 section order is:
 
-- Detected build system and source roots.
-- Important Spring entry points.
-- Endpoint inventory summary.
-- Component inventory summary.
-- Known uncertainty.
-- Suggested files to inspect before changing common areas.
+```md
+# Agent Guide
 
-It must not claim architecture that is not backed by evidence or explicitly marked as inference.
+Generated deterministically from `project-map.json` and `evidence-index.jsonl`.
+
+## Detected Project Layout
+## Detected Spring MVC Endpoints
+## Detected Spring Components
+## Detected JPA Entities
+## Detected Tests
+## Known Uncertainty And Limits
+## Practical Inspection Order For Coding Agents
+```
+
+Content rules:
+
+- The project layout section reports the detected build system, root build file, source
+  roots, and test roots from `project-map.json`.
+- Evidence-backed entries render readable evidence references by resolving
+  `evidence_ids` through `evidence-index.jsonl`. References should include a source
+  location such as `path:line` or `path:start-end` plus the evidence ID.
+- Facts without dedicated evidence IDs, such as current source-root and test-root lists,
+  must say that they are recorded in `project-map.json` and that no separate evidence ID
+  is emitted in v0.1.
+- Endpoint entries use cautious `Detected` wording and include controller class, handler
+  method, HTTP method status, paths, request parameters, request body, response type, and
+  evidence references.
+- Component entries use `Detected` wording and include direct stereotype annotations and
+  evidence references. They must not claim Spring runtime wiring, component scanning,
+  lifecycle, scopes, bean names, or dependency graphs.
+- Entity entries use `Detected` wording for direct entity, table, and identifier facts.
+  Relationship entries must preserve `target_resolution: declared_type_only` and
+  `uncertainty: target_type_not_resolved`, and should present relationship targets as
+  `Uncertain`, not resolved entity links.
+- Test entries use `Detected` wording for test classes and directly visible framework
+  signals. `tested_subjects` entries must use `Inferred` wording and show
+  `support_type`, `confidence`, and `uncertainty` when present.
+- The known-limits section must explicitly call out `Not analyzed`, `Inferred`, and
+  `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
+  execution/coverage/assertion behavior, call graphs, complete subject mapping,
+  connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and
+  multi-module Maven parsing.
+- The practical inspection order may suggest evidence paths from generated facts, but it
+  must not introduce unsupported architecture, modules, domain flows, service layers, or
+  source summaries.
 
 ## Contract Rules
 

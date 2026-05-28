@@ -102,6 +102,7 @@ public final class AgentProjectMemoryCli {
             "Generated evidence-index.jsonl with "
                 + result.evidenceCount()
                 + " evidence records.");
+        out.println("Generated agent-guide.md.");
       }
     } catch (IOException ex) {
       return scanError("Could not generate project memory output: " + ex.getMessage());

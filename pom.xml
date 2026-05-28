@@ -14,11 +14,17 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <jackson.version>2.17.2</jackson.version>
     <javaparser.version>3.26.4</javaparser.version>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
   </properties>
 
   <dependencies>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+      <version>${jackson.version}</version>
+    </dependency>
     <dependency>
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-core</artifactId>
@@ -105,6 +111,9 @@
                 <available
                     file="${smoke.project}/.project-memory/evidence-index.jsonl"
                     property="smoke.evidence.generated"/>
+                <available
+                    file="${smoke.project}/.project-memory/agent-guide.md"
+                    property="smoke.agent.guide.generated"/>
                 <fail
                     unless="smoke.project.map.generated"
                     message="Packaged CLI smoke test did not generate project-map.json"/>
@@ -114,6 +123,9 @@
                 <fail
                     unless="smoke.evidence.generated"
                     message="Packaged CLI smoke test did not generate evidence-index.jsonl"/>
+                <fail
+                    unless="smoke.agent.guide.generated"
+                    message="Packaged CLI smoke test did not generate agent-guide.md"/>
               </target>
             </configuration>
           </execution>
