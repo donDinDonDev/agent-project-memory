@@ -14,7 +14,7 @@ final class AgentGuideGeneratorTest {
 
   @Test
   void generatedGuideFromGoldenProjectMapAndEvidenceIndexMatchesGoldenFile() throws Exception {
-    Path goldenRoot = goldenRoot();
+    Path goldenRoot = goldenRoot("stage3-project-map");
 
     String guide = generator.generate(
         Files.readString(goldenRoot.resolve("project-map.json")),
@@ -22,6 +22,25 @@ final class AgentGuideGeneratorTest {
 
     assertEquals(Files.readString(goldenRoot.resolve("agent-guide.md")), guide);
     assertEvidenceIsAttachedToDetectedClaims(guide);
+  }
+
+  @Test
+  void generatedGuideCapsLargeEvidenceListsAndInspectionPaths() throws Exception {
+    Path goldenRoot = goldenRoot("large-agent-guide");
+
+    String guide = generator.generate(
+        Files.readString(goldenRoot.resolve("project-map.json")),
+        Files.readString(goldenRoot.resolve("evidence-index.jsonl")));
+
+    assertEquals(Files.readString(goldenRoot.resolve("agent-guide.md")), guide);
+    assertTrue(guide.contains(
+        "... and 3 more evidence references in `evidence-index.jsonl`"));
+    assertTrue(guide.contains(
+        "... and 2 more evidence paths in `evidence-index.jsonl`"));
+    assertTrue(guide.contains("""
+        - Inferred tested subject: `com.example.web.LargeController` (support_type: `inferred`, confidence: `medium`)
+          - Evidence: `src/test/java/com/example/web/LargeControllerTest.java:3` (`ev:src/test/java/com/example/web/LargeControllerTest.java:3-3:com.example.web.LargeControllerTest:test_file`), `src/main/java/com/example/web/LargeController.java:8` (`ev:src/main/java/com/example/web/LargeController.java:8-8:com.example.web.LargeController:code_symbol`)
+        """));
   }
 
   private void assertEvidenceIsAttachedToDetectedClaims(String guide) {
@@ -51,8 +70,8 @@ final class AgentGuideGeneratorTest {
         """));
   }
 
-  private Path goldenRoot() throws Exception {
+  private Path goldenRoot(String fixtureName) throws Exception {
     return Path.of(Objects.requireNonNull(
-        getClass().getResource("/golden/stage3-project-map")).toURI());
+        getClass().getResource("/golden/" + fixtureName)).toURI());
   }
 }

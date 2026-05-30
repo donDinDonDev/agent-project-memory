@@ -395,6 +395,11 @@ Content rules:
 - Evidence-backed entries render readable evidence references by resolving
   `evidence_ids` through `evidence-index.jsonl`. References should include a source
   location such as `path:line` or `path:start-end` plus the evidence ID.
+- Long Markdown evidence-reference lists are presentation-capped to keep the guide
+  concise. When a list is capped, the guide must keep the first evidence references
+  inline and add a suffix such as `... and N more evidence references in
+  evidence-index.jsonl`. This does not remove or alter complete evidence records in
+  `evidence-index.jsonl` or evidence IDs in `project-map.json`.
 - Facts without dedicated evidence IDs, such as current source-root and test-root lists,
   must say that they are recorded in `project-map.json` and that no separate evidence ID
   is emitted in v0.1.
@@ -421,7 +426,8 @@ Content rules:
   multi-module Maven parsing.
 - The practical inspection order may suggest evidence paths from generated facts, but it
   must not introduce unsupported architecture, modules, domain flows, service layers, or
-  source summaries.
+  source summaries. Long inline evidence path lists should be capped with a suffix that
+  points readers back to `evidence-index.jsonl` for the complete source-backed evidence.
 
 ## Contract Rules
 

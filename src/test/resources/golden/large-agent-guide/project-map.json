@@ -1,0 +1,138 @@
+{
+  "schema_version": "0.1",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ]
+  },
+  "endpoints": [],
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.components.ComponentOne",
+        "class_name": "com.example.components.ComponentOne",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentOne.java:8-8:com.example.components.ComponentOne:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentTwo",
+        "class_name": "com.example.components.ComponentTwo",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentTwo.java:8-8:com.example.components.ComponentTwo:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentThree",
+        "class_name": "com.example.components.ComponentThree",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentThree.java:8-8:com.example.components.ComponentThree:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentFour",
+        "class_name": "com.example.components.ComponentFour",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentFour.java:8-8:com.example.components.ComponentFour:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentFive",
+        "class_name": "com.example.components.ComponentFive",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentFive.java:8-8:com.example.components.ComponentFive:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentSix",
+        "class_name": "com.example.components.ComponentSix",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentSix.java:8-8:com.example.components.ComponentSix:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.components.ComponentSeven",
+        "class_name": "com.example.components.ComponentSeven",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/ComponentSeven.java:8-8:com.example.components.ComponentSeven:@Service"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "class_name": "com.example.web.LargeControllerTest",
+        "source_path": "src/test/java/com/example/web/LargeControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:5-5:com.example.web.LargeControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:10-10:com.example.web.LargeControllerTest#testOne:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:13-13:com.example.web.LargeControllerTest#testTwo:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:16-16:com.example.web.LargeControllerTest#testThree:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:19-19:com.example.web.LargeControllerTest#testFour:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:22-22:com.example.web.LargeControllerTest#testFive:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:25-25:com.example.web.LargeControllerTest#testSix:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:28-28:com.example.web.LargeControllerTest#testSeven:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "class_name": "com.example.web.LargeController",
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:3-3:com.example.web.LargeControllerTest:test_file",
+              "ev:src/main/java/com/example/web/LargeController.java:8-8:com.example.web.LargeController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/LargeControllerTest.java:3-3:com.example.web.LargeControllerTest:test_file"
+        ]
+      }
+    ]
+  }
+}

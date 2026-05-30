@@ -311,6 +311,7 @@ workspace. Those third-party generated outputs were not copied into this reposit
 ### EVAL-8-005: Keep `agent-guide.md` concise for large evidence sets
 
 - Bounded task id: `EVAL-8-005`
+- Status: Addressed and retested on 2026-05-30; see "EVAL-8-005 Retest" below.
 - Project/ref: `spring-petclinic-rest@v4.0.2`
   (`d8026bb5bcc58145b95a66a7f8e7694f0fae142f`)
 - Observed artifact: `.project-memory/agent-guide.md` test framework signal sections and
@@ -327,11 +328,64 @@ workspace. Those third-party generated outputs were not copied into this reposit
 - Non-goals: Do not drop evidence records from `evidence-index.jsonl`, do not perform
   test coverage analysis, and do not summarize source behavior with LLMs.
 
-## Validation
+## EVAL-8-005 Retest
 
-Final validation was run from this repository:
+Retest date: 2026-05-30
+
+Implementation scope:
+
+- Updated only `agent-guide.md` Markdown presentation behavior in
+  `AgentGuideGenerator`.
+- Added a guide-generator golden fixture for many framework-signal evidence references
+  and long practical inspection path lists.
+- Updated `docs/architecture/OUTPUT_CONTRACT.md` to document capped guide presentation.
+- Did not change analyzers, `project-map.json` schema, evidence record generation, or
+  `evidence-index.jsonl` semantics.
+
+Commands run:
 
 ```sh
+mvn -Dtest=AgentGuideGeneratorTest,SpringMvcEndpointOutputGeneratorTest,AgentProjectMemoryCliTest test
+mvn test
+mvn package
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest rev-parse HEAD
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest describe --tags --exact-match HEAD
+java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
+rg -n "more evidence references|more evidence paths" /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/agent-guide.md
+wc -l /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/evidence-index.jsonl
+jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
+```
+
+Results:
+
+- The external checkout was still pinned to tag `v4.0.2` at commit
+  `d8026bb5bcc58145b95a66a7f8e7694f0fae142f`.
+- The scan completed and preserved the same artifact counts: 1 endpoint, 28 components,
+  8 entities, 19 tests, and 342 evidence records.
+- The generated guide now caps long framework-signal evidence lists with suffixes such as
+  `... and 20 more evidence references in evidence-index.jsonl`.
+- The practical inspection order now caps long inline path lists with suffixes such as
+  `... and 23 more evidence paths in evidence-index.jsonl`.
+- Complete JSON/JSONL evidence remains available: recursive evidence-reference checking
+  found 342 referenced evidence IDs, 342 indexed evidence records, and no missing
+  references.
+- `tested_subjects` inference metadata remains visible in the guide, including
+  `support_type`, `confidence`, and `uncertainty` when present.
+- JPA relationship uncertainty remains visible through `target_resolution:
+  declared_type_only` and `uncertainty: target_type_not_resolved`.
+
+Retest conclusion: `EVAL-8-005` is addressed for the observed guide verbosity issue.
+`EVAL-8-004` remains open and was not implemented.
+
+## Validation
+
+Final validation for the `EVAL-8-005` retest was run from this repository:
+
+```sh
+mvn -Dtest=AgentGuideGeneratorTest,SpringMvcEndpointOutputGeneratorTest,AgentProjectMemoryCliTest test
+mvn test
+mvn package
+java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
 git diff --check
 git diff --stat
 git status --short
@@ -339,10 +393,12 @@ git status --short
 
 Results:
 
-- `git diff --check`: passed with no output.
-- `git diff --stat`: produced no output because the only repository change is a new
-  untracked report file.
-- `git status --short`: `?? docs/development/evaluations/spring-petclinic-rest-v4.0.2.md`
-
-`mvn test` was not run separately because `mvn package` already ran the full Maven test
-suite for this repository successfully.
+- Targeted Maven test selection passed with 18 tests, 0 failures, and 0 errors.
+- `mvn test` passed with 71 tests, 0 failures, and 0 errors.
+- `mvn package` passed with 71 tests, 0 failures, and 0 errors, then completed the
+  packaged CLI smoke test.
+- The Spring PetClinic REST scan rerun completed successfully and generated the same
+  JSON/JSONL evidence counts recorded above.
+- `git diff --check` passed with no output.
+- `git diff --stat` and `git status --short` were reviewed before handoff; generated
+  third-party `.project-memory/` outputs stayed in the external evaluation workspace.
