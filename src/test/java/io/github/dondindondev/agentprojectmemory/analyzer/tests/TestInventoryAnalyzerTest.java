@@ -113,16 +113,36 @@ final class TestInventoryAnalyzerTest {
   }
 
   @Test
-  void classUnderTestRootWithoutSignalsIsHandledConservatively() throws Exception {
+  void helperClassesWithoutTestSignalsOrClearTestNamesAreOmitted() throws Exception {
     TestInventoryAnalysis analysis = analyzeFixture();
 
-    TestClassFact supportClass = test(analysis, "com.example.support.TestFixtureSupport");
+    assertAll(
+        () -> assertTestNotPresent(analysis, "com.example.support.TestFixtureSupport"),
+        () -> assertTestNotPresent(analysis, "com.example.support.TestSupportConfiguration"),
+        () -> assertTestNotPresent(analysis, "com.example.web.NestedAndHelperTests.NestedTestConfiguration"));
+  }
+
+  @Test
+  void nestedTestClassUsesOnlyItsOwnAnnotationSignals() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact nestedTest = test(analysis, "com.example.web.NestedAndHelperTests.ValidationCases");
+    TestFrameworkSignalFact junitJupiter = frameworkSignal(nestedTest, "JUnit Jupiter");
 
     assertAll(
-        () -> assertTrue(supportClass.frameworkSignals().isEmpty()),
-        () -> assertTrue(supportClass.testedSubjects().isEmpty()),
-        () -> assertEquals(1, supportClass.evidenceIds().size()),
-        () -> assertEquals("test_file", evidence(analysis, supportClass.evidenceIds().get(0)).sourceType()));
+        () -> assertEquals("src/test/java/com/example/web/NestedAndHelperTests.java", nestedTest.sourcePath()),
+        () -> assertTrue(nestedTest.testedSubjects().isEmpty()),
+        () -> assertTrue(junitJupiter.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "@Nested".equals(record.symbolName()))),
+        () -> assertTrue(junitJupiter.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "@Test".equals(record.symbolName())
+                && "rejectsInvalidInput".equals(record.methodName()))),
+        () -> assertTrue(junitJupiter.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .noneMatch(record -> "code_symbol".equals(record.sourceType())
+                && record.symbolName().startsWith("import "))));
   }
 
   @Test
@@ -176,6 +196,11 @@ final class TestInventoryAnalyzerTest {
         .filter(candidate -> candidate.className().equals(className))
         .findFirst()
         .orElseThrow();
+  }
+
+  private void assertTestNotPresent(TestInventoryAnalysis analysis, String className) {
+    assertTrue(analysis.tests().stream()
+        .noneMatch(candidate -> candidate.className().equals(className)));
   }
 
   private TestFrameworkSignalFact frameworkSignal(TestClassFact test, String name) {

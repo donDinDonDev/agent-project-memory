@@ -245,15 +245,26 @@ Field rules:
 - `tests.analysis_status` is `"analyzed"` when the supported `src/test/java` source root
   exists and the tests inventory analyzer runs. It is `"not_detected"` when no supported
   test root is present in the current single-module scan.
-- `tests.items` contains Java class declarations under supported test roots, sorted
-  deterministically by `class_name` and `source_path`. Interfaces are not emitted.
+- `tests.items` contains Java class declarations under supported test roots that look
+  like test classes, sorted deterministically by `class_name` and `source_path`.
+  Interfaces are not emitted. A declaration is emitted when it has a supported test
+  suffix such as `Test`, `Tests`, or `IT`, or when it has directly visible test-class
+  marker annotations on the class or its methods, such as JUnit `@Test`, JUnit
+  `@Nested`, JUnit 4 `@RunWith`, or Spring test context annotations such as
+  `@SpringBootTest`, `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`.
+  Helper, support, or configuration declarations without clear test naming and without
+  direct test-class marker annotations are omitted, including nested helper/configuration
+  declarations inside otherwise valid test files.
 - `test.class_name` is the fully qualified Java class name when resolvable from the
   source file package and class declaration.
 - `test.source_path` is the repository-relative Java source path.
 - `test.framework_signals` contains only directly visible framework signals from imports
-  or annotations in the test source file. Stage 6.1 emits signal names `"JUnit Jupiter"`,
-  `"JUnit 4"`, and `"Spring Test"` when detectable. It is empty when no supported direct
-  signal is visible.
+  or annotations in the test source file for emitted test classes. Stage 6.1 emits
+  signal names `"JUnit Jupiter"`, `"JUnit 4"`, and `"Spring Test"` when detectable. It is
+  empty when no supported direct signal is visible. Source-file-level import evidence is
+  attached only to top-level emitted test classes; nested emitted test classes use their
+  own class or method annotation evidence so imports are not repeated as nested-class
+  signals.
 - `framework_signal.name` is the detected framework family name.
 - `framework_signal.evidence_ids` references direct import or annotation evidence and
   must resolve to records in `evidence-index.jsonl`.
@@ -303,10 +314,12 @@ Stage 6.1 emits:
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
   Field-level evidence IDs include a `field:<field_name>` discriminator because the
   current evidence record field set does not add a separate field-name property.
-- `test_file` evidence for Java class declarations under supported test roots.
+- `test_file` evidence for emitted test-like Java class declarations under supported
+  test roots.
 - `code_symbol` evidence for production class declarations that are referenced by
   inferred `tested_subjects` relations.
-- `code_symbol` evidence for directly visible test framework imports.
+- `code_symbol` evidence for directly visible test framework imports attached to
+  top-level emitted test classes.
 - `annotation` evidence for directly visible test framework annotations.
 
 Direct mapped-superclass identifier facts do not add new evidence fields. When an

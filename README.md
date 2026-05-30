@@ -53,7 +53,8 @@ rewritten deterministically when a supported source root exists.
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
 implementation analyzes Spring MVC controllers and direct Spring stereotype components,
 direct JPA entity annotations with direct source-visible mapped-superclass identifier
-fields, and standard Maven test-root classes, then writes:
+fields, and standard Maven test-root classes with conservative helper filtering, then
+writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -116,8 +117,9 @@ Stage 4.1 adds a deterministic direct Spring stereotype component inventory to
 Stage 5.1 adds a deterministic direct JPA entity inventory to `project-map.json` with
 annotation evidence in `evidence-index.jsonl`.
 Stage 6.1 adds a minimal deterministic tests inventory to `project-map.json`, including
-test-root class declarations, directly visible framework signals, and naming-convention
-tested-subject inferences with explicit uncertainty for ambiguous matches.
+test-like class declarations under supported test roots, directly visible framework
+signals, and naming-convention tested-subject inferences with explicit uncertainty for
+ambiguous matches.
 Stage 7.1 adds deterministic `agent-guide.md` generation from `project-map.json` and
 `evidence-index.jsonl` facts without re-analyzing source files or calling LLMs.
 
@@ -139,10 +141,13 @@ Current Stage 7.1 limitations:
   ORM runtime behavior.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
-- Tests inventory is limited to Java classes under standard single-module Maven
-  `src/test/java`.
+- Tests inventory is limited to test-like Java classes under standard single-module
+  Maven `src/test/java`; helper/support/configuration declarations without clear test
+  naming or direct test-class marker annotations are omitted.
 - Test framework signals are limited to directly visible imports and annotations for
-  JUnit Jupiter, JUnit 4, and Spring Test signals.
+  JUnit Jupiter, JUnit 4, and Spring Test signals. Import evidence is attached only to
+  top-level emitted test classes; nested emitted test classes use their own class or
+  method annotation evidence.
 - Tested-subject relations are inferred only from test class naming conventions against
   production classes under `src/main/java`; ambiguous simple-name matches are marked with
   low confidence and explicit uncertainty.

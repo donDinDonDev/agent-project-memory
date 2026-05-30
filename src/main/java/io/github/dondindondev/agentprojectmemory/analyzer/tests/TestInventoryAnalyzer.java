@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.tests;
 
 import com.github.javaparser.Range;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -34,6 +35,17 @@ public final class TestInventoryAnalyzer {
   private static final String SUPPORT_TYPE_INFERRED = "inferred";
   private static final String AMBIGUOUS_SUBJECT_NAME = "ambiguous_subject_name";
   private static final List<String> TEST_SUFFIXES = List.of("Test", "Tests", "IT");
+  private static final Set<String> JUNIT_TEST_METHOD_ANNOTATIONS = Set.of(
+      "Test",
+      "ParameterizedTest",
+      "RepeatedTest",
+      "TestFactory",
+      "TestTemplate");
+  private static final Set<String> SPRING_TEST_CLASS_MARKER_ANNOTATIONS = Set.of(
+      "SpringBootTest",
+      "WebMvcTest",
+      "DataJpaTest",
+      "ContextConfiguration");
   private static final Set<String> SPRING_TEST_ANNOTATIONS = Set.of(
       "SpringBootTest",
       "WebMvcTest",
@@ -111,6 +123,10 @@ public final class TestInventoryAnalyzer {
         continue;
       }
 
+      if (!shouldEmitTestClass(type, importsBySimpleName)) {
+        continue;
+      }
+
       String className = qualifiedClassName(packageName, type);
       TestInventoryEvidence classEvidence = testClassEvidence(sourcePath, className, type, sourceLines);
       evidence.putIfAbsent(classEvidence.id(), classEvidence);
@@ -119,6 +135,7 @@ public final class TestInventoryAnalyzer {
           sourcePath,
           className,
           type,
+          !isNestedClass(type),
           importsBySimpleName,
           sourceLines);
       frameworkEvidence.forEach(record -> evidence.putIfAbsent(record.evidence().id(), record.evidence()));
@@ -155,23 +172,26 @@ public final class TestInventoryAnalyzer {
       String sourcePath,
       String className,
       ClassOrInterfaceDeclaration type,
+      boolean includeImportEvidence,
       Map<String, ImportDeclaration> importsBySimpleName,
       List<String> sourceLines) {
     List<FrameworkEvidence> evidence = new ArrayList<>();
     Set<String> seen = new LinkedHashSet<>();
 
-    for (ImportDeclaration importDeclaration : importsBySimpleName.values()) {
-      frameworkName(importDeclaration.getNameAsString(), null)
-          .ifPresent(frameworkName -> {
-            TestInventoryEvidence importEvidence = importEvidence(
-                sourcePath,
-                className,
-                importDeclaration,
-                sourceLines);
-            if (seen.add(importEvidence.id())) {
-              evidence.add(new FrameworkEvidence(frameworkName, importEvidence));
-            }
-          });
+    if (includeImportEvidence) {
+      for (ImportDeclaration importDeclaration : importsBySimpleName.values()) {
+        frameworkName(importDeclaration.getNameAsString(), null)
+            .ifPresent(frameworkName -> {
+              TestInventoryEvidence importEvidence = importEvidence(
+                  sourcePath,
+                  className,
+                  importDeclaration,
+                  sourceLines);
+              if (seen.add(importEvidence.id())) {
+                evidence.add(new FrameworkEvidence(frameworkName, importEvidence));
+              }
+            });
+      }
     }
 
     for (AnnotationLocation annotationLocation : annotationLocations(type)) {
@@ -239,6 +259,64 @@ public final class TestInventoryAnalyzer {
       return Optional.of("Spring Test");
     }
     return Optional.empty();
+  }
+
+  private boolean shouldEmitTestClass(
+      ClassOrInterfaceDeclaration type,
+      Map<String, ImportDeclaration> importsBySimpleName) {
+    return hasClearTestName(type.getNameAsString())
+        || hasDirectTestClassSignal(type, importsBySimpleName);
+  }
+
+  private boolean hasClearTestName(String simpleName) {
+    return subjectSimpleName(simpleName).isPresent();
+  }
+
+  private boolean hasDirectTestClassSignal(
+      ClassOrInterfaceDeclaration type,
+      Map<String, ImportDeclaration> importsBySimpleName) {
+    for (AnnotationLocation annotationLocation : annotationLocations(type)) {
+      if (isTestClassMarker(annotationLocation, importsBySimpleName)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isTestClassMarker(
+      AnnotationLocation annotationLocation,
+      Map<String, ImportDeclaration> importsBySimpleName) {
+    AnnotationExpr annotation = annotationLocation.annotation();
+    Optional<String> resolvedName = resolvedAnnotationName(annotation, importsBySimpleName);
+    String simpleName = simpleAnnotationName(annotation);
+    if (annotationLocation.methodName() != null) {
+      return isJUnitTestMethodAnnotation(resolvedName, simpleName);
+    }
+
+    return isJUnitNestedAnnotation(resolvedName, simpleName)
+        || isJUnitFourRunWithAnnotation(resolvedName, simpleName)
+        || isSpringTestClassMarkerAnnotation(resolvedName, simpleName);
+  }
+
+  private boolean isJUnitTestMethodAnnotation(Optional<String> resolvedName, String simpleName) {
+    return JUNIT_TEST_METHOD_ANNOTATIONS.contains(simpleName)
+        && resolvedName.map(name -> name.startsWith("org.junit.")).orElse(false);
+  }
+
+  private boolean isJUnitNestedAnnotation(Optional<String> resolvedName, String simpleName) {
+    return "Nested".equals(simpleName)
+        && resolvedName.map(name -> name.startsWith("org.junit.jupiter.")).orElse(false);
+  }
+
+  private boolean isJUnitFourRunWithAnnotation(Optional<String> resolvedName, String simpleName) {
+    return "RunWith".equals(simpleName)
+        && resolvedName.map(name -> name.startsWith("org.junit.")).orElse(false);
+  }
+
+  private boolean isSpringTestClassMarkerAnnotation(Optional<String> resolvedName, String simpleName) {
+    return SPRING_TEST_CLASS_MARKER_ANNOTATIONS.contains(simpleName)
+        && resolvedName.map(name -> name.startsWith("org.springframework.test.")
+            || name.startsWith("org.springframework.boot.test.")).orElse(false);
   }
 
   private TestInventoryEvidence testClassEvidence(
@@ -457,6 +535,18 @@ public final class TestInventoryAnalyzer {
         .orElseGet(() -> packageName.isBlank()
             ? type.getNameAsString()
             : packageName + "." + type.getNameAsString());
+  }
+
+  private boolean isNestedClass(ClassOrInterfaceDeclaration type) {
+    Optional<Node> parent = type.getParentNode();
+    while (parent.isPresent()) {
+      Node parentNode = parent.orElseThrow();
+      if (parentNode instanceof ClassOrInterfaceDeclaration) {
+        return true;
+      }
+      parent = parentNode.getParentNode();
+    }
+    return false;
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {

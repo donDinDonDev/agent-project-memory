@@ -13,6 +13,9 @@ Evaluation date: 2026-05-30
 - EVAL-8-002 retest result: addressed for direct immediate source-visible
   `@MappedSuperclass` identifiers; the 2026-05-30 retest emits
   `Visit.identifier_fields[0]` from `BaseEntity`.
+- EVAL-8-003 retest result: addressed on 2026-05-30; helper/support/configuration
+  classes without clear test naming or direct test-class marker annotations are omitted,
+  and nested test classes no longer inherit source-file import signals.
 - Repository worktree state before editing: clean; `git status --short` produced no output.
 
 ## Commands Run
@@ -76,6 +79,20 @@ java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent
 jq -r '.entities.items[] | [.class_name, (.identifier_fields | map(.field_name + ":" + .java_type + ":" + .declaring_class + ":" + .source_kind) | join(","))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
 rg -n "mapped-superclass identifier support|source_kind|BaseEntity" /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/agent-guide.md
+```
+
+Retest after `EVAL-8-003` fix on 2026-05-30 16:32:00 CST:
+
+```sh
+mvn -Dtest=TestInventoryAnalyzerTest,SpringMvcEndpointOutputGeneratorTest,AgentProjectMemoryCliTest,AgentGuideGeneratorTest test
+mvn test
+mvn package
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
+java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+jq -r '["endpoints", (.endpoints | length)], ["components", (.components.items | length)], ["entities", (.entities.items | length)], ["tests", (.tests.items | length)] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
+jq -r '.tests.items[] | [.class_name, (.framework_signals | map(.name) | join(",")), (.tested_subjects | map(.class_name + "(" + .support_type + ":" + .confidence + (if .uncertainty then ":" + .uncertainty else "" end) + ")") | join(";"))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
+jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
 ```
 
 ## Run Results
@@ -147,29 +164,47 @@ do not directly declare `@Id`, and walking their inheritance chain to `BaseEntit
 outside the direct-only `EVAL-8-002` scope. The generated guide now states that
 mapped-superclass identifier support is limited to immediate source-visible superclasses.
 
+The `EVAL-8-003` retest reused the same pinned checkout. The target checkout still
+showed only untracked generated `.project-memory/` output before the scan, which is
+expected for the external evaluation workspace. Focused validation completed with 25
+tests, 0 failures, and 0 errors; full `mvn test` and `mvn package` completed with 70
+tests, 0 failures, and 0 errors. The scan command exited with code 0 and generated 17
+endpoints, 9 components, 6 entities, 18 tests, and 257 evidence records.
+
+The test inventory now omits top-level helper/support/configuration classes
+`MysqlTestApplication` and `EntityUtils`, and nested helper/configuration classes
+`PostgresIntegrationTests.PropertiesLogger` and
+`CrashControllerIntegrationTests.TestConfiguration`. Nested executable test classes are
+still emitted when they have direct test-class markers such as `@Nested` or their own
+`@Test` methods. Those nested test classes now carry only their own JUnit annotation
+evidence instead of repeated source-file import evidence. A recursive reference check
+found 257 unique referenced evidence IDs, 257 indexed evidence records, and 0 missing
+references. The eight naming-convention `tested_subjects` relations remain
+`support_type: "inferred"` with `confidence: "medium"`.
+
 ## Generated Artifacts And Counts
 
 | Artifact | Status |
 | --- | --- |
-| `.project-memory/project-map.json` | Generated in the 2026-05-30 retest and regenerated in the content-level scorecard pass. |
-| `.project-memory/evidence-index.jsonl` | Generated in the 2026-05-30 retest and regenerated in the content-level scorecard pass. |
-| `.project-memory/endpoints.md` | Generated in the 2026-05-30 retest and regenerated in the content-level scorecard pass. |
-| `.project-memory/agent-guide.md` | Generated in the 2026-05-30 retest and regenerated in the content-level scorecard pass. |
+| `.project-memory/project-map.json` | Generated in the 2026-05-30 retest and regenerated in the `EVAL-8-003` retest. |
+| `.project-memory/evidence-index.jsonl` | Generated in the 2026-05-30 retest and regenerated in the `EVAL-8-003` retest. |
+| `.project-memory/endpoints.md` | Generated in the 2026-05-30 retest and regenerated in the `EVAL-8-003` retest. |
+| `.project-memory/agent-guide.md` | Generated in the 2026-05-30 retest and regenerated in the `EVAL-8-003` retest. |
 
 | Count | Value |
 | --- | --- |
 | Endpoints | 17 |
 | Components | 9 |
 | Entities | 6 |
-| Tests | 22 |
-| Evidence records | 304 |
+| Tests | 18 |
+| Evidence records | 257 |
 | Identifier fields | 1 direct mapped-superclass identifier |
 
 ## Scorecard Summary
 
 | Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804` | `2` | `2` | `2` | `1` | `1` | `1` | Retest after `EVAL-8-002`: direct endpoint and component extraction matched bounded source searches; direct entity/table/relationship facts and the direct `Visit -> BaseEntity` mapped-superclass identifier are emitted with resolving evidence. Test, evidence, and guide usefulness remains limited by noisy helper/nested class handling in the test inventory; multi-level mapped-superclass inheritance is explicitly outside the direct-only scope. |
+| `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804` | `2` | `2` | `2` | `2` | `2` | `2` | Retest after `EVAL-8-003`: direct endpoint and component extraction matched bounded source searches; direct entity/table/relationship facts and the direct `Visit -> BaseEntity` mapped-superclass identifier are emitted with resolving evidence. Test inventory now omits helper/configuration declarations without clear test naming or direct test-class markers, nested executable test classes use their own annotation evidence, and multi-level mapped-superclass inheritance remains explicitly outside the direct-only scope. |
 
 ## Scorecard: Endpoints
 
@@ -232,47 +267,49 @@ mapped-superclass identifier support is limited to immediate source-visible supe
 
 ## Scorecard: Tests
 
-- Expected observations: Standard Maven `src/test/java` classes should be emitted under
-  `tests.items`, with directly visible framework signals and naming-convention
-  `tested_subjects` marked as inferred where applicable.
+- Expected observations: Standard Maven `src/test/java` test-like classes should be
+  emitted under `tests.items`, with directly visible framework signals and
+  naming-convention `tested_subjects` marked as inferred where applicable. Helper,
+  support, or configuration declarations without clear test naming or direct test-class
+  markers should be omitted.
 - Actual observations: A bounded file listing found 17 Java files under `src/test/java`.
-  The generated inventory emits 22 class declarations, including nested classes and
-  top-level helper/configuration classes such as `MysqlTestApplication` and
-  `EntityUtils`. Eight naming-convention `tested_subjects` relations were emitted with
-  `support_type: "inferred"` and `confidence: "medium"`.
-- False positives if found: No strict contract-level false positive was confirmed if the
-  intended contract is "all Java class declarations under supported test roots." A
-  usability/contract gap was found: helper and nested configuration classes are rendered
-  as "Test class" entries, and nested classes can inherit file-level framework-signal
-  evidence from imports that are not specific to that nested class.
-- False negatives if found: None found in the bounded inspection. Exact completeness was
-  not established beyond comparing the generated 22 class declarations with the bounded
-  test-root file/class inspection.
-- Evidence quality notes: Test class evidence generally resolves to class declaration
-  lines. Framework-signal evidence resolves, but signal attribution is noisy for nested
-  helper/configuration classes because source-file imports are associated with each class
-  declaration in the file.
-- Output contract issues if found: No field-shape issue found. The distinction between
-  "test-root class declaration" and "test class" needs a bounded follow-up.
+  The regenerated inventory emits 18 test-like class declarations: 15 top-level test
+  classes and 3 nested executable test classes. Top-level helpers `MysqlTestApplication`
+  and `EntityUtils` are omitted, as are nested helper/configuration classes
+  `PostgresIntegrationTests.PropertiesLogger` and
+  `CrashControllerIntegrationTests.TestConfiguration`. Eight naming-convention
+  `tested_subjects` relations were emitted with `support_type: "inferred"` and
+  `confidence: "medium"`.
+- False positives if found: None found in the bounded retest. Nested executable test
+  classes are emitted only when they have direct test-class markers such as `@Nested` or
+  their own `@Test` methods.
+- False negatives if found: None found in the bounded retest. Exact completeness was not
+  established beyond the supported test-like declaration semantics.
+- Evidence quality notes: Test class evidence resolves to class declaration lines.
+  Nested executable test classes now carry only their own JUnit annotation evidence
+  instead of repeated source-file import evidence.
+- Output contract issues if found: Addressed by clarifying test-like class selection and
+  nested import-signal attribution in `docs/architecture/OUTPUT_CONTRACT.md` and
+  `docs/architecture/EVIDENCE_MODEL.md`; no JSON field-shape issue was found.
 
 ## Scorecard: Evidence Quality
 
 - Expected observations: Evidence IDs should resolve to repository-relative paths, line
   ranges, symbols, excerpts, and confidence labels in `evidence-index.jsonl`.
-- Actual observations: The regenerated `evidence-index.jsonl` contains 304 records. A
-  recursive reference check over `project-map.json` found 304 unique referenced evidence
+- Actual observations: The regenerated `evidence-index.jsonl` contains 257 records. A
+  recursive reference check over `project-map.json` found 257 unique referenced evidence
   IDs and 0 missing references.
 - False positives if found: No unresolved or fabricated evidence record was found in the
-  bounded inspection. The test framework-signal records for nested helper/configuration
-  classes are weak/noisy because file-level imports are reused as class-level signals.
-- False negatives if found: None found for direct mapped-superclass identifier facts.
+  bounded retest. No helper/configuration test inventory item retains repeated
+  source-file import evidence.
+- False negatives if found: None found for direct mapped-superclass identifier facts or
+  supported test-like declarations in the bounded retest.
 - Evidence quality notes: Endpoint, component, entity, and direct test class evidence is
   precise enough for v0.1, including the `BaseEntity` `@Id` and `@MappedSuperclass`
-  evidence for the `Visit` identifier. Relationship uncertainty is preserved. Test
-  framework-signal evidence is noisier than the other categories when nested/helper
-  classes are involved.
+  evidence for the `Visit` identifier. Relationship uncertainty is preserved. Nested
+  executable test classes use annotation evidence from their own class or methods.
 - Output contract issues if found: No evidence schema or reference-resolution issue was
-  found. The weak nested-class signal attribution is a semantic gap candidate.
+  found. The nested-class signal attribution semantics are now documented.
 
 ## Scorecard: `agent-guide.md`
 
@@ -283,19 +320,20 @@ mapped-superclass identifier support is limited to immediate source-visible supe
   evidence references inline, uses cautious `Detected`, `Inferred`, and `Uncertain`
   wording, and lists known limits for Spring runtime behavior, ORM behavior, test
   execution/coverage, direct-only mapped-superclass identifier support, connectors, LLM
-  summaries, RAG, Gradle/Kotlin, and multi-module Maven parsing.
+  summaries, RAG, Gradle/Kotlin, and multi-module Maven parsing. The tests section now
+  reflects only emitted test-like classes.
 - False positives if found: No unsupported architecture claim was found in the bounded
-  inspection. The guide does render helper/nested test-root classes as "Test class"
-  entries because that wording comes from the current structured test inventory.
+  retest. Helper/support/configuration declarations omitted from structured
+  `tests.items` are no longer rendered as "Test class" entries.
 - False negatives if found: No false negative found for the direct-only mapped-superclass
-  identifier contract. The guide still does not orient all entity IDs through
-  `Person`/`NamedEntity` to `BaseEntity`, because multi-level mapped-superclass traversal
-  is outside this task.
-- Evidence quality notes: Guide references are readable and evidence-backed, but the
-  test section and practical inspection order become noisy because every emitted test
-  inventory item and inferred subject contributes paths.
+  identifier contract or for supported test-like declarations in the bounded retest.
+  Multi-level mapped-superclass traversal remains outside this task and is stated as a
+  known limit.
+- Evidence quality notes: Guide references are readable and evidence-backed. The tests
+  section and practical inspection order are less noisy because helper/configuration
+  declarations and repeated nested import signals are no longer present.
 - Output contract issues if found: No section-order or generated-file contract issue was
-  found. Usefulness is limited by the entity and test inventory gaps noted above.
+  found.
 
 ## Observations
 
@@ -399,6 +437,10 @@ mapped-superclass identifier support is limited to immediate source-visible supe
   with an explicit role.
 - Notes: Naming-convention `tested_subjects` remain correctly marked as inferred and do
   not claim coverage or execution behavior.
+- Retest: Addressed on 2026-05-30. The retest emits 18 test-like declarations, omits
+  the observed helper/support/configuration classes, and keeps nested executable test
+  classes only when they have direct test-class markers. Nested emitted test classes now
+  use their own annotation evidence instead of source-file import evidence.
 
 ### OBS-8-005: `agent-guide.md` is contract-complete but inherits entity and test gaps
 
@@ -425,7 +467,9 @@ mapped-superclass identifier support is limited to immediate source-visible supe
   beyond generated deterministic facts.
 - Retest: Partially improved by `EVAL-8-002`; the guide now includes the direct
   `Visit -> BaseEntity` inherited identifier and explicitly states that multi-level
-  mapped-superclass identifier support is not analyzed.
+  mapped-superclass identifier support is not analyzed. Addressed for the test inventory
+  noise by `EVAL-8-003`; helper/support/configuration declarations omitted from
+  `tests.items` no longer render as "Test class" entries.
 
 ## Follow-up Tasks
 
@@ -485,6 +529,8 @@ mapped-superclass identifier support is limited to immediate source-visible supe
 ### EVAL-8-003: Clarify test inventory semantics for helper and nested classes
 
 - Bounded task id: `EVAL-8-003`
+- Status: Addressed and retested on 2026-05-30 for helper/support/configuration
+  omission and nested class framework-signal attribution.
 - Project/ref: `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804`
 - Observed artifact: `.project-memory/project-map.json` `tests.items`,
   `.project-memory/evidence-index.jsonl` test framework-signal records, and
@@ -501,6 +547,11 @@ mapped-superclass identifier support is limited to immediate source-visible supe
   configuration/helper class. Assert whether each should be emitted, how it should be
   labeled in `agent-guide.md`, and which framework-signal evidence should attach to
   which class.
+- Retest result: Focused validation, full `mvn test`, `mvn package`, and the pinned
+  `spring-petclinic` scan passed. The scan emits 18 test facts and 257 evidence records,
+  omits `MysqlTestApplication`, `EntityUtils`, `PostgresIntegrationTests.PropertiesLogger`,
+  and `CrashControllerIntegrationTests.TestConfiguration`, keeps nested executable test
+  classes with direct annotation evidence, and resolves all 257 referenced evidence IDs.
 - Non-goals: Do not add test execution, coverage, assertion analysis, call graph
   resolution, complete subject mapping, CI integration, or runtime framework behavior.
 
@@ -512,4 +563,4 @@ mapped-superclass identifier support is limited to immediate source-visible supe
 - Third-party source and generated outputs were not committed.
 - Generated third-party contract outputs were produced only under
   `/private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/` during the
-  parser-fix and `EVAL-8-002` retests and were not committed.
+  parser-fix, `EVAL-8-002`, and `EVAL-8-003` retests and were not committed.
