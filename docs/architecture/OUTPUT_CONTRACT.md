@@ -95,6 +95,8 @@ The current implementation writes this top-level object:
           {
             "field_name": "id",
             "java_type": "Long",
+            "declaring_class": "com.example.orders.Order",
+            "source_kind": "declared",
             "evidence_ids": [
               "ev:src/main/java/com/example/orders/Order.java:16-16:com.example.orders.Order:@Id:field:id"
             ]
@@ -203,12 +205,29 @@ Field rules:
 - `entity.table_name` is the literal string from direct class-level
   `@Table(name = "...")` when present and deterministically extractable, otherwise
   `null`.
-- `entity.identifier_fields` contains field-level direct `@Id` facts sorted by
-  `field_name` and `java_type`.
+- `entity.identifier_fields` contains field-level `@Id` facts declared directly on the
+  entity class or declared on a directly source-visible superclass annotated with
+  `@MappedSuperclass`. Identifier fields are sorted deterministically by `source_kind`,
+  `declaring_class`, `field_name`, and `java_type`.
+- Direct mapped-superclass support is limited to the entity class's immediate superclass
+  when that superclass is present under supported production source roots and has a
+  direct class-level `@MappedSuperclass` annotation. This does not imply full ORM
+  inheritance reconstruction, multi-level hierarchy walking, classpath solving,
+  `@Inheritance` handling, property-access mapping, embedded IDs, generated-value
+  semantics, column or join-column analysis, repository analysis, schema generation, or
+  runtime ORM behavior.
 - `identifier_field.field_name` is the declared Java field name.
 - `identifier_field.java_type` is the declared Java field type string.
+- `identifier_field.declaring_class` is the fully qualified Java class that declares the
+  identifier field.
+- `identifier_field.source_kind` is one of:
+  - `"declared"`: the field is declared directly on the entity class.
+  - `"mapped_superclass"`: the field is declared on a directly source-visible class
+    annotated with `@MappedSuperclass`.
 - `identifier_field.evidence_ids` references field-level `@Id` annotation evidence and
-  must resolve to records in `evidence-index.jsonl`.
+  must resolve to records in `evidence-index.jsonl`. For identifier fields with
+  `source_kind` set to `"mapped_superclass"`, it must also reference class-level
+  `@MappedSuperclass` annotation evidence for `declaring_class`.
 - `entity.relationships` contains field-level direct JPA relationship annotation facts
   sorted by `field_name`, `annotation`, and `java_type`. Stage 5.1 supports
   `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
@@ -290,6 +309,11 @@ Stage 6.1 emits:
 - `code_symbol` evidence for directly visible test framework imports.
 - `annotation` evidence for directly visible test framework annotations.
 
+Direct mapped-superclass identifier facts do not add new evidence fields. When an
+identifier field uses `source_kind` set to `"mapped_superclass"`, it uses the existing
+`annotation` evidence shape for the field-level `@Id` declaration and the class-level
+`@MappedSuperclass` declaration.
+
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
 empty arrays in `project-map.json`.
@@ -368,9 +392,12 @@ Content rules:
   evidence references. They must not claim Spring runtime wiring, component scanning,
   lifecycle, scopes, bean names, or dependency graphs.
 - Entity entries use `Detected` wording for direct entity, table, and identifier facts.
-  Relationship entries must preserve `target_resolution: declared_type_only` and
-  `uncertainty: target_type_not_resolved`, and should present relationship targets as
-  `Uncertain`, not resolved entity links.
+  Identifier entries should include `declaring_class` and `source_kind` when that context
+  matters. Mapped-superclass identifiers must be described as direct source-visible
+  mapped-superclass facts, not as full ORM inheritance reconstruction. Relationship
+  entries must preserve `target_resolution: declared_type_only` and `uncertainty:
+  target_type_not_resolved`, and should present relationship targets as `Uncertain`, not
+  resolved entity links.
 - Test entries use `Detected` wording for test classes and directly visible framework
   signals. `tested_subjects` entries must use `Inferred` wording and show
   `support_type`, `confidence`, and `uncertainty` when present.
