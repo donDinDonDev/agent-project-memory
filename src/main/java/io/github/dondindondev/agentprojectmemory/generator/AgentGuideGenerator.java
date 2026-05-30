@@ -14,6 +14,8 @@ import java.util.StringJoiner;
 
 public final class AgentGuideGenerator {
   private static final ObjectMapper JSON = new ObjectMapper();
+  private static final int MAX_INLINE_EVIDENCE_REFERENCES = 5;
+  private static final int MAX_INLINE_INSPECTION_PATHS = 5;
 
   public String generate(String projectMapJson, String evidenceIndexJsonl) throws IOException {
     Objects.requireNonNull(projectMapJson, "projectMapJson");
@@ -420,11 +422,14 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
     StringJoiner joiner = new StringJoiner(", ");
-    for (String id : ids) {
-      joiner.add(evidenceReference(id, evidenceById));
+    for (int i = 0; i < visibleCount; i++) {
+      joiner.add(evidenceReference(ids.get(i), evidenceById));
     }
-    markdown.append(joiner).append("\n");
+    markdown.append(joiner);
+    appendOmittedEvidenceSuffix(markdown, ids.size() - visibleCount);
+    markdown.append("\n");
   }
 
   private String endpointLabel(JsonNode endpoint) {
@@ -545,7 +550,38 @@ public final class AgentGuideGenerator {
       markdown.append(" (no evidence paths recorded)");
       return;
     }
-    markdown.append(" in ").append(codeList(paths));
+    markdown.append(" in ").append(cappedCodeList(
+        paths,
+        MAX_INLINE_INSPECTION_PATHS,
+        "evidence paths"));
+  }
+
+  private void appendOmittedEvidenceSuffix(StringBuilder markdown, int omittedCount) {
+    if (omittedCount <= 0) {
+      return;
+    }
+    markdown.append(", ... and ")
+        .append(omittedCount)
+        .append(" more evidence references in ")
+        .append(code("evidence-index.jsonl"));
+  }
+
+  private String cappedCodeList(
+      List<String> values,
+      int maxVisible,
+      String omittedDescription) {
+    if (values.size() <= maxVisible) {
+      return codeList(values);
+    }
+
+    List<String> visibleValues = values.subList(0, maxVisible);
+    return codeList(visibleValues)
+        + ", ... and "
+        + (values.size() - maxVisible)
+        + " more "
+        + omittedDescription
+        + " in "
+        + code("evidence-index.jsonl");
   }
 
   private String evidenceReference(String id, Map<String, EvidenceRecord> evidenceById) {
