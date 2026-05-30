@@ -59,7 +59,9 @@ public final class SpringMvcEndpointOutputGenerator {
       .comparing(JpaEntityFact::className)
       .thenComparing(JpaEntityFact::id);
   private static final Comparator<JpaIdentifierFieldFact> IDENTIFIER_FIELD_ORDER = Comparator
-      .comparing(JpaIdentifierFieldFact::fieldName)
+      .comparing(JpaIdentifierFieldFact::sourceKind)
+      .thenComparing(JpaIdentifierFieldFact::declaringClass)
+      .thenComparing(JpaIdentifierFieldFact::fieldName)
       .thenComparing(JpaIdentifierFieldFact::javaType);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
@@ -492,6 +494,8 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("          {\n");
       appendIndentedStringField(json, 6, "field_name", identifierField.fieldName(), true);
       appendIndentedStringField(json, 6, "java_type", identifierField.javaType(), true);
+      appendIndentedStringField(json, 6, "declaring_class", identifierField.declaringClass(), true);
+      appendIndentedStringField(json, 6, "source_kind", identifierField.sourceKind(), true);
       appendIndentedStringArrayField(json, 6, "evidence_ids", identifierField.evidenceIds(), false);
       json.append("          }");
       if (index < sortedIdentifierFields.size() - 1) {

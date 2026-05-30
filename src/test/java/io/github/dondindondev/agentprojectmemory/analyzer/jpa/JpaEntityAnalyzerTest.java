@@ -44,6 +44,9 @@ final class JpaEntityAnalyzerTest {
         () -> assertNull(entity.tableName()),
         () -> assertEquals(List.of("id"), entity.identifierFields().stream()
             .map(JpaIdentifierFieldFact::fieldName)
+            .toList()),
+        () -> assertEquals(List.of("declared"), entity.identifierFields().stream()
+            .map(JpaIdentifierFieldFact::sourceKind)
             .toList()));
   }
 
@@ -68,10 +71,52 @@ final class JpaEntityAnalyzerTest {
 
     assertAll(
         () -> assertEquals("Long", id.javaType()),
+        () -> assertEquals("com.example.domain.Order", id.declaringClass()),
+        () -> assertEquals("declared", id.sourceKind()),
         () -> assertEquals("@Id", idEvidence.annotationSymbol()),
         () -> assertEquals("com.example.domain.Order", idEvidence.className()),
         () -> assertNull(idEvidence.methodName()),
         () -> assertTrue(idEvidence.id().endsWith(":@Id:field:id")));
+  }
+
+  @Test
+  void mappedSuperclassIdentifierIsAttachedToDirectEntitySubclass() throws Exception {
+    JpaEntityAnalysis analysis = analyzeMappedSuperclassFixture();
+
+    JpaIdentifierFieldFact id = identifierField(entity(analysis, "Owner"), "id");
+    List<JpaEntityEvidence> identifierEvidence = id.evidenceIds().stream()
+        .map(evidenceId -> evidence(analysis, evidenceId))
+        .toList();
+
+    assertAll(
+        () -> assertEquals("Long", id.javaType()),
+        () -> assertEquals("com.example.domain.BaseEntity", id.declaringClass()),
+        () -> assertEquals("mapped_superclass", id.sourceKind()),
+        () -> assertEquals(2, id.evidenceIds().size()),
+        () -> assertTrue(identifierEvidence.stream()
+            .anyMatch(evidence -> evidence.annotationSymbol().equals("@Id")
+                && evidence.className().equals("com.example.domain.BaseEntity")
+                && evidence.sourcePath().endsWith(
+                    "src/main/java/com/example/domain/MappedSuperclassEntities.java")
+                && evidence.id().endsWith(
+                    ":com.example.domain.BaseEntity:@Id:field:id"))),
+        () -> assertTrue(identifierEvidence.stream()
+            .anyMatch(evidence -> evidence.annotationSymbol().equals("@MappedSuperclass")
+                && evidence.className().equals("com.example.domain.BaseEntity"))));
+  }
+
+  @Test
+  void nonMappedSuperclassDoesNotContributeIdentifier() throws Exception {
+    JpaEntityFact plainOwner = entity(analyzeMappedSuperclassFixture(), "PlainOwner");
+
+    assertTrue(plainOwner.identifierFields().isEmpty());
+  }
+
+  @Test
+  void unresolvedSuperclassDoesNotFabricateIdentifier() throws Exception {
+    JpaEntityFact missingOwner = entity(analyzeMappedSuperclassFixture(), "MissingOwner");
+
+    assertTrue(missingOwner.identifierFields().isEmpty());
   }
 
   @Test
@@ -185,6 +230,11 @@ final class JpaEntityAnalyzerTest {
     return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
   }
 
+  private JpaEntityAnalysis analyzeMappedSuperclassFixture() throws Exception {
+    Path fixtureRoot = mappedSuperclassFixtureRoot();
+    return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-entities")).toURI());
@@ -193,6 +243,11 @@ final class JpaEntityAnalyzerTest {
   private Path modernJavaFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/modern-java-syntax")).toURI());
+  }
+
+  private Path mappedSuperclassFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/jpa-mapped-superclass")).toURI());
   }
 
   private JpaEntityFact entity(JpaEntityAnalysis analysis, String simpleName) {

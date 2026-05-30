@@ -43,6 +43,10 @@ class-level `@Table(name = "...")`, field-level `@Id`, and field-level relations
 annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relationship
 facts preserve the declared field type and explicitly mark target resolution as
 uncertain because no Java symbol solving or ORM runtime reconstruction is performed.
+It also attaches field-level `@Id` facts declared on an immediate source-visible
+superclass annotated with direct `@MappedSuperclass`. This mapped-superclass support is
+direct-only and does not walk multi-level inheritance, solve classpaths, or claim ORM
+runtime behavior.
 
 The tests inventory analyzer records Java class declarations under standard Maven
 `src/test/java` roots, directly visible test framework signals from imports and

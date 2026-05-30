@@ -144,14 +144,16 @@
           {
             "field_name": "id",
             "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectCustomer",
+            "source_kind": "declared",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:15-15:com.example.domain.ProjectCustomer:@Id:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectCustomer:@Id:field:id"
             ]
           }
         ],
         "relationships": [],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:13-13:com.example.domain.ProjectCustomer:@Entity"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectCustomer:@Entity"
         ]
       },
       {
@@ -162,8 +164,10 @@
           {
             "field_name": "id",
             "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectOrder:@Id:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:29-29:com.example.domain.ProjectOrder:@Id:field:id"
             ]
           }
         ],
@@ -175,7 +179,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:25-25:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
             ]
           },
           {
@@ -185,7 +189,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:31-31:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
             ]
           },
           {
@@ -195,7 +199,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@OneToMany:field:lines"
             ]
           },
           {
@@ -205,13 +209,35 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:41-41:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
             ]
           }
         ],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:19-19:com.example.domain.ProjectOrder:@Entity",
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectOrder:@Table"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:27-27:com.example.domain.ProjectOrder:@Table"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectVisit",
+        "class_name": "com.example.domain.ProjectVisit",
+        "table_name": "visits",
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectBaseEntity",
+            "source_kind": "mapped_superclass",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:16-16:com.example.domain.ProjectBaseEntity:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:14-14:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:45-45:com.example.domain.ProjectVisit:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectVisit:@Table"
         ]
       }
     ]

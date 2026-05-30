@@ -4,11 +4,18 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import java.util.List;
 import java.util.Set;
+
+@MappedSuperclass
+class ProjectBaseEntity {
+  @Id
+  private Long id;
+}
 
 @Entity
 class ProjectCustomer {
@@ -33,4 +40,9 @@ class ProjectOrder {
 
   @ManyToMany
   private Set<ProjectTag> tags;
+}
+
+@Entity
+@Table(name = "visits")
+class ProjectVisit extends ProjectBaseEntity {
 }

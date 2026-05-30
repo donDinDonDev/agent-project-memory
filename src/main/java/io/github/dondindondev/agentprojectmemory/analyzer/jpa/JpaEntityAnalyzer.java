@@ -2,18 +2,23 @@ package io.github.dondindondev.agentprojectmemory.analyzer.jpa;
 
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -22,16 +27,21 @@ public final class JpaEntityAnalyzer {
   private static final String ENTITY = "Entity";
   private static final String TABLE = "Table";
   private static final String ID = "Id";
+  private static final String MAPPED_SUPERCLASS = "MappedSuperclass";
   private static final String HIGH_CONFIDENCE = "high";
   private static final String TARGET_RESOLUTION = "declared_type_only";
   private static final String UNCERTAINTY = "target_type_not_resolved";
+  private static final String SOURCE_KIND_DECLARED = "declared";
+  private static final String SOURCE_KIND_MAPPED_SUPERCLASS = "mapped_superclass";
   private static final List<String> RELATIONSHIP_ANNOTATIONS = List.of(
       "@ManyToOne",
       "@OneToMany",
       "@OneToOne",
       "@ManyToMany");
   private static final Comparator<JpaIdentifierFieldFact> IDENTIFIER_FIELD_ORDER = Comparator
-      .comparing(JpaIdentifierFieldFact::fieldName)
+      .comparing(JpaIdentifierFieldFact::sourceKind)
+      .thenComparing(JpaIdentifierFieldFact::declaringClass)
+      .thenComparing(JpaIdentifierFieldFact::fieldName)
       .thenComparing(JpaIdentifierFieldFact::javaType);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
@@ -46,6 +56,7 @@ public final class JpaEntityAnalyzer {
     Objects.requireNonNull(sourceRoots, "sourceRoots");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    List<JavaTypeSource> javaTypes = new ArrayList<>();
     List<JpaEntityFact> entities = new ArrayList<>();
     List<JpaEntityEvidence> evidence = new ArrayList<>();
 
@@ -56,8 +67,13 @@ public final class JpaEntityAnalyzer {
       }
 
       for (Path javaFile : javaFiles(normalizedSourceRoot)) {
-        analyzeJavaFile(normalizedRepositoryRoot, javaFile, entities, evidence);
+        javaTypes.addAll(javaTypes(normalizedRepositoryRoot, javaFile));
       }
+    }
+
+    Map<String, MappedSuperclassSource> mappedSuperclasses = mappedSuperclasses(javaTypes);
+    for (JavaTypeSource javaType : javaTypes) {
+      analyzeJavaType(javaType, mappedSuperclasses, entities, evidence);
     }
 
     return new JpaEntityAnalysis(
@@ -65,81 +81,139 @@ public final class JpaEntityAnalyzer {
         evidence);
   }
 
-  private void analyzeJavaFile(
+  private List<JavaTypeSource> javaTypes(
       Path repositoryRoot,
-      Path javaFile,
-      List<JpaEntityFact> entities,
-      List<JpaEntityEvidence> evidence) throws IOException {
+      Path javaFile) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
+    List<JavaTypeSource> javaTypes = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
       if (type.isInterface()) {
         continue;
       }
 
-      Optional<AnnotationExpr> entityAnnotation = findAnnotation(type.getAnnotations(), ENTITY);
-      if (entityAnnotation.isEmpty()) {
+      javaTypes.add(new JavaTypeSource(
+          compilationUnit,
+          packageName,
+          sourcePath,
+          sourceLines,
+          type,
+          qualifiedClassName(packageName, type)));
+    }
+
+    return javaTypes;
+  }
+
+  private Map<String, MappedSuperclassSource> mappedSuperclasses(List<JavaTypeSource> javaTypes) {
+    Map<String, MappedSuperclassSource> mappedSuperclasses = new LinkedHashMap<>();
+
+    for (JavaTypeSource javaType : javaTypes) {
+      Optional<AnnotationExpr> mappedSuperclassAnnotation =
+          findAnnotation(javaType.type().getAnnotations(), MAPPED_SUPERCLASS);
+      if (mappedSuperclassAnnotation.isEmpty()) {
         continue;
       }
 
-      String className = qualifiedClassName(packageName, type);
-      List<JpaEntityEvidence> entityEvidence = new ArrayList<>();
-      entityEvidence.add(annotationEvidence(
-          sourcePath,
-          className,
-          entityAnnotation.orElseThrow(),
-          sourceLines,
-          null));
-
-      Optional<AnnotationExpr> tableAnnotation = findAnnotation(type.getAnnotations(), TABLE);
-      tableAnnotation
-          .map(annotation -> annotationEvidence(sourcePath, className, annotation, sourceLines, null))
-          .ifPresent(entityEvidence::add);
-      String tableName = tableAnnotation
-          .flatMap(this::tableName)
-          .orElse(null);
-
+      JpaEntityEvidence mappedSuperclassEvidence = annotationEvidence(
+          javaType.sourcePath(),
+          javaType.className(),
+          mappedSuperclassAnnotation.orElseThrow(),
+          javaType.sourceLines(),
+          null);
+      List<JpaEntityEvidence> evidence = new ArrayList<>();
+      evidence.add(mappedSuperclassEvidence);
       List<JpaIdentifierFieldFact> identifierFields = identifierFields(
-          sourcePath,
-          className,
-          type,
-          sourceLines,
+          javaType,
+          SOURCE_KIND_MAPPED_SUPERCLASS,
+          List.of(mappedSuperclassEvidence.id()),
           evidence);
-      List<JpaRelationshipFact> relationships = relationships(
-          sourcePath,
-          className,
-          type,
-          sourceLines,
-          evidence);
-      List<String> evidenceIds = entityEvidence.stream()
-          .map(JpaEntityEvidence::id)
-          .toList();
 
-      entities.add(new JpaEntityFact(
-          "entity:" + className,
-          className,
-          tableName,
-          identifierFields.stream().sorted(IDENTIFIER_FIELD_ORDER).toList(),
-          relationships.stream().sorted(RELATIONSHIP_ORDER).toList(),
-          evidenceIds));
-      evidence.addAll(entityEvidence);
+      mappedSuperclasses.put(
+          javaType.className(),
+          new MappedSuperclassSource(identifierFields, evidence));
     }
+
+    return mappedSuperclasses;
+  }
+
+  private void analyzeJavaType(
+      JavaTypeSource javaType,
+      Map<String, MappedSuperclassSource> mappedSuperclasses,
+      List<JpaEntityFact> entities,
+      List<JpaEntityEvidence> evidence) {
+    ClassOrInterfaceDeclaration type = javaType.type();
+    Optional<AnnotationExpr> entityAnnotation = findAnnotation(type.getAnnotations(), ENTITY);
+    if (entityAnnotation.isEmpty()) {
+      return;
+    }
+
+    List<JpaEntityEvidence> entityEvidence = new ArrayList<>();
+    entityEvidence.add(annotationEvidence(
+        javaType.sourcePath(),
+        javaType.className(),
+        entityAnnotation.orElseThrow(),
+        javaType.sourceLines(),
+        null));
+
+    Optional<AnnotationExpr> tableAnnotation = findAnnotation(type.getAnnotations(), TABLE);
+    tableAnnotation
+        .map(annotation -> annotationEvidence(
+            javaType.sourcePath(),
+            javaType.className(),
+            annotation,
+            javaType.sourceLines(),
+            null))
+        .ifPresent(entityEvidence::add);
+    String tableName = tableAnnotation
+        .flatMap(this::tableName)
+        .orElse(null);
+
+    List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>(identifierFields(
+        javaType,
+        SOURCE_KIND_DECLARED,
+        List.of(),
+        evidence));
+    directMappedSuperclass(javaType, mappedSuperclasses)
+        .ifPresent(mappedSuperclass -> {
+          if (mappedSuperclass.identifierFields().isEmpty()) {
+            return;
+          }
+          identifierFields.addAll(mappedSuperclass.identifierFields());
+          evidence.addAll(mappedSuperclass.evidence());
+        });
+    List<JpaRelationshipFact> relationships = relationships(
+        javaType.sourcePath(),
+        javaType.className(),
+        type,
+        javaType.sourceLines(),
+        evidence);
+    List<String> evidenceIds = entityEvidence.stream()
+        .map(JpaEntityEvidence::id)
+        .toList();
+
+    entities.add(new JpaEntityFact(
+        "entity:" + javaType.className(),
+        javaType.className(),
+        tableName,
+        identifierFields.stream().sorted(IDENTIFIER_FIELD_ORDER).toList(),
+        relationships.stream().sorted(RELATIONSHIP_ORDER).toList(),
+        evidenceIds));
+    evidence.addAll(entityEvidence);
   }
 
   private List<JpaIdentifierFieldFact> identifierFields(
-      String sourcePath,
-      String className,
-      ClassOrInterfaceDeclaration type,
-      List<String> sourceLines,
+      JavaTypeSource javaType,
+      String sourceKind,
+      List<String> additionalEvidenceIds,
       List<JpaEntityEvidence> evidence) {
     List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>();
 
-    for (FieldDeclaration field : type.getFields()) {
+    for (FieldDeclaration field : javaType.type().getFields()) {
       Optional<AnnotationExpr> idAnnotation = findAnnotation(field.getAnnotations(), ID);
       if (idAnnotation.isEmpty()) {
         continue;
@@ -147,20 +221,75 @@ public final class JpaEntityAnalyzer {
 
       for (VariableDeclarator variable : field.getVariables()) {
         JpaEntityEvidence idEvidence = annotationEvidence(
-            sourcePath,
-            className,
+            javaType.sourcePath(),
+            javaType.className(),
             idAnnotation.orElseThrow(),
-            sourceLines,
+            javaType.sourceLines(),
             "field:" + variable.getNameAsString());
         evidence.add(idEvidence);
+        List<String> evidenceIds = new ArrayList<>();
+        evidenceIds.add(idEvidence.id());
+        evidenceIds.addAll(additionalEvidenceIds);
         identifierFields.add(new JpaIdentifierFieldFact(
             variable.getNameAsString(),
             variable.getType().asString(),
-            List.of(idEvidence.id())));
+            javaType.className(),
+            sourceKind,
+            evidenceIds));
       }
     }
 
     return identifierFields;
+  }
+
+  private Optional<MappedSuperclassSource> directMappedSuperclass(
+      JavaTypeSource javaType,
+      Map<String, MappedSuperclassSource> mappedSuperclasses) {
+    if (javaType.type().getExtendedTypes().isEmpty()) {
+      return Optional.empty();
+    }
+
+    ClassOrInterfaceType extendedType = javaType.type().getExtendedTypes().get(0);
+    List<MappedSuperclassSource> matches = superclassCandidates(javaType, extendedType).stream()
+        .map(mappedSuperclasses::get)
+        .filter(Objects::nonNull)
+        .distinct()
+        .toList();
+    if (matches.size() != 1) {
+      return Optional.empty();
+    }
+    return Optional.of(matches.get(0));
+  }
+
+  private List<String> superclassCandidates(
+      JavaTypeSource javaType,
+      ClassOrInterfaceType extendedType) {
+    LinkedHashSet<String> candidates = new LinkedHashSet<>();
+    String nameWithScope = extendedType.getNameWithScope();
+    if (nameWithScope.contains(".")) {
+      candidates.add(nameWithScope);
+      return List.copyOf(candidates);
+    }
+
+    for (ImportDeclaration importDeclaration : javaType.compilationUnit().getImports()) {
+      if (importDeclaration.isStatic()) {
+        continue;
+      }
+      String importName = importDeclaration.getNameAsString();
+      if (!importDeclaration.isAsterisk() && importName.endsWith("." + nameWithScope)) {
+        candidates.add(importName);
+      }
+      if (importDeclaration.isAsterisk()) {
+        candidates.add(importName + "." + nameWithScope);
+      }
+    }
+
+    if (javaType.packageName().isBlank()) {
+      candidates.add(nameWithScope);
+    } else {
+      candidates.add(javaType.packageName() + "." + nameWithScope);
+    }
+    return List.copyOf(candidates);
   }
 
   private List<JpaRelationshipFact> relationships(
@@ -325,5 +454,26 @@ public final class JpaEntityAnalyzer {
       return name.substring(lastDot + 1);
     }
     return name;
+  }
+
+  private record JavaTypeSource(
+      CompilationUnit compilationUnit,
+      String packageName,
+      String sourcePath,
+      List<String> sourceLines,
+      ClassOrInterfaceDeclaration type,
+      String className) {
+    private JavaTypeSource {
+      sourceLines = List.copyOf(sourceLines);
+    }
+  }
+
+  private record MappedSuperclassSource(
+      List<JpaIdentifierFieldFact> identifierFields,
+      List<JpaEntityEvidence> evidence) {
+    private MappedSuperclassSource {
+      identifierFields = List.copyOf(identifierFields);
+      evidence = List.copyOf(evidence);
+    }
   }
 }

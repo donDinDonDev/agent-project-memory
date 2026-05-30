@@ -72,36 +72,46 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ### `com.example.domain.ProjectCustomer`
 
 - Entity: Detected `com.example.domain.ProjectCustomer`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:13` (`ev:src/main/java/com/example/domain/ProjectEntities.java:13-13:com.example.domain.ProjectCustomer:@Entity`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectCustomer:@Entity`)
 - Table: Detected none.
-- Identifier field: Detected `id` (`Long`)
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:15` (`ev:src/main/java/com/example/domain/ProjectEntities.java:15-15:com.example.domain.ProjectCustomer:@Id:field:id`)
+- Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectCustomer` with source_kind `declared`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:22` (`ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectCustomer:@Id:field:id`)
 - Relationships: Detected none.
 
 ### `com.example.domain.ProjectOrder`
 
 - Entity: Detected `com.example.domain.ProjectOrder`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:19` (`ev:src/main/java/com/example/domain/ProjectEntities.java:19-19:com.example.domain.ProjectOrder:@Entity`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity`)
 - Table: Detected `orders`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectOrder:@Table`)
-- Identifier field: Detected `id` (`Long`)
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:22` (`ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectOrder:@Id:field:id`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:27` (`ev:src/main/java/com/example/domain/ProjectEntities.java:27-27:com.example.domain.ProjectOrder:@Table`)
+- Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectOrder` with source_kind `declared`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:29` (`ev:src/main/java/com/example/domain/ProjectEntities.java:29-29:com.example.domain.ProjectOrder:@Id:field:id`)
 - Relationship: Uncertain target for `customer` `@ManyToOne` declared type `ProjectCustomer`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:25` (`ev:src/main/java/com/example/domain/ProjectEntities.java:25-25:com.example.domain.ProjectOrder:@ManyToOne:field:customer`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:32` (`ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@ManyToOne:field:customer`)
 - Relationship: Uncertain target for `invoice` `@OneToOne` declared type `ProjectInvoice`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:31` (`ev:src/main/java/com/example/domain/ProjectEntities.java:31-31:com.example.domain.ProjectOrder:@OneToOne:field:invoice`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:38` (`ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectOrder:@OneToOne:field:invoice`)
 - Relationship: Uncertain target for `lines` `@OneToMany` declared type `List<ProjectOrderLine>`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:28` (`ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectOrder:@OneToMany:field:lines`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:35` (`ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@OneToMany:field:lines`)
 - Relationship: Uncertain target for `tags` `@ManyToMany` declared type `Set<ProjectTag>`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:34` (`ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectOrder:@ManyToMany:field:tags`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:41` (`ev:src/main/java/com/example/domain/ProjectEntities.java:41-41:com.example.domain.ProjectOrder:@ManyToMany:field:tags`)
+
+### `com.example.domain.ProjectVisit`
+
+- Entity: Detected `com.example.domain.ProjectVisit`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:45` (`ev:src/main/java/com/example/domain/ProjectEntities.java:45-45:com.example.domain.ProjectVisit:@Entity`)
+- Table: Detected `visits`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:46` (`ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectVisit:@Table`)
+- Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectBaseEntity` with source_kind `mapped_superclass`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:16` (`ev:src/main/java/com/example/domain/ProjectEntities.java:16-16:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:14` (`ev:src/main/java/com/example/domain/ProjectEntities.java:14-14:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
+- Relationships: Detected none.
 
 ## Detected Tests
 
@@ -120,6 +130,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
+- Not analyzed: JPA mapped-superclass identifier support is limited to immediate source-visible superclasses; multi-level inheritance is not walked.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.
 

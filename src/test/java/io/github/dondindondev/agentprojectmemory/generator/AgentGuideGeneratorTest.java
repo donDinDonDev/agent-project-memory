@@ -27,13 +27,17 @@ final class AgentGuideGeneratorTest {
   private void assertEvidenceIsAttachedToDetectedClaims(String guide) {
     assertTrue(guide.contains("""
         - Entity: Detected `com.example.domain.ProjectOrder`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:19` (`ev:src/main/java/com/example/domain/ProjectEntities.java:19-19:com.example.domain.ProjectOrder:@Entity`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity`)
         - Table: Detected `orders`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectOrder:@Table`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:27` (`ev:src/main/java/com/example/domain/ProjectEntities.java:27-27:com.example.domain.ProjectOrder:@Table`)
+        """));
+    assertTrue(guide.contains("""
+        - Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectBaseEntity` with source_kind `mapped_superclass`
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:16` (`ev:src/main/java/com/example/domain/ProjectEntities.java:16-16:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:14` (`ev:src/main/java/com/example/domain/ProjectEntities.java:14-14:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
         """));
     assertFalse(guide.contains("""
         - Table: Detected `orders`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:19` (`ev:src/main/java/com/example/domain/ProjectEntities.java:19-19:com.example.domain.ProjectOrder:@Entity`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity`)
         """));
     assertTrue(guide.contains("""
         - Test class: Detected `com.example.web.ProjectMapControllerTest`

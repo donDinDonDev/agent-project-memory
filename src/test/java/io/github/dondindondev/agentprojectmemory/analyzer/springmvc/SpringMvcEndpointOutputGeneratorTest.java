@@ -65,7 +65,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(23, projectMapEvidenceIds.size()),
+        () -> assertEquals(27, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -167,8 +167,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"id\": \"entity:com.example.domain.ProjectCustomer\"")),
         () -> assertTrue(projectMap.contains(
             "\"id\": \"entity:com.example.domain.ProjectOrder\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"entity:com.example.domain.ProjectVisit\"")),
         () -> assertTrue(projectMap.contains("\"table_name\": \"orders\"")),
         () -> assertTrue(projectMap.contains("\"field_name\": \"id\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"declaring_class\": \"com.example.domain.ProjectBaseEntity\"")),
+        () -> assertTrue(projectMap.contains("\"source_kind\": \"mapped_superclass\"")),
+        () -> assertTrue(projectMap.contains("\"source_kind\": \"declared\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToOne\"")),
         () -> assertTrue(projectMap.contains("\"java_type\": \"ProjectCustomer\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToMany\"")),
