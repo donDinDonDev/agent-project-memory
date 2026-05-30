@@ -86,7 +86,8 @@ v0.1 is acceptable when:
 - Spring MVC endpoint extraction detects common controller annotations and request mapping annotations.
 - Basic Spring component inventory detects common stereotypes such as `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController`.
 - Basic direct JPA entity extraction detects direct `@Entity`, direct `@Table(name = "...")`,
-  field-level `@Id`, and direct field-level relationship annotations while marking
+  field-level `@Id` declared on the entity class or on an immediate source-visible
+  `@MappedSuperclass`, and direct field-level relationship annotations while marking
   unresolved relationship targets as uncertain.
 - Minimal tests inventory detects Java test classes under standard single-module Maven
   `src/test/java`.

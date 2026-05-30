@@ -189,7 +189,16 @@ public final class AgentGuideGenerator {
           .append(code(text(field, "field_name")))
           .append(" (")
           .append(code(text(field, "java_type")))
-          .append(")\n");
+          .append(")");
+      String declaringClass = nullableText(field, "declaring_class");
+      String sourceKind = nullableText(field, "source_kind");
+      if (declaringClass != null && !declaringClass.isBlank()) {
+        markdown.append(" declared by ").append(code(declaringClass));
+      }
+      if (sourceKind != null && !sourceKind.isBlank()) {
+        markdown.append(" with source_kind ").append(code(sourceKind));
+      }
+      markdown.append("\n");
       appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
     }
   }
@@ -303,6 +312,8 @@ public final class AgentGuideGenerator {
     markdown.append("- Uncertain: JPA relationship targets preserve `target_resolution: ")
         .append("declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol ")
         .append("solving or ORM runtime behavior is claimed.\n");
+    markdown.append("- Not analyzed: JPA mapped-superclass identifier support is limited to ")
+        .append("immediate source-visible superclasses; multi-level inheritance is not walked.\n");
     markdown.append("- Inferred: tested-subject relations use naming conventions only. Test execution, ")
         .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
         .append("analyzed.\n");

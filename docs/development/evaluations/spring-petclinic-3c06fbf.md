@@ -10,6 +10,9 @@ Evaluation date: 2026-05-30
 - Initial evaluation result: blocked before contract artifact generation.
 - EVAL-8-001 retest result: addressed; the scan reached contract artifact generation on
   2026-05-30 after configuring JavaParser for modern Java syntax.
+- EVAL-8-002 retest result: addressed for direct immediate source-visible
+  `@MappedSuperclass` identifiers; the 2026-05-30 retest emits
+  `Visit.identifier_fields[0]` from `BaseEntity`.
 - Repository worktree state before editing: clean; `git status --short` produced no output.
 
 ## Commands Run
@@ -61,6 +64,20 @@ jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.pr
 sed -n '1,760p' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/agent-guide.md
 ```
 
+Retest after `EVAL-8-002` fix on 2026-05-30 16:16:03 CST:
+
+```sh
+mvn -Dtest=JpaEntityAnalyzerTest,SpringMvcEndpointOutputGeneratorTest,AgentProjectMemoryCliTest test
+mvn test
+mvn package
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
+git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
+java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+jq -r '.entities.items[] | [.class_name, (.identifier_fields | map(.field_name + ":" + .java_type + ":" + .declaring_class + ":" + .source_kind) | join(","))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
+jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
+rg -n "mapped-superclass identifier support|source_kind|BaseEntity" /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/agent-guide.md
+```
+
 ## Run Results
 
 `mvn package` completed successfully. The packaged build ran 62 tests with 0 failures and
@@ -107,6 +124,29 @@ again with 66 tests, 0 failures, and 0 errors. The scan command exited with code
 regenerated the same artifact counts: 17 endpoints, 9 components, 6 entities, 22 tests,
 and 302 evidence records.
 
+The `EVAL-8-002` retest reused the same pinned checkout. The target checkout still showed
+only untracked generated `.project-memory/` output before the scan, which is expected for
+the external evaluation workspace. Focused validation completed with 31 tests, 0
+failures, and 0 errors; full `mvn test` and `mvn package` completed with 69 tests, 0
+failures, and 0 errors. The scan command exited with code 0 and generated 17 endpoints,
+9 components, 6 entities, 22 tests, and 304 evidence records.
+
+The direct-only inherited identifier now appears for
+`org.springframework.samples.petclinic.owner.Visit`, which directly extends
+`org.springframework.samples.petclinic.model.BaseEntity`:
+
+```text
+id:Integer:org.springframework.samples.petclinic.model.BaseEntity:mapped_superclass
+```
+
+Its evidence IDs resolve to `BaseEntity.java:35` for `@Id` and `BaseEntity.java:32` for
+`@MappedSuperclass`. A recursive reference check found 304 unique referenced evidence IDs,
+304 indexed evidence records, and 0 missing references. Other entity identifier arrays
+remain empty when the entity extends `Person` or `NamedEntity`; those mapped superclasses
+do not directly declare `@Id`, and walking their inheritance chain to `BaseEntity` remains
+outside the direct-only `EVAL-8-002` scope. The generated guide now states that
+mapped-superclass identifier support is limited to immediate source-visible superclasses.
+
 ## Generated Artifacts And Counts
 
 | Artifact | Status |
@@ -122,13 +162,14 @@ and 302 evidence records.
 | Components | 9 |
 | Entities | 6 |
 | Tests | 22 |
-| Evidence records | 302 |
+| Evidence records | 304 |
+| Identifier fields | 1 direct mapped-superclass identifier |
 
 ## Scorecard Summary
 
 | Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804` | `2` | `2` | `1` | `1` | `1` | `1` | Content-level pass after parser fix: direct endpoint and component extraction matched bounded source searches. Entity, test, evidence, and guide usefulness is limited by inherited mapped-superclass IDs being absent and by noisy helper/nested class handling in the test inventory. |
+| `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804` | `2` | `2` | `2` | `1` | `1` | `1` | Retest after `EVAL-8-002`: direct endpoint and component extraction matched bounded source searches; direct entity/table/relationship facts and the direct `Visit -> BaseEntity` mapped-superclass identifier are emitted with resolving evidence. Test, evidence, and guide usefulness remains limited by noisy helper/nested class handling in the test inventory; multi-level mapped-superclass inheritance is explicitly outside the direct-only scope. |
 
 ## Scorecard: Endpoints
 
@@ -170,26 +211,24 @@ and 302 evidence records.
 ## Scorecard: Entities
 
 - Expected observations: Direct `@Entity`, direct `@Table(name = "...")`, field-level
-  `@Id`, and supported direct relationship annotations should be emitted under
-  `entities.items` with uncertainty preserved for unresolved relationship targets.
+  `@Id` declared on an entity or on an immediate source-visible `@MappedSuperclass`, and
+  supported direct relationship annotations should be emitted under `entities.items` with
+  uncertainty preserved for unresolved relationship targets.
 - Actual observations: A bounded source search found 6 direct `@Entity` classes with
   direct `@Table(name = "...")` annotations and 4 supported direct relationship
-  annotations. `entities.items` emits all 6 entities, their table names, and the 4
+  annotations. `entities.items` emits all 6 entities, their table names, the 4
   relationship facts with `target_resolution: "declared_type_only"` and
-  `uncertainty: "target_type_not_resolved"`.
+  `uncertainty: "target_type_not_resolved"`, and one inherited identifier for
+  `Visit` from direct mapped superclass `BaseEntity`.
 - False positives if found: None found for direct entity, table, or relationship facts.
-- False negatives if found: No false negative was confirmed for fields declared directly
-  on the emitted entity classes. A practical gap was observed: all emitted
-  `identifier_fields` arrays are empty because the model inherits `id` from
-  `org.springframework.samples.petclinic.model.BaseEntity`, a `@MappedSuperclass` with a
-  direct field-level `@Id`. The current contract does not clearly say whether inherited
-  mapped-superclass identifiers should be represented.
+- False negatives if found: None found for the direct-only mapped-superclass contract.
+  Entities that extend `Person` or `NamedEntity` still have empty `identifier_fields`
+  because those immediate mapped superclasses do not directly declare `@Id`; walking that
+  chain to `BaseEntity` is outside `EVAL-8-002`.
 - Evidence quality notes: Direct entity/table/relationship evidence resolves with precise
-  annotation lines and high confidence. There is no evidence for the inherited `@Id`
-  because that fact is not emitted.
-- Output contract issues if found: No JSON field-shape issue found. The mapped-superclass
-  identifier behavior is a contract/product gap candidate rather than an observed schema
-  violation.
+  annotation lines and high confidence. The inherited `Visit` identifier evidence resolves
+  to `BaseEntity.java` `@Id` and `@MappedSuperclass` annotation lines.
+- Output contract issues if found: None found.
 
 ## Scorecard: Tests
 
@@ -220,17 +259,18 @@ and 302 evidence records.
 
 - Expected observations: Evidence IDs should resolve to repository-relative paths, line
   ranges, symbols, excerpts, and confidence labels in `evidence-index.jsonl`.
-- Actual observations: The regenerated `evidence-index.jsonl` contains 302 records. A
-  recursive reference check over `project-map.json` found 302 unique referenced evidence
+- Actual observations: The regenerated `evidence-index.jsonl` contains 304 records. A
+  recursive reference check over `project-map.json` found 304 unique referenced evidence
   IDs and 0 missing references.
 - False positives if found: No unresolved or fabricated evidence record was found in the
   bounded inspection. The test framework-signal records for nested helper/configuration
   classes are weak/noisy because file-level imports are reused as class-level signals.
-- False negatives if found: No evidence exists for inherited mapped-superclass identifier
-  facts because those facts are not emitted.
+- False negatives if found: None found for direct mapped-superclass identifier facts.
 - Evidence quality notes: Endpoint, component, entity, and direct test class evidence is
-  precise enough for v0.1. Relationship uncertainty is preserved. Test framework-signal
-  evidence is noisier than the other categories when nested/helper classes are involved.
+  precise enough for v0.1, including the `BaseEntity` `@Id` and `@MappedSuperclass`
+  evidence for the `Visit` identifier. Relationship uncertainty is preserved. Test
+  framework-signal evidence is noisier than the other categories when nested/helper
+  classes are involved.
 - Output contract issues if found: No evidence schema or reference-resolution issue was
   found. The weak nested-class signal attribution is a semantic gap candidate.
 
@@ -242,15 +282,15 @@ and 302 evidence records.
 - Actual observations: The guide contains the required Stage 7.1 sections, resolves
   evidence references inline, uses cautious `Detected`, `Inferred`, and `Uncertain`
   wording, and lists known limits for Spring runtime behavior, ORM behavior, test
-  execution/coverage, connectors, LLM summaries, RAG, Gradle/Kotlin, and multi-module
-  Maven parsing.
+  execution/coverage, direct-only mapped-superclass identifier support, connectors, LLM
+  summaries, RAG, Gradle/Kotlin, and multi-module Maven parsing.
 - False positives if found: No unsupported architecture claim was found in the bounded
   inspection. The guide does render helper/nested test-root classes as "Test class"
   entries because that wording comes from the current structured test inventory.
-- False negatives if found: The guide does not orient a persistence change toward
-  `BaseEntity`, `NamedEntity`, or `Person`, where inherited mapped-superclass identifier
-  and common fields live. This follows from the missing structured entity facts rather
-  than a separate guide-only source analysis failure.
+- False negatives if found: No false negative found for the direct-only mapped-superclass
+  identifier contract. The guide still does not orient all entity IDs through
+  `Person`/`NamedEntity` to `BaseEntity`, because multi-level mapped-superclass traversal
+  is outside this task.
 - Evidence quality notes: Guide references are readable and evidence-backed, but the
   test section and practical inspection order become noisy because every emitted test
   inventory item and inferred subject contributes paths.
@@ -322,6 +362,12 @@ and 302 evidence records.
   identifier semantics; no JSON schema violation was found.
 - Notes: The bounded inspection did not evaluate full ORM inheritance, property access,
   generated values, or schema behavior.
+- Retest: Addressed on 2026-05-30 for the direct-only contract. The retest emits
+  `Visit.identifier_fields[0]` as `id:Integer` with
+  `declaring_class: "org.springframework.samples.petclinic.model.BaseEntity"` and
+  `source_kind: "mapped_superclass"`, backed by `BaseEntity.java` `@Id` and
+  `@MappedSuperclass` evidence. Entities whose immediate mapped superclass does not
+  directly declare `@Id` remain outside this task.
 
 ### OBS-8-004: Test-root helper and nested classes make the tests inventory noisy
 
@@ -361,22 +407,25 @@ and 302 evidence records.
 - Expected: The guide should use deterministic facts from `project-map.json` and
   `evidence-index.jsonl`, expose uncertainty, and avoid unsupported architecture claims.
 - Actual: The guide contains the expected Stage 7.1 sections, uses cautious
-  `Detected`, `Inferred`, and `Uncertain` wording, includes evidence references, and
-  calls out known limits. It is useful for first-pass orientation, but it is noisy in the
-  tests section and does not direct persistence inspection toward mapped superclasses
-  because those facts are absent from the structured entity inventory.
+  `Detected`, `Inferred`, and `Uncertain` wording, includes evidence references, calls out
+  known limits, and now directs direct mapped-superclass identifier inspection for
+  `Visit` toward `BaseEntity`. It remains noisy in the tests section and does not follow
+  multi-level mapped-superclass chains through `Person` or `NamedEntity`.
 - False positive: No unsupported architecture claim was found in the bounded inspection.
   Helper/nested test-root classes are rendered as "Test class" entries because they are
   present in the structured test inventory.
-- False negative: The guide misses inherited identifier orientation through `BaseEntity`,
-  `NamedEntity`, and `Person`; this follows from missing structured facts rather than
-  a separate guide-only analyzer pass.
+- False negative: None found for the direct-only mapped-superclass identifier contract.
+  Multi-level mapped-superclass orientation through `Person` or `NamedEntity` remains
+  outside `EVAL-8-002`.
 - Evidence quality: Guide references resolve and remain readable for endpoints,
   components, entities, and tests. The test section is less useful because noisy test
   inventory entries contribute many evidence references.
 - Output contract issue: None found for required section order or cautious wording.
 - Notes: The guide correctly avoids adding unsupported source summaries or architecture
   beyond generated deterministic facts.
+- Retest: Partially improved by `EVAL-8-002`; the guide now includes the direct
+  `Visit -> BaseEntity` inherited identifier and explicitly states that multi-level
+  mapped-superclass identifier support is not analyzed.
 
 ## Follow-up Tasks
 
@@ -405,7 +454,8 @@ and 302 evidence records.
 ### EVAL-8-002: Clarify or support inherited `@MappedSuperclass` identifier facts
 
 - Bounded task id: `EVAL-8-002`
-- Status: Contract update required before analyzer implementation.
+- Status: Addressed and retested on 2026-05-30 for direct immediate source-visible
+  `@MappedSuperclass` identifier fields.
 - Project/ref: `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804`
 - Observed artifact: `.project-memory/project-map.json` `entities.items[*].identifier_fields`
   and `.project-memory/agent-guide.md` `Detected JPA Entities`.
@@ -423,9 +473,14 @@ and 302 evidence records.
   `@MappedSuperclass`, a direct field-level `@Id`, and one or two `@Entity` subclasses.
   Assert the chosen behavior in `project-map.json`, `evidence-index.jsonl`, and
   `agent-guide.md`, then repeat the `spring-petclinic` scan at the pinned commit.
+- Retest result: Focused validation, full `mvn test`, `mvn package`, and the pinned
+  `spring-petclinic` scan passed. The scan emits `Visit.identifier_fields[0]` with
+  `declaring_class: "org.springframework.samples.petclinic.model.BaseEntity"` and
+  `source_kind: "mapped_superclass"`; all 304 evidence references resolve.
 - Non-goals: Do not implement full ORM runtime behavior, property-access mapping,
   embedded IDs, generated-value semantics, schema inference, join-column analysis, or
-  symbol-solving beyond the bounded inheritance decision.
+  symbol-solving beyond the bounded inheritance decision. Do not walk multi-level
+  mapped-superclass inheritance chains.
 
 ### EVAL-8-003: Clarify test inventory semantics for helper and nested classes
 
@@ -457,4 +512,4 @@ and 302 evidence records.
 - Third-party source and generated outputs were not committed.
 - Generated third-party contract outputs were produced only under
   `/private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/` during the
-  parser-fix retest and were not committed.
+  parser-fix and `EVAL-8-002` retests and were not committed.

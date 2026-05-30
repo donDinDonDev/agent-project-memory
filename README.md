@@ -52,7 +52,8 @@ rewritten deterministically when a supported source root exists.
 
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
 implementation analyzes Spring MVC controllers and direct Spring stereotype components,
-direct JPA entity annotations, and standard Maven test-root classes, then writes:
+direct JPA entity annotations with direct source-visible mapped-superclass identifier
+fields, and standard Maven test-root classes, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -129,11 +130,13 @@ Current Stage 7.1 limitations:
 - Component analysis does not model Spring component scanning semantics, bean lifecycle,
   bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
-  `@Table(name = "...")`, field-level `@Id`, and field-level `@ManyToOne`,
+  `@Table(name = "...")`, field-level `@Id` declared on the entity class or on an
+  immediate source-visible `@MappedSuperclass`, and field-level `@ManyToOne`,
   `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
 - Entity analysis does not implement getter/property-access mapping, embedded IDs,
   generated values, column or join-column details, repository analysis, schema
-  generation, transactional semantics, symbol solving, or ORM runtime behavior.
+  generation, transactional semantics, symbol solving, multi-level inheritance, or
+  ORM runtime behavior.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
 - Tests inventory is limited to Java classes under standard single-module Maven
