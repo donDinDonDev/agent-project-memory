@@ -89,8 +89,9 @@ v0.1 is acceptable when:
   field-level `@Id` declared on the entity class or on an immediate source-visible
   `@MappedSuperclass`, and direct field-level relationship annotations while marking
   unresolved relationship targets as uncertain.
-- Minimal tests inventory detects Java test classes under standard single-module Maven
-  `src/test/java`.
+- Minimal tests inventory detects test-like Java classes under standard single-module
+  Maven `src/test/java`, while omitting helper/support/configuration declarations
+  without clear test naming or direct test-class marker annotations.
 - Minimal tests inventory records test class names, repository-relative source paths,
   directly visible framework signals when supported, and evidence IDs.
 - Likely tested-subject relations are emitted only as conservative inferred relations,

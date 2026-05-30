@@ -166,15 +166,20 @@ schema semantics in this stage.
 
 The Stage 6.1 tests inventory emits only these additional evidence records:
 
-- `test_file` for Java class declarations under supported Maven test roots. The evidence
-  path points to `src/test/java/...`, `class_name` is the detected test-root class,
-  `method_name` is `null`, `symbol_name` is the fully qualified class name, and confidence
-  is `high`.
+- `test_file` for emitted test-like Java class declarations under supported Maven test
+  roots. The evidence path points to `src/test/java/...`, `class_name` is the detected
+  test class, `method_name` is `null`, `symbol_name` is the fully qualified class name,
+  and confidence is `high`. Helper, support, or configuration declarations without clear
+  test naming and without direct test-class marker annotations are not emitted as test
+  classes.
 - `code_symbol` for production class declarations under `src/main/java` when they are
   referenced by an inferred `tested_subjects` relation. This evidence supports the
   candidate production class side of the naming convention; it is not coverage evidence.
 - `code_symbol` for directly visible imports that indicate supported test framework
-  signals, such as JUnit Jupiter, JUnit 4, or Spring Test imports.
+  signals, such as JUnit Jupiter, JUnit 4, or Spring Test imports. Import evidence is
+  attached only to top-level emitted test classes; nested emitted test classes use their
+  own class or method annotation evidence so file-level imports are not repeated as
+  nested-class signals.
 - `annotation` for directly visible annotations that indicate supported test framework
   signals, such as JUnit `@Test` annotations when resolvable from imports or fully
   qualified annotation names, and direct Spring test annotations.
