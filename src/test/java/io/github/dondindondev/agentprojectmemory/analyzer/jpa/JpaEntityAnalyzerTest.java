@@ -32,6 +32,22 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void modernInstanceofPatternInEntitySourceIsParsed() throws Exception {
+    JpaEntityAnalysis analysis = analyzeModernJavaFixture();
+
+    JpaEntityFact entity = analysis.entities().stream()
+        .filter(candidate -> candidate.className().equals("com.example.modern.ModernEntity"))
+        .findFirst()
+        .orElseThrow();
+
+    assertAll(
+        () -> assertNull(entity.tableName()),
+        () -> assertEquals(List.of("id"), entity.identifierFields().stream()
+            .map(JpaIdentifierFieldFact::fieldName)
+            .toList()));
+  }
+
+  @Test
   void tableNameIsExtractedFromDirectTableName() throws Exception {
     JpaEntityAnalysis analysis = analyzeFixture();
 
@@ -164,9 +180,19 @@ final class JpaEntityAnalyzerTest {
     return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
   }
 
+  private JpaEntityAnalysis analyzeModernJavaFixture() throws Exception {
+    Path fixtureRoot = modernJavaFixtureRoot();
+    return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-entities")).toURI());
+  }
+
+  private Path modernJavaFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/modern-java-syntax")).toURI());
   }
 
   private JpaEntityFact entity(JpaEntityAnalysis analysis, String simpleName) {

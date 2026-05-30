@@ -40,6 +40,23 @@ final class TestInventoryAnalyzerTest {
   }
 
   @Test
+  void modernInstanceofPatternInTestSourcesIsParsed() throws Exception {
+    TestInventoryAnalysis analysis = analyzeModernJavaFixture();
+
+    TestClassFact test = test(analysis, "com.example.modern.ModernControllerTest");
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals("src/test/java/com/example/modern/ModernControllerTest.java", test.sourcePath()),
+        () -> assertEquals(
+            List.of("JUnit Jupiter"),
+            test.frameworkSignals().stream().map(TestFrameworkSignalFact::name).toList()),
+        () -> assertEquals(
+            List.of("com.example.modern.ModernController"),
+            test.testedSubjects().stream().map(TestedSubjectFact::className).toList()));
+  }
+
+  @Test
   void annotationBasedTestClassWithNonTestNameIsDetectedViaTestAnnotation() throws Exception {
     TestInventoryAnalysis analysis = analyzeFixture();
 
@@ -136,9 +153,22 @@ final class TestInventoryAnalyzerTest {
         List.of(fixtureRoot.resolve("src/test/java")));
   }
 
+  private TestInventoryAnalysis analyzeModernJavaFixture() throws Exception {
+    Path fixtureRoot = modernJavaFixtureRoot();
+    return analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")),
+        List.of(fixtureRoot.resolve("src/test/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/test-inventory")).toURI());
+  }
+
+  private Path modernJavaFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/modern-java-syntax")).toURI());
   }
 
   private TestClassFact test(TestInventoryAnalysis analysis, String className) {

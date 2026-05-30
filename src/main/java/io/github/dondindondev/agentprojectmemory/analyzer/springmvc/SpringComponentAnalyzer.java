@@ -1,10 +1,10 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import com.github.javaparser.Range;
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,7 +57,7 @@ final class SpringComponentAnalyzer {
       Path javaFile,
       List<SpringComponentFact> components,
       List<SpringComponentEvidence> evidence) throws IOException {
-    CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+    CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");

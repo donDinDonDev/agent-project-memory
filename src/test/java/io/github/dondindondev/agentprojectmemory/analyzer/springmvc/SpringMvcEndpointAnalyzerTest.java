@@ -30,6 +30,20 @@ final class SpringMvcEndpointAnalyzerTest {
   }
 
   @Test
+  void modernInstanceofPatternInControllerSourceIsParsed() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeModernJavaFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.modern.ModernController",
+        "modern");
+
+    assertAll(
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(List.of("/modern"), endpoint.paths()));
+  }
+
+  @Test
   void controllerAnnotationIsDetected() throws Exception {
     SpringMvcEndpointAnalysis analysis = analyzeFixture();
 
@@ -401,9 +415,19 @@ final class SpringMvcEndpointAnalyzerTest {
     return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
   }
 
+  private SpringMvcEndpointAnalysis analyzeModernJavaFixture() throws Exception {
+    Path fixtureRoot = modernJavaFixtureRoot();
+    return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/springmvc-endpoints")).toURI());
+  }
+
+  private Path modernJavaFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/modern-java-syntax")).toURI());
   }
 
   private SpringMvcEndpointFact endpoint(
