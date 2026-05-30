@@ -405,6 +405,7 @@ and 302 evidence records.
 ### EVAL-8-002: Clarify or support inherited `@MappedSuperclass` identifier facts
 
 - Bounded task id: `EVAL-8-002`
+- Status: Contract update required before analyzer implementation.
 - Project/ref: `spring-petclinic@3c06fbfc1e42eb40802e0d0ca989bc9226755804`
 - Observed artifact: `.project-memory/project-map.json` `entities.items[*].identifier_fields`
   and `.project-memory/agent-guide.md` `Detected JPA Entities`.
@@ -414,6 +415,10 @@ and 302 evidence records.
 - Affected contract/doc: `docs/architecture/OUTPUT_CONTRACT.md` and
   `docs/architecture/EVIDENCE_MODEL.md` if inherited mapped-superclass identifiers are
   added or if the out-of-scope limit needs explicit documentation.
+- Contract prerequisite: Before changing analyzer behavior, `identifier_fields` needs to
+  distinguish direct entity declarations from direct source-visible `@MappedSuperclass`
+  declarations. The minimal contract shape should add `declaring_class` and
+  `source_kind`, with `source_kind` limited to `declared` and `mapped_superclass`.
 - Proposed validation: Add a focused fixture with `BaseEntity` annotated
   `@MappedSuperclass`, a direct field-level `@Id`, and one or two `@Entity` subclasses.
   Assert the chosen behavior in `project-map.json`, `evidence-index.jsonl`, and

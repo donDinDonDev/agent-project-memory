@@ -65,6 +65,9 @@ Examples:
 - A method annotated with `@GetMapping("/orders/{id}")`.
 - A class annotated with direct `@Entity`.
 - A field annotated with direct `@Id` or `@ManyToOne`.
+- A field annotated with direct `@Id` on a directly source-visible
+  `@MappedSuperclass` when that field is attached to an entity as a bounded
+  mapped-superclass identifier fact.
 - A Maven project with a root `pom.xml`.
 
 Extracted facts should use strong evidence references and high confidence.
@@ -101,6 +104,23 @@ The Stage 6.1 implementation emits these evidence records:
 Stage 6.1 does not emit evidence records for Maven modules, connectors, generated
 guidance, coverage data, test execution results, behavioral assertion analysis, or LLM
 output.
+
+### JPA Mapped-Superclass Identifier Evidence
+
+Mapped-superclass identifier facts reuse the existing `annotation` evidence shape. No
+new global evidence fields are introduced.
+
+When `project-map.json` emits an `identifier_fields` item with `source_kind` set to
+`"mapped_superclass"`, its evidence IDs should include:
+
+- annotation evidence for the field-level `@Id` declaration on the declaring class.
+- annotation evidence for the direct class-level `@MappedSuperclass` declaration on the
+  same declaring class.
+
+This evidence supports only a direct, source-visible mapped-superclass identifier fact.
+It does not prove full ORM inheritance reconstruction, multi-level hierarchy traversal,
+classpath resolution, property-access mapping, generated-value behavior, column mapping,
+schema generation, or runtime persistence behavior.
 
 ### Inferred Relations
 
