@@ -29,6 +29,18 @@ final class SpringComponentAnalyzerTest {
   }
 
   @Test
+  void modernInstanceofPatternInComponentSourceIsParsed() throws Exception {
+    SpringComponentAnalysis analysis = analyzeModernJavaFixture();
+
+    SpringComponentFact component = analysis.components().stream()
+        .filter(candidate -> candidate.className().equals("com.example.modern.ModernController"))
+        .findFirst()
+        .orElseThrow();
+
+    assertEquals(List.of("@RestController"), component.stereotypes());
+  }
+
+  @Test
   void unsupportedAnnotatedClassIsIgnored() throws Exception {
     SpringComponentAnalysis analysis = analyzeFixture();
 
@@ -90,9 +102,19 @@ final class SpringComponentAnalyzerTest {
     return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
   }
 
+  private SpringComponentAnalysis analyzeModernJavaFixture() throws Exception {
+    Path fixtureRoot = modernJavaFixtureRoot();
+    return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/spring-components")).toURI());
+  }
+
+  private Path modernJavaFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/modern-java-syntax")).toURI());
   }
 
   private SpringComponentFact component(SpringComponentAnalysis analysis, String simpleName) {

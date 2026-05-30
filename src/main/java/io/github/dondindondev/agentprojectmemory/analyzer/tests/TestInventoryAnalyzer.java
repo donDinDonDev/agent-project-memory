@@ -1,12 +1,12 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.tests;
 
 import com.github.javaparser.Range;
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -98,7 +98,7 @@ public final class TestInventoryAnalyzer {
       Map<String, List<ProductionClass>> productionClassesBySimpleName,
       List<TestClassFact> tests,
       Map<String, TestInventoryEvidence> evidence) throws IOException {
-    CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+    CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
@@ -389,7 +389,7 @@ public final class TestInventoryAnalyzer {
   }
 
   private List<ProductionClass> productionClasses(Path repositoryRoot, Path javaFile) throws IOException {
-    CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+    CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");

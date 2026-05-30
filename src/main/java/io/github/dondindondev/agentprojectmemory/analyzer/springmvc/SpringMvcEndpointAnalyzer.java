@@ -1,7 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import com.github.javaparser.Range;
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -9,6 +8,7 @@ import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,7 +72,7 @@ final class SpringMvcEndpointAnalyzer {
       Path javaFile,
       List<SpringMvcEndpointFact> endpoints,
       List<SpringMvcEndpointEvidence> evidence) throws IOException {
-    CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+    CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");

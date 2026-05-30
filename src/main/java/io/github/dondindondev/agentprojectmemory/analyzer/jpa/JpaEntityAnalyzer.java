@@ -1,13 +1,13 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.jpa;
 
 import com.github.javaparser.Range;
-import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -70,7 +70,7 @@ public final class JpaEntityAnalyzer {
       Path javaFile,
       List<JpaEntityFact> entities,
       List<JpaEntityEvidence> evidence) throws IOException {
-    CompilationUnit compilationUnit = StaticJavaParser.parse(javaFile);
+    CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
