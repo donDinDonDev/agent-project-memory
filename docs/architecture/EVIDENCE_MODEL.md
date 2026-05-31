@@ -63,6 +63,9 @@ Examples:
 
 - A class annotated with `@RestController`.
 - A method annotated with `@GetMapping("/orders/{id}")`.
+- A source-visible Java interface method annotated with `@GetMapping("/orders/{id}")`
+  when it is uniquely bound to a concrete controller handler under supported
+  production source roots.
 - A class annotated with direct `@Entity`.
 - A field annotated with direct `@Id` or `@ManyToOne`.
 - A field annotated with direct `@Id` on a directly source-visible
@@ -104,6 +107,27 @@ The Stage 6.1 implementation emits these evidence records:
 Stage 6.1 does not emit evidence records for Maven modules, connectors, generated
 guidance, coverage data, test execution results, behavioral assertion analysis, or LLM
 output.
+
+### Spring MVC Interface Mapping Evidence
+
+Source-visible interface-declared endpoint facts reuse the existing evidence types. No
+new global evidence fields are introduced for `EVAL-8-004` decision B.
+
+When an endpoint mapping is declared on a Java interface method, the emitted fact should
+use:
+
+- `annotation` evidence for the Spring MVC mapping annotations on the interface method,
+  plus any source-visible class-level mapping annotations that are deterministically used
+  to form the endpoint path or HTTP method semantics.
+- `code_symbol` evidence for the source-visible interface method and the concrete
+  controller handler or class declaration needed to support the unique binding.
+- existing controller stereotype `annotation` evidence when the concrete handler class
+  is emitted as the endpoint `controller_class`.
+
+This evidence supports only a deterministic source-visible interface binding. It does
+not prove generated-source mappings that are absent from supported source roots,
+OpenAPI YAML operations, Maven-generated APIs, runtime proxy behavior, or complete
+Spring handler mapping reconstruction.
 
 ### JPA Mapped-Superclass Identifier Evidence
 

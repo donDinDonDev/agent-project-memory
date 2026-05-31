@@ -14,6 +14,8 @@ v0.1 includes:
 - Maven project detection.
 - Java source root detection.
 - Spring MVC endpoint extraction.
+- Source-visible interface-declared Spring MVC endpoint mappings under supported
+  production source roots when they can be uniquely bound to concrete handlers.
 - Basic Spring component inventory.
 - Basic direct JPA entity extraction.
 - Minimal deterministic tests inventory.
@@ -36,6 +38,8 @@ The repository may include:
 - Maven build files such as `pom.xml`.
 - Java source roots such as `src/main/java`.
 - Spring MVC controllers.
+- Java interfaces under supported production source roots when they declare Spring MVC
+  mappings implemented by concrete controllers.
 - Spring components and services.
 - JPA entities with direct annotations.
 - Local Markdown documentation.
@@ -69,6 +73,9 @@ v0.1 does not include:
 - Multi-language analysis.
 - PDF parsing.
 - Automatic code modification.
+- Running Maven or other code generation during a scan.
+- Default scanning of generated source roots such as `target/generated-sources`.
+- OpenAPI YAML parsing or generated API reconstruction.
 - Complete Spring runtime behavior reconstruction.
 - Full ORM runtime behavior reconstruction.
 - Full dependency graph analysis.
@@ -83,7 +90,11 @@ v0.1 is acceptable when:
 - The tool can scan a local Maven Java/Spring fixture project.
 - Maven project detection identifies at least root `pom.xml` and Maven module boundaries when present.
 - Java source root detection identifies standard Maven source and test roots.
-- Spring MVC endpoint extraction detects common controller annotations and request mapping annotations.
+- Spring MVC endpoint extraction detects common controller annotations and request
+  mapping annotations declared directly on handler methods, and detects
+  source-visible interface-declared mappings only when the interface is under a
+  supported production source root such as `src/main/java` and the mapping can be
+  uniquely bound to a concrete controller handler.
 - Basic Spring component inventory detects common stereotypes such as `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController`.
 - Basic direct JPA entity extraction detects direct `@Entity`, direct `@Table(name = "...")`,
   field-level `@Id` declared on the entity class or on an immediate source-visible

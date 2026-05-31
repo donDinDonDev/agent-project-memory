@@ -33,6 +33,15 @@ Uses JavaParser first to inspect Java source files. The current implementation e
 Spring MVC endpoint facts, direct Spring stereotype component facts, and direct JPA
 entity facts from supported production source roots.
 
+For `EVAL-8-004` decision B, the v0.1 endpoint contract includes Spring MVC mappings
+declared on Java interface methods only when those interfaces are visible under
+supported production source roots such as `src/main/java` and can be uniquely bound to
+concrete controller handler methods. This is still source-visible analysis: the analyzer
+must not run Maven generation, scan `target/generated-sources` by default, parse OpenAPI
+YAML, reconstruct generated APIs, or claim complete Spring runtime handler mapping
+behavior. Ambiguous or non-unique interface bindings are skipped instead of emitted as
+uncertain endpoints.
+
 The basic component analyzer records only directly present class-level stereotypes such
 as `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
 `@Configuration`. It does not reconstruct Spring component scanning, bean lifecycle,
