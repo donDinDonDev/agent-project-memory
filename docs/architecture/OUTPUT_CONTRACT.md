@@ -20,6 +20,14 @@ In the current Stage 7.1 implementation, `scan <path>` writes all four files whe
 Maven-style `src/main/java` source root exists. Unsupported directories still only get a
 prepared `.project-memory/` directory and do not get contract output files.
 
+`EVAL-8-004` decision B is documented here as a v0.1 docs/contract decision pending
+analyzer implementation. It keeps endpoint extraction limited to source-visible Java
+inputs under supported production source roots, while adding uniquely bound
+interface-declared Spring MVC mappings to the intended v0.1 endpoint semantics. It does
+not add Maven generation during scans, default `target/generated-sources` scanning,
+OpenAPI YAML parsing, generated API reconstruction, or Spring runtime handler mapping
+reconstruction.
+
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. It contains the minimal
@@ -173,6 +181,12 @@ Field rules:
 - `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
   controller class, and handler method.
 - `endpoint.id` is `endpoint:<controller_class>#<handler_method>` in this slice.
+- `endpoint.controller_class` is always the concrete controller class that owns or
+  implements the emitted handler, even when the mapping annotations are declared on a
+  source-visible interface method.
+- `endpoint.handler_method` is always the concrete handler method name. Interface-only
+  declarations with no uniquely bindable concrete handler are not emitted as endpoints
+  in this v0.1 slice.
 - `http_methods` contains directly extracted methods when available. It is an empty array
   when the source did not declare a method or used an unsupported expression.
 - `http_method_semantics` is one of `"declared"`, `"not_declared"`, or `"unsupported"`.
@@ -183,6 +197,80 @@ Field rules:
 - `response_type` is the declared Java return type when available.
 - Endpoint and request-parameter `evidence_ids` must resolve to records in
   `evidence-index.jsonl`.
+
+Endpoint mapping-source rules for `EVAL-8-004` decision B:
+
+- Once this decision is implemented, endpoint facts for this analyzer slice must include
+  a `mapping_source` object. Until that analyzer slice lands, existing Stage 7.1 outputs
+  may omit this object and emit only direct handler method mappings.
+- `mapping_source.kind` is one of:
+  - `"direct_handler_method"`: the Spring MVC method-level mapping annotation is declared
+    directly on the concrete `controller_class` `handler_method`.
+  - `"source_visible_interface_method"`: the Spring MVC method-level mapping annotation
+    is declared on a Java interface method under a supported production source root such
+    as `src/main/java`, and that interface method is uniquely bound to the concrete
+    `controller_class` `handler_method`.
+- `mapping_source.declaring_type` is the fully qualified class or interface that declares
+  the method-level mapping annotation used for this endpoint fact.
+- `mapping_source.declaring_method` is the method name on `declaring_type` that declares
+  the method-level mapping annotation.
+- `mapping_source.binding` is `"direct"` for direct handler method mappings and
+  `"unique_implemented_interface_method"` for source-visible interface method mappings.
+- `mapping_source.uncertainty` is `null` for emitted endpoint facts in this decision
+  slice. Ambiguous interface bindings are skipped rather than emitted with an uncertain
+  endpoint claim.
+- `mapping_source.evidence_ids` references the evidence that supports where the mapping
+  annotation was read from and, for interface mappings, the evidence that supports the
+  unique source-visible binding. These IDs must resolve to records in
+  `evidence-index.jsonl`.
+- For a direct handler method mapping, `mapping_source.evidence_ids` should include the
+  concrete method-level mapping annotation evidence and any directly used class-level
+  controller mapping annotation evidence.
+- For a source-visible interface method mapping, `mapping_source.evidence_ids` should
+  include interface method mapping annotation evidence, relevant source-visible
+  class-level mapping annotation evidence, and `code_symbol` evidence for the concrete
+  handler/interface binding.
+- Interface mapping support does not claim complete Spring runtime behavior. It does not
+  run Maven generation, scan `target/generated-sources` by default, parse OpenAPI YAML,
+  reconstruct generated APIs, resolve classpath-only interfaces, infer runtime proxies,
+  or interpret unsupported Spring mapping conditions.
+- If more than one source-visible interface method could bind to the same concrete
+  handler, if the binding cannot be established from supported source roots, or if the
+  interface is only present in generated or classpath sources outside the scan inputs,
+  the interface-derived endpoint is skipped. If the concrete handler also has a direct
+  handler method mapping, the direct endpoint may still be emitted with
+  `mapping_source.kind: "direct_handler_method"`.
+
+Example direct mapping source:
+
+```json
+{
+  "kind": "direct_handler_method",
+  "declaring_type": "com.example.orders.OrderController",
+  "declaring_method": "getOrder",
+  "binding": "direct",
+  "uncertainty": null,
+  "evidence_ids": [
+    "ev:src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping"
+  ]
+}
+```
+
+Example source-visible interface mapping source:
+
+```json
+{
+  "kind": "source_visible_interface_method",
+  "declaring_type": "com.example.orders.OrdersApi",
+  "declaring_method": "getOrder",
+  "binding": "unique_implemented_interface_method",
+  "uncertainty": null,
+  "evidence_ids": [
+    "ev:src/main/java/com/example/orders/OrdersApi.java:18-18:com.example.orders.OrdersApi#getOrder:@GetMapping",
+    "ev:src/main/java/com/example/orders/OrderController.java:16-16:com.example.orders.OrderController:code_symbol"
+  ]
+}
+```
 - `components.analysis_status` is `"analyzed"` when the supported `src/main/java` source
   root exists and the direct component analyzer runs.
 - `components.items` contains direct Spring stereotype component facts sorted
@@ -305,6 +393,10 @@ Stage 6.1 emits:
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
   and request body annotations.
+- Source-visible interface-declared endpoint mappings, when implemented, reuse existing
+  `annotation` evidence for interface mapping annotations and existing `code_symbol`
+  evidence for interface and concrete handler symbols needed to prove the unique
+  binding. No new evidence fields are required.
 - `annotation` evidence for direct supported Spring component stereotype annotations on
   Java class declarations. `@Controller` and `@RestController` evidence IDs use the same
   annotation ID convention as endpoint evidence so the same source annotation is not
@@ -341,6 +433,7 @@ It should include:
 - Path.
 - Controller class.
 - Handler method.
+- Mapping source when available.
 - Request body type when detected.
 - Response type when detected.
 - Evidence reference.
@@ -349,6 +442,13 @@ If a `@RequestMapping` endpoint does not declare an HTTP method, the Markdown ou
 must say that the method was not declared instead of inventing one. If a method
 expression is present but unsupported by deterministic source extraction, the output
 must mark it as unsupported.
+
+For interface-declared mappings, `endpoints.md` should say that the mapping source is a
+source-visible interface method and name the interface method when `mapping_source` is
+available. It must not describe generated OpenAPI operations, generated `*Api`
+interfaces, or runtime handler mappings unless the source-visible Java interface is
+present under supported production source roots and represented in `project-map.json`
+with resolving evidence.
 
 Example shape:
 
@@ -359,6 +459,7 @@ Example shape:
 
 - Controller: `com.example.orders.OrderController`
 - Handler: `getOrder`
+- Mapping source: `direct_handler_method`
 - Response: `com.example.orders.OrderDto`
 - Evidence: `src/main/java/com/example/orders/OrderController.java:20`
 ```
@@ -405,7 +506,10 @@ Content rules:
   is emitted in v0.1.
 - Endpoint entries use cautious `Detected` wording and include controller class, handler
   method, HTTP method status, paths, request parameters, request body, response type, and
-  evidence references.
+  evidence references. When `mapping_source` is available, endpoint entries should state
+  whether the mapping came from a direct handler method or from a uniquely bound
+  source-visible interface method, without claiming complete runtime handler mapping
+  behavior.
 - Component entries use `Detected` wording and include direct stereotype annotations and
   evidence references. They must not claim Spring runtime wiring, component scanning,
   lifecycle, scopes, bean names, or dependency graphs.
@@ -423,7 +527,9 @@ Content rules:
   `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
   execution/coverage/assertion behavior, call graphs, complete subject mapping,
   connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and
-  multi-module Maven parsing.
+  multi-module Maven parsing. It should also call out that generated sources,
+  OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous
+  interface endpoint bindings are not analyzed for `EVAL-8-004` decision B.
 - The practical inspection order may suggest evidence paths from generated facts, but it
   must not introduce unsupported architecture, modules, domain flows, service layers, or
   source summaries. Long inline evidence path lists should be capped with a suffix that

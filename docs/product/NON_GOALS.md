@@ -17,6 +17,9 @@ This document protects the v0.1 scope. Items listed here may be useful later, bu
 - PDF parsing.
 - LLM-generated architecture as the source of truth.
 - Automatic code modification.
+- Running Maven or other code generation during scans.
+- Default scanning of generated source roots such as `target/generated-sources`.
+- OpenAPI YAML parsing or generated API reconstruction.
 - Continuous background indexing daemon.
 - Cloud-hosted project memory.
 - Authentication, organizations, teams, or billing.

@@ -13,8 +13,17 @@ Evaluation date: 2026-05-30
 
 This project is the Stage 8 known-limitation probe for generated/interface-only REST API
 mappings. The concrete controllers implement generated OpenAPI interfaces, while the
-current v0.1 scanner analyzes the standard `src/main/java` source root and direct
-source-visible Spring MVC annotations only.
+implementation used for this scan analyzes the standard `src/main/java` source root and
+direct source-visible Spring MVC annotations only.
+
+`EVAL-8-004` docs/contract decision update: v0.1 decision B supports Spring MVC mappings
+declared on Java interfaces only when those interfaces are visible under supported
+production source roots such as `src/main/java` and can be uniquely bound to concrete
+controller handlers. `EVAL-8-004` remains open and pending implementation. This decision
+does not fix generated `*Api` mappings for this project unless those generated
+interfaces are present as normal source inputs; Maven generation, default
+`target/generated-sources` scanning, OpenAPI YAML parsing, and generated API
+reconstruction remain out of scope.
 
 ## Commands Run
 
@@ -109,17 +118,20 @@ workspace. Those third-party generated outputs were not copied into this reposit
 
 | Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `spring-petclinic-rest@v4.0.2` / `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | `1` | `2` | `2` | `2` | `2` | `1` | Direct-source extraction is accurate and evidence-backed, but the main REST API surface is generated/interface-only and intentionally missed by current v0.1. The guide remains useful for extracted facts but is noisy for large test evidence and does not explicitly warn about the generated-interface endpoint gap. |
+| `spring-petclinic-rest@v4.0.2` / `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | `1` | `2` | `2` | `2` | `2` | `1` | Direct-source extraction is accurate and evidence-backed, but the main REST API surface is generated/interface-only and intentionally missed by the current implementation. Decision B will support interface-declared mappings only when the interfaces are normal source inputs under supported production roots. |
 
 ## Scorecard: Endpoints
 
-- Expected observations from bounded manual inspection: The current v0.1 analyzer should
-  detect direct Spring MVC mappings visible under `src/main/java`. A bounded source
-  search found one concrete handler method mapping in `RootRestController`: class-level
-  `@RequestMapping("/")` and method-level `@RequestMapping(value = "/")`. The seven
-  domain REST controllers are direct `@RestController` classes with class-level
-  `@RequestMapping("api")` or `@RequestMapping("/api")`, but their operation mappings are
-  on generated OpenAPI API interfaces, not concrete controller methods in `src/main/java`.
+- Expected observations from bounded manual inspection: The current implementation
+  detects direct Spring MVC mappings visible under `src/main/java`. The v0.1 decision B
+  contract will also support source-visible interface-declared mappings when the
+  interface Java sources are under supported production roots and uniquely bind to
+  concrete handlers. A bounded source search found one concrete handler method mapping in
+  `RootRestController`: class-level `@RequestMapping("/")` and method-level
+  `@RequestMapping(value = "/")`. The seven domain REST controllers are direct
+  `@RestController` classes with class-level `@RequestMapping("api")` or
+  `@RequestMapping("/api")`, but their operation mappings are on generated OpenAPI API
+  interfaces, not normal source inputs in `src/main/java`.
 - Actual observations from generated artifacts: `project-map.json` and `endpoints.md`
   contain one endpoint, `METHOD NOT DECLARED /`, for
   `RootRestController#redirectToSwagger`. The OpenAPI spec contains 35 HTTP operations,
@@ -128,15 +140,17 @@ workspace. Those third-party generated outputs were not copied into this reposit
   not emitted.
 - False positives if found: None found for the direct emitted endpoint.
 - False negatives if found: The main REST API operations are missing from a user-facing
-  API perspective. Under the current v0.1 contract this is a known limitation rather than
-  a direct-source extraction bug, because generated source roots and OpenAPI specs are
-  outside the scanner's current supported source roots.
+  API perspective. Under decision B this remains a known limitation rather than a
+  supported-source extraction bug for this project, because the relevant `*Api`
+  interfaces are generated and absent from supported production source roots in the fresh
+  checkout, and OpenAPI specs remain outside the scanner's v0.1 inputs.
 - Evidence quality notes: The emitted endpoint evidence resolves to repository-relative
   annotation records for `RootRestController.java:33`, `RootRestController.java:35`, and
   `RootRestController.java:41` with high confidence.
 - Output contract issues if found: None for the emitted endpoint shape. The evaluation
-  exposes a future scope/contract decision if generated-source or interface-inherited
-  endpoint mappings become part of v0.1+.
+  exposed `EVAL-8-004` decision B: source-visible interface-declared mappings are in
+  scope only when the interface Java source is present under supported production roots;
+  generated-source and OpenAPI reconstruction remain out of scope.
 
 ## Scorecard: Components
 
@@ -249,8 +263,10 @@ workspace. Those third-party generated outputs were not copied into this reposit
   (`d8026bb5bcc58145b95a66a7f8e7694f0fae142f`)
 - Observed artifact: `.project-memory/project-map.json` `endpoints`; `.project-memory/endpoints.md`.
 - Expected: Direct Spring MVC mappings under `src/main/java` should be emitted. For a
-  complete runtime REST API map, the generated API interfaces or OpenAPI spec would also
-  need to be analyzed.
+  complete runtime REST API map for this project, the generated API interfaces or
+  OpenAPI spec would also need to be analyzed, which remains out of scope. Under decision
+  B, interface-declared mappings are supported only when the interface Java source is
+  visible under supported production roots and uniquely binds to a concrete handler.
 - Actual: Only `RootRestController#redirectToSwagger` is emitted. The OpenAPI spec
   defines 35 operations, and seven concrete REST controllers implement generated `*Api`
   interfaces.
@@ -260,8 +276,9 @@ workspace. Those third-party generated outputs were not copied into this reposit
 - Evidence quality: The emitted root endpoint evidence is precise. Missing generated API
   mappings have no evidence because generated source roots and OpenAPI specs are outside
   current v0.1 scan inputs.
-- Output contract issue: None under the current source-root contract; this is a future
-  scope/contract decision.
+- Output contract issue: None for the current emitted endpoint. Decision B documents
+  future interface mapping-source semantics without bringing generated sources or OpenAPI
+  reconstruction into scope.
 - Notes: `target/generated-sources/openapi/src/main/java` did not exist in the fresh
   target checkout because the target project was not built.
 
@@ -289,6 +306,12 @@ workspace. Those third-party generated outputs were not copied into this reposit
 ### EVAL-8-004: Decide generated/interface endpoint handling
 
 - Bounded task id: `EVAL-8-004`
+- Status: Open; docs/contract decision B recorded, analyzer implementation pending.
+- Decision: For v0.1, support Spring MVC mappings declared on Java interfaces only when
+  those interfaces are visible under supported production source roots such as
+  `src/main/java` and can be uniquely bound to concrete controller handlers. Ambiguous
+  or non-unique interface bindings should be skipped rather than emitted as uncertain
+  endpoints.
 - Project/ref: `spring-petclinic-rest@v4.0.2`
   (`d8026bb5bcc58145b95a66a7f8e7694f0fae142f`)
 - Observed artifact: `.project-memory/project-map.json` `endpoints`; `.project-memory/endpoints.md`; `.project-memory/agent-guide.md`.
@@ -297,16 +320,19 @@ workspace. Those third-party generated outputs were not copied into this reposit
   are produced by `openapi-generator-maven-plugin` with `interfaceOnly=true` and added by
   `build-helper-maven-plugin` under `target/generated-sources/openapi/src/main/java`.
 - Affected contract/doc: `docs/product/MVP_SPEC.md`,
-  `docs/architecture/OUTPUT_CONTRACT.md`, and `docs/architecture/EVIDENCE_MODEL.md` if
-  generated-source or interface-inherited endpoint facts become supported. If support
-  remains out of scope, `docs/development/EVALUATION_PLAN.md` and the guide known-limits
-  wording may be enough.
+  `docs/architecture/OUTPUT_CONTRACT.md`, `docs/architecture/EVIDENCE_MODEL.md`, and
+  `docs/architecture/ARCHITECTURE_OVERVIEW.md` document the decision B scope and mapping
+  source semantics.
 - Proposed validation: Add a focused fixture with a concrete `@RestController`
-  implementing an interface whose methods carry Spring MVC mappings, plus a repeat scan
-  of this project after deciding whether generated source roots are valid inputs.
+  implementing a source-visible interface whose methods carry Spring MVC mappings, plus
+  ambiguous-binding cases that prove non-unique interface mappings are skipped. A repeat
+  scan of this project should still not emit generated `*Api` operations unless those
+  generated interfaces are provided as normal source inputs under supported production
+  roots.
 - Non-goals: Do not parse OpenAPI YAML as evidence in this task, do not run Maven builds
-  inside scans, do not add connectors, and do not infer runtime endpoints without source
-  evidence.
+  inside scans, do not scan `target/generated-sources` by default, do not reconstruct
+  generated APIs, do not add connectors, and do not infer runtime endpoints without
+  source evidence.
 
 ### EVAL-8-005: Keep `agent-guide.md` concise for large evidence sets
 
