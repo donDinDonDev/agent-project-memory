@@ -1,12 +1,15 @@
 # Ingestion Architecture
 
-The v0.1 product focuses on local repository files and local Markdown docs.
+The v0.1 product focuses on local repository Java/Spring source files, a root Maven
+build file when present, and standard Maven test roots. Local Markdown/document ingestion
+is not implemented in the current v0.1 release-candidate slice.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 
 ## SourceDocument
 
-Future ingestors should normalize external and local documents into a `SourceDocument` abstraction.
+Future ingestors should normalize external and local documents into a `SourceDocument`
+abstraction.
 
 Proposed fields:
 
@@ -38,13 +41,13 @@ They should not:
 v0.1 supports:
 
 - Local repository files.
-- Maven build files.
-- Java source files.
-- Java test files.
-- Local Markdown docs when present.
+- Root Maven build file detection for `pom.xml`.
+- Java source files under supported production source roots such as `src/main/java`.
+- Java test files under supported test roots such as `src/test/java`.
 
 v0.1 does not support:
 
+- Local Markdown or document ingestion.
 - YouTrack, Jira, Confluence, GitHub, or GitLab imports.
 - PDF parsing.
 - Web crawling.
@@ -53,7 +56,7 @@ v0.1 does not support:
 
 ## Relationship To Evidence
 
-Documents can provide evidence, but document evidence must be identified as `document` evidence and kept separate from code evidence.
+Future document ingestors may provide evidence, but document evidence must be identified
+as `document` evidence and kept separate from code evidence.
 
 When code and documents disagree, generated memory should prefer deterministic code facts and mark document-only claims as document-backed, not code-backed.
-

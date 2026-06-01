@@ -16,19 +16,20 @@ Evidence may point to:
 - a Maven build file,
 - a Spring configuration file,
 - a test file,
-- a local Markdown document,
+- a local Markdown document from future document ingestion,
 - another explicit source reference.
 
 ## Evidence Types
 
-Initial evidence types:
+Evidence types defined by the model:
 
 - `code_symbol`: a class, method, field, enum, interface, or other Java symbol.
 - `annotation`: an annotation on a class, method, field, parameter, or configuration element.
 - `config_file`: a configuration file such as `application.yml`, `application.properties`, or XML configuration.
 - `build_file`: a build file such as `pom.xml`.
 - `test_file`: a test source file or test resource.
-- `document`: a local project document such as Markdown.
+- `document`: a local project document such as Markdown. This evidence type is reserved
+  for future document ingestion and is not emitted by the current v0.1 implementation.
 
 ## Evidence Fields
 
@@ -59,6 +60,10 @@ value has no entries in `project-map.json`, it is emitted as an empty array.
 
 Extracted facts are directly observed in source files or documents.
 
+In the current v0.1 implementation, extracted facts come from root Maven build files,
+supported Java production source roots, and supported Java test roots. Local Markdown
+or document ingestion is future work.
+
 Examples:
 
 - A class annotated with `@RestController`.
@@ -75,9 +80,9 @@ Examples:
 
 Extracted facts should use strong evidence references and high confidence.
 
-### Stage 6.1 Emitted Evidence
+### v0.1 Emitted Evidence
 
-The Stage 6.1 implementation emits these evidence records:
+The v0.1 implementation emits these evidence records:
 
 - `build_file` for a root `pom.xml` when present. The evidence path is `pom.xml`,
   `symbol_name` is `pom.xml`, `class_name` and `method_name` are `null`, and confidence is
@@ -87,26 +92,28 @@ The Stage 6.1 implementation emits these evidence records:
   `@RequestMapping`, method-level mapping annotations, `@PathVariable`, `@RequestParam`,
   and `@RequestBody`.
 - `annotation` for direct supported Spring component stereotype annotations on Java class
-  declarations under supported production source roots. Stage 5.1 supports `@Component`,
-  `@Service`, `@Repository`, `@Controller`, `@RestController`, and `@Configuration`.
+  declarations under supported production source roots. The v0.1 implementation supports
+  `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
+  `@Configuration`.
   Component stereotype evidence uses `class_name` for the annotated type, `method_name`
   as `null`, `symbol_name` as the annotation symbol, the annotation line range, the
   annotation excerpt, and `high` confidence. When the same `@Controller` or
   `@RestController` annotation supports both endpoint and component facts, both facts
   reference the same evidence ID and `evidence-index.jsonl` emits a single record.
 - `annotation` for direct JPA annotations under supported production source roots.
-  Stage 5.1 supports class-level `@Entity`, class-level `@Table`, field-level `@Id`,
-  and field-level relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and
-  `@ManyToMany`. JPA annotation evidence uses `class_name` for the annotated type,
+  The v0.1 implementation supports class-level `@Entity`, class-level `@Table`,
+  field-level `@Id`, and field-level relationship annotations `@ManyToOne`,
+  `@OneToMany`, `@OneToOne`, and `@ManyToMany`. JPA annotation evidence uses
+  `class_name` for the annotated type,
   `method_name` as `null`, `symbol_name` as the annotation symbol, the annotation line
   range, the annotation excerpt, and `high` confidence. Field-level JPA annotation
   evidence IDs include a `field:<field_name>` discriminator while preserving the global
   evidence field set.
-- Test inventory evidence described in the Stage 6.1 Test Evidence section below.
+- Test inventory evidence described in the v0.1 Test Evidence section below.
 
-Stage 6.1 does not emit evidence records for Maven modules, connectors, generated
-guidance, coverage data, test execution results, behavioral assertion analysis, or LLM
-output.
+v0.1 does not emit evidence records for Maven modules, local Markdown/documents,
+connectors, generated guidance, coverage data, test execution results, behavioral
+assertion analysis, or LLM output.
 
 ### Spring MVC Interface Mapping Evidence
 
@@ -156,7 +163,7 @@ Examples:
 - A service injected into a controller is likely involved in handling that controller's endpoints.
 
 Inferred relations must be marked as inferred and must preserve the evidence that led to the relation.
-Stage 6.1 tests inventory uses only naming-convention inferred relations for
+The v0.1 tests inventory uses only naming-convention inferred relations for
 `tested_subjects`; it does not use call graphs, assertions, runtime execution, or coverage
 data.
 
@@ -175,7 +182,7 @@ Uncertain signals should be labeled with lower confidence and should not be used
 
 ### JPA Relationship Uncertainty
 
-Stage 5.1 JPA relationship facts are extracted directly from field-level annotations.
+v0.1 JPA relationship facts are extracted directly from field-level annotations.
 They preserve the declared Java field type in `java_type`, but they do not claim a
 resolved fully qualified target class. Every relationship fact therefore includes
 `target_resolution: "declared_type_only"` and
@@ -186,9 +193,9 @@ mapping. The analyzer does not interpret `mappedBy`, `@JoinColumn`, cascade, fet
 collection element types, runtime proxies, persistence provider behavior, or database
 schema semantics in this stage.
 
-### Stage 6.1 Test Evidence
+### v0.1 Test Evidence
 
-The Stage 6.1 tests inventory emits only these additional evidence records:
+The v0.1 tests inventory emits only these additional evidence records:
 
 - `test_file` for emitted test-like Java class declarations under supported Maven test
   roots. The evidence path points to `src/test/java/...`, `class_name` is the detected
@@ -209,11 +216,11 @@ The Stage 6.1 tests inventory emits only these additional evidence records:
   qualified annotation names, and direct Spring test annotations.
 
 Test evidence uses the same stable evidence field set as the rest of
-`evidence-index.jsonl`; no new global evidence fields are introduced in Stage 6.1.
+`evidence-index.jsonl`; no new global evidence fields are introduced in v0.1.
 
-### Stage 6.1 Tested-Subject Relations
+### v0.1 Tested-Subject Relations
 
-Stage 6.1 infers likely tested subjects only from test class naming conventions. The
+v0.1 infers likely tested subjects only from test class naming conventions. The
 analyzer strips supported suffixes such as `Test`, `Tests`, or `IT` from the test class
 simple name and matches the result against production class simple names under
 `src/main/java`.

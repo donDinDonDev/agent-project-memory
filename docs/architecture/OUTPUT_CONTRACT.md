@@ -182,10 +182,10 @@ Field rules:
 - `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
 - `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
   when present and is an empty array otherwise.
-- `project.source_roots` contains detected standard production source roots. Stage 6.1
-  supports `src/main/java`.
-- `project.test_roots` contains detected standard test source roots. Stage 6.1 supports
-  `src/test/java`.
+- `project.source_roots` contains detected standard production source roots. The v0.1
+  implementation supports `src/main/java`.
+- `project.test_roots` contains detected standard test source roots. The v0.1
+  implementation supports `src/test/java`.
 - `endpoints` is sorted deterministically by first path, HTTP methods, method semantics,
   controller class, and handler method.
 - `endpoint.id` is `endpoint:<controller_class>#<handler_method>` in this slice.
@@ -289,8 +289,8 @@ Example source-visible interface mapping source:
 - `component.class_name` is the fully qualified Java class name when resolvable from the
   source file package and class declaration.
 - `component.stereotypes` contains directly present supported class-level annotation
-  symbols with `@`. Stage 5.1 supports `@Component`, `@Service`, `@Repository`,
-  `@Controller`, `@RestController`, and `@Configuration`.
+  symbols with `@`. The v0.1 implementation supports `@Component`, `@Service`,
+  `@Repository`, `@Controller`, `@RestController`, and `@Configuration`.
 - `component.evidence_ids` references annotation evidence for the direct stereotype
   annotations and must resolve to records in `evidence-index.jsonl`.
 - `entities.analysis_status` is `"analyzed"` when the supported `src/main/java` source
@@ -327,14 +327,14 @@ Example source-visible interface mapping source:
   `source_kind` set to `"mapped_superclass"`, it must also reference class-level
   `@MappedSuperclass` annotation evidence for `declaring_class`.
 - `entity.relationships` contains field-level direct JPA relationship annotation facts
-  sorted by `field_name`, `annotation`, and `java_type`. Stage 5.1 supports
-  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
+  sorted by `field_name`, `annotation`, and `java_type`. The v0.1 implementation
+  supports `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
 - `relationship.field_name` is the declared Java field name.
 - `relationship.annotation` is the direct relationship annotation symbol with `@`.
 - `relationship.java_type` is the declared Java field type string. It is not a resolved
   target class.
-- `relationship.target_resolution` is `"declared_type_only"` in Stage 5.1.
-- `relationship.uncertainty` is `"target_type_not_resolved"` in Stage 5.1.
+- `relationship.target_resolution` is `"declared_type_only"` in v0.1.
+- `relationship.uncertainty` is `"target_type_not_resolved"` in v0.1.
 - `relationship.evidence_ids` references field-level relationship annotation evidence
   and must resolve to records in `evidence-index.jsonl`.
 - `entity.evidence_ids` references class-level direct `@Entity` evidence and direct
@@ -357,12 +357,12 @@ Example source-visible interface mapping source:
   source file package and class declaration.
 - `test.source_path` is the repository-relative Java source path.
 - `test.framework_signals` contains only directly visible framework signals from imports
-  or annotations in the test source file for emitted test classes. Stage 6.1 emits
-  signal names `"JUnit Jupiter"`, `"JUnit 4"`, and `"Spring Test"` when detectable. It is
-  empty when no supported direct signal is visible. Source-file-level import evidence is
-  attached only to top-level emitted test classes; nested emitted test classes use their
-  own class or method annotation evidence so imports are not repeated as nested-class
-  signals.
+  or annotations in the test source file for emitted test classes. The v0.1 implementation
+  emits signal names `"JUnit Jupiter"`, `"JUnit 4"`, and `"Spring Test"` when detectable.
+  It is empty when no supported direct signal is visible. Source-file-level import
+  evidence is attached only to top-level emitted test classes; nested emitted test
+  classes use their own class or method annotation evidence so imports are not repeated
+  as nested-class signals.
 - `framework_signal.name` is the detected framework family name.
 - `framework_signal.evidence_ids` references direct import or annotation evidence and
   must resolve to records in `evidence-index.jsonl`.
@@ -371,7 +371,7 @@ Example source-visible interface mapping source:
   simple name against production classes under `src/main/java`. It is empty when no
   production class match is found.
 - `tested_subject.class_name` is a candidate production class name.
-- `tested_subject.support_type` is `"inferred"` for Stage 6.1 naming-convention
+- `tested_subject.support_type` is `"inferred"` for v0.1 naming-convention
   relations.
 - `tested_subject.confidence` is `"medium"` for a single naming-convention production
   class match and `"low"` for duplicate or ambiguous production class matches.
@@ -389,7 +389,7 @@ Example source-visible interface mapping source:
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-Stage 6.1 emits a stable field order:
+The v0.1 implementation emits a stable field order:
 
 ```json
 {"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
@@ -398,7 +398,7 @@ Stage 6.1 emits a stable field order:
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
 
-Stage 6.1 emits:
+The v0.1 implementation emits:
 
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
@@ -483,7 +483,7 @@ structured in-memory facts that are serialized to those files. The guide generat
 not walk source files, call LLMs, call external services, ingest local documentation, or
 invent architecture not represented by deterministic facts.
 
-The minimal stable Stage 7.1 section order is:
+The minimal stable v0.1 section order is:
 
 ```md
 # Agent Guide
