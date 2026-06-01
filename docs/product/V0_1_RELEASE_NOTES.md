@@ -110,5 +110,5 @@ marker hygiene, Markdown whitespace, the full test suite, and package generation
 `mvn package` produces the executable shaded CLI jar at:
 
 ```text
-target/agent-project-memory-0.1.0-SNAPSHOT.jar
+target/agent-project-memory-0.1.0.jar
 ```

@@ -37,7 +37,7 @@ later pilot scan if reproducibility matters for the run date.
 
 ### Refs Pending Verification
 
-None for the Stage 8.1 selected set. If a selected project is replaced later and its ref
+None for the Stage 8 selected set. If a selected project is replaced later and its ref
 cannot be verified without network access, add it here with the exact command that should
 verify it, such as:
 
@@ -76,8 +76,8 @@ Suggested local layout:
    mvn package
    ```
 
-2. Clone or update each selected third-party project under
-   `<external-eval-dir>/`, then check out the pinned ref. Example:
+2. Clone or update each selected third-party project under `<external-eval-dir>/`, then
+   check out the pinned ref. Example:
 
    ```sh
    git clone https://github.com/spring-projects/spring-petclinic.git <external-eval-dir>/spring-petclinic
@@ -88,9 +88,9 @@ Suggested local layout:
    selected project stores the Maven app below the repository root:
 
    ```sh
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan <external-eval-dir>/spring-petclinic
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan <external-eval-dir>/spring-petclinic-rest
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan <external-eval-dir>/gs-rest-service/complete
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic-rest
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/gs-rest-service/complete
    ```
 
 4. Inspect generated local artifacts only:
@@ -202,7 +202,7 @@ Field rules:
 
 ## Non-goals
 
-Stage 8.1 does not include:
+Stage 8 does not include:
 
 - Analyzer changes.
 - Test changes.

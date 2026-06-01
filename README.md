@@ -41,15 +41,15 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.1.0-SNAPSHOT.jar
+target/agent-project-memory-0.1.0.jar
 ```
 
-## Current Usage
+## Quick Start
 
-The current CLI exposes the intended command shape:
+After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.1.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -86,7 +86,7 @@ source-backed evidence records referenced by generated facts. `agent-guide.md` i
 deterministic orientation guide generated only from the structured project-map facts and
 evidence index.
 
-## Intended Usage
+## Future Installed Usage
 
 Future installed command:
 
@@ -94,7 +94,7 @@ Future installed command:
 agent-project-memory scan .
 ```
 
-Intended output:
+The same output files:
 
 ```text
 .project-memory/project-map.json
@@ -120,17 +120,7 @@ Start here:
   [docs/architecture/INGESTION_ARCHITECTURE.md](docs/architecture/INGESTION_ARCHITECTURE.md).
 - Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
 
-Supporting development detail:
-
-- Evaluation runbook and reports:
-  [docs/development/EVALUATION_PLAN.md](docs/development/EVALUATION_PLAN.md) and
-  [docs/development/evaluations/](docs/development/evaluations/).
-- Codex workflow and reusable prompts:
-  [docs/development/CODEX_WORKFLOW.md](docs/development/CODEX_WORKFLOW.md) and
-  [docs/development/PROMPT_PLAYBOOK.md](docs/development/PROMPT_PLAYBOOK.md).
-
-Development workflow docs are public for transparency, but they are not the primary
-path for using the v0.1 CLI.
+Stage 8 evaluation reports are linked from the v0.1 release notes as supporting detail.
 
 ## What This Is Not
 
@@ -140,7 +130,7 @@ path for using the v0.1 CLI.
 - a repository chatbot,
 - a RAG system,
 - a SaaS product,
-- a DeepWiki clone,
+- a hosted codebase wiki,
 - a tool that treats LLM output as the source of truth,
 - an automatic code modification system.
 
@@ -208,3 +198,7 @@ Current v0.1 limitations:
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see
 [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
+
+## License
+
+Apache-2.0. See [LICENSE](LICENSE).

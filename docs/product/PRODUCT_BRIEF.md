@@ -30,9 +30,10 @@ RAG systems retrieve relevant chunks at question time. `agent-project-memory` pr
 
 Repo chat lets users ask questions interactively. `agent-project-memory` does not require a chat interface and does not make an LLM the source of truth.
 
-LLMs may later help with wording, grouping, or optional summaries, but the core facts must come from deterministic analysis, project documents, and explicit output contracts.
+LLMs may later help with wording, grouping, or optional summaries, but v0.1 core facts
+come from deterministic analysis of local build/source/test inputs and explicit output
+contracts. Local project document ingestion is future-only.
 
 ## North Star
 
 Generate evidence-based project memory for Java/Spring codebases so AI coding agents can understand a project before changing it.
-
