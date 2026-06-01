@@ -132,7 +132,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
-- Not analyzed: JPA mapped-superclass identifier support is limited to immediate source-visible superclasses; multi-level inheritance is not walked.
+- Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.
 - Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
@@ -140,7 +140,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Practical Inspection Order For Coding Agents
 
 1. Start with detected build and layout facts in `pom.xml`.
-2. For HTTP behavior, inspect detected endpoint evidence in `src/main/java/com/example/web/ProjectMapController.java`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/ProjectMapController.java`.
 3. For Spring wiring changes, inspect detected component evidence in `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/web/ProjectMapController.java` and avoid assuming runtime injection graphs.
 4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat relationship targets as declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence in `src/test/java/com/example/web/ProjectMapControllerTest.java`, `src/main/java/com/example/web/ProjectMapController.java`; do not treat inferred subjects as coverage proof.

@@ -135,7 +135,7 @@ public final class JpaEntityAnalyzer {
 
       mappedSuperclasses.put(
           javaType.className(),
-          new MappedSuperclassSource(identifierFields, evidence));
+          new MappedSuperclassSource(javaType, identifierFields, evidence));
     }
 
     return mappedSuperclasses;
@@ -178,14 +178,11 @@ public final class JpaEntityAnalyzer {
         SOURCE_KIND_DECLARED,
         List.of(),
         evidence));
-    directMappedSuperclass(javaType, mappedSuperclasses)
-        .ifPresent(mappedSuperclass -> {
-          if (mappedSuperclass.identifierFields().isEmpty()) {
-            return;
-          }
-          identifierFields.addAll(mappedSuperclass.identifierFields());
-          evidence.addAll(mappedSuperclass.evidence());
-        });
+    MappedSuperclassTraversal mappedSuperclassTraversal = mappedSuperclassTraversal(
+        javaType,
+        mappedSuperclasses);
+    identifierFields.addAll(mappedSuperclassTraversal.identifierFields());
+    evidence.addAll(mappedSuperclassTraversal.evidence());
     List<JpaRelationshipFact> relationships = relationships(
         javaType.sourcePath(),
         javaType.className(),
@@ -242,23 +239,46 @@ public final class JpaEntityAnalyzer {
     return identifierFields;
   }
 
-  private Optional<MappedSuperclassSource> directMappedSuperclass(
+  private MappedSuperclassTraversal mappedSuperclassTraversal(
       JavaTypeSource javaType,
       Map<String, MappedSuperclassSource> mappedSuperclasses) {
     if (javaType.type().getExtendedTypes().isEmpty()) {
-      return Optional.empty();
+      return MappedSuperclassTraversal.empty();
     }
 
-    ClassOrInterfaceType extendedType = javaType.type().getExtendedTypes().get(0);
-    List<MappedSuperclassSource> matches = superclassCandidates(javaType, extendedType).stream()
-        .map(mappedSuperclasses::get)
-        .filter(Objects::nonNull)
-        .distinct()
-        .toList();
-    if (matches.size() != 1) {
-      return Optional.empty();
+    List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>();
+    List<JpaEntityEvidence> evidence = new ArrayList<>();
+    LinkedHashSet<String> visitedClasses = new LinkedHashSet<>();
+    JavaTypeSource currentContext = javaType;
+    ClassOrInterfaceType currentExtendedType = javaType.type().getExtendedTypes().get(0);
+
+    while (true) {
+      List<MappedSuperclassSource> matches = superclassCandidates(currentContext, currentExtendedType).stream()
+          .map(mappedSuperclasses::get)
+          .filter(Objects::nonNull)
+          .distinct()
+          .toList();
+      if (matches.size() != 1) {
+        return new MappedSuperclassTraversal(identifierFields, evidence);
+      }
+
+      MappedSuperclassSource mappedSuperclass = matches.get(0);
+      if (!visitedClasses.add(mappedSuperclass.javaType().className())) {
+        return MappedSuperclassTraversal.empty();
+      }
+
+      if (!mappedSuperclass.identifierFields().isEmpty()) {
+        identifierFields.addAll(mappedSuperclass.identifierFields());
+        evidence.addAll(mappedSuperclass.evidence());
+      }
+
+      if (mappedSuperclass.javaType().type().getExtendedTypes().isEmpty()) {
+        return new MappedSuperclassTraversal(identifierFields, evidence);
+      }
+
+      currentContext = mappedSuperclass.javaType();
+      currentExtendedType = mappedSuperclass.javaType().type().getExtendedTypes().get(0);
     }
-    return Optional.of(matches.get(0));
   }
 
   private List<String> superclassCandidates(
@@ -278,9 +298,6 @@ public final class JpaEntityAnalyzer {
       String importName = importDeclaration.getNameAsString();
       if (!importDeclaration.isAsterisk() && importName.endsWith("." + nameWithScope)) {
         candidates.add(importName);
-      }
-      if (importDeclaration.isAsterisk()) {
-        candidates.add(importName + "." + nameWithScope);
       }
     }
 
@@ -469,11 +486,25 @@ public final class JpaEntityAnalyzer {
   }
 
   private record MappedSuperclassSource(
+      JavaTypeSource javaType,
       List<JpaIdentifierFieldFact> identifierFields,
       List<JpaEntityEvidence> evidence) {
     private MappedSuperclassSource {
       identifierFields = List.copyOf(identifierFields);
       evidence = List.copyOf(evidence);
+    }
+  }
+
+  private record MappedSuperclassTraversal(
+      List<JpaIdentifierFieldFact> identifierFields,
+      List<JpaEntityEvidence> evidence) {
+    private MappedSuperclassTraversal {
+      identifierFields = List.copyOf(identifierFields);
+      evidence = List.copyOf(evidence);
+    }
+
+    private static MappedSuperclassTraversal empty() {
+      return new MappedSuperclassTraversal(List.of(), List.of());
     }
   }
 }

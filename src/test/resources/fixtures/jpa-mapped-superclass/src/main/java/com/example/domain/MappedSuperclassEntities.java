@@ -10,8 +10,24 @@ class BaseEntity {
   private Long id;
 }
 
+@MappedSuperclass
+class NamedEntity extends BaseEntity {
+}
+
+@MappedSuperclass
+class BrokenEntity extends MissingBase {
+}
+
 @Entity
 class Owner extends BaseEntity {
+}
+
+@Entity
+class NamedOwner extends NamedEntity {
+}
+
+@Entity
+class BrokenOwner extends BrokenEntity {
 }
 
 class PlainBase {

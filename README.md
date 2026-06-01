@@ -59,7 +59,8 @@ rewritten deterministically when a supported source root exists.
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
 implementation analyzes Spring MVC controllers and source-visible interface-declared
 Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spring
-stereotype components, direct JPA entity annotations with direct source-visible
+stereotype components on classes and interfaces, deterministic hidden HTTP surface
+warnings, direct JPA entity annotations with conservative source-visible
 mapped-superclass identifier fields, and standard Maven test-root classes with
 conservative helper filtering, then writes:
 
@@ -72,8 +73,9 @@ conservative helper filtering, then writes:
 
 `project-map.json` is the minimal stable machine-readable project map for the currently
 supported single-module scan. It includes detected root `pom.xml` build metadata when
-present, standard Maven source roots, Spring MVC endpoint facts, direct component
-inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID references.
+present, standard Maven source roots, Spring MVC endpoint facts, hidden HTTP surface
+warnings that are not expanded into endpoint facts, direct component inventory, direct
+JPA entity facts, a minimal tests inventory, and evidence ID references.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -121,26 +123,32 @@ not started.
 The v0.1 implementation includes a Java 21 Maven CLI, JavaParser-backed Spring MVC
 endpoint extraction, source-visible interface mapping support when uniquely bindable,
 stable `project-map.json` and `evidence-index.jsonl` outputs, deterministic direct
-Spring component and JPA entity inventories, a minimal deterministic tests inventory,
-deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
-structured facts and evidence index.
+Spring component and JPA entity inventories, deterministic hidden HTTP surface warnings,
+a minimal deterministic tests inventory, deterministic `endpoints.md`, and deterministic
+`agent-guide.md` generation from the structured facts and evidence index.
 
 Current v0.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
-- Component inventory is limited to direct class-level `@Component`, `@Service`,
-  `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations under
-  `src/main/java`.
+- Component inventory is limited to direct source-type-level `@Component`, `@Service`,
+  `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
+  Java classes or interfaces under `src/main/java`. It does not infer repositories from
+  `extends JpaRepository` without a direct supported stereotype.
 - Component analysis does not model Spring component scanning semantics, bean lifecycle,
   bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
-  `@Table(name = "...")`, field-level `@Id` declared on the entity class or on an
-  immediate source-visible `@MappedSuperclass`, and field-level `@ManyToOne`,
+  `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
+  conservative source-visible `@MappedSuperclass` chain, and field-level `@ManyToOne`,
   `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
 - Entity analysis does not implement getter/property-access mapping, embedded IDs,
   generated values, column or join-column details, repository analysis, schema
-  generation, transactional semantics, symbol solving, multi-level inheritance, or
-  ORM runtime behavior.
+  generation, transactional semantics, symbol solving, or ORM runtime behavior.
+- Hidden HTTP surface warnings are limited to OpenAPI/Swagger spec filename presence,
+  root `pom.xml` OpenAPI/Swagger Maven plugin declarations under `<build><plugins>` or
+  `<build><pluginManagement><plugins>`, and direct `@RepositoryRestResource`. They do
+  not create endpoint facts, parse OpenAPI YAML, run
+  Maven generation, scan `target/generated-sources` by default, or reconstruct generated
+  APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
 - Tests inventory is limited to test-like Java classes under standard single-module
@@ -159,6 +167,7 @@ Current v0.1 limitations:
   ingest local documentation, summarize source files, infer architecture layers, or add
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.
 - Local Markdown/document ingestion is not implemented in v0.1.
-- `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
-  plus Spring MVC endpoint, component stereotype, JPA annotation, and tests inventory evidence.
+- `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when
+  present plus Spring MVC endpoint, warning, component stereotype, JPA annotation, and
+  tests inventory evidence.
 - The CLI uses only Java standard library argument handling.

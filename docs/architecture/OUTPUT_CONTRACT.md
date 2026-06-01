@@ -30,8 +30,8 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 
 `project-map.json` is the machine-readable project memory file. It contains the minimal
 stable v0.1 slice for the currently supported local single-module
-Maven-style Spring MVC endpoint, direct Spring component, direct JPA entity, and tests
-inventory scan.
+Maven-style Spring MVC endpoint, hidden HTTP surface warning, direct Spring component,
+direct JPA entity, and tests inventory scan.
 
 The current implementation writes this top-level object:
 
@@ -87,6 +87,21 @@ The current implementation writes this top-level object:
       ]
     }
   ],
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:hidden_http_surface:openapi_spec_file:src/main/resources/openapi.yml",
+        "category": "hidden_http_surface",
+        "signal": "openapi_spec_file",
+        "message": "OpenAPI/Swagger spec file detected by filename only; v0.1 does not parse specs or reconstruct generated APIs.",
+        "source_path": "src/main/resources/openapi.yml",
+        "evidence_ids": [
+          "ev:src/main/resources/openapi.yml:unknown:config_file:openapi.yml"
+        ]
+      }
+    ]
+  },
   "components": {
     "analysis_status": "analyzed",
     "items": [
@@ -250,6 +265,34 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
   the interface-derived endpoint is skipped. If the concrete handler also has a direct
   handler method mapping, the direct endpoint may still be emitted with
   `mapping_source.kind: "direct_handler_method"`.
+- `warnings.analysis_status` is `"analyzed"` when the supported `src/main/java` source
+  root exists and the hidden HTTP surface warning analyzer runs.
+- `warnings.items` contains deterministic warning signals that may indicate HTTP
+  surfaces intentionally not expanded into endpoint facts. Warning items are sorted by
+  `category`, `signal`, `source_path`, and `id`.
+- `warning.id` is a stable string beginning with
+  `warning:hidden_http_surface:<signal>:` in this slice.
+- `warning.category` is `"hidden_http_surface"` for the current warning set.
+- `warning.signal` is one of:
+  - `"openapi_spec_file"`: a repository file has a supported OpenAPI/Swagger filename
+    such as `openapi.yml`, `openapi.yaml`, `swagger.yml`, or `swagger.yaml`. Detection is
+    by filename only and does not parse the file content.
+  - `"maven_openapi_swagger_codegen_plugin"`: the root `pom.xml` contains a deterministic
+    OpenAPI/Swagger Maven plugin declaration under `<build><plugins><plugin>` or
+    `<build><pluginManagement><plugins><plugin>` with exact artifact ID
+    `openapi-generator-maven-plugin` or `swagger-codegen-maven-plugin`. Comments,
+    dependencies, properties, and arbitrary text do not produce this signal. Duplicate
+    declarations of the same plugin artifact ID in one `pom.xml` emit one warning.
+  - `"repository_rest_resource"`: a source-visible Java type under a supported
+    production source root has a direct `@RepositoryRestResource` annotation.
+- `warning.message` is a concise deterministic explanation of the limitation. It must
+  not summarize the referenced source file or turn the signal into endpoint facts.
+- `warning.source_path` is the repository-relative source path that produced the signal.
+- `warning.evidence_ids` references the evidence that supports the warning and must
+  resolve to records in `evidence-index.jsonl`.
+- Warning signals do not create entries in `endpoints`; the analyzer must not parse
+  OpenAPI YAML, run Maven generation, scan `target/generated-sources` by default, or
+  reconstruct generated APIs from warning signals.
 
 Example direct mapping source:
 
@@ -286,11 +329,14 @@ Example source-visible interface mapping source:
 - `components.items` contains direct Spring stereotype component facts sorted
   deterministically by `class_name` and `id`.
 - `component.id` is `component:<class_name>`.
-- `component.class_name` is the fully qualified Java class name when resolvable from the
-  source file package and class declaration.
+- `component.class_name` is the fully qualified Java source type name when resolvable
+  from the source file package and class or interface declaration. The field name remains
+  `class_name` for v0.1 compatibility even when the component is an annotated interface.
 - `component.stereotypes` contains directly present supported class-level annotation
-  symbols with `@`. The v0.1 implementation supports `@Component`, `@Service`,
-  `@Repository`, `@Controller`, `@RestController`, and `@Configuration`.
+  symbols with `@` on source-visible Java classes or interfaces. The v0.1 implementation
+  supports `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
+  `@Configuration`. It does not infer repository components from `extends JpaRepository`
+  unless a supported stereotype annotation is directly present.
 - `component.evidence_ids` references annotation evidence for the direct stereotype
   annotations and must resolve to records in `evidence-index.jsonl`.
 - `entities.analysis_status` is `"analyzed"` when the supported `src/main/java` source
@@ -304,16 +350,17 @@ Example source-visible interface mapping source:
   `@Table(name = "...")` when present and deterministically extractable, otherwise
   `null`.
 - `entity.identifier_fields` contains field-level `@Id` facts declared directly on the
-  entity class or declared on a directly source-visible superclass annotated with
-  `@MappedSuperclass`. Identifier fields are sorted deterministically by `source_kind`,
-  `declaring_class`, `field_name`, and `java_type`.
-- Direct mapped-superclass support is limited to the entity class's immediate superclass
-  when that superclass is present under supported production source roots and has a
-  direct class-level `@MappedSuperclass` annotation. This does not imply full ORM
-  inheritance reconstruction, multi-level hierarchy walking, classpath solving,
-  `@Inheritance` handling, property-access mapping, embedded IDs, generated-value
-  semantics, column or join-column analysis, repository analysis, schema generation, or
-  runtime ORM behavior.
+  entity class or declared on a conservative source-visible superclass chain where each
+  traversed superclass is present under supported production source roots and has a
+  direct class-level `@MappedSuperclass` annotation. Identifier fields are sorted
+  deterministically by `source_kind`, `declaring_class`, `field_name`, and `java_type`.
+- Mapped-superclass support resolves superclass references only through fully qualified
+  names, explicit single-type imports, or the same package. Unresolved, ambiguous,
+  cyclic, wildcard-import-only, classpath-only, generated-source-only, or otherwise
+  non-source-visible hierarchy branches are skipped. This does not imply full ORM
+  inheritance reconstruction, classpath solving, `@Inheritance` handling, property-access
+  mapping, embedded IDs, generated-value semantics, column or join-column analysis,
+  repository analysis, schema generation, or runtime ORM behavior.
 - `identifier_field.field_name` is the declared Java field name.
 - `identifier_field.java_type` is the declared Java field type string.
 - `identifier_field.declaring_class` is the fully qualified Java class that declares the
@@ -408,9 +455,9 @@ The v0.1 implementation emits:
   interface and concrete handler symbols needed to prove the unique binding. No new
   evidence fields are required.
 - `annotation` evidence for direct supported Spring component stereotype annotations on
-  Java class declarations. `@Controller` and `@RestController` evidence IDs use the same
-  annotation ID convention as endpoint evidence so the same source annotation is not
-  duplicated in `evidence-index.jsonl`.
+  Java class or interface declarations. `@Controller` and `@RestController` evidence IDs
+  use the same annotation ID convention as endpoint evidence so the same source
+  annotation is not duplicated in `evidence-index.jsonl`.
 - `annotation` evidence for direct JPA annotations that support entity facts, including
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
@@ -423,11 +470,22 @@ The v0.1 implementation emits:
 - `code_symbol` evidence for directly visible test framework imports attached to
   top-level emitted test classes.
 - `annotation` evidence for directly visible test framework annotations.
+- Warning evidence for hidden HTTP surface signals:
+  - `config_file` evidence for OpenAPI/Swagger spec filename presence, with the spec
+    path as `path`, the filename as `symbol_name`, nullable line fields, and a bounded
+    excerpt such as `filename detected: openapi.yml`. The scanner does not parse the
+    file content.
+  - `build_file` evidence for deterministic OpenAPI/Swagger Maven code generation
+    plugin declarations in the root `pom.xml`, with the plugin artifact ID as
+    `symbol_name` and the matching artifactId line as the excerpt.
+  - `annotation` evidence for direct source-visible `@RepositoryRestResource`
+    annotations.
 
-Direct mapped-superclass identifier facts do not add new evidence fields. When an
-identifier field uses `source_kind` set to `"mapped_superclass"`, it uses the existing
-`annotation` evidence shape for the field-level `@Id` declaration and the class-level
-`@MappedSuperclass` declaration.
+Mapped-superclass identifier facts do not add new evidence fields. When an identifier
+field uses `source_kind` set to `"mapped_superclass"`, it uses the existing `annotation`
+evidence shape for the field-level `@Id` declaration and the class-level
+`@MappedSuperclass` declaration on `declaring_class`, including when that declaring class
+is reached through a conservative source-visible mapped-superclass chain.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -520,6 +578,10 @@ Content rules:
   whether the mapping came from a direct handler method or from a uniquely bound
   source-visible interface method, without claiming complete runtime handler mapping
   behavior.
+- Hidden HTTP surface warnings, when present, are rendered in the known-limits section
+  with `Warning` wording, the warning category, signal, source path, deterministic
+  message, and resolving evidence references. They must not be rendered as detected
+  endpoint facts.
 - Component entries use `Detected` wording and include direct stereotype annotations and
   evidence references. They must not claim Spring runtime wiring, component scanning,
   lifecycle, scopes, bean names, or dependency graphs.
@@ -539,7 +601,9 @@ Content rules:
   connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and
   multi-module Maven parsing. It should also call out that generated sources,
   OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous
-  interface endpoint bindings are not analyzed for `EVAL-8-004` decision B.
+  interface endpoint bindings are not analyzed for `EVAL-8-004` decision B, and that
+  mapped-superclass identifier traversal skips unresolved, ambiguous, cyclic, and
+  non-source-visible branches.
 - The practical inspection order may suggest evidence paths from generated facts, but it
   must not introduce unsupported architecture, modules, domain flows, service layers, or
   source summaries. Long inline evidence path lists should be capped with a suffix that

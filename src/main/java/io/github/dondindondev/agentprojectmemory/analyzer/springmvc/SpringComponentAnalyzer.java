@@ -65,10 +65,6 @@ final class SpringComponentAnalyzer {
     List<String> sourceLines = Files.readAllLines(javaFile);
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
-      if (type.isInterface()) {
-        continue;
-      }
-
       List<AnnotationExpr> stereotypeAnnotations = stereotypeAnnotations(type.getAnnotations());
       if (stereotypeAnnotations.isEmpty()) {
         continue;

@@ -100,6 +100,10 @@
       ]
     }
   ],
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
   "components": {
     "analysis_status": "analyzed",
     "items": [

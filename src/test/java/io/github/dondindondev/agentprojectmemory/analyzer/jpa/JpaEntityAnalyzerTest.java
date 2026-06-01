@@ -106,6 +106,34 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void mappedSuperclassIdentifierIsAttachedThroughSourceVisibleSuperclassChain() throws Exception {
+    JpaEntityAnalysis analysis = analyzeMappedSuperclassFixture();
+
+    JpaIdentifierFieldFact id = identifierField(entity(analysis, "NamedOwner"), "id");
+    List<JpaEntityEvidence> identifierEvidence = id.evidenceIds().stream()
+        .map(evidenceId -> evidence(analysis, evidenceId))
+        .toList();
+
+    assertAll(
+        () -> assertEquals("Long", id.javaType()),
+        () -> assertEquals("com.example.domain.BaseEntity", id.declaringClass()),
+        () -> assertEquals("mapped_superclass", id.sourceKind()),
+        () -> assertTrue(identifierEvidence.stream()
+            .anyMatch(evidence -> evidence.annotationSymbol().equals("@Id")
+                && evidence.className().equals("com.example.domain.BaseEntity"))),
+        () -> assertTrue(identifierEvidence.stream()
+            .anyMatch(evidence -> evidence.annotationSymbol().equals("@MappedSuperclass")
+                && evidence.className().equals("com.example.domain.BaseEntity"))));
+  }
+
+  @Test
+  void unresolvedMappedSuperclassChainDoesNotFabricateIdentifier() throws Exception {
+    JpaEntityFact brokenOwner = entity(analyzeMappedSuperclassFixture(), "BrokenOwner");
+
+    assertTrue(brokenOwner.identifierFields().isEmpty());
+  }
+
+  @Test
   void nonMappedSuperclassDoesNotContributeIdentifier() throws Exception {
     JpaEntityFact plainOwner = entity(analyzeMappedSuperclassFixture(), "PlainOwner");
 
