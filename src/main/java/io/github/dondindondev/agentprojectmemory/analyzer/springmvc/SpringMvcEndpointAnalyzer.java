@@ -1,21 +1,26 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import com.github.javaparser.Range;
+import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -34,7 +39,14 @@ final class SpringMvcEndpointAnalyzer {
   private static final String REQUEST_BODY = "RequestBody";
   private static final String PATH_VARIABLE_SOURCE = "path_variable";
   private static final String REQUEST_PARAM_SOURCE = "request_param";
+  private static final String ANNOTATION_SOURCE_TYPE = "annotation";
+  private static final String CODE_SYMBOL_SOURCE_TYPE = "code_symbol";
   private static final String HIGH_CONFIDENCE = "high";
+  private static final String DIRECT_HANDLER_METHOD = "direct_handler_method";
+  private static final String SOURCE_VISIBLE_INTERFACE_METHOD = "source_visible_interface_method";
+  private static final String DIRECT_BINDING = "direct";
+  private static final String UNIQUE_IMPLEMENTED_INTERFACE_METHOD =
+      "unique_implemented_interface_method";
   private static final List<String> REQUEST_METHOD_NAMES = List.of(
       "GET",
       "HEAD",
@@ -52,6 +64,7 @@ final class SpringMvcEndpointAnalyzer {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     List<SpringMvcEndpointFact> endpoints = new ArrayList<>();
     List<SpringMvcEndpointEvidence> evidence = new ArrayList<>();
+    List<SourceType> sourceTypes = new ArrayList<>();
 
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(normalizedRepositoryRoot, sourceRoot);
@@ -60,105 +73,388 @@ final class SpringMvcEndpointAnalyzer {
       }
 
       for (Path javaFile : javaFiles(normalizedSourceRoot)) {
-        analyzeJavaFile(normalizedRepositoryRoot, javaFile, endpoints, evidence);
+        sourceTypes.addAll(sourceTypes(normalizedRepositoryRoot, javaFile));
       }
+    }
+
+    SourceIndex sourceIndex = new SourceIndex(sourceTypes);
+    for (SourceType sourceType : sourceTypes) {
+      analyzeSourceType(sourceIndex, sourceType, endpoints, evidence);
     }
 
     return new SpringMvcEndpointAnalysis(endpoints, evidence);
   }
 
-  private void analyzeJavaFile(
+  private List<SourceType> sourceTypes(
       Path repositoryRoot,
-      Path javaFile,
-      List<SpringMvcEndpointFact> endpoints,
-      List<SpringMvcEndpointEvidence> evidence) throws IOException {
+      Path javaFile) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
+    Map<String, String> importsBySimpleName = importsBySimpleName(compilationUnit);
+    List<SourceType> sourceTypes = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
-      if (type.isInterface()) {
+      sourceTypes.add(new SourceType(
+          qualifiedClassName(packageName, type),
+          packageName,
+          type,
+          sourcePath,
+          sourceLines,
+          importsBySimpleName));
+    }
+
+    return sourceTypes;
+  }
+
+  private Map<String, String> importsBySimpleName(CompilationUnit compilationUnit) {
+    Map<String, String> imports = new LinkedHashMap<>();
+    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+      if (importDeclaration.isAsterisk()) {
         continue;
       }
-      List<AnnotationExpr> controllerAnnotations = controllerAnnotations(type.getAnnotations());
-      if (controllerAnnotations.isEmpty()) {
+      String importName = importDeclaration.getNameAsString();
+      imports.putIfAbsent(simpleName(importName), importName);
+    }
+    return imports;
+  }
+
+  private void analyzeSourceType(
+      SourceIndex sourceIndex,
+      SourceType controller,
+      List<SpringMvcEndpointFact> endpoints,
+      List<SpringMvcEndpointEvidence> evidence) {
+    ClassOrInterfaceDeclaration type = controller.declaration();
+    if (type.isInterface()) {
+      return;
+    }
+
+    List<AnnotationExpr> controllerAnnotations = controllerAnnotations(type.getAnnotations());
+    if (controllerAnnotations.isEmpty()) {
+      return;
+    }
+
+    String controllerClass = controller.className();
+    List<SpringMvcEndpointEvidence> controllerAnnotationEvidence = controllerAnnotations.stream()
+        .map(annotation -> mappingEvidence(
+            controller.sourcePath(),
+            controllerClass,
+            null,
+            annotation,
+            controller.sourceLines()))
+        .toList();
+    Optional<AnnotationExpr> requestMapping = findAnnotation(type.getAnnotations(), REQUEST_MAPPING);
+    ExtractedPaths classPathExtraction = requestMapping
+        .map(this::literalPathValues)
+        .orElseGet(ExtractedPaths::notDeclared);
+    if (classPathExtraction.isDeclaredButUnsupported()) {
+      return;
+    }
+    List<String> classPaths = classPathExtraction.pathsOrDefaultRoot();
+    SpringMvcEndpointEvidence requestMappingEvidence = requestMapping
+        .map(annotation -> mappingEvidence(
+            controller.sourcePath(),
+            controllerClass,
+            null,
+            annotation,
+            controller.sourceLines()))
+        .orElse(null);
+
+    for (MethodDeclaration method : type.getMethods()) {
+      Optional<AnnotationExpr> methodMapping = findMethodMapping(method.getAnnotations());
+      if (methodMapping.isPresent()) {
+        addDirectEndpoint(
+            controller,
+            method,
+            methodMapping.orElseThrow(),
+            classPaths,
+            requestMappingEvidence,
+            controllerAnnotationEvidence,
+            endpoints,
+            evidence);
         continue;
       }
 
-      String controllerClass = qualifiedClassName(packageName, type.getNameAsString());
-      List<SpringMvcEndpointEvidence> controllerAnnotationEvidence = controllerAnnotations.stream()
-          .map(annotation -> mappingEvidence(sourcePath, controllerClass, null, annotation, sourceLines))
-          .toList();
-      Optional<AnnotationExpr> requestMapping = findAnnotation(type.getAnnotations(), REQUEST_MAPPING);
-      ExtractedPaths classPathExtraction = requestMapping
+      addInterfaceEndpointIfUnique(
+          sourceIndex,
+          controller,
+          method,
+          classPaths,
+          requestMappingEvidence,
+          controllerAnnotationEvidence,
+          endpoints,
+          evidence);
+    }
+  }
+
+  private void addDirectEndpoint(
+      SourceType controller,
+      MethodDeclaration method,
+      AnnotationExpr methodMappingAnnotation,
+      List<String> classPaths,
+      SpringMvcEndpointEvidence requestMappingEvidence,
+      List<SpringMvcEndpointEvidence> controllerAnnotationEvidence,
+      List<SpringMvcEndpointFact> endpoints,
+      List<SpringMvcEndpointEvidence> evidence) {
+    ExtractedPaths methodPathExtraction = literalPathValues(methodMappingAnnotation);
+    if (methodPathExtraction.isDeclaredButUnsupported()) {
+      return;
+    }
+    ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
+    ExtractedRequestMetadata requestMetadata = requestMetadata(
+        controller.sourcePath(),
+        controller.className(),
+        method,
+        controller.sourceLines());
+    SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
+        controller.sourcePath(),
+        controller.className(),
+        method.getNameAsString(),
+        methodMappingAnnotation,
+        controller.sourceLines());
+    controllerAnnotationEvidence.forEach(
+        controllerEvidence -> addEvidenceIfAbsent(evidence, controllerEvidence));
+    addEvidenceIfAbsent(evidence, requestMappingEvidence);
+    addEvidenceIfAbsent(evidence, methodMappingEvidence);
+    requestMetadata.evidence().forEach(metadataEvidence -> addEvidenceIfAbsent(evidence, metadataEvidence));
+
+    List<String> evidenceIds = new ArrayList<>();
+    controllerAnnotationEvidence.stream()
+        .map(SpringMvcEndpointEvidence::id)
+        .forEach(evidenceIds::add);
+    if (requestMappingEvidence != null) {
+      evidenceIds.add(requestMappingEvidence.id());
+    }
+    evidenceIds.add(methodMappingEvidence.id());
+    requestMetadata.requestParameters().stream()
+        .flatMap(parameter -> parameter.evidenceIds().stream())
+        .forEach(evidenceIds::add);
+    evidenceIds.addAll(requestMetadata.requestBodyEvidenceIds());
+
+    List<String> mappingSourceEvidenceIds = new ArrayList<>();
+    if (requestMappingEvidence != null) {
+      mappingSourceEvidenceIds.add(requestMappingEvidence.id());
+    }
+    mappingSourceEvidenceIds.add(methodMappingEvidence.id());
+
+    SpringMvcEndpointMappingSource mappingSource = new SpringMvcEndpointMappingSource(
+        DIRECT_HANDLER_METHOD,
+        controller.className(),
+        method.getNameAsString(),
+        DIRECT_BINDING,
+        null,
+        mappingSourceEvidenceIds);
+
+    endpoints.add(new SpringMvcEndpointFact(
+        controller.className(),
+        method.getNameAsString(),
+        httpMethods.methods(),
+        httpMethods.semantics(),
+        combinePaths(classPaths, methodPathExtraction.pathsOrDefaultRoot()),
+        requestMetadata.requestParameters(),
+        requestMetadata.requestBodyType(),
+        requestMetadata.requestBodyEvidenceIds(),
+        method.getType().asString(),
+        mappingSource,
+        evidenceIds));
+  }
+
+  private void addInterfaceEndpointIfUnique(
+      SourceIndex sourceIndex,
+      SourceType controller,
+      MethodDeclaration controllerMethod,
+      List<String> controllerClassPaths,
+      SpringMvcEndpointEvidence controllerRequestMappingEvidence,
+      List<SpringMvcEndpointEvidence> controllerAnnotationEvidence,
+      List<SpringMvcEndpointFact> endpoints,
+      List<SpringMvcEndpointEvidence> evidence) {
+    List<InterfaceMappingCandidate> candidates = interfaceMappingCandidates(
+        sourceIndex,
+        controller,
+        controllerMethod);
+    if (candidates.size() != 1) {
+      return;
+    }
+
+    InterfaceMappingCandidate candidate = candidates.get(0);
+    ExtractedHttpMethods httpMethods = httpMethods(candidate.methodMappingAnnotation());
+    ExtractedRequestMetadata requestMetadata = requestMetadata(
+        candidate.interfaceType().sourcePath(),
+        candidate.interfaceType().className(),
+        candidate.interfaceMethod(),
+        candidate.interfaceType().sourceLines());
+    SpringMvcEndpointEvidence interfaceMethodMappingEvidence = mappingEvidence(
+        candidate.interfaceType().sourcePath(),
+        candidate.interfaceType().className(),
+        candidate.interfaceMethod().getNameAsString(),
+        candidate.methodMappingAnnotation(),
+        candidate.interfaceType().sourceLines());
+    SpringMvcEndpointEvidence interfaceRequestMappingEvidence = candidate.interfaceRequestMapping()
+        .map(annotation -> mappingEvidence(
+            candidate.interfaceType().sourcePath(),
+            candidate.interfaceType().className(),
+            null,
+            annotation,
+            candidate.interfaceType().sourceLines()))
+        .orElse(null);
+    List<SpringMvcEndpointEvidence> bindingEvidence = List.of(
+        codeSymbolEvidence(
+            candidate.interfaceType().sourcePath(),
+            candidate.interfaceType().className(),
+            candidate.interfaceMethod(),
+            candidate.interfaceType().sourceLines()),
+        codeSymbolEvidence(
+            controller.sourcePath(),
+            controller.className(),
+            controller.declaration(),
+            controller.sourceLines()),
+        codeSymbolEvidence(
+            controller.sourcePath(),
+            controller.className(),
+            controllerMethod,
+            controller.sourceLines()));
+
+    controllerAnnotationEvidence.forEach(
+        controllerEvidence -> addEvidenceIfAbsent(evidence, controllerEvidence));
+    addEvidenceIfAbsent(evidence, controllerRequestMappingEvidence);
+    addEvidenceIfAbsent(evidence, interfaceRequestMappingEvidence);
+    addEvidenceIfAbsent(evidence, interfaceMethodMappingEvidence);
+    requestMetadata.evidence().forEach(metadataEvidence -> addEvidenceIfAbsent(evidence, metadataEvidence));
+    bindingEvidence.forEach(binding -> addEvidenceIfAbsent(evidence, binding));
+
+    List<String> evidenceIds = new ArrayList<>();
+    controllerAnnotationEvidence.stream()
+        .map(SpringMvcEndpointEvidence::id)
+        .forEach(evidenceIds::add);
+    if (controllerRequestMappingEvidence != null) {
+      evidenceIds.add(controllerRequestMappingEvidence.id());
+    }
+    if (interfaceRequestMappingEvidence != null) {
+      evidenceIds.add(interfaceRequestMappingEvidence.id());
+    }
+    evidenceIds.add(interfaceMethodMappingEvidence.id());
+    requestMetadata.requestParameters().stream()
+        .flatMap(parameter -> parameter.evidenceIds().stream())
+        .forEach(evidenceIds::add);
+    evidenceIds.addAll(requestMetadata.requestBodyEvidenceIds());
+    bindingEvidence.stream()
+        .map(SpringMvcEndpointEvidence::id)
+        .forEach(evidenceIds::add);
+
+    List<String> mappingSourceEvidenceIds = new ArrayList<>();
+    if (interfaceRequestMappingEvidence != null) {
+      mappingSourceEvidenceIds.add(interfaceRequestMappingEvidence.id());
+    }
+    mappingSourceEvidenceIds.add(interfaceMethodMappingEvidence.id());
+    if (controllerRequestMappingEvidence != null) {
+      mappingSourceEvidenceIds.add(controllerRequestMappingEvidence.id());
+    }
+    bindingEvidence.stream()
+        .map(SpringMvcEndpointEvidence::id)
+        .forEach(mappingSourceEvidenceIds::add);
+
+    SpringMvcEndpointMappingSource mappingSource = new SpringMvcEndpointMappingSource(
+        SOURCE_VISIBLE_INTERFACE_METHOD,
+        candidate.interfaceType().className(),
+        candidate.interfaceMethod().getNameAsString(),
+        UNIQUE_IMPLEMENTED_INTERFACE_METHOD,
+        null,
+        mappingSourceEvidenceIds);
+
+    endpoints.add(new SpringMvcEndpointFact(
+        controller.className(),
+        controllerMethod.getNameAsString(),
+        httpMethods.methods(),
+        httpMethods.semantics(),
+        combinePaths(
+            combinePaths(controllerClassPaths, candidate.interfaceClassPaths()),
+            candidate.methodPathExtraction().pathsOrDefaultRoot()),
+        requestMetadata.requestParameters(),
+        requestMetadata.requestBodyType(),
+        requestMetadata.requestBodyEvidenceIds(),
+        controllerMethod.getType().asString(),
+        mappingSource,
+        evidenceIds));
+  }
+
+  private List<InterfaceMappingCandidate> interfaceMappingCandidates(
+      SourceIndex sourceIndex,
+      SourceType controller,
+      MethodDeclaration controllerMethod) {
+    List<InterfaceMappingCandidate> candidates = new ArrayList<>();
+    for (SourceType interfaceType : sourceIndex.implementedInterfaces(controller)) {
+      Optional<AnnotationExpr> interfaceRequestMapping = findAnnotation(
+          interfaceType.declaration().getAnnotations(),
+          REQUEST_MAPPING);
+      ExtractedPaths interfaceClassPathExtraction = interfaceRequestMapping
           .map(this::literalPathValues)
           .orElseGet(ExtractedPaths::notDeclared);
-      if (classPathExtraction.isDeclaredButUnsupported()) {
+      if (interfaceClassPathExtraction.isDeclaredButUnsupported()) {
         continue;
       }
-      List<String> classPaths = classPathExtraction.pathsOrDefaultRoot();
-      SpringMvcEndpointEvidence requestMappingEvidence = requestMapping
-          .map(annotation -> mappingEvidence(sourcePath, controllerClass, null, annotation, sourceLines))
-          .orElse(null);
 
-      for (MethodDeclaration method : type.getMethods()) {
-        Optional<AnnotationExpr> methodMapping = findMethodMapping(method.getAnnotations());
+      for (MethodDeclaration interfaceMethod : interfaceType.declaration().getMethods()) {
+        if (!interfaceMethod.getNameAsString().equals(controllerMethod.getNameAsString())) {
+          continue;
+        }
+        if (!hasCompatibleParameterShapes(interfaceMethod, controllerMethod)) {
+          continue;
+        }
+        Optional<AnnotationExpr> methodMapping = findMethodMapping(interfaceMethod.getAnnotations());
         if (methodMapping.isEmpty()) {
           continue;
         }
-
-        AnnotationExpr methodMappingAnnotation = methodMapping.orElseThrow();
-        ExtractedPaths methodPathExtraction = literalPathValues(methodMappingAnnotation);
+        ExtractedPaths methodPathExtraction = literalPathValues(methodMapping.orElseThrow());
         if (methodPathExtraction.isDeclaredButUnsupported()) {
           continue;
         }
-        ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
-        ExtractedRequestMetadata requestMetadata = requestMetadata(
-            sourcePath,
-            controllerClass,
-            method,
-            sourceLines);
-        SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
-            sourcePath,
-            controllerClass,
-            method.getNameAsString(),
-            methodMappingAnnotation,
-            sourceLines);
-        controllerAnnotationEvidence.forEach(
-            controllerEvidence -> addEvidenceIfAbsent(evidence, controllerEvidence));
-        addEvidenceIfAbsent(evidence, requestMappingEvidence);
-        evidence.add(methodMappingEvidence);
-        evidence.addAll(requestMetadata.evidence());
 
-        List<String> evidenceIds = new ArrayList<>();
-        controllerAnnotationEvidence.stream()
-            .map(SpringMvcEndpointEvidence::id)
-            .forEach(evidenceIds::add);
-        if (requestMappingEvidence != null) {
-          evidenceIds.add(requestMappingEvidence.id());
-        }
-        evidenceIds.add(methodMappingEvidence.id());
-        requestMetadata.requestParameters().stream()
-            .flatMap(parameter -> parameter.evidenceIds().stream())
-            .forEach(evidenceIds::add);
-        evidenceIds.addAll(requestMetadata.requestBodyEvidenceIds());
-
-        endpoints.add(new SpringMvcEndpointFact(
-            controllerClass,
-            method.getNameAsString(),
-            httpMethods.methods(),
-            httpMethods.semantics(),
-            combinePaths(classPaths, methodPathExtraction.pathsOrDefaultRoot()),
-            requestMetadata.requestParameters(),
-            requestMetadata.requestBodyType(),
-            requestMetadata.requestBodyEvidenceIds(),
-            method.getType().asString(),
-            evidenceIds));
+        candidates.add(new InterfaceMappingCandidate(
+            interfaceType,
+            interfaceMethod,
+            interfaceRequestMapping,
+            interfaceClassPathExtraction.pathsOrDefaultRoot(),
+            methodMapping.orElseThrow(),
+            methodPathExtraction));
       }
     }
+    return candidates;
+  }
+
+  private boolean hasCompatibleParameterShapes(
+      MethodDeclaration interfaceMethod,
+      MethodDeclaration controllerMethod) {
+    if (interfaceMethod.getParameters().size() != controllerMethod.getParameters().size()) {
+      return false;
+    }
+
+    for (int index = 0; index < interfaceMethod.getParameters().size(); index++) {
+      String interfaceType = interfaceMethod.getParameter(index).getType().asString();
+      String controllerType = controllerMethod.getParameter(index).getType().asString();
+      if (!compatibleTypeShape(interfaceType, controllerType)) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  private boolean compatibleTypeShape(String left, String right) {
+    String normalizedLeft = normalizedTypeShape(left);
+    String normalizedRight = normalizedTypeShape(right);
+    return normalizedLeft.equals(normalizedRight)
+        || simpleTypeShape(normalizedLeft).equals(simpleTypeShape(normalizedRight));
+  }
+
+  private String normalizedTypeShape(String type) {
+    return type.replaceAll("\\s+", "");
+  }
+
+  private String simpleTypeShape(String type) {
+    return type.replaceAll("([a-z_][\\w$]*\\.)+([A-Z][\\w$]*)", "$2");
   }
 
   private Path normalizeSourceRoot(Path repositoryRoot, Path sourceRoot) {
@@ -467,6 +763,7 @@ final class SpringMvcEndpointAnalyzer {
 
     return new SpringMvcEndpointEvidence(
         evidenceId(sourcePath, className, methodName, annotationSymbol, lineStart, lineEnd, null),
+        ANNOTATION_SOURCE_TYPE,
         sourcePath,
         className,
         methodName,
@@ -492,6 +789,7 @@ final class SpringMvcEndpointAnalyzer {
 
     return new SpringMvcEndpointEvidence(
         evidenceId(sourcePath, className, methodName, annotationSymbol, lineStart, lineEnd, discriminator),
+        ANNOTATION_SOURCE_TYPE,
         sourcePath,
         className,
         methodName,
@@ -499,6 +797,49 @@ final class SpringMvcEndpointAnalyzer {
         lineStart,
         lineEnd,
         excerpt(annotation, sourceLines),
+        HIGH_CONFIDENCE);
+  }
+
+  private SpringMvcEndpointEvidence codeSymbolEvidence(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      List<String> sourceLines) {
+    Integer lineStart = classDeclarationLine(type);
+    Integer lineEnd = lineStart;
+
+    return new SpringMvcEndpointEvidence(
+        evidenceId(sourcePath, className, null, CODE_SYMBOL_SOURCE_TYPE, lineStart, lineEnd, null),
+        CODE_SYMBOL_SOURCE_TYPE,
+        sourcePath,
+        className,
+        null,
+        className,
+        lineStart,
+        lineEnd,
+        singleLineExcerpt(type, sourceLines, lineStart),
+        HIGH_CONFIDENCE);
+  }
+
+  private SpringMvcEndpointEvidence codeSymbolEvidence(
+      String sourcePath,
+      String className,
+      MethodDeclaration method,
+      List<String> sourceLines) {
+    String methodName = method.getNameAsString();
+    Integer lineStart = methodDeclarationLine(method);
+    Integer lineEnd = lineStart;
+
+    return new SpringMvcEndpointEvidence(
+        evidenceId(sourcePath, className, methodName, CODE_SYMBOL_SOURCE_TYPE, lineStart, lineEnd, null),
+        CODE_SYMBOL_SOURCE_TYPE,
+        sourcePath,
+        className,
+        methodName,
+        className + "#" + methodName,
+        lineStart,
+        lineEnd,
+        singleLineExcerpt(method, sourceLines, lineStart),
         HIGH_CONFIDENCE);
   }
 
@@ -534,6 +875,36 @@ final class SpringMvcEndpointAnalyzer {
     return String.join("\n", sourceLines.subList(start - 1, end)).trim();
   }
 
+  private String singleLineExcerpt(Node node, List<String> sourceLines, Integer preferredLine) {
+    if (preferredLine != null && preferredLine >= 1 && preferredLine <= sourceLines.size()) {
+      return sourceLines.get(preferredLine - 1).trim();
+    }
+
+    Optional<Range> range = node.getRange();
+    if (range.isEmpty()) {
+      return node.toString();
+    }
+
+    int line = range.orElseThrow().begin.line;
+    if (line < 1 || line > sourceLines.size()) {
+      return node.toString();
+    }
+
+    return sourceLines.get(line - 1).trim();
+  }
+
+  private Integer classDeclarationLine(ClassOrInterfaceDeclaration type) {
+    return type.getName().getRange()
+        .map(range -> range.begin.line)
+        .orElseGet(() -> type.getRange().map(range -> range.begin.line).orElse(null));
+  }
+
+  private Integer methodDeclarationLine(MethodDeclaration method) {
+    return method.getName().getRange()
+        .map(range -> range.begin.line)
+        .orElseGet(() -> method.getRange().map(range -> range.begin.line).orElse(null));
+  }
+
   private String repositoryRelativePath(Path repositoryRoot, Path javaFile) {
     Path relativePath = repositoryRoot.relativize(javaFile.toAbsolutePath().normalize());
     return relativePath.toString().replace(javaFile.getFileSystem().getSeparator(), "/");
@@ -544,6 +915,19 @@ final class SpringMvcEndpointAnalyzer {
       return className;
     }
     return packageName + "." + className;
+  }
+
+  private String qualifiedClassName(String packageName, ClassOrInterfaceDeclaration type) {
+    return type.getFullyQualifiedName()
+        .orElseGet(() -> qualifiedClassName(packageName, type.getNameAsString()));
+  }
+
+  private String simpleName(String name) {
+    int lastDot = name.lastIndexOf('.');
+    if (lastDot >= 0) {
+      return name.substring(lastDot + 1);
+    }
+    return name;
   }
 
   private List<String> combinePaths(List<String> classPaths, List<String> methodPaths) {
@@ -659,6 +1043,84 @@ final class SpringMvcEndpointAnalyzer {
         return List.of("");
       }
       return paths;
+    }
+  }
+
+  private record SourceType(
+      String className,
+      String packageName,
+      ClassOrInterfaceDeclaration declaration,
+      String sourcePath,
+      List<String> sourceLines,
+      Map<String, String> importsBySimpleName) {
+    private SourceType {
+      sourceLines = List.copyOf(sourceLines);
+      importsBySimpleName = Map.copyOf(importsBySimpleName);
+    }
+  }
+
+  private record InterfaceMappingCandidate(
+      SourceType interfaceType,
+      MethodDeclaration interfaceMethod,
+      Optional<AnnotationExpr> interfaceRequestMapping,
+      List<String> interfaceClassPaths,
+      AnnotationExpr methodMappingAnnotation,
+      ExtractedPaths methodPathExtraction) {
+    private InterfaceMappingCandidate {
+      interfaceClassPaths = List.copyOf(interfaceClassPaths);
+    }
+  }
+
+  private final class SourceIndex {
+    private final Map<String, SourceType> byQualifiedName;
+
+    private SourceIndex(List<SourceType> sourceTypes) {
+      Map<String, SourceType> qualified = new LinkedHashMap<>();
+      for (SourceType sourceType : sourceTypes) {
+        qualified.putIfAbsent(sourceType.className(), sourceType);
+      }
+      this.byQualifiedName = Map.copyOf(qualified);
+    }
+
+    private List<SourceType> implementedInterfaces(SourceType controller) {
+      Map<String, SourceType> interfaces = new LinkedHashMap<>();
+      for (ClassOrInterfaceType implementedType : controller.declaration().getImplementedTypes()) {
+        resolveImplementedType(controller, implementedType)
+            .filter(sourceType -> sourceType.declaration().isInterface())
+            .ifPresent(sourceType -> interfaces.putIfAbsent(sourceType.className(), sourceType));
+      }
+      return List.copyOf(interfaces.values());
+    }
+
+    private Optional<SourceType> resolveImplementedType(
+        SourceType controller,
+        ClassOrInterfaceType implementedType) {
+      String nameWithScope = implementedType.getNameWithScope();
+      if (nameWithScope.contains(".")) {
+        SourceType exact = byQualifiedName.get(nameWithScope);
+        if (exact != null) {
+          return Optional.of(exact);
+        }
+        return Optional.empty();
+      }
+
+      String simpleImplementedName = implementedType.getNameAsString();
+      String importedName = controller.importsBySimpleName().get(simpleImplementedName);
+      if (importedName != null) {
+        SourceType imported = byQualifiedName.get(importedName);
+        if (imported != null) {
+          return Optional.of(imported);
+        }
+        return Optional.empty();
+      }
+
+      String samePackageName = qualifiedClassName(controller.packageName(), simpleImplementedName);
+      SourceType samePackage = byQualifiedName.get(samePackageName);
+      if (samePackage != null) {
+        return Optional.of(samePackage);
+      }
+
+      return Optional.empty();
     }
   }
 }

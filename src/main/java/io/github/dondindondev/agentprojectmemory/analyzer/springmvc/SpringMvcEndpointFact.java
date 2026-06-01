@@ -12,6 +12,7 @@ record SpringMvcEndpointFact(
     String requestBodyType,
     List<String> requestBodyEvidenceIds,
     String declaredResponseType,
+    SpringMvcEndpointMappingSource mappingSource,
     List<String> evidenceIds) {
   SpringMvcEndpointFact {
     httpMethods = List.copyOf(httpMethods);

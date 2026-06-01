@@ -282,6 +282,9 @@ public final class SpringMvcEndpointOutputGenerator {
           .append("\n\n");
       markdown.append("- Controller: ").append(code(endpoint.controllerClass())).append("\n");
       markdown.append("- Handler: ").append(code(endpoint.handlerMethod())).append("\n");
+      markdown.append("- Mapping source: ")
+          .append(mappingSourceLabel(endpoint.mappingSource()))
+          .append("\n");
       markdown.append("- HTTP methods: ").append(httpMethods(endpoint)).append("\n");
       markdown.append("- Request parameters: ")
           .append(requestParameters(endpoint.requestParameters()))
@@ -378,6 +381,7 @@ public final class SpringMvcEndpointOutputGenerator {
         "response_type",
         endpoint.declaredResponseType(),
         true);
+    appendMappingSource(json, endpoint.mappingSource());
     appendIndentedStringArrayField(json, 3, "evidence_ids", endpoint.evidenceIds(), false);
     json.append("    }");
     if (trailingComma) {
@@ -410,6 +414,19 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("\n");
     }
     json.append("      ],\n");
+  }
+
+  private void appendMappingSource(
+      StringBuilder json,
+      SpringMvcEndpointMappingSource mappingSource) {
+    json.append("      \"mapping_source\": {\n");
+    appendIndentedStringField(json, 4, "kind", mappingSource.kind(), true);
+    appendIndentedStringField(json, 4, "declaring_type", mappingSource.declaringType(), true);
+    appendIndentedStringField(json, 4, "declaring_method", mappingSource.declaringMethod(), true);
+    appendIndentedStringField(json, 4, "binding", mappingSource.binding(), true);
+    appendIndentedNullableStringField(json, 4, "uncertainty", mappingSource.uncertainty(), true);
+    appendIndentedStringArrayField(json, 4, "evidence_ids", mappingSource.evidenceIds(), false);
+    json.append("      },\n");
   }
 
   private void appendComponents(StringBuilder json, List<SpringComponentFact> components) {
@@ -692,6 +709,13 @@ public final class SpringMvcEndpointOutputGenerator {
     return joiner.toString();
   }
 
+  private String mappingSourceLabel(SpringMvcEndpointMappingSource mappingSource) {
+    return code(mappingSource.kind())
+        + " ("
+        + code(mappingSource.declaringType() + "#" + mappingSource.declaringMethod())
+        + ")";
+  }
+
   private List<SpringMvcEndpointFact> sortedEndpoints(List<SpringMvcEndpointFact> endpoints) {
     return endpoints.stream()
         .sorted(ENDPOINT_ORDER)
@@ -739,11 +763,11 @@ public final class SpringMvcEndpointOutputGenerator {
   private EvidenceRecord evidenceRecord(SpringMvcEndpointEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
-        ANNOTATION_SOURCE_TYPE,
+        evidence.sourceType(),
         evidence.sourcePath(),
         evidence.className(),
         evidence.methodName(),
-        evidence.annotationSymbol(),
+        evidence.symbolName(),
         evidence.lineStart(),
         evidence.lineEnd(),
         evidence.excerpt(),

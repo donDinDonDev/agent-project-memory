@@ -30,6 +30,176 @@ final class SpringMvcEndpointAnalyzerTest {
   }
 
   @Test
+  void directHandlerMappingsRecordMappingSource() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(analysis, "com.example.web.SimpleRestController", "health");
+    SpringMvcEndpointMappingSource mappingSource = endpoint.mappingSource();
+
+    assertAll(
+        () -> assertEquals("direct_handler_method", mappingSource.kind()),
+        () -> assertEquals("com.example.web.SimpleRestController", mappingSource.declaringType()),
+        () -> assertEquals("health", mappingSource.declaringMethod()),
+        () -> assertEquals("direct", mappingSource.binding()),
+        () -> assertNull(mappingSource.uncertainty()),
+        () -> assertTrue(mappingSource.evidenceIds().stream()
+            .anyMatch(evidenceId -> evidenceId.contains("@GetMapping"))));
+  }
+
+  @Test
+  void sourceVisibleInterfaceMethodMappingIsDetectedThroughControllerImplementation()
+      throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.InterfaceBackedController",
+        "getInterfaceOrder");
+    SpringMvcEndpointMappingSource mappingSource = endpoint.mappingSource();
+
+    assertAll(
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(List.of("/interface/orders/{id}"), endpoint.paths()),
+        () -> assertEquals("InterfaceOrderResponse", endpoint.declaredResponseType()),
+        () -> assertEquals("source_visible_interface_method", mappingSource.kind()),
+        () -> assertEquals("com.example.web.InterfaceOrdersApi", mappingSource.declaringType()),
+        () -> assertEquals("getInterfaceOrder", mappingSource.declaringMethod()),
+        () -> assertEquals("unique_implemented_interface_method", mappingSource.binding()),
+        () -> assertNull(mappingSource.uncertainty()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "annotation".equals(evidence.sourceType())
+                && "com.example.web.InterfaceOrdersApi".equals(evidence.className())
+                && "getInterfaceOrder".equals(evidence.methodName())
+                && "@GetMapping".equals(evidence.annotationSymbol()))),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "code_symbol".equals(evidence.sourceType())
+                && "com.example.web.InterfaceBackedController".equals(evidence.className()))));
+  }
+
+  @Test
+  void explicitlyImportedInterfaceMethodMappingIsDetected() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.ImportedApiController",
+        "importedOrder");
+
+    assertAll(
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(List.of("/imported/orders"), endpoint.paths()),
+        () -> assertEquals("com.example.api.ImportedOrdersApi", endpoint.mappingSource().declaringType()),
+        () -> assertEquals("source_visible_interface_method", endpoint.mappingSource().kind()));
+  }
+
+  @Test
+  void crossPackageSameSimpleNameInterfaceWithoutValidImportIsSkipped() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.CrossPackageNoImportController",
+        "crossPackageOrder"));
+  }
+
+  @Test
+  void wildcardImportedInterfaceMethodMappingIsSkipped() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.WildcardImportedController",
+        "wildcardOrder"));
+  }
+
+  @Test
+  void interfaceClassLevelAndMethodLevelMappingsAreCombinedWithControllerPrefix()
+      throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.InterfaceClassLevelController",
+        "createFromInterface");
+
+    assertAll(
+        () -> assertEquals(List.of("POST"), endpoint.httpMethods()),
+        () -> assertEquals(List.of("/api/interface-class/orders"), endpoint.paths()),
+        () -> assertEquals("InterfaceOrderRequest", endpoint.requestBodyType()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "com.example.web.InterfaceClassLevelApi".equals(evidence.className())
+                && "@RequestMapping".equals(evidence.annotationSymbol()))),
+        () -> assertTrue(endpoint.requestBodyEvidenceIds().stream()
+            .allMatch(evidenceId -> analysis.evidence().stream()
+                .anyMatch(evidence -> evidence.id().equals(evidenceId)
+                    && "com.example.web.InterfaceClassLevelApi".equals(evidence.className())
+                    && "@RequestBody".equals(evidence.annotationSymbol())))));
+  }
+
+  @Test
+  void interfaceParameterAnnotationsAreUsedForRequestMetadata() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.InterfaceBackedController",
+        "getInterfaceOrder");
+    SpringMvcRequestParameterFact id = requestParameter(endpoint, "path_variable", "id");
+    SpringMvcRequestParameterFact expand = requestParameter(endpoint, "request_param", "expand");
+
+    assertAll(
+        () -> assertEquals("Long", id.javaType()),
+        () -> assertEquals("String", expand.javaType()),
+        () -> assertTrue(endpoint.requestParameters().stream()
+            .flatMap(parameter -> parameter.evidenceIds().stream())
+            .allMatch(evidenceId -> analysis.evidence().stream()
+                .anyMatch(evidence -> evidence.id().equals(evidenceId)
+                    && "com.example.web.InterfaceOrdersApi".equals(evidence.className())
+                    && "getInterfaceOrder".equals(evidence.methodName())))));
+  }
+
+  @Test
+  void directConcreteMappingAvoidsDuplicateInterfaceDerivedEndpoint() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    List<SpringMvcEndpointFact> endpoints = endpoints(
+        analysis,
+        "com.example.web.DirectDuplicateController",
+        "duplicateDirect");
+    SpringMvcEndpointFact endpoint = endpoints.get(0);
+
+    assertAll(
+        () -> assertEquals(1, endpoints.size()),
+        () -> assertEquals(List.of("/controller/direct"), endpoint.paths()),
+        () -> assertEquals("direct_handler_method", endpoint.mappingSource().kind()),
+        () -> assertFalse(analysis.endpoints().stream()
+            .filter(candidate -> candidate.controllerClass().equals(
+                "com.example.web.DirectDuplicateController"))
+            .flatMap(candidate -> candidate.paths().stream())
+            .anyMatch("/interface/direct"::equals)));
+  }
+
+  @Test
+  void ambiguousInterfaceBindingsAreSkipped() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.AmbiguousInterfaceController",
+        "ambiguous"));
+  }
+
+  @Test
+  void classpathOnlyOrGeneratedInterfacesRemainOutOfScope() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertFalse(hasEndpoint(
+        analysis,
+        "com.example.web.GeneratedApiController",
+        "generatedOperation"));
+  }
+
+  @Test
   void modernInstanceofPatternInControllerSourceIsParsed() throws Exception {
     SpringMvcEndpointAnalysis analysis = analyzeModernJavaFixture();
 
@@ -434,11 +604,19 @@ final class SpringMvcEndpointAnalyzerTest {
       SpringMvcEndpointAnalysis analysis,
       String controllerClass,
       String handlerMethod) {
+    return endpoints(analysis, controllerClass, handlerMethod).stream()
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private List<SpringMvcEndpointFact> endpoints(
+      SpringMvcEndpointAnalysis analysis,
+      String controllerClass,
+      String handlerMethod) {
     return analysis.endpoints().stream()
         .filter(candidate -> candidate.controllerClass().equals(controllerClass))
         .filter(candidate -> candidate.handlerMethod().equals(handlerMethod))
-        .findFirst()
-        .orElseThrow();
+        .toList();
   }
 
   private boolean hasEndpoint(
