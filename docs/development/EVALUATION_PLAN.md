@@ -4,8 +4,8 @@ This document is the Stage 8 runbook for evaluating `agent-project-memory` on re
 open-source Spring projects. Stage 8 evaluation records observations only. Analyzer,
 contract, script, and product changes must be split into later bounded tasks.
 
-Stage 8 is closed for the v0.1 release-candidate after the linked evaluation reports.
-Keep this file as the historical runbook and baseline for future pilot scans.
+Stage 8 is closed for the v0.1 baseline after the linked evaluation reports. Keep this
+file as the historical runbook and baseline for future pilot scans.
 
 ## Stage 8 Scope
 
@@ -128,7 +128,7 @@ Recommended scorecard row:
 
 | Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `<project>@<ref>` | `TBD` | `TBD` | `TBD` | `TBD` | `TBD` | `TBD` | `<summary>` |
+| `<project>@<ref>` | `<score>` | `<score>` | `<score>` | `<score>` | `<score>` | `<score>` | `<summary>` |
 
 ## Observation Format
 

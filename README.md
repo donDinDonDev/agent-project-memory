@@ -1,8 +1,12 @@
 # agent-project-memory
 
-`agent-project-memory` is a local-first CLI/devtool for generating evidence-backed project memory for Java/Spring codebases.
+`agent-project-memory` is a local-first CLI/devtool for generating evidence-backed
+project memory for Java/Spring codebases.
 
-The goal is to help developers and AI coding agents understand a legacy Java/Spring project before changing it. The tool scans local Java source, standard Maven layout, and standard Maven test roots, extracts deterministic facts, attaches evidence references, and writes Markdown/JSON artifacts that can be reviewed, versioned, and reused.
+The goal is to help developers and AI coding agents understand a legacy Java/Spring
+project before changing it. The tool scans local Java source, standard Maven layout, and
+standard Maven test roots, extracts deterministic facts, attaches evidence references,
+and writes Markdown/JSON artifacts that can be reviewed, versioned, and reused.
 
 The current product focus is intentionally narrow:
 
@@ -12,7 +16,8 @@ The current product focus is intentionally narrow:
 - Deterministic source analysis as the source of truth.
 - Optional AI assistance later, outside the core analyzer.
 
-The first version is intended to be a local-first CLI. Source code must not be sent to external services by default.
+The first version is a local-first CLI. Source code must not be sent to external
+services by default.
 
 ## Requirements
 
@@ -100,6 +105,33 @@ Intended output:
 
 These files are meant to give humans and coding agents a compact, evidence-backed map of the project: detected build layout, Spring MVC endpoints, important components, and references back to the source files that prove each fact.
 
+## Public Documentation Map
+
+Start here:
+
+- v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
+- Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
+  [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
+- Output and evidence contracts:
+  [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
+  [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
+- Architecture overview:
+  [docs/architecture/ARCHITECTURE_OVERVIEW.md](docs/architecture/ARCHITECTURE_OVERVIEW.md) and
+  [docs/architecture/INGESTION_ARCHITECTURE.md](docs/architecture/INGESTION_ARCHITECTURE.md).
+- Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
+
+Supporting development detail:
+
+- Evaluation runbook and reports:
+  [docs/development/EVALUATION_PLAN.md](docs/development/EVALUATION_PLAN.md) and
+  [docs/development/evaluations/](docs/development/evaluations/).
+- Codex workflow and reusable prompts:
+  [docs/development/CODEX_WORKFLOW.md](docs/development/CODEX_WORKFLOW.md) and
+  [docs/development/PROMPT_PLAYBOOK.md](docs/development/PROMPT_PLAYBOOK.md).
+
+Development workflow docs are public for transparency, but they are not the primary
+path for using the v0.1 CLI.
+
 ## What This Is Not
 
 `agent-project-memory` is not:
@@ -112,13 +144,15 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 - a tool that treats LLM output as the source of truth,
 - an automatic code modification system.
 
-AI may become an optional presentation or summarization layer later, but the core project memory must come from deterministic analysis, explicit output contracts, and evidence references.
+AI may become an optional presentation or summarization layer later, but the core project
+memory must come from deterministic analysis, explicit output contracts, and evidence
+references.
 
 ## Project Status
 
-The current implementation is the v0.1 release-candidate slice after Stage 8 evaluation.
-Roadmap Stages 0 through 8 are closed for v0.1. Stage 9 is post-v0.1 future work and is
-not started.
+The current implementation is the v0.1 public release slice after Stage 8 evaluation.
+Roadmap Stages 0 through 8 are closed for v0.1. Future connector/import work is
+post-v0.1 and is not started.
 
 The v0.1 implementation includes a Java 21 Maven CLI, JavaParser-backed Spring MVC
 endpoint extraction, source-visible interface mapping support when uniquely bindable,
@@ -171,3 +205,6 @@ Current v0.1 limitations:
   present plus Spring MVC endpoint, warning, component stereotype, JPA annotation, and
   tests inventory evidence.
 - The CLI uses only Java standard library argument handling.
+
+For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see
+[docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).

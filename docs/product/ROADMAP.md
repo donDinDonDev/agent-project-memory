@@ -2,8 +2,8 @@
 
 ## Current Status
 
-Stages 0 through 8 are closed for the v0.1 release-candidate implementation. Stage 9 is
-post-v0.1 future work only and is not started.
+Stages 0 through 8 are closed for the v0.1 implementation. Stage 9 is post-v0.1 future
+work only and is not started.
 
 ## Stage 0: Foundation Docs (Closed)
 
