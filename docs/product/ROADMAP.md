@@ -1,6 +1,11 @@
 # Roadmap
 
-## Stage 0: Foundation Docs
+## Current Status
+
+Stages 0 through 8 are closed for the v0.1 release-candidate implementation. Stage 9 is
+post-v0.1 future work only and is not started.
+
+## Stage 0: Foundation Docs (Closed)
 
 Create the initial repository documentation, product boundaries, architecture notes, evidence model, and output contract.
 
@@ -15,7 +20,7 @@ Exit criteria:
 - `AGENTS.md` points agents to the canonical docs needed before implementation work.
 - No production implementation code, Maven project skeleton, or runtime dependencies have been added.
 
-## Stage 1: Maven CLI Skeleton
+## Stage 1: Maven CLI Skeleton (Closed)
 
 Create the Java 21 Maven project structure and a minimal CLI entrypoint. The CLI should accept a local path and prepare the output directory, but it should avoid implementing analyzers beyond what is needed to prove the command shape.
 
@@ -28,7 +33,7 @@ Exit criteria:
 - Focused tests cover CLI argument handling and output directory preparation.
 - Documentation reflects how to build, test, and run the skeleton locally.
 
-## Stage 2: Spring MVC Endpoints Analyzer
+## Stage 2: Spring MVC Endpoints Analyzer (Closed)
 
 Use JavaParser to extract Spring MVC controller classes and endpoint methods. Capture annotations, paths, HTTP methods, Java symbols, and line ranges.
 
@@ -42,7 +47,7 @@ Exit criteria:
 - Fixture tests cover representative controllers, class-level mappings, method-level mappings, and unsupported or ambiguous cases.
 - The analyzer does not use LLM calls or external services.
 
-## Stage 3: Evidence/Project-Map Stabilization
+## Stage 3: Evidence/Project-Map Stabilization (Closed)
 
 Stabilize `project-map.json` and `evidence-index.jsonl` around explicit contracts. Add fixture tests that compare generated JSON with expected results.
 
@@ -55,7 +60,7 @@ Exit criteria:
 - Contract changes are reflected in `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`.
 - Unknown, inferred, or uncertain facts are represented explicitly instead of being presented as unsupported facts.
 
-## Stage 4: Spring Components Analyzer
+## Stage 4: Spring Components Analyzer (Closed)
 
 Extract a basic inventory of Spring components such as controllers, services, repositories, configuration classes, and components. Attach evidence to every component fact.
 
@@ -68,7 +73,7 @@ Exit criteria:
 - Fixture tests cover each supported stereotype and classes without supported stereotypes.
 - The analyzer avoids reconstructing full Spring runtime behavior.
 
-## Stage 5: JPA Entities Analyzer
+## Stage 5: JPA Entities Analyzer (Closed)
 
 Detect JPA entities and basic relationships from annotations such as `@Entity`, `@Table`, `@Id`, `@ManyToOne`, and `@OneToMany`.
 
@@ -81,7 +86,7 @@ Exit criteria:
 - Fixture tests cover simple entities, table names, ID fields, and basic relationships.
 - The analyzer does not attempt full ORM runtime reconstruction.
 
-## Stage 6: Tests Inventory
+## Stage 6: Tests Inventory (Closed)
 
 Detect test classes and likely tested subjects using naming conventions, imports, annotations, and references. Mark uncertain relations explicitly.
 
@@ -94,7 +99,7 @@ Exit criteria:
 - Fixture tests cover naming-convention matches, annotation-based test classes, and ambiguous cases.
 - The output does not claim full test coverage analysis.
 
-## Stage 7: Agent Guide Generator
+## Stage 7: Agent Guide Generator (Closed)
 
 Generate `agent-guide.md` from the deterministic project map and evidence index. The guide should help coding agents orient themselves without inventing unsupported architecture.
 
@@ -107,7 +112,7 @@ Exit criteria:
 - Fixture tests or golden-output checks cover guide generation from representative project-map inputs.
 - The guide does not invent architecture that is not present in deterministic facts.
 
-## Stage 8: Evaluation On Real Spring Projects
+## Stage 8: Evaluation On Real Spring Projects (Closed)
 
 Run the tool on real open-source Spring projects and measure whether generated facts are accurate, useful, and evidence-backed.
 
@@ -120,9 +125,12 @@ Exit criteria:
 - Bugs or contract gaps discovered during evaluation are converted into bounded follow-up tasks.
 - v0.1 scope remains Java/Spring-first and local-first.
 
-## Stage 9: Future Connectors/Imports
+## Stage 9: Future Connectors/Imports (Post-v0.1 Future, Not Started)
 
-Add future input adapters for systems such as YouTrack, Jira, Confluence, GitHub, and GitLab. These adapters should produce normalized source documents and remain separate from the core analyzer.
+Add future input adapters for systems such as YouTrack, Jira, Confluence, GitHub, and
+GitLab. These adapters should produce normalized source documents and remain separate
+from the core analyzer. This stage is outside v0.1 and must not begin as part of v0.1
+release-readiness work.
 
 Exit criteria:
 

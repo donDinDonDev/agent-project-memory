@@ -78,7 +78,9 @@ Builds a structured project map from extracted facts. The graph should describe 
 
 ### Evidence Index Builder
 
-Creates stable evidence records for important facts. Evidence may point to code symbols, annotations, config files, build files, test files, or documents.
+Creates stable evidence records for important facts. The current v0.1 implementation
+emits evidence for build files, code symbols, annotations, and test files. Future
+ingestors may add document evidence.
 
 ### Memory Generator
 

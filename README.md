@@ -2,7 +2,7 @@
 
 `agent-project-memory` is a local-first CLI/devtool for generating evidence-backed project memory for Java/Spring codebases.
 
-The goal is to help developers and AI coding agents understand a legacy Java/Spring project before changing it. The tool will scan local source code and project materials, extract deterministic facts, attach evidence references, and write Markdown/JSON artifacts that can be reviewed, versioned, and reused.
+The goal is to help developers and AI coding agents understand a legacy Java/Spring project before changing it. The tool scans local Java source, standard Maven layout, and standard Maven test roots, extracts deterministic facts, attaches evidence references, and writes Markdown/JSON artifacts that can be reviewed, versioned, and reused.
 
 The current product focus is intentionally narrow:
 
@@ -33,6 +33,12 @@ Build the packaged CLI jar:
 mvn package
 ```
 
+`mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
+
+```text
+target/agent-project-memory-0.1.0-SNAPSHOT.jar
+```
+
 ## Current Usage
 
 The current CLI exposes the intended command shape:
@@ -51,10 +57,11 @@ Existing unrelated contents inside `.project-memory/` are preserved. Generated f
 rewritten deterministically when a supported source root exists.
 
 When the scanned path has a Maven-style Java source root at `src/main/java`, the current
-implementation analyzes Spring MVC controllers and direct Spring stereotype components,
-direct JPA entity annotations with direct source-visible mapped-superclass identifier
-fields, and standard Maven test-root classes with conservative helper filtering, then
-writes:
+implementation analyzes Spring MVC controllers and source-visible interface-declared
+Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spring
+stereotype components, direct JPA entity annotations with direct source-visible
+mapped-superclass identifier fields, and standard Maven test-root classes with
+conservative helper filtering, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -107,23 +114,18 @@ AI may become an optional presentation or summarization layer later, but the cor
 
 ## Project Status
 
-Stage 1 is implemented as a minimal Java 21 Maven CLI skeleton.
-Stage 2 implements a JavaParser-backed Spring MVC endpoint analyzer and wires it into
-`scan <path>` for Maven-style `src/main/java` source roots.
-Stage 3.1 stabilizes minimal `project-map.json` and `evidence-index.jsonl` output for
-the currently supported single-module Maven/Spring MVC scan.
-Stage 4.1 adds a deterministic direct Spring stereotype component inventory to
-`project-map.json`.
-Stage 5.1 adds a deterministic direct JPA entity inventory to `project-map.json` with
-annotation evidence in `evidence-index.jsonl`.
-Stage 6.1 adds a minimal deterministic tests inventory to `project-map.json`, including
-test-like class declarations under supported test roots, directly visible framework
-signals, and naming-convention tested-subject inferences with explicit uncertainty for
-ambiguous matches.
-Stage 7.1 adds deterministic `agent-guide.md` generation from `project-map.json` and
-`evidence-index.jsonl` facts without re-analyzing source files or calling LLMs.
+The current implementation is the v0.1 release-candidate slice after Stage 8 evaluation.
+Roadmap Stages 0 through 8 are closed for v0.1. Stage 9 is post-v0.1 future work and is
+not started.
 
-Current Stage 7.1 limitations:
+The v0.1 implementation includes a Java 21 Maven CLI, JavaParser-backed Spring MVC
+endpoint extraction, source-visible interface mapping support when uniquely bindable,
+stable `project-map.json` and `evidence-index.jsonl` outputs, deterministic direct
+Spring component and JPA entity inventories, a minimal deterministic tests inventory,
+deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
+structured facts and evidence index.
+
+Current v0.1 limitations:
 
 - Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
 - Component inventory is limited to direct class-level `@Component`, `@Service`,
@@ -156,6 +158,7 @@ Current Stage 7.1 limitations:
 - `agent-guide.md` is generated from existing deterministic output facts only. It does not
   ingest local documentation, summarize source files, infer architecture layers, or add
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.
+- Local Markdown/document ingestion is not implemented in v0.1.
 - `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when present
   plus Spring MVC endpoint, component stereotype, JPA annotation, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.

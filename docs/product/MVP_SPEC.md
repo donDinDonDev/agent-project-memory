@@ -2,17 +2,21 @@
 
 ## Version
 
-v0.1 is the first implementation milestone for `agent-project-memory`.
+v0.1 is the first release-candidate implementation milestone for
+`agent-project-memory`.
 
-The MVP is a local-first Java 21 CLI/devtool that scans a Maven-based Java/Spring repository and writes evidence-backed project memory files under `.project-memory/`.
+The MVP is a local-first Java 21 CLI/devtool that scans a Maven-based Java/Spring
+repository and writes evidence-backed project memory files under `.project-memory/`.
+The current build is packaged with Maven as an executable shaded jar produced by
+`mvn package`.
 
 ## In Scope
 
 v0.1 includes:
 
 - Local repository scan.
-- Maven project detection.
-- Java source root detection.
+- Root `pom.xml` Maven project detection.
+- Standard single-module Maven source and test root detection.
 - Spring MVC endpoint extraction.
 - Source-visible interface-declared Spring MVC endpoint mappings under supported
   production source roots when they can be uniquely bound to concrete handlers.
@@ -35,14 +39,13 @@ agent-project-memory scan .
 
 The repository may include:
 
-- Maven build files such as `pom.xml`.
-- Java source roots such as `src/main/java`.
+- A root Maven build file at `pom.xml`.
+- Standard single-module Maven source roots such as `src/main/java`.
 - Spring MVC controllers.
 - Java interfaces under supported production source roots when they declare Spring MVC
   mappings implemented by concrete controllers.
 - Spring components and services.
 - JPA entities with direct annotations.
-- Local Markdown documentation.
 - Tests under standard Maven test roots.
 
 ## Expected Outputs
@@ -73,6 +76,7 @@ v0.1 does not include:
 - Multi-language analysis.
 - PDF parsing.
 - Automatic code modification.
+- Local Markdown or document ingestion in the current implementation.
 - Running Maven or other code generation during a scan.
 - Default scanning of generated source roots such as `target/generated-sources`.
 - OpenAPI YAML parsing or generated API reconstruction.
@@ -88,8 +92,9 @@ v0.1 does not include:
 v0.1 is acceptable when:
 
 - The tool can scan a local Maven Java/Spring fixture project.
-- Maven project detection identifies at least root `pom.xml` and Maven module boundaries when present.
-- Java source root detection identifies standard Maven source and test roots.
+- Maven project detection identifies a root `pom.xml` when present.
+- Java source root detection identifies standard single-module Maven source and test
+  roots such as `src/main/java` and `src/test/java` when present.
 - Spring MVC endpoint extraction detects common controller annotations and request
   mapping annotations declared directly on handler methods, and detects
   source-visible interface-declared mappings only when the interface is under a
@@ -118,3 +123,5 @@ v0.1 is acceptable when:
 - Fixture tests compare generated facts with expected output.
 - No source code is sent to external services by default.
 - The core analyzer does not depend on external APIs.
+- Full Maven module parsing, generated-source/OpenAPI reconstruction, and Local
+  Markdown ingestion remain outside the current v0.1 implementation.
