@@ -34,7 +34,7 @@ public final class AgentGuideGenerator {
     appendComponents(markdown, projectMap.path("components"), evidenceById);
     appendEntities(markdown, projectMap.path("entities"), evidenceById);
     appendTests(markdown, projectMap.path("tests"), evidenceById);
-    appendKnownLimits(markdown, projectMap);
+    appendKnownLimits(markdown, projectMap, evidenceById);
     appendInspectionOrder(markdown, projectMap, evidenceById);
 
     return markdown.toString();
@@ -307,8 +307,12 @@ public final class AgentGuideGenerator {
     }
   }
 
-  private void appendKnownLimits(StringBuilder markdown, JsonNode projectMap) {
+  private void appendKnownLimits(
+      StringBuilder markdown,
+      JsonNode projectMap,
+      Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Known Uncertainty And Limits\n\n");
+    appendWarnings(markdown, projectMap.path("warnings"), evidenceById);
     markdown.append("- Not analyzed: Spring runtime behavior such as component scanning, dependency ")
         .append("injection graphs, bean lifecycle, scopes, and conditional configuration is not ")
         .append("represented by `components.items`.\n");
@@ -316,7 +320,8 @@ public final class AgentGuideGenerator {
         .append("declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol ")
         .append("solving or ORM runtime behavior is claimed.\n");
     markdown.append("- Not analyzed: JPA mapped-superclass identifier support is limited to ")
-        .append("immediate source-visible superclasses; multi-level inheritance is not walked.\n");
+        .append("conservative source-visible mapped-superclass chains; unresolved, ambiguous, ")
+        .append("cyclic, or non-source-visible branches are skipped.\n");
     markdown.append("- Inferred: tested-subject relations use naming conventions only. Test execution, ")
         .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
         .append("analyzed.\n");
@@ -350,8 +355,11 @@ public final class AgentGuideGenerator {
     List<String> buildPaths = evidencePaths(projectMap.path("project").path("build"), evidenceById);
     appendPathHint(markdown, buildPaths);
     markdown.append(".\n");
-    markdown.append("2. For HTTP behavior, inspect detected endpoint evidence");
-    appendPathHint(markdown, evidencePaths(projectMap.path("endpoints"), evidenceById));
+    markdown.append("2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence");
+    LinkedHashSet<String> httpPaths = new LinkedHashSet<>();
+    httpPaths.addAll(evidencePaths(projectMap.path("endpoints"), evidenceById));
+    httpPaths.addAll(evidencePaths(projectMap.path("warnings").path("items"), evidenceById));
+    appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");
     markdown.append("3. For Spring wiring changes, inspect detected component evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("components").path("items"), evidenceById));
@@ -362,6 +370,29 @@ public final class AgentGuideGenerator {
     markdown.append("5. For tests, inspect detected test files and inferred tested-subject evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("tests").path("items"), evidenceById));
     markdown.append("; do not treat inferred subjects as coverage proof.\n");
+  }
+
+  private void appendWarnings(
+      StringBuilder markdown,
+      JsonNode warnings,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = warnings.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      return;
+    }
+
+    for (JsonNode warning : items) {
+      markdown.append("- Warning: ")
+          .append(code(text(warning, "category")))
+          .append(" signal ")
+          .append(code(text(warning, "signal")))
+          .append(" at ")
+          .append(code(text(warning, "source_path")))
+          .append(". ")
+          .append(text(warning, "message"))
+          .append("\n");
+      appendEvidenceLine(markdown, warning.path("evidence_ids"), evidenceById);
+    }
   }
 
   private void appendHttpMethodLine(StringBuilder markdown, JsonNode endpoint) {

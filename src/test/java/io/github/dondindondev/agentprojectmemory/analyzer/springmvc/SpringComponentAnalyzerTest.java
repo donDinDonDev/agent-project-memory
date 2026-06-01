@@ -23,6 +23,9 @@ final class SpringComponentAnalyzerTest {
         () -> assertEquals(List.of("@Component"), component(analysis, "PlainComponent").stereotypes()),
         () -> assertEquals(List.of("@Service"), component(analysis, "OrderService").stereotypes()),
         () -> assertEquals(List.of("@Repository"), component(analysis, "OrderRepository").stereotypes()),
+        () -> assertEquals(
+            List.of("@Repository"),
+            component(analysis, "OrderRepositoryInterface").stereotypes()),
         () -> assertEquals(List.of("@Controller"), component(analysis, "PageController").stereotypes()),
         () -> assertEquals(List.of("@RestController"), component(analysis, "ApiController").stereotypes()),
         () -> assertEquals(List.of("@Configuration"), component(analysis, "AppConfiguration").stereotypes()));
@@ -68,6 +71,7 @@ final class SpringComponentAnalyzerTest {
             "com.example.components.ApiController",
             "com.example.components.AppConfiguration",
             "com.example.components.OrderRepository",
+            "com.example.components.OrderRepositoryInterface",
             "com.example.components.OrderService",
             "com.example.components.PageController",
             "com.example.components.PlainComponent"),

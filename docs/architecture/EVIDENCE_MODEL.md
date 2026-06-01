@@ -25,7 +25,9 @@ Evidence types defined by the model:
 
 - `code_symbol`: a class, method, field, enum, interface, or other Java symbol.
 - `annotation`: an annotation on a class, method, field, parameter, or configuration element.
-- `config_file`: a configuration file such as `application.yml`, `application.properties`, or XML configuration.
+- `config_file`: a configuration file such as `application.yml`,
+  `application.properties`, XML configuration, or bounded filename-only OpenAPI/Swagger
+  spec presence evidence.
 - `build_file`: a build file such as `pom.xml`.
 - `test_file`: a test source file or test resource.
 - `document`: a local project document such as Markdown. This evidence type is reserved
@@ -67,16 +69,25 @@ or document ingestion is future work.
 Examples:
 
 - A class annotated with `@RestController`.
+- An interface annotated with a direct supported Spring stereotype such as `@Repository`.
 - A method annotated with `@GetMapping("/orders/{id}")`.
 - A source-visible Java interface method annotated with `@GetMapping("/orders/{id}")`
   when it is uniquely bound to a concrete controller handler under supported
   production source roots.
 - A class annotated with direct `@Entity`.
 - A field annotated with direct `@Id` or `@ManyToOne`.
-- A field annotated with direct `@Id` on a directly source-visible
-  `@MappedSuperclass` when that field is attached to an entity as a bounded
-  mapped-superclass identifier fact.
+- A field annotated with direct `@Id` on a source-visible `@MappedSuperclass` reached
+  from an entity through a conservative mapped-superclass chain when that field is
+  attached to the entity as a bounded mapped-superclass identifier fact.
 - A Maven project with a root `pom.xml`.
+- Filename-only presence of `openapi.yml`, `openapi.yaml`, `swagger.yml`, or
+  `swagger.yaml` as a hidden HTTP surface warning signal.
+- A root `pom.xml` Maven plugin declaration under `<build><plugins><plugin>` or
+  `<build><pluginManagement><plugins><plugin>` with an exact artifact ID of
+  `openapi-generator-maven-plugin` or `swagger-codegen-maven-plugin` as a hidden HTTP
+  surface warning signal.
+- A direct source-visible `@RepositoryRestResource` annotation as a hidden HTTP surface
+  warning signal.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -92,9 +103,9 @@ The v0.1 implementation emits these evidence records:
   `@RequestMapping`, method-level mapping annotations, `@PathVariable`, `@RequestParam`,
   and `@RequestBody`.
 - `annotation` for direct supported Spring component stereotype annotations on Java class
-  declarations under supported production source roots. The v0.1 implementation supports
-  `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
-  `@Configuration`.
+  or interface declarations under supported production source roots. The v0.1
+  implementation supports `@Component`, `@Service`, `@Repository`, `@Controller`,
+  `@RestController`, and `@Configuration`.
   Component stereotype evidence uses `class_name` for the annotated type, `method_name`
   as `null`, `symbol_name` as the annotation symbol, the annotation line range, the
   annotation excerpt, and `high` confidence. When the same `@Controller` or
@@ -110,6 +121,8 @@ The v0.1 implementation emits these evidence records:
   evidence IDs include a `field:<field_name>` discriminator while preserving the global
   evidence field set.
 - Test inventory evidence described in the v0.1 Test Evidence section below.
+- Hidden HTTP surface warning evidence described in the v0.1 Warning Evidence section
+  below.
 
 v0.1 does not emit evidence records for Maven modules, local Markdown/documents,
 connectors, generated guidance, coverage data, test execution results, behavioral
@@ -148,10 +161,39 @@ When `project-map.json` emits an `identifier_fields` item with `source_kind` set
 - annotation evidence for the direct class-level `@MappedSuperclass` declaration on the
   same declaring class.
 
-This evidence supports only a direct, source-visible mapped-superclass identifier fact.
-It does not prove full ORM inheritance reconstruction, multi-level hierarchy traversal,
-classpath resolution, property-access mapping, generated-value behavior, column mapping,
-schema generation, or runtime persistence behavior.
+This evidence supports only a conservative source-visible mapped-superclass identifier
+fact. Superclass traversal is limited to fully qualified names, explicit single-type
+imports, and same-package references under supported production source roots.
+Unresolved, ambiguous, cyclic, wildcard-import-only, classpath-only, generated-source-only,
+or otherwise non-source-visible hierarchy branches are skipped. This does not prove full
+ORM inheritance reconstruction, classpath resolution, property-access mapping,
+generated-value behavior, column mapping, schema generation, or runtime persistence
+behavior.
+
+### v0.1 Warning Evidence
+
+The v0.1 hidden HTTP surface warning analyzer emits evidence only for bounded,
+deterministic signals. Warning evidence supports `warnings.items`; it does not create
+endpoint facts.
+
+The emitted warning evidence records are:
+
+- `config_file` for OpenAPI/Swagger spec file presence by filename only. The evidence
+  path is the repository-relative spec path, `symbol_name` is the filename, `class_name`
+  and `method_name` are `null`, `line_start` and `line_end` are `null`, and the excerpt is
+  a bounded filename observation such as `filename detected: openapi.yml`. The analyzer
+  does not parse OpenAPI/Swagger YAML content.
+- `build_file` for deterministic OpenAPI/Swagger Maven code generation plugin
+  declarations in the root `pom.xml`, under `<build><plugins><plugin>` or
+  `<build><pluginManagement><plugins><plugin>`, with exact artifact IDs such as
+  `openapi-generator-maven-plugin` or `swagger-codegen-maven-plugin`. The matching
+  artifactId line is used as the evidence excerpt.
+- `annotation` for direct source-visible `@RepositoryRestResource` annotations under
+  supported production source roots.
+
+This evidence does not prove runtime Spring Data REST endpoints, generated OpenAPI
+interfaces, generated source contents, or complete HTTP API coverage. It only proves that
+the warning signal was visible in the scanned local sources.
 
 ### Inferred Relations
 

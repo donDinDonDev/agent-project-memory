@@ -19,6 +19,10 @@ class OrderService {
 class OrderRepository {
 }
 
+@Repository
+interface OrderRepositoryInterface {
+}
+
 @Controller
 class PageController {
 }

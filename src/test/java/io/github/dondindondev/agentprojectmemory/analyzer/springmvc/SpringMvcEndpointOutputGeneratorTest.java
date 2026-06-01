@@ -217,6 +217,44 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"path\":\"src/test/java/com/example/web/ProjectMapControllerTest.java\"")));
   }
 
+  @Test
+  void hiddenHttpSurfaceWarningsAreGeneratedWithoutInventingEndpoints() throws Exception {
+    Path projectPath = tempDir.resolve("hidden-http-warnings");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(hiddenWarningFixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertTrue(projectMap.contains("\"endpoints\": [],")),
+        () -> assertTrue(projectMap.contains("\"warnings\": {")),
+        () -> assertTrue(projectMap.contains("\"category\": \"hidden_http_surface\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"openapi_spec_file\"")),
+        () -> assertTrue(projectMap.contains("\"source_path\": \"src/main/resources/openapi.yml\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"repository_rest_resource\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_openapi_swagger_codegen_plugin\"")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"config_file\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi.yml\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@RepositoryRestResource\"")),
+        () -> assertTrue(agentGuide.contains("Warning: `hidden_http_surface` signal `openapi_spec_file`")),
+        () -> assertTrue(agentGuide.contains(
+            "Warning: `hidden_http_surface` signal `repository_rest_resource`")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Warning evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
   private Set<String> projectMapEvidenceIds(String projectMap) {
     Set<String> ids = new HashSet<>();
     var arrayMatcher = EVIDENCE_ID_ARRAY.matcher(projectMap);
@@ -252,6 +290,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private Path goldenRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/golden/stage3-project-map")).toURI());
+  }
+
+  private Path hiddenWarningFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/hidden-http-warnings")).toURI());
   }
 
   private void copyDirectory(Path source, Path target) throws Exception {

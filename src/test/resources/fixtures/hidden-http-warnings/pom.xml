@@ -1,0 +1,16 @@
+<project>
+  <properties>
+    <maven.openapi-generator-plugin.version>7.22.0</maven.openapi-generator-plugin.version>
+  </properties>
+  <build>
+    <plugins>
+      <!-- openapi-generator-maven-plugin in a comment must not create a warning -->
+      <plugin>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <artifactId>openapi-generator-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+</project>

@@ -30,8 +30,9 @@ later roadmap item and is not implemented in the current slice.
 ### Java/Spring Analyzer
 
 Uses JavaParser first to inspect Java source files. The current implementation extracts
-Spring MVC endpoint facts, direct Spring stereotype component facts, and direct JPA
-entity facts from supported production source roots.
+Spring MVC endpoint facts, deterministic hidden HTTP surface warnings, direct Spring
+stereotype component facts, and direct JPA entity facts from supported production source
+roots.
 
 For `EVAL-8-004` decision B, the v0.1 endpoint contract includes Spring MVC mappings
 declared on Java interface methods only when those interfaces are visible under
@@ -42,20 +43,31 @@ YAML, reconstruct generated APIs, or claim complete Spring runtime handler mappi
 behavior. Ambiguous or non-unique interface bindings are skipped instead of emitted as
 uncertain endpoints.
 
-The basic component analyzer records only directly present class-level stereotypes such
-as `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
-`@Configuration`. It does not reconstruct Spring component scanning, bean lifecycle,
-bean names, scopes, autowiring, conditional configuration, or other runtime behavior.
+The hidden HTTP surface warning analyzer records bounded signals such as
+OpenAPI/Swagger spec filename presence, root `pom.xml` OpenAPI/Swagger Maven plugin
+declarations under `<build><plugins>` or `<build><pluginManagement><plugins>`, and
+direct source-visible `@RepositoryRestResource`. These warnings do not become endpoint
+facts, and they do not parse OpenAPI YAML, run Maven generation, scan generated sources
+by default, or reconstruct generated APIs.
+
+The basic component analyzer records only directly present source-type-level stereotypes
+on Java classes or interfaces, such as `@Component`, `@Service`, `@Repository`,
+`@Controller`, `@RestController`, and `@Configuration`. It does not infer repository
+components from `extends JpaRepository`, or reconstruct Spring component scanning, bean
+lifecycle, bean names, scopes, autowiring, conditional configuration, or other runtime
+behavior.
 
 The basic JPA entity analyzer records only directly present class-level `@Entity`,
 class-level `@Table(name = "...")`, field-level `@Id`, and field-level relationship
 annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relationship
 facts preserve the declared field type and explicitly mark target resolution as
 uncertain because no Java symbol solving or ORM runtime reconstruction is performed.
-It also attaches field-level `@Id` facts declared on an immediate source-visible
-superclass annotated with direct `@MappedSuperclass`. This mapped-superclass support is
-direct-only and does not walk multi-level inheritance, solve classpaths, or claim ORM
-runtime behavior.
+It also attaches field-level `@Id` facts declared on a conservative source-visible
+superclass chain where each traversed superclass is annotated with direct
+`@MappedSuperclass`. This traversal resolves only fully qualified names, explicit
+single-type imports, and same-package references; unresolved, ambiguous, cyclic, or
+non-source-visible hierarchy branches are skipped. It does not solve classpaths or claim
+ORM runtime behavior.
 
 The tests inventory analyzer records test-like Java class declarations under standard
 Maven `src/test/java` roots, directly visible test framework signals from imports and

@@ -21,6 +21,7 @@ v0.1 includes:
 - Source-visible interface-declared Spring MVC endpoint mappings under supported
   production source roots when they can be uniquely bound to concrete handlers.
 - Basic Spring component inventory.
+- Deterministic hidden HTTP surface warnings without endpoint expansion.
 - Basic direct JPA entity extraction.
 - Minimal deterministic tests inventory.
 - Evidence index.
@@ -44,8 +45,11 @@ The repository may include:
 - Spring MVC controllers.
 - Java interfaces under supported production source roots when they declare Spring MVC
   mappings implemented by concrete controllers.
-- Spring components and services.
+- Spring components and services, including directly annotated interfaces.
 - JPA entities with direct annotations.
+- Optional OpenAPI/Swagger spec files, Maven code generation plugin declarations under
+  root `pom.xml` build plugin sections, and direct `@RepositoryRestResource`
+  annotations that should be warned about but not expanded into endpoint facts.
 - Tests under standard Maven test roots.
 
 ## Expected Outputs
@@ -100,11 +104,18 @@ v0.1 is acceptable when:
   source-visible interface-declared mappings only when the interface is under a
   supported production source root such as `src/main/java` and the mapping can be
   uniquely bound to a concrete controller handler.
-- Basic Spring component inventory detects common stereotypes such as `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController`.
+- Basic Spring component inventory detects common direct stereotypes such as
+  `@Component`, `@Service`, `@Repository`, `@Controller`, and `@RestController` on
+  source-visible Java classes or interfaces, without inferring repository components
+  from `extends JpaRepository`.
+- Hidden HTTP surface warnings detect bounded deterministic signals such as
+  OpenAPI/Swagger spec filename presence, root `pom.xml` OpenAPI/Swagger Maven plugin
+  declarations under build plugin sections, and direct source-visible
+  `@RepositoryRestResource`, while not adding endpoint facts from those warnings.
 - Basic direct JPA entity extraction detects direct `@Entity`, direct `@Table(name = "...")`,
-  field-level `@Id` declared on the entity class or on an immediate source-visible
-  `@MappedSuperclass`, and direct field-level relationship annotations while marking
-  unresolved relationship targets as uncertain.
+  field-level `@Id` declared on the entity class or on a conservative source-visible
+  `@MappedSuperclass` chain, and direct field-level relationship annotations while
+  marking unresolved relationship targets as uncertain.
 - Minimal tests inventory detects test-like Java classes under standard single-module
   Maven `src/test/java`, while omitting helper/support/configuration declarations
   without clear test naming or direct test-class marker annotations.
