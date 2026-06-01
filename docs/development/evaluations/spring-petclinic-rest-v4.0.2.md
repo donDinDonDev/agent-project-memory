@@ -13,15 +13,17 @@ Evaluation date: 2026-05-30
 
 This project is the Stage 8 known-limitation probe for generated/interface-only REST API
 mappings. The concrete controllers implement generated OpenAPI interfaces, while the
-implementation used for this scan analyzes the standard `src/main/java` source root and
-direct source-visible Spring MVC annotations only.
+implementation used for the original scan analyzed the standard `src/main/java` source
+root and direct source-visible Spring MVC annotations only. The current analyzer also
+supports source-visible Java interface mappings under supported production source roots
+when they can be uniquely bound to concrete controller handlers.
 
 `EVAL-8-004` docs/contract decision update: v0.1 decision B supports Spring MVC mappings
 declared on Java interfaces only when those interfaces are visible under supported
 production source roots such as `src/main/java` and can be uniquely bound to concrete
-controller handlers. `EVAL-8-004` remains open and pending implementation. This decision
-does not fix generated `*Api` mappings for this project unless those generated
-interfaces are present as normal source inputs; Maven generation, default
+controller handlers. This support does not fix generated `*Api` mappings for this
+project unless those generated interfaces are present as normal source inputs; Maven
+generation, default
 `target/generated-sources` scanning, OpenAPI YAML parsing, and generated API
 reconstruction remain out of scope.
 
@@ -118,15 +120,15 @@ workspace. Those third-party generated outputs were not copied into this reposit
 
 | Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| `spring-petclinic-rest@v4.0.2` / `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | `1` | `2` | `2` | `2` | `2` | `1` | Direct-source extraction is accurate and evidence-backed, but the main REST API surface is generated/interface-only and intentionally missed by the current implementation. Decision B will support interface-declared mappings only when the interfaces are normal source inputs under supported production roots. |
+| `spring-petclinic-rest@v4.0.2` / `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | `1` | `2` | `2` | `2` | `2` | `1` | Direct-source extraction is accurate and evidence-backed, but the main REST API surface is generated/interface-only and intentionally missed by the current implementation. Decision B supports interface-declared mappings only when the interfaces are normal source inputs under supported production roots. |
 
 ## Scorecard: Endpoints
 
 - Expected observations from bounded manual inspection: The current implementation
   detects direct Spring MVC mappings visible under `src/main/java`. The v0.1 decision B
-  contract will also support source-visible interface-declared mappings when the
-  interface Java sources are under supported production roots and uniquely bind to
-  concrete handlers. A bounded source search found one concrete handler method mapping in
+  contract also supports source-visible interface-declared mappings when the interface
+  Java sources are under supported production roots and uniquely bind to concrete
+  handlers. A bounded source search found one concrete handler method mapping in
   `RootRestController`: class-level `@RequestMapping("/")` and method-level
   `@RequestMapping(value = "/")`. The seven domain REST controllers are direct
   `@RestController` classes with class-level `@RequestMapping("api")` or
@@ -306,7 +308,8 @@ workspace. Those third-party generated outputs were not copied into this reposit
 ### EVAL-8-004: Decide generated/interface endpoint handling
 
 - Bounded task id: `EVAL-8-004`
-- Status: Open; docs/contract decision B recorded, analyzer implementation pending.
+- Status: Addressed for source-visible Java interfaces when binding is supported by
+  Java-visible source syntax; generated/OpenAPI handling remains out of scope.
 - Decision: For v0.1, support Spring MVC mappings declared on Java interfaces only when
   those interfaces are visible under supported production source roots such as
   `src/main/java` and can be uniquely bound to concrete controller handlers. Ambiguous
@@ -323,12 +326,13 @@ workspace. Those third-party generated outputs were not copied into this reposit
   `docs/architecture/OUTPUT_CONTRACT.md`, `docs/architecture/EVIDENCE_MODEL.md`, and
   `docs/architecture/ARCHITECTURE_OVERVIEW.md` document the decision B scope and mapping
   source semantics.
-- Proposed validation: Add a focused fixture with a concrete `@RestController`
-  implementing a source-visible interface whose methods carry Spring MVC mappings, plus
-  ambiguous-binding cases that prove non-unique interface mappings are skipped. A repeat
-  scan of this project should still not emit generated `*Api` operations unless those
-  generated interfaces are provided as normal source inputs under supported production
-  roots.
+- Proposed validation: Keep focused fixtures with concrete `@RestController` classes
+  implementing source-visible interfaces whose methods carry Spring MVC mappings,
+  including same-package and explicit-import bindings, plus skipped cases for ambiguous
+  bindings, cross-package simple names without valid imports, wildcard imports, and
+  classpath/generated-only interfaces. A repeat scan of this project should still not
+  emit generated `*Api` operations unless those generated interfaces are provided as
+  normal source inputs under supported production roots.
 - Non-goals: Do not parse OpenAPI YAML as evidence in this task, do not run Maven builds
   inside scans, do not scan `target/generated-sources` by default, do not reconstruct
   generated APIs, do not add connectors, and do not infer runtime endpoints without
@@ -353,6 +357,48 @@ workspace. Those third-party generated outputs were not copied into this reposit
   complete JSON/JSONL artifacts.
 - Non-goals: Do not drop evidence records from `evidence-index.jsonl`, do not perform
   test coverage analysis, and do not summarize source behavior with LLMs.
+
+## EVAL-8-004 Retest
+
+Retest date: 2026-06-01
+
+Implementation scope:
+
+- Source-visible Java interface mappings are addressed when the concrete controller
+  implements the interface through a fully qualified name, an explicit single-type
+  import, or the same package.
+- Repository-wide simple-name fallback is removed, so a controller is not bound to a
+  same-simple-name interface in another package without Java-visible import/package
+  evidence.
+- Wildcard imports are intentionally not resolved in this v0.1 slice and are skipped
+  deterministically.
+- Generated `*Api` interfaces, OpenAPI YAML parsing, Maven generation during scans,
+  default `target/generated-sources` scanning, and generated API reconstruction remain
+  out of scope.
+
+Commands run:
+
+```sh
+mvn -Dtest=SpringMvcEndpointAnalyzerTest test
+mvn -Dtest=SpringMvcEndpointAnalyzerTest,AgentProjectMemoryCliTest,SpringMvcEndpointOutputGeneratorTest,AgentGuideGeneratorTest test
+mvn test
+git diff --check
+```
+
+Results:
+
+- Focused analyzer regression tests passed with 34 tests, 0 failures, and 0 errors.
+- The targeted Maven selection passed with 52 tests, 0 failures, and 0 errors.
+- `mvn test` passed with 81 tests, 0 failures, and 0 errors.
+- `git diff --check` passed with no output.
+- No repeat Spring PetClinic REST scan changed the known generated/API limitation:
+  generated `*Api` interfaces remain absent from normal `src/main/java` scan inputs in
+  the fresh `v4.0.2` checkout unless Maven generation is run outside the scanner.
+
+Retest conclusion: `EVAL-8-004` is addressed for source-visible Java interface-declared
+Spring MVC mappings. It still does not fix `spring-petclinic-rest` generated `*Api`,
+OpenAPI, or Maven-generation cases, so the project's generated operation-level REST API
+surface remains outside the v0.1 scan inputs.
 
 ## EVAL-8-005 Retest
 
@@ -401,7 +447,9 @@ Results:
   declared_type_only` and `uncertainty: target_type_not_resolved`.
 
 Retest conclusion: `EVAL-8-005` is addressed for the observed guide verbosity issue.
-`EVAL-8-004` remains open and was not implemented.
+`EVAL-8-004` is addressed for source-visible Java interfaces only; generated `*Api`,
+OpenAPI, and Maven-generation cases remain out of scope and are still not fixed for
+`spring-petclinic-rest`.
 
 ## Validation
 

@@ -31,6 +31,17 @@
       "request_parameters": [],
       "request_body_type": "CreateItemRequest",
       "response_type": "ItemResponse",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.ProjectMapController",
+        "declaring_method": "createItem",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+          "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping"
+        ]
+      },
       "evidence_ids": [
         "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
         "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
@@ -69,6 +80,17 @@
       ],
       "request_body_type": null,
       "response_type": "ItemResponse",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.ProjectMapController",
+        "declaring_method": "getItem",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+          "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping"
+        ]
+      },
       "evidence_ids": [
         "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
         "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",

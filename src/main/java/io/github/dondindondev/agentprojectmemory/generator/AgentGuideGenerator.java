@@ -102,6 +102,7 @@ public final class AgentGuideGenerator {
       markdown.append("- Handler: Detected ")
           .append(code(text(endpoint, "handler_method")))
           .append("\n");
+      appendMappingSourceLine(markdown, endpoint.path("mapping_source"));
       appendHttpMethodLine(markdown, endpoint);
       markdown.append("- Paths: Detected ")
           .append(codeList(stringValues(endpoint.path("paths"))))
@@ -321,6 +322,9 @@ public final class AgentGuideGenerator {
         .append("analyzed.\n");
     markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
         .append("Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.\n");
+    markdown.append("- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, ")
+        .append("classpath-only interfaces, and ambiguous interface endpoint bindings are outside ")
+        .append("the source-visible interface endpoint support.\n");
 
     if (projectMap.path("endpoints").isEmpty()) {
       markdown.append("- Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent ")
@@ -376,6 +380,30 @@ public final class AgentGuideGenerator {
       return;
     }
     markdown.append("- HTTP methods: Not analyzed; no supported method value was recorded.\n");
+  }
+
+  private void appendMappingSourceLine(StringBuilder markdown, JsonNode mappingSource) {
+    if (!mappingSource.isObject() || mappingSource.isEmpty()) {
+      markdown.append("- Mapping source: Not analyzed; no mapping source was recorded.\n");
+      return;
+    }
+
+    String kind = text(mappingSource, "kind");
+    String declaringType = text(mappingSource, "declaring_type");
+    String declaringMethod = text(mappingSource, "declaring_method");
+    String binding = text(mappingSource, "binding");
+    markdown.append("- Mapping source: Detected ")
+        .append(code(kind))
+        .append(" from ")
+        .append(code(declaringType + "#" + declaringMethod));
+    if (!binding.isBlank()) {
+      markdown.append(" with binding ").append(code(binding));
+    }
+    String uncertainty = nullableText(mappingSource, "uncertainty");
+    if (uncertainty != null) {
+      markdown.append(" and uncertainty ").append(code(uncertainty));
+    }
+    markdown.append("\n");
   }
 
   private void appendRequestParametersLine(StringBuilder markdown, JsonNode requestParameters) {

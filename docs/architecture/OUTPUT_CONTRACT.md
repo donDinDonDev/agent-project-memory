@@ -16,17 +16,15 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-In the current Stage 7.1 implementation, `scan <path>` writes all four files when a
+In the current implementation, `scan <path>` writes all four files when a
 Maven-style `src/main/java` source root exists. Unsupported directories still only get a
 prepared `.project-memory/` directory and do not get contract output files.
 
-`EVAL-8-004` decision B is documented here as a v0.1 docs/contract decision pending
-analyzer implementation. It keeps endpoint extraction limited to source-visible Java
-inputs under supported production source roots, while adding uniquely bound
-interface-declared Spring MVC mappings to the intended v0.1 endpoint semantics. It does
-not add Maven generation during scans, default `target/generated-sources` scanning,
-OpenAPI YAML parsing, generated API reconstruction, or Spring runtime handler mapping
-reconstruction.
+`EVAL-8-004` decision B keeps endpoint extraction limited to source-visible Java inputs
+under supported production source roots, while adding uniquely bound interface-declared
+Spring MVC mappings to the v0.1 endpoint semantics. It does not add Maven generation
+during scans, default `target/generated-sources` scanning, OpenAPI YAML parsing,
+generated API reconstruction, or Spring runtime handler mapping reconstruction.
 
 ## `project-map.json`
 
@@ -72,6 +70,16 @@ The current implementation writes this top-level object:
       ],
       "request_body_type": null,
       "response_type": "com.example.orders.OrderDto",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.orders.OrderController",
+        "declaring_method": "getOrder",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping"
+        ]
+      },
       "evidence_ids": [
         "ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController",
         "ev:src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping",
@@ -200,9 +208,7 @@ Field rules:
 
 Endpoint mapping-source rules for `EVAL-8-004` decision B:
 
-- Once this decision is implemented, endpoint facts for this analyzer slice must include
-  a `mapping_source` object. Until that analyzer slice lands, existing Stage 7.1 outputs
-  may omit this object and emit only direct handler method mappings.
+- Endpoint facts for this analyzer slice include a `mapping_source` object.
 - `mapping_source.kind` is one of:
   - `"direct_handler_method"`: the Spring MVC method-level mapping annotation is declared
     directly on the concrete `controller_class` `handler_method`.
@@ -234,6 +240,10 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
   run Maven generation, scan `target/generated-sources` by default, parse OpenAPI YAML,
   reconstruct generated APIs, resolve classpath-only interfaces, infer runtime proxies,
   or interpret unsupported Spring mapping conditions.
+- Source-visible interface binding is established only from Java-visible source syntax:
+  fully qualified implemented interface names, explicit single-type imports, or
+  same-package interface names. Wildcard imports are not resolved in this v0.1 slice and
+  are skipped rather than matched through a repository-wide simple-name fallback.
 - If more than one source-visible interface method could bind to the same concrete
   handler, if the binding cannot be established from supported source roots, or if the
   interface is only present in generated or classpath sources outside the scan inputs,
@@ -393,10 +403,10 @@ Stage 6.1 emits:
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
   and request body annotations.
-- Source-visible interface-declared endpoint mappings, when implemented, reuse existing
-  `annotation` evidence for interface mapping annotations and existing `code_symbol`
-  evidence for interface and concrete handler symbols needed to prove the unique
-  binding. No new evidence fields are required.
+- Source-visible interface-declared endpoint mappings reuse existing `annotation`
+  evidence for interface mapping annotations and existing `code_symbol` evidence for
+  interface and concrete handler symbols needed to prove the unique binding. No new
+  evidence fields are required.
 - `annotation` evidence for direct supported Spring component stereotype annotations on
   Java class declarations. `@Controller` and `@RestController` evidence IDs use the same
   annotation ID convention as endpoint evidence so the same source annotation is not

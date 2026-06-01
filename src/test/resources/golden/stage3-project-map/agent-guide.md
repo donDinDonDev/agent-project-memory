@@ -18,6 +18,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 - Controller: Detected `com.example.web.ProjectMapController`
 - Handler: Detected `createItem`
+- Mapping source: Detected `direct_handler_method` from `com.example.web.ProjectMapController#createItem` with binding `direct`
 - HTTP methods: Detected `POST`
 - Paths: Detected `/api/items`
 - Request parameters: Detected none.
@@ -29,6 +30,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 - Controller: Detected `com.example.web.ProjectMapController`
 - Handler: Detected `getItem`
+- Mapping source: Detected `direct_handler_method` from `com.example.web.ProjectMapController#getItem` with binding `direct`
 - HTTP methods: Detected `GET`
 - Paths: Detected `/api/items/{id}`
 - Request parameters: Detected `path_variable:id (Long)`, `request_param:expand (String)`
@@ -133,6 +135,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to immediate source-visible superclasses; multi-level inheritance is not walked.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.
+- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 
 ## Practical Inspection Order For Coding Agents
 
