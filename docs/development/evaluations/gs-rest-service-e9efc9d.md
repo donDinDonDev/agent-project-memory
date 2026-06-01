@@ -202,8 +202,8 @@ Evidence records by type:
 
 - Expected observations from bounded manual inspection: The guide should use
   deterministic facts, expose known limits, and avoid unsupported architecture claims.
-- Actual observations from generated artifacts: The guide contains the required Stage
-  7.1 sections, reports Maven layout, one detected endpoint, one direct component, no
+- Actual observations from generated artifacts: The guide contains the expected
+  agent-guide.md sections, reports Maven layout, one detected endpoint, one direct component, no
   detected JPA entities, one detected test class, and the standard known-limit section.
   It uses cautious `Detected`, `Inferred`, and `Uncertain` wording and does not invent a
   broader architecture.

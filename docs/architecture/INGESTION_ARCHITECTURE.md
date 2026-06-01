@@ -2,7 +2,7 @@
 
 The v0.1 product focuses on local repository Java/Spring source files, a root Maven
 build file when present, and standard Maven test roots. Local Markdown/document ingestion
-is not implemented in the current v0.1 release-candidate slice.
+is not implemented in the current v0.1 slice.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 

@@ -2,8 +2,7 @@
 
 ## Version
 
-v0.1 is the first release-candidate implementation milestone for
-`agent-project-memory`.
+v0.1 is the first public implementation milestone for `agent-project-memory`.
 
 The MVP is a local-first Java 21 CLI/devtool that scans a Maven-based Java/Spring
 repository and writes evidence-backed project memory files under `.project-memory/`.

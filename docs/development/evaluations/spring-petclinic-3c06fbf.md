@@ -316,7 +316,7 @@ references. The eight naming-convention `tested_subjects` relations remain
 - Expected observations: `agent-guide.md` should be generated deterministically from
   `project-map.json` and `evidence-index.jsonl`, using cautious wording and known-limit
   sections.
-- Actual observations: The guide contains the required Stage 7.1 sections, resolves
+- Actual observations: The guide contains the required `agent-guide.md` sections, resolves
   evidence references inline, uses cautious `Detected`, `Inferred`, and `Uncertain`
   wording, and lists known limits for Spring runtime behavior, ORM behavior, test
   execution/coverage, direct-only mapped-superclass identifier support, connectors, LLM
@@ -448,7 +448,7 @@ references. The eight naming-convention `tested_subjects` relations remain
 - Observed artifact: `.project-memory/agent-guide.md`.
 - Expected: The guide should use deterministic facts from `project-map.json` and
   `evidence-index.jsonl`, expose uncertainty, and avoid unsupported architecture claims.
-- Actual: The guide contains the expected Stage 7.1 sections, uses cautious
+- Actual: The guide contains the expected `agent-guide.md` sections, uses cautious
   `Detected`, `Inferred`, and `Uncertain` wording, includes evidence references, calls out
   known limits, and now directs direct mapped-superclass identifier inspection for
   `Visit` toward `BaseEntity`. It remains noisy in the tests section and does not follow
