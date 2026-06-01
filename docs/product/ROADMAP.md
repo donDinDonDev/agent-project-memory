@@ -15,9 +15,9 @@ Exit criteria:
 - `docs/product/MVP_SPEC.md` defines v0.1 scope, out-of-scope items, inputs, outputs, and acceptance criteria.
 - `docs/architecture/OUTPUT_CONTRACT.md` defines the first `.project-memory/` files and contract rules.
 - `docs/architecture/EVIDENCE_MODEL.md` defines evidence references, evidence types, fact categories, and evidence discipline.
-- `docs/development/CODEX_WORKFLOW.md` defines the Codex-driven development operating model.
-- `docs/development/PROMPT_PLAYBOOK.md` provides reusable prompts for planning, execution, review, fixes, goal mode, stage close, and checkpointing.
 - `AGENTS.md` points agents to the canonical docs needed before implementation work.
+- Private maintainer workflow and prompt-playbook instructions, when present, are kept in
+  intentionally untracked local files such as `AGENTS.local.md` or `docs/maintainer/`.
 - No production implementation code, Maven project skeleton, or runtime dependencies have been added.
 
 ## Stage 1: Maven CLI Skeleton (Closed)
