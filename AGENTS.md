@@ -4,22 +4,19 @@ These rules apply to Codex and other AI coding agents working in this repository
 
 ## Required Reading
 
-Before any implementation task, read these files:
+Before any implementation task, read these public files:
 
 - `README.md`
 - `docs/product/MVP_SPEC.md`
+- `docs/product/ROADMAP.md`
 - `docs/architecture/OUTPUT_CONTRACT.md`
 - `docs/architecture/EVIDENCE_MODEL.md`
 
-Use those documents as the source of product scope, output shape, and evidence requirements.
+Use those documents as the source of product scope, stage sequencing, output shape, and
+evidence requirements.
 
-Before planning, executing, reviewing, fixing, or checkpointing Codex-driven development work, also read:
-
-- `docs/product/ROADMAP.md`
-- `docs/development/CODEX_WORKFLOW.md`
-- `docs/development/PROMPT_PLAYBOOK.md`
-
-Use those documents as the source of stage sequencing, operating model, and reusable self-contained prompt structure.
+If `AGENTS.local.md` exists, read it after this file for local maintainer workflow
+instructions. `AGENTS.local.md` is intentionally not tracked.
 
 ## Working Rules
 
