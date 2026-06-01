@@ -25,7 +25,7 @@ git -C /private/tmp/agent-project-memory-eval/gs-rest-service rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/gs-rest-service status --short
 find /private/tmp/agent-project-memory-eval/gs-rest-service -maxdepth 2 -name pom.xml -print
 find /private/tmp/agent-project-memory-eval/gs-rest-service -maxdepth 2 -type d -name src -print
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/gs-rest-service/complete
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/gs-rest-service/complete
 find /private/tmp/agent-project-memory-eval/gs-rest-service/complete/.project-memory -maxdepth 1 -type f -print
 jq '{endpoints: (.endpoints | length), components: (.components.items | length), entities: (.entities.items | length), tests: (.tests.items | length)}' /private/tmp/agent-project-memory-eval/gs-rest-service/complete/.project-memory/project-map.json
 wc -l /private/tmp/agent-project-memory-eval/gs-rest-service/complete/.project-memory/evidence-index.jsonl
@@ -250,7 +250,7 @@ Final validation for this report was run from this repository:
 
 ```sh
 mvn package
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/gs-rest-service/complete
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/gs-rest-service/complete
 git diff --check
 git diff --stat
 git status --short

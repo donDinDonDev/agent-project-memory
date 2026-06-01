@@ -38,7 +38,7 @@ git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest rev-parse HE
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest describe --tags --exact-match HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest status --short
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest rev-parse v4.0.2^{commit}
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
 find /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory -maxdepth 1 -type f -print
 jq '{endpoints: (.endpoints | length), components: (.components.items | length), entities: (.entities.items | length), tests: (.tests.items | length)}' /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/project-map.json
 wc -l /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/evidence-index.jsonl
@@ -422,7 +422,7 @@ mvn test
 mvn package
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic-rest describe --tags --exact-match HEAD
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
 rg -n "more evidence references|more evidence paths" /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/agent-guide.md
 wc -l /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/evidence-index.jsonl
 jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic-rest/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
@@ -459,7 +459,7 @@ Final validation for the `EVAL-8-005` retest was run from this repository:
 mvn -Dtest=AgentGuideGeneratorTest,SpringMvcEndpointOutputGeneratorTest,AgentProjectMemoryCliTest test
 mvn test
 mvn package
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
 git diff --check
 git diff --stat
 git status --short

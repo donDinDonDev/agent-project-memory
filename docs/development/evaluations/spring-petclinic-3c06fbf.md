@@ -26,7 +26,7 @@ mkdir -p /private/tmp/agent-project-memory-eval
 git clone https://github.com/spring-projects/spring-petclinic.git /private/tmp/agent-project-memory-eval/spring-petclinic
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic checkout 3c06fbfc1e42eb40802e0d0ca989bc9226755804
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
 find /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory -maxdepth 1 -type f -print
 find /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory -maxdepth 1 -print
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
@@ -38,7 +38,7 @@ Retest after `EVAL-8-001` fix on 2026-05-30:
 mvn package
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
 ls /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 ls /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl
 ls /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/endpoints.md
@@ -54,7 +54,7 @@ mvn package
 ls -ld /private/tmp/agent-project-memory-eval/spring-petclinic
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
 jq -r '.endpoints[] | [(.http_methods | join(",")), (.paths | join(",")), .controller_class, .handler_method] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -r '.components.items[] | [.class_name, (.stereotypes | join(","))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -r '.entities.items[] | [.class_name, (.table_name // "null"), (.identifier_fields | map(.field_name + ":" + .java_type) | join(",")), (.relationships | map(.annotation + " " + .field_name + ":" + .java_type + " " + .target_resolution + " " + .uncertainty) | join("; "))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
@@ -75,7 +75,7 @@ mvn test
 mvn package
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
 jq -r '.entities.items[] | [.class_name, (.identifier_fields | map(.field_name + ":" + .java_type + ":" + .declaring_class + ":" + .source_kind) | join(","))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'
 rg -n "mapped-superclass identifier support|source_kind|BaseEntity" /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/agent-guide.md
@@ -89,7 +89,7 @@ mvn test
 mvn package
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic rev-parse HEAD
 git -C /private/tmp/agent-project-memory-eval/spring-petclinic status --short
-java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
+java -jar target/agent-project-memory-0.1.0.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
 jq -r '["endpoints", (.endpoints | length)], ["components", (.components.items | length)], ["entities", (.entities.items | length)], ["tests", (.tests.items | length)] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -r '.tests.items[] | [.class_name, (.framework_signals | map(.name) | join(",")), (.tested_subjects | map(.class_name + "(" + .support_type + ":" + .confidence + (if .uncertainty then ":" + .uncertainty else "" end) + ")") | join(";"))] | @tsv' /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json
 jq -n --slurpfile pm /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/project-map.json --slurpfile ev /private/tmp/agent-project-memory-eval/spring-petclinic/.project-memory/evidence-index.jsonl '($ev | map(.id)) as $ids | ([$pm[0] | .. | objects | .evidence_ids? // empty | .[]] | unique) as $refs | {referenced_evidence_ids: ($refs | length), indexed_evidence_records: ($ids | length), missing_references: ($refs | map(select(($ids | index(.)) | not)))}'

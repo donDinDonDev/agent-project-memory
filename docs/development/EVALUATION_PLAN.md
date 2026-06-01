@@ -37,7 +37,7 @@ later pilot scan if reproducibility matters for the run date.
 
 ### Refs Pending Verification
 
-None for the Stage 8.1 selected set. If a selected project is replaced later and its ref
+None for the Stage 8 selected set. If a selected project is replaced later and its ref
 cannot be verified without network access, add it here with the exact command that should
 verify it, such as:
 
@@ -49,7 +49,7 @@ git ls-remote https://github.com/<owner>/<repo>.git <commit-or-branch>
 ## Local Workspace Rules
 
 - Clone third-party projects outside this repository, for example under
-  `/private/tmp/agent-project-memory-eval/`.
+  `<external-eval-dir>/`.
 - Do not vendor third-party source into this repository.
 - Do not copy third-party source snippets into this repository beyond short evidence
   examples needed in an observation.
@@ -62,7 +62,7 @@ git ls-remote https://github.com/<owner>/<repo>.git <commit-or-branch>
 Suggested local layout:
 
 ```text
-/private/tmp/agent-project-memory-eval/
+<external-eval-dir>/
   spring-petclinic/
   spring-petclinic-rest/
   gs-rest-service/
@@ -76,21 +76,21 @@ Suggested local layout:
    mvn package
    ```
 
-2. Clone or update each selected third-party project under
-   `/private/tmp/agent-project-memory-eval/`, then check out the pinned ref. Example:
+2. Clone or update each selected third-party project under `<external-eval-dir>/`, then
+   check out the pinned ref. Example:
 
    ```sh
-   git clone https://github.com/spring-projects/spring-petclinic.git /private/tmp/agent-project-memory-eval/spring-petclinic
-   git -C /private/tmp/agent-project-memory-eval/spring-petclinic checkout 3c06fbfc1e42eb40802e0d0ca989bc9226755804
+   git clone https://github.com/spring-projects/spring-petclinic.git <external-eval-dir>/spring-petclinic
+   git -C <external-eval-dir>/spring-petclinic checkout 3c06fbfc1e42eb40802e0d0ca989bc9226755804
    ```
 
 3. Run the packaged CLI against the local project path. Use the subproject path when the
    selected project stores the Maven app below the repository root:
 
    ```sh
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/spring-petclinic-rest
-   java -jar target/agent-project-memory-0.1.0-SNAPSHOT.jar scan /private/tmp/agent-project-memory-eval/gs-rest-service/complete
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic-rest
+   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/gs-rest-service/complete
    ```
 
 4. Inspect generated local artifacts only:
@@ -202,7 +202,7 @@ Field rules:
 
 ## Non-goals
 
-Stage 8.1 does not include:
+Stage 8 does not include:
 
 - Analyzer changes.
 - Test changes.
