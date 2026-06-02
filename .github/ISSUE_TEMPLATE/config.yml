@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/donDinDonDev/agent-project-memory/security/policy
+    about: Please use GitHub private vulnerability reporting when available, or follow SECURITY.md.
