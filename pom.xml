@@ -14,7 +14,7 @@
   <properties>
     <maven.compiler.release>21</maven.compiler.release>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jackson.version>2.17.2</jackson.version>
+    <jackson.version>2.22.0</jackson.version>
     <javaparser.version>3.26.4</javaparser.version>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
   </properties>
