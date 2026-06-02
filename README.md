@@ -24,6 +24,19 @@ services by default.
 - Java 21.
 - Apache Maven 3.x.
 
+## Download
+
+Release artifacts are expected on the
+[GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
+after the `v0.1.0` tag and release are created.
+
+Download `agent-project-memory-0.1.0.jar`. If `SHA256SUMS` is published with the
+release, you can optionally verify the jar checksum before running it.
+
+```sh
+java -jar agent-project-memory-0.1.0.jar scan /path/to/java-spring-project
+```
+
 ## Build And Test
 
 Run the test suite:
@@ -119,6 +132,8 @@ Start here:
   [docs/architecture/ARCHITECTURE_OVERVIEW.md](docs/architecture/ARCHITECTURE_OVERVIEW.md) and
   [docs/architecture/INGESTION_ARCHITECTURE.md](docs/architecture/INGESTION_ARCHITECTURE.md).
 - Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
+- Contributing and security:
+  [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
 
 Stage 8 evaluation reports are linked from the v0.1 release notes as supporting detail.
 
