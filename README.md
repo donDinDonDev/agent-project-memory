@@ -216,4 +216,5 @@ For the concise v0.1 scope, evaluation summary, limitations, and validation surf
 
 ## License
 
-Apache-2.0. See [LICENSE](LICENSE).
+Apache-2.0. See [LICENSE](LICENSE). Runtime dependency notices are summarized in
+[THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
