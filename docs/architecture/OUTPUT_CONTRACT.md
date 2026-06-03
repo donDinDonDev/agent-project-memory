@@ -433,6 +433,278 @@ Example source-visible interface mapping source:
 - The tests inventory does not claim code coverage, test execution results, direct
   behavioral assertion analysis, call graph resolution, or complete subject mapping.
 
+### Planned v0.2 Module-Aware Maven Contract
+
+This section defines planned v0.2 design behavior only. The current v0.1 implementation
+does not emit these module-aware fields.
+
+The planned v0.2 module-aware contract uses:
+
+- `schema_version: "0.2"` only for an atomic public output state that includes both
+  `project.modules` and direct `module_id` fields on every emitted module-owned
+  endpoint, warning, component, entity, and test fact.
+- The same four output files under `.project-memory/`.
+- Existing v0.1 fact arrays, with direct `module_id` fields added to module-owned facts.
+- Existing evidence fields; Maven module discovery reuses `build_file` evidence.
+
+The planned v0.2 `project-map.json` project shape is:
+
+```json
+{
+  "schema_version": "0.2",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java",
+      "services/orders/src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java",
+      "services/orders/src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": ["src/main/java"],
+          "test_roots": ["src/test/java"],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ]
+        },
+        {
+          "module_id": "module:services/orders",
+          "module_path": "services/orders",
+          "pom_path": "services/orders/pom.xml",
+          "source_roots": ["services/orders/src/main/java"],
+          "test_roots": ["services/orders/src/test/java"],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "services/orders",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:14-14:build_file:module:services/orders"
+          ],
+          "pom_evidence_ids": [
+            "ev:services/orders/pom.xml:1-1:build_file:pom.xml"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+Planned module identity rules:
+
+- `module_id` is stable within a repository because it is derived from the normalized
+  repository-relative module path, not from Maven coordinates, artifact IDs, display
+  names, parent POMs, or effective POM data.
+- The scan root module is `module:.` with `module_path: "."`.
+- A child module is `module:<module_path>`, where `<module_path>` is a normalized
+  slash-separated repository-relative path with no leading `./`, no trailing slash, no
+  absolute path prefix, and no `.` or `..` path segments.
+- `module_path` is the normalized repository-relative directory path for the module. It
+  is `"."` only for the scan root.
+- `pom_path` is the repository-relative POM path for valid modules with a detected POM,
+  or `null` when a valid root declaration is missing its child POM.
+- Maven profile resolution, effective POM reconstruction, parent inheritance, dependency
+  graph reconstruction, and Maven execution are not part of module identity.
+
+Planned single-module compatibility rules:
+
+- v0.1 output remains `schema_version: "0.1"` until module-aware support is implemented.
+- v0.2 single-module scans use `schema_version: "0.2"` and include one module item for
+  the scan root with `module_id: "module:."`.
+- There is no valid planned inventory-only `schema_version: "0.2"` state. Normal public
+  scan output must not emit `project.modules` under `schema_version: "0.2"` while any
+  emitted module-owned endpoint, warning, component, entity, or test fact lacks
+  `module_id`.
+- An implementation checkpoint may build module discovery before analyzer execution, but
+  until `project.modules` and fact-level `module_id` are emitted together, normal scan
+  output must remain on the v0.1 contract and keep module inventory internal or
+  test-scoped.
+- v0.2 single-module scans keep the existing output files and preserve v0.1 top-level
+  `project.source_roots`, `project.test_roots`, and root-module fact ID shapes.
+- v0.2 multi-module scans keep `project.source_roots` and `project.test_roots` as
+  compatibility summaries containing all supported repository-relative roots sorted
+  deterministically. Per-module roots in `project.modules.items` are authoritative.
+
+Planned module inventory rules:
+
+- `project.modules.analysis_status` is `"analyzed"` when module discovery runs. It may
+  be `"not_detected"` only when no Maven build input is available for module discovery.
+- `project.modules.items` contains the scan root when the scan is single-module or when
+  the root has supported production or test roots, plus valid unique child module paths
+  declared by the root `<modules>` section.
+- `source_roots` and `test_roots` inside a module item contain repository-relative roots
+  under that module. They are empty arrays when no supported root of that kind is
+  detected.
+- `support_status` is one of:
+  - `"supported"`: at least one supported production or test root is detected for the
+    module.
+  - `"missing_child_pom"`: the root declaration normalized to a valid repository-relative
+    module path, but `<module_path>/pom.xml` is missing.
+  - `"unsupported"`: a valid child POM is present, but the module has no supported
+    Java production or test roots for the v0.2 analyzer slice.
+- `declaration_kind` is `"scan_root"` for the root module and `"root_modules_entry"` for
+  modules declared in root `<modules>`.
+- `declared_path` preserves the deterministic normalized declaration used to derive
+  `module_path`; it is `"."` for the scan root.
+- `declaration_evidence_ids` references root `<module>` declaration evidence for child
+  modules and is an empty array for the scan root.
+- `pom_evidence_ids` references `build_file` evidence for the detected root or child
+  `pom.xml`. It is an empty array for a valid declaration whose child POM is missing.
+
+Planned fact-level module identity rules:
+
+- Endpoint facts, component facts, entity facts, test facts, and warning items include a
+  direct `module_id` field in v0.2.
+- Request parameters, endpoint `mapping_source`, entity identifier fields, entity
+  relationships, and test framework signals inherit the `module_id` of their parent fact
+  and do not repeat it.
+- `tested_subjects` relations include `target_module_id` for the matched production
+  class. The initial v0.2 naming-convention inference is same-module only, so
+  `target_module_id` is expected to match the parent test fact `module_id`.
+- Entity relationships continue to use `target_resolution: "declared_type_only"` and
+  `uncertainty: "target_type_not_resolved"`; v0.2 module identity does not imply target
+  entity resolution.
+- Root-module fact IDs keep the v0.1 ID shape for single-module compatibility. Child
+  module facts include the module identity in their stable IDs to avoid collisions with
+  facts from other modules.
+
+Example planned v0.2 endpoint fact:
+
+```json
+{
+  "id": "endpoint:module:services/orders:com.example.orders.OrderController#getOrder",
+  "module_id": "module:services/orders",
+  "controller_class": "com.example.orders.OrderController",
+  "handler_method": "getOrder",
+  "http_methods": ["GET"],
+  "http_method_semantics": "declared",
+  "paths": ["/orders/{id}"],
+  "request_parameters": [],
+  "request_body_type": null,
+  "response_type": "com.example.orders.OrderDto",
+  "mapping_source": {
+    "kind": "direct_handler_method",
+    "declaring_type": "com.example.orders.OrderController",
+    "declaring_method": "getOrder",
+    "binding": "direct",
+    "uncertainty": null,
+    "evidence_ids": [
+      "ev:services/orders/src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping"
+    ]
+  },
+  "evidence_ids": [
+    "ev:services/orders/src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController",
+    "ev:services/orders/src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping"
+  ]
+}
+```
+
+Planned module warning rules:
+
+- In planned v0.2 output, `warnings.analysis_status` is `"analyzed"` when at least one
+  warning-producing analyzer runs, including Maven module discovery or hidden HTTP
+  surface analysis. It is `"not_detected"` only when no warning-producing analyzer has
+  supported input.
+- If Maven module discovery runs and produces `maven_module` warnings but hidden HTTP
+  surface analysis does not run because no supported Java production source root exists,
+  `warnings.analysis_status` is still `"analyzed"` and `warnings.items` contains only the
+  module warnings that were actually produced.
+- v0.2 Maven module discovery warnings are emitted in `warnings.items` with
+  `category: "maven_module"`.
+- Warning items include direct `module_id` when a valid module path exists. `module_id`
+  is `null` for invalid declarations that cannot produce a valid module identity.
+- `source_path` is the repository-relative path that produced the warning, usually
+  `pom.xml` for root declarations or `<module_path>/pom.xml` for nested declarations.
+- Warning IDs begin with `warning:maven_module:<signal>:` and use only normalized
+  repository-relative module paths or deterministic declaration ordinals as
+  discriminators.
+- A module declaration ordinal is the one-based document-order index of a root
+  `<modules><module>` declaration. Ordinals are rendered in warning IDs as zero-padded
+  `decl:000001` style suffixes so invalid or duplicate declarations on the same line
+  cannot collide.
+- Supported module warning signals are:
+  - `"invalid_module_path"`: the `<module>` text is empty, absolute, contains unsupported
+    `.` or `..` segments, or resolves outside the scanned repository root. It emits one
+    warning per invalid declaration, uses `module_id: null`, does not create a module
+    inventory item, and uses an ID shaped as
+    `warning:maven_module:invalid_module_path:decl:<ordinal>`.
+  - `"missing_child_pom"`: a valid root module path does not contain
+    `<module_path>/pom.xml`. It emits at most one warning per normalized module path and
+    uses an ID shaped as `warning:maven_module:missing_child_pom:<module_path>`.
+  - `"duplicate_module_path"`: more than one root `<module>` declaration resolves to the
+    same normalized module path. The first valid declaration may be processed once; later
+    duplicates each emit a warning and are ignored as duplicate module items. The warning
+    ID includes both the normalized module path and duplicate declaration ordinal, shaped
+    as `warning:maven_module:duplicate_module_path:<module_path>:decl:<ordinal>`.
+  - `"nested_module_declaration"`: a supported child module POM declares its own
+    `<modules>` section. v0.2 records the warning but does not recursively discover
+    nested modules. It emits at most one warning per supported child module path and uses
+    an ID shaped as `warning:maven_module:nested_module_declaration:<module_path>`.
+  - `"unsupported_module"`: a valid child POM is present, but no supported Java
+    production or test roots are detected for the v0.2 analyzer slice. It emits at most
+    one warning per normalized module path and uses an ID shaped as
+    `warning:maven_module:unsupported_module:<module_path>`.
+- Invalid declarations do not create module inventory items. Duplicate declarations do
+  not create duplicate module inventory items. Valid missing or unsupported modules may
+  appear in `project.modules.items` with the corresponding `support_status`.
+- Module warnings do not create endpoint, component, entity, or test facts.
+
+Example planned v0.2 module warning:
+
+```json
+{
+  "id": "warning:maven_module:missing_child_pom:services/missing",
+  "category": "maven_module",
+  "signal": "missing_child_pom",
+  "module_id": "module:services/missing",
+  "message": "Maven module declared in root pom.xml does not have a child pom.xml; v0.2 does not analyze this module.",
+  "source_path": "pom.xml",
+  "evidence_ids": [
+    "ev:pom.xml:18-18:build_file:module:services/missing"
+  ]
+}
+```
+
+Planned deterministic sorting rules:
+
+- Module inventory items are sorted with `module:.` first, followed by lexicographic
+  `module_path` order.
+- Top-level `project.source_roots` and `project.test_roots` are sorted
+  repository-relative path strings.
+- Module-aware endpoints are sorted by module order first, then by the existing v0.1
+  endpoint sort keys: first path, HTTP methods, method semantics, controller class, and
+  handler method.
+- Module-aware component, entity, and test items are sorted by module order first, then
+  by their existing v0.1 sort keys.
+- Module-aware warning items are sorted by `category`, `signal`, module order,
+  `source_path`, and `id`.
+- For warning items with `module_id: null`, module order uses the declaration ordinal
+  after all concrete module IDs for the same `category` and `signal`; the final `id`
+  sort key keeps multiple invalid declarations deterministic.
+- Duplicate declaration warnings sort with their normalized module path through
+  `module_id`, then by `id`, whose ordinal suffix preserves declaration-specific order
+  and prevents ID collisions.
+- Evidence entries keep the existing sort order by path, line range, class, method,
+  symbol, and ID.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -487,6 +759,20 @@ evidence shape for the field-level `@Id` declaration and the class-level
 `@MappedSuperclass` declaration on `declaring_class`, including when that declaring class
 is reached through a conservative source-visible mapped-superclass chain.
 
+Planned v0.2 Maven module discovery also does not add new evidence fields. Root
+`<modules>` entries and child POM files reuse `build_file` evidence:
+
+- Root `<module>` declaration evidence uses `path: "pom.xml"`, `source_type:
+  "build_file"`, and a `symbol_name` derived from the normalized module path such as
+  `module:services/orders` when the declaration is valid.
+- Child POM evidence uses the repository-relative child POM path such as
+  `services/orders/pom.xml`, `source_type: "build_file"`, and `symbol_name: "pom.xml"`.
+- Module discovery evidence supports only deterministic local POM observations. It does
+  not prove effective POM contents, Maven profile activation, dependency graphs, generated
+  sources, or runtime Spring behavior.
+- Module discovery evidence paths must remain normalized repository-relative paths and
+  must not be absolute, start with `./`, or escape the scanned repository root.
+
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
 empty arrays in `project-map.json`.
@@ -531,6 +817,18 @@ Example shape:
 - Response: `com.example.orders.OrderDto`
 - Evidence: `src/main/java/com/example/orders/OrderController.java:20`
 ```
+
+Planned v0.2 `endpoints.md` behavior:
+
+- Endpoint sections should be grouped by module in deterministic module order.
+- The single-module root group may be omitted or rendered as the scan root when there is
+  only `module:.`, but endpoint content must still resolve from module-aware
+  `project-map.json` facts.
+- Multi-module endpoint entries should include the module identity or module path near
+  the endpoint heading or metadata.
+- Module grouping must not claim architectural layers, service ownership, bounded
+  contexts, or runtime routing behavior beyond the module identity recorded in
+  `project-map.json`.
 
 ## `agent-guide.md`
 
@@ -608,6 +906,20 @@ Content rules:
   must not introduce unsupported architecture, modules, domain flows, service layers, or
   source summaries. Long inline evidence path lists should be capped with a suffix that
   points readers back to `evidence-index.jsonl` for the complete source-backed evidence.
+
+Planned v0.2 `agent-guide.md` behavior:
+
+- The detected project layout section should summarize `project.modules.items` in
+  deterministic module order, including `module_id`, `module_path`, `pom_path`,
+  `support_status`, source roots, test roots, and resolving evidence where available.
+- Endpoint, component, entity, test, and warning sections should group or label facts by
+  module using the module identity from `project-map.json`.
+- Module warnings should appear in the known-limits section with `Warning` wording and
+  resolving evidence references. They must not be rendered as application facts.
+- The practical inspection order may use module paths as navigation hints, but it must
+  not infer dependency direction, runtime Spring boundaries, ownership, generated API
+  contents, or cross-module architecture unless future deterministic facts explicitly
+  support those claims.
 
 ## Contract Rules
 

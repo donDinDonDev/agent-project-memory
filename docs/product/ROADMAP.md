@@ -68,6 +68,10 @@ Expected scope:
 - Multi-module fixtures and golden outputs.
 - Real-project multi-module evaluation.
 
+The planned v0.2 module-aware output and evidence contract is documented as design-only
+behavior in `docs/architecture/OUTPUT_CONTRACT.md` and
+`docs/architecture/EVIDENCE_MODEL.md` until implementation work emits it.
+
 Non-goals:
 
 - Gradle.

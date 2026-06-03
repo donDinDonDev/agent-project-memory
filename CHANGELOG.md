@@ -13,6 +13,7 @@ architecture documents.
 
 - Added public post-v0.1 strategy documentation.
 - Added public v0.2 module-aware Maven planning documentation.
+- Documented planned v0.2 module-aware output and evidence contract decisions.
 - Adopted a public changelog.
 - Added public release process and versioning discipline documentation.
 
@@ -20,6 +21,8 @@ architecture documents.
 
 - Reorganized the public roadmap from historical v0.1 stages into post-v0.1 release
   tracks.
+- Clarified planned v0.2 module-aware schema atomicity, warning analysis status, and
+  Maven module warning ID/sort semantics.
 - Clarified release authority and changelog expectations in contributor documentation.
 - Clarified public agent boundaries, issue/PR scope wording, development versioning, and
   checkpoint-vs-release commit expectations.

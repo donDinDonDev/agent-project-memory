@@ -56,6 +56,12 @@ applicable to a source type are emitted as JSON `null`, not omitted. For example
 When a line range is unavailable, `line_start` and `line_end` are `null`; when a repeated
 value has no entries in `project-map.json`, it is emitted as an empty array.
 
+Evidence paths must be normalized repository-relative paths. They must not be absolute,
+must not start with `./`, must use slash separators in output, and must not escape the
+scanned repository root. The root build file path is `pom.xml`; the scan root module path
+may be represented as `"."` in `project-map.json`, but evidence paths do not use `"."` as
+a file path.
+
 ## Fact Categories
 
 ### Extracted Facts
@@ -127,6 +133,69 @@ The v0.1 implementation emits these evidence records:
 v0.1 does not emit evidence records for Maven modules, local Markdown/documents,
 connectors, generated guidance, coverage data, test execution results, behavioral
 assertion analysis, or LLM output.
+
+### Planned v0.2 Maven Module Evidence
+
+This section describes planned v0.2 design behavior only. The current v0.1
+implementation does not emit Maven module discovery evidence.
+
+Planned v0.2 module discovery reuses the existing evidence field set and the existing
+`build_file` evidence type. No new global evidence fields are planned for module-aware
+Maven discovery.
+
+Root `<modules>` declaration evidence:
+
+- Each root `<module>` entry that affects module inventory or a Maven module warning
+  should have `source_type: "build_file"` and `path: "pom.xml"`.
+- A module declaration ordinal is the one-based document-order index of a root
+  `<modules><module>` declaration. When evidence IDs need a collision discriminator,
+  they should use the same zero-padded `decl:000001` style ordinal used by module warning
+  IDs.
+- `symbol_name` should be `module:<normalized_module_path>` when the module declaration
+  normalizes to a valid repository-relative path.
+- Invalid module declarations that cannot produce a valid module path should still use
+  `build_file` evidence for the root POM line. Their `symbol_name` may use a bounded
+  deterministic discriminator such as `module:<invalid>:decl:<ordinal>` and their
+  excerpt should preserve a short normalized observation of the declaration text.
+- `line_start` and `line_end` should point to the `<module>` declaration line when
+  known. If an XML declaration spans lines and the exact range is available, the range
+  should cover the declaration element.
+- `excerpt` should be a short source excerpt or normalized snippet from the `<module>`
+  declaration. It must not summarize the child module contents.
+- Duplicate declarations should each keep evidence for the declaration that produced the
+  warning. Duplicate warnings are emitted per duplicate declaration after the first
+  declaration for a normalized module path, not once per normalized path. Evidence IDs
+  should include the declaration ordinal when path, line range, and normalized module path
+  would otherwise collide.
+
+Child POM evidence:
+
+- Each detected child POM used for module inventory should have `source_type:
+  "build_file"` and a repository-relative `path` such as `services/orders/pom.xml`.
+- `symbol_name` should be `pom.xml`, `class_name` and `method_name` should be `null`,
+  and confidence should be `high`.
+- Child POM evidence proves only that the POM file was present as a local build file. It
+  does not prove effective POM contents, parent inheritance, dependency graphs, Maven
+  profile activation, generated sources, or runtime behavior.
+
+Module evidence supports only deterministic Maven module discovery from source-visible
+root and child POM files. It does not require running Maven, resolving profiles,
+reconstructing effective POMs, resolving dependencies, scanning generated sources by
+default, or discovering Gradle projects.
+
+Planned v0.2 module warnings use this same evidence:
+
+- `invalid_module_path`, `missing_child_pom`, and `duplicate_module_path` warnings should
+  reference root `<module>` declaration evidence.
+- `invalid_module_path` warnings should reference the evidence for the specific invalid,
+  empty, or blank declaration and should not reuse evidence from another invalid
+  declaration.
+- `duplicate_module_path` warnings should reference the duplicate declaration evidence
+  that was ignored, not only the first declaration for that normalized module path.
+- `nested_module_declaration` warnings should reference child POM `build_file` evidence
+  and, when available, evidence for the nested `<module>` declaration in that child POM.
+- `unsupported_module` warnings should reference child POM evidence and any root
+  declaration evidence that led to the module candidate.
 
 ### Spring MVC Interface Mapping Evidence
 
