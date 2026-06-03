@@ -22,7 +22,9 @@ mvn package
 ## Pull Request Expectations
 
 - Keep the PR scope focused and reviewable.
-- Do not drift beyond the documented v0.1 scope.
+- Keep the change within the documented release-track scope.
+- Update `CHANGELOG.md` for user-visible behavior, output contract, evidence semantics,
+  release packaging, or meaningful public workflow changes.
 - Sync durable documentation when analyzer behavior, output files, evidence semantics,
   CLI workflow, architecture, or development workflow changes.
 - Update `docs/architecture/OUTPUT_CONTRACT.md` for output field additions, removals,
@@ -33,6 +35,15 @@ mvn package
   chat, generic RAG, automatic code modification, or multi-language analysis.
 - Keep future adapters and optional AI layers separate from the deterministic core
   analyzer.
+
+## Release Expectations
+
+Release preparation is governed by
+[docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
+
+The human maintainer owns release authority. Coding agents may prepare release materials
+and run checks, but must not create commits, tags, GitHub releases, or publish artifacts
+unless explicitly asked by the maintainer.
 
 ## Evidence-First Analyzer Discipline
 

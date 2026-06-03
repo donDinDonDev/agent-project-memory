@@ -125,6 +125,9 @@ Start here:
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
+- Post-v0.1 direction:
+  [docs/product/POST_V0_1_STRATEGY.md](docs/product/POST_V0_1_STRATEGY.md) and
+  the public v0.2 roadmap and release notes.
 - Output and evidence contracts:
   [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
   [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
@@ -132,8 +135,11 @@ Start here:
   [docs/architecture/ARCHITECTURE_OVERVIEW.md](docs/architecture/ARCHITECTURE_OVERVIEW.md) and
   [docs/architecture/INGESTION_ARCHITECTURE.md](docs/architecture/INGESTION_ARCHITECTURE.md).
 - Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
-- Contributing and security:
-  [CONTRIBUTING.md](CONTRIBUTING.md) and [SECURITY.md](SECURITY.md).
+- Changelog: [CHANGELOG.md](CHANGELOG.md).
+- Contributing, release process, and security:
+  [CONTRIBUTING.md](CONTRIBUTING.md),
+  [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md), and
+  [SECURITY.md](SECURITY.md).
 
 Stage 8 evaluation reports are linked from the v0.1 release notes as supporting detail.
 

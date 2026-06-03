@@ -15,6 +15,11 @@ Before any implementation task, read these public files:
 Use those documents as the source of product scope, stage sequencing, output shape, and
 evidence requirements.
 
+For post-v0.1 release-track work, also read the relevant release-track planning document
+under `docs/product/`, `CHANGELOG.md` when present, and
+`docs/development/RELEASE_PROCESS.md` when release, versioning, changelog, commit, tag,
+or publish behavior may be affected.
+
 If `AGENTS.local.md` exists, read it after this file for local maintainer workflow
 instructions. `AGENTS.local.md` is intentionally not tracked.
 
@@ -26,6 +31,8 @@ instructions. `AGENTS.local.md` is intentionally not tracked.
 - Prefer the repository's documented scope over assumptions from similar tools.
 - Update the relevant docs when behavior, architecture, or output contracts change.
 - Do not expand scope without updating `docs/product/MVP_SPEC.md` and the relevant architecture documents.
+- Do not create commits, push branches or tags, create releases, or publish artifacts
+  unless the user explicitly asks for that specific action.
 
 ## Documentation Synchronization
 

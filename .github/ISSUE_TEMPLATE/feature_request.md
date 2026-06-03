@@ -26,6 +26,6 @@ What should change?
 
 ## Scope Boundary Check
 
-- [ ] This request fits the documented v0.1 scope, or is clearly post-v0.1 future work.
+- [ ] This request fits a documented release track, or is clearly future work.
 - [ ] This does not casually add connectors, LLM calls, SaaS, web UI, repository chat,
       generic RAG, automatic code modification, or multi-language analysis.
