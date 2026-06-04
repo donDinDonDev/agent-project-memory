@@ -30,6 +30,64 @@ final class SpringMvcEndpointAnalyzerTest {
   }
 
   @Test
+  void explicitlyImportedSpringAnnotationsStillEmitEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(analysis, "com.example.web.SimpleRestController", "health");
+
+    assertAll(
+        () -> assertEquals(List.of("/health"), endpoint.paths()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@RestController".equals(evidence.annotationSymbol()))),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@GetMapping".equals(evidence.annotationSymbol()))));
+  }
+
+  @Test
+  void fullyQualifiedSpringAnnotationsEmitEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact endpoint = endpoint(
+        analysis,
+        "com.example.web.FullyQualifiedSpringController",
+        "fullyQualified");
+
+    assertAll(
+        () -> assertEquals(List.of("GET"), endpoint.httpMethods()),
+        () -> assertEquals(List.of("/fully-qualified"), endpoint.paths()),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@RestController".equals(evidence.annotationSymbol()))),
+        () -> assertTrue(evidenceForEndpoint(analysis, endpoint).stream()
+            .anyMatch(evidence -> "@GetMapping".equals(evidence.annotationSymbol()))));
+  }
+
+  @Test
+  void localFakeSpringAnnotationsDoNotEmitEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertAll(
+        () -> assertFalse(hasEndpoint(
+            analysis,
+            "com.example.fake.FakeSpringAnnotationsController",
+            "fake")),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> evidence.sourcePath().contains("FakeSpringAnnotationsController.java"))));
+  }
+
+  @Test
+  void wildcardImportedSpringAnnotationsDoNotEmitEndpointFacts() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    assertAll(
+        () -> assertFalse(hasEndpoint(
+            analysis,
+            "com.example.wildcard.WildcardAnnotationController",
+            "wildcardAnnotation")),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> evidence.sourcePath().contains("WildcardAnnotationController.java"))));
+  }
+
+  @Test
   void directHandlerMappingsRecordMappingSource() throws Exception {
     SpringMvcEndpointAnalysis analysis = analyzeFixture();
 

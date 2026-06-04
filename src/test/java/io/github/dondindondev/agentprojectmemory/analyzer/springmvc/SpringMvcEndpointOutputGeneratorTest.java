@@ -276,11 +276,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
         """
             package com.example.web;
 
-            @RestController
-            @RequestMapping("/api")
+            @org.springframework.web.bind.annotation.RestController
+            @org.springframework.web.bind.annotation.RequestMapping("/api")
             class InjectedController {
-              @GetMapping("/safe\\n## Forged Evidence\\n  - Evidence: `ev:forged`")
-              String injected(@RequestParam(name = "q\\n  - Evidence: `ev:param`") String query) {
+              @org.springframework.web.bind.annotation.GetMapping("/safe\\n## Forged Evidence\\n  - Evidence: `ev:forged`")
+              String injected(@org.springframework.web.bind.annotation.RequestParam(name = "q\\n  - Evidence: `ev:param`") String query) {
                 return "ok";
               }
             }
@@ -575,16 +575,16 @@ final class SpringMvcEndpointOutputGeneratorTest {
     writeFile(projectPath.resolve(modulePath + "/src/main/java/com/example/shared/SharedController.java"), """
         package com.example.shared;
 
-        @RestController
-        @RequestMapping("%s")
+        @org.springframework.web.bind.annotation.RestController
+        @org.springframework.web.bind.annotation.RequestMapping("%s")
         class SharedController {
-          @GetMapping("/health")
+          @org.springframework.web.bind.annotation.GetMapping("/health")
           String health() {
             return "ok";
           }
         }
 
-        @Service
+        @org.springframework.stereotype.Service
         class SharedService {
         }
 

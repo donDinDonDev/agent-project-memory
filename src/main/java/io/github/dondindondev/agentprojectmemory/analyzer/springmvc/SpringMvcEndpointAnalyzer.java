@@ -3,7 +3,6 @@ package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.CompilationUnit;
-import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.Parameter;
@@ -38,6 +37,18 @@ final class SpringMvcEndpointAnalyzer {
   private static final String PATH_VARIABLE = "PathVariable";
   private static final String REQUEST_PARAM = "RequestParam";
   private static final String REQUEST_BODY = "RequestBody";
+  private static final Map<String, String> SUPPORTED_SPRING_ANNOTATIONS = Map.ofEntries(
+      Map.entry(CONTROLLER, "org.springframework.stereotype.Controller"),
+      Map.entry(REST_CONTROLLER, "org.springframework.web.bind.annotation.RestController"),
+      Map.entry(REQUEST_MAPPING, "org.springframework.web.bind.annotation.RequestMapping"),
+      Map.entry(GET_MAPPING, "org.springframework.web.bind.annotation.GetMapping"),
+      Map.entry(POST_MAPPING, "org.springframework.web.bind.annotation.PostMapping"),
+      Map.entry(PUT_MAPPING, "org.springframework.web.bind.annotation.PutMapping"),
+      Map.entry(PATCH_MAPPING, "org.springframework.web.bind.annotation.PatchMapping"),
+      Map.entry(DELETE_MAPPING, "org.springframework.web.bind.annotation.DeleteMapping"),
+      Map.entry(PATH_VARIABLE, "org.springframework.web.bind.annotation.PathVariable"),
+      Map.entry(REQUEST_PARAM, "org.springframework.web.bind.annotation.RequestParam"),
+      Map.entry(REQUEST_BODY, "org.springframework.web.bind.annotation.RequestBody"));
   private static final String PATH_VARIABLE_SOURCE = "path_variable";
   private static final String REQUEST_PARAM_SOURCE = "request_param";
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
@@ -98,7 +109,7 @@ final class SpringMvcEndpointAnalyzer {
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
-    Map<String, String> importsBySimpleName = importsBySimpleName(compilationUnit);
+    Map<String, String> importsBySimpleName = SpringAnnotationOrigins.importsBySimpleName(compilationUnit);
     List<SourceType> sourceTypes = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
@@ -114,18 +125,6 @@ final class SpringMvcEndpointAnalyzer {
     return sourceTypes;
   }
 
-  private Map<String, String> importsBySimpleName(CompilationUnit compilationUnit) {
-    Map<String, String> imports = new LinkedHashMap<>();
-    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
-      if (importDeclaration.isAsterisk()) {
-        continue;
-      }
-      String importName = importDeclaration.getNameAsString();
-      imports.putIfAbsent(simpleName(importName), importName);
-    }
-    return imports;
-  }
-
   private void analyzeSourceType(
       SourceIndex sourceIndex,
       SourceType controller,
@@ -136,7 +135,7 @@ final class SpringMvcEndpointAnalyzer {
       return;
     }
 
-    List<AnnotationExpr> controllerAnnotations = controllerAnnotations(type.getAnnotations());
+    List<AnnotationExpr> controllerAnnotations = controllerAnnotations(controller, type.getAnnotations());
     if (controllerAnnotations.isEmpty()) {
       return;
     }
@@ -150,7 +149,10 @@ final class SpringMvcEndpointAnalyzer {
             annotation,
             controller.sourceLines()))
         .toList();
-    Optional<AnnotationExpr> requestMapping = findAnnotation(type.getAnnotations(), REQUEST_MAPPING);
+    Optional<AnnotationExpr> requestMapping = findAnnotation(
+        controller,
+        type.getAnnotations(),
+        REQUEST_MAPPING);
     ExtractedPaths classPathExtraction = requestMapping
         .map(this::literalPathValues)
         .orElseGet(ExtractedPaths::notDeclared);
@@ -168,7 +170,7 @@ final class SpringMvcEndpointAnalyzer {
         .orElse(null);
 
     for (MethodDeclaration method : type.getMethods()) {
-      Optional<AnnotationExpr> methodMapping = findMethodMapping(method.getAnnotations());
+      Optional<AnnotationExpr> methodMapping = findMethodMapping(controller, method.getAnnotations());
       if (methodMapping.isPresent()) {
         addDirectEndpoint(
             controller,
@@ -208,11 +210,7 @@ final class SpringMvcEndpointAnalyzer {
       return;
     }
     ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
-    ExtractedRequestMetadata requestMetadata = requestMetadata(
-        controller.sourcePath(),
-        controller.className(),
-        method,
-        controller.sourceLines());
+    ExtractedRequestMetadata requestMetadata = requestMetadata(controller, method);
     SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
         controller.sourcePath(),
         controller.className(),
@@ -286,10 +284,8 @@ final class SpringMvcEndpointAnalyzer {
     InterfaceMappingCandidate candidate = candidates.get(0);
     ExtractedHttpMethods httpMethods = httpMethods(candidate.methodMappingAnnotation());
     ExtractedRequestMetadata requestMetadata = requestMetadata(
-        candidate.interfaceType().sourcePath(),
-        candidate.interfaceType().className(),
-        candidate.interfaceMethod(),
-        candidate.interfaceType().sourceLines());
+        candidate.interfaceType(),
+        candidate.interfaceMethod());
     SpringMvcEndpointEvidence interfaceMethodMappingEvidence = mappingEvidence(
         candidate.interfaceType().sourcePath(),
         candidate.interfaceType().className(),
@@ -391,6 +387,7 @@ final class SpringMvcEndpointAnalyzer {
     List<InterfaceMappingCandidate> candidates = new ArrayList<>();
     for (SourceType interfaceType : sourceIndex.implementedInterfaces(controller)) {
       Optional<AnnotationExpr> interfaceRequestMapping = findAnnotation(
+          interfaceType,
           interfaceType.declaration().getAnnotations(),
           REQUEST_MAPPING);
       ExtractedPaths interfaceClassPathExtraction = interfaceRequestMapping
@@ -407,7 +404,9 @@ final class SpringMvcEndpointAnalyzer {
         if (!hasCompatibleParameterShapes(interfaceMethod, controllerMethod)) {
           continue;
         }
-        Optional<AnnotationExpr> methodMapping = findMethodMapping(interfaceMethod.getAnnotations());
+        Optional<AnnotationExpr> methodMapping = findMethodMapping(
+            interfaceType,
+            interfaceMethod.getAnnotations());
         if (methodMapping.isEmpty()) {
           continue;
         }
@@ -479,18 +478,26 @@ final class SpringMvcEndpointAnalyzer {
     }
   }
 
-  private List<AnnotationExpr> controllerAnnotations(List<AnnotationExpr> annotations) {
+  private List<AnnotationExpr> controllerAnnotations(
+      SourceType sourceType,
+      List<AnnotationExpr> annotations) {
     return annotations.stream()
         .filter(annotation -> {
-          String simpleName = simpleAnnotationName(annotation);
-          return CONTROLLER.equals(simpleName) || REST_CONTROLLER.equals(simpleName);
+          Optional<String> simpleName = supportedSpringAnnotationName(sourceType, annotation);
+          return simpleName
+              .filter(name -> CONTROLLER.equals(name) || REST_CONTROLLER.equals(name))
+              .isPresent();
         })
         .toList();
   }
 
-  private Optional<AnnotationExpr> findMethodMapping(List<AnnotationExpr> annotations) {
+  private Optional<AnnotationExpr> findMethodMapping(
+      SourceType sourceType,
+      List<AnnotationExpr> annotations) {
     return annotations.stream()
-        .filter(annotation -> isSupportedMethodMapping(simpleAnnotationName(annotation)))
+        .filter(annotation -> supportedSpringAnnotationName(sourceType, annotation)
+            .filter(this::isSupportedMethodMapping)
+            .isPresent())
         .findFirst();
   }
 
@@ -503,17 +510,29 @@ final class SpringMvcEndpointAnalyzer {
         || DELETE_MAPPING.equals(simpleName);
   }
 
-  private Optional<AnnotationExpr> findAnnotation(List<AnnotationExpr> annotations, String simpleName) {
+  private Optional<AnnotationExpr> findAnnotation(
+      SourceType sourceType,
+      List<AnnotationExpr> annotations,
+      String simpleName) {
     return annotations.stream()
-        .filter(annotation -> simpleAnnotationName(annotation).equals(simpleName))
+        .filter(annotation -> supportedSpringAnnotationName(sourceType, annotation)
+            .filter(simpleName::equals)
+            .isPresent())
         .findFirst();
   }
 
+  private Optional<String> supportedSpringAnnotationName(
+      SourceType sourceType,
+      AnnotationExpr annotation) {
+    return SpringAnnotationOrigins.supportedSimpleName(
+        annotation,
+        sourceType.importsBySimpleName(),
+        SUPPORTED_SPRING_ANNOTATIONS);
+  }
+
   private ExtractedRequestMetadata requestMetadata(
-      String sourcePath,
-      String controllerClass,
-      MethodDeclaration method,
-      List<String> sourceLines) {
+      SourceType sourceType,
+      MethodDeclaration method) {
     List<SpringMvcRequestParameterFact> requestParameters = new ArrayList<>();
     List<String> requestBodyEvidenceIds = new ArrayList<>();
     List<SpringMvcEndpointEvidence> evidence = new ArrayList<>();
@@ -521,13 +540,16 @@ final class SpringMvcEndpointAnalyzer {
 
     for (int index = 0; index < method.getParameters().size(); index++) {
       Parameter parameter = method.getParameter(index);
-      Optional<AnnotationExpr> pathVariable = findAnnotation(parameter.getAnnotations(), PATH_VARIABLE);
+      Optional<AnnotationExpr> pathVariable = findAnnotation(
+          sourceType,
+          parameter.getAnnotations(),
+          PATH_VARIABLE);
       if (pathVariable.isPresent()) {
         addRequestParameterFact(
-            sourcePath,
-            controllerClass,
+            sourceType.sourcePath(),
+            sourceType.className(),
             method,
-            sourceLines,
+            sourceType.sourceLines(),
             requestParameters,
             evidence,
             parameter,
@@ -536,13 +558,16 @@ final class SpringMvcEndpointAnalyzer {
             PATH_VARIABLE_SOURCE);
       }
 
-      Optional<AnnotationExpr> requestParam = findAnnotation(parameter.getAnnotations(), REQUEST_PARAM);
+      Optional<AnnotationExpr> requestParam = findAnnotation(
+          sourceType,
+          parameter.getAnnotations(),
+          REQUEST_PARAM);
       if (requestParam.isPresent()) {
         addRequestParameterFact(
-            sourcePath,
-            controllerClass,
+            sourceType.sourcePath(),
+            sourceType.className(),
             method,
-            sourceLines,
+            sourceType.sourceLines(),
             requestParameters,
             evidence,
             parameter,
@@ -551,15 +576,18 @@ final class SpringMvcEndpointAnalyzer {
             REQUEST_PARAM_SOURCE);
       }
 
-      Optional<AnnotationExpr> requestBody = findAnnotation(parameter.getAnnotations(), REQUEST_BODY);
+      Optional<AnnotationExpr> requestBody = findAnnotation(
+          sourceType,
+          parameter.getAnnotations(),
+          REQUEST_BODY);
       if (requestBody.isPresent() && requestBodyType == null) {
         SpringMvcEndpointEvidence requestBodyEvidence = parameterAnnotationEvidence(
-            sourcePath,
-            controllerClass,
+            sourceType.sourcePath(),
+            sourceType.className(),
             method.getNameAsString(),
             parameter,
             requestBody.orElseThrow(),
-            sourceLines,
+            sourceType.sourceLines(),
             index);
         evidence.add(requestBodyEvidence);
         requestBodyType = parameter.getType().asString();
@@ -631,12 +659,7 @@ final class SpringMvcEndpointAnalyzer {
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
-    String name = annotation.getNameAsString();
-    int lastDot = name.lastIndexOf('.');
-    if (lastDot >= 0) {
-      return name.substring(lastDot + 1);
-    }
-    return name;
+    return SpringAnnotationOrigins.simpleAnnotationName(annotation);
   }
 
   private ExtractedHttpMethods httpMethods(AnnotationExpr annotation) {
@@ -925,14 +948,6 @@ final class SpringMvcEndpointAnalyzer {
   private String qualifiedClassName(String packageName, ClassOrInterfaceDeclaration type) {
     return type.getFullyQualifiedName()
         .orElseGet(() -> qualifiedClassName(packageName, type.getNameAsString()));
-  }
-
-  private String simpleName(String name) {
-    int lastDot = name.lastIndexOf('.');
-    if (lastDot >= 0) {
-      return name.substring(lastDot + 1);
-    }
-    return name;
   }
 
   private List<String> combinePaths(List<String> classPaths, List<String> methodPaths) {

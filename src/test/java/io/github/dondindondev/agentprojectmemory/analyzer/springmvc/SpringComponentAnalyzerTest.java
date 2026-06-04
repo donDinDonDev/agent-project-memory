@@ -32,6 +32,53 @@ final class SpringComponentAnalyzerTest {
   }
 
   @Test
+  void explicitlyImportedSpringStereotypesStillEmitComponentFacts() throws Exception {
+    SpringComponentAnalysis analysis = analyzeFixture();
+
+    SpringComponentFact service = component(analysis, "OrderService");
+
+    assertAll(
+        () -> assertEquals("component:com.example.components.OrderService", service.id()),
+        () -> assertEquals(List.of("@Service"), service.stereotypes()),
+        () -> assertTrue(service.evidenceIds().stream()
+            .anyMatch(evidenceId -> evidenceId.contains("@Service"))));
+  }
+
+  @Test
+  void fullyQualifiedSpringStereotypesEmitComponentFacts() throws Exception {
+    SpringComponentAnalysis analysis = analyzeFixture();
+
+    SpringComponentFact service = component(analysis, "FullyQualifiedService");
+
+    assertAll(
+        () -> assertEquals("component:com.example.components.FullyQualifiedService", service.id()),
+        () -> assertEquals(List.of("@Service"), service.stereotypes()),
+        () -> assertTrue(service.evidenceIds().stream()
+            .anyMatch(evidenceId -> evidenceId.contains("@Service"))));
+  }
+
+  @Test
+  void localFakeSpringStereotypesDoNotEmitComponentFacts() throws Exception {
+    SpringComponentAnalysis analysis = analyzeFixture();
+
+    assertAll(
+        () -> assertFalse(hasComponent(analysis, "FakeLocalService")),
+        () -> assertFalse(hasComponent(analysis, "FakeLocalComponent")),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> evidence.sourcePath().contains("FakeStereotypeComponents.java"))));
+  }
+
+  @Test
+  void wildcardImportedSpringStereotypesDoNotEmitComponentFacts() throws Exception {
+    SpringComponentAnalysis analysis = analyzeFixture();
+
+    assertAll(
+        () -> assertFalse(hasComponent(analysis, "WildcardImportedService")),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> evidence.sourcePath().contains("WildcardStereotypeComponents.java"))));
+  }
+
+  @Test
   void modernInstanceofPatternInComponentSourceIsParsed() throws Exception {
     SpringComponentAnalysis analysis = analyzeModernJavaFixture();
 
@@ -70,6 +117,7 @@ final class SpringComponentAnalyzerTest {
         List.of(
             "com.example.components.ApiController",
             "com.example.components.AppConfiguration",
+            "com.example.components.FullyQualifiedService",
             "com.example.components.OrderRepository",
             "com.example.components.OrderRepositoryInterface",
             "com.example.components.OrderService",
@@ -91,12 +139,13 @@ final class SpringComponentAnalyzerTest {
           () -> assertNull(evidence.methodName()),
           () -> assertTrue(component.stereotypes().contains(evidence.annotationSymbol())),
           () -> assertTrue(evidence.sourcePath()
-              .endsWith("src/main/java/com/example/components/StereotypeComponents.java")),
+              .startsWith("src/main/java/com/example/components/")),
           () -> assertNotNull(evidence.lineStart()),
           () -> assertNotNull(evidence.lineEnd()),
           () -> assertTrue(evidence.lineStart() > 0),
           () -> assertTrue(evidence.lineEnd() >= evidence.lineStart()),
-          () -> assertTrue(evidence.excerpt().contains(evidence.annotationSymbol())),
+          () -> assertTrue(evidence.excerpt().contains(evidence.annotationSymbol())
+              || evidence.excerpt().contains("." + evidence.annotationSymbol().substring(1))),
           () -> assertEquals("high", evidence.confidence()));
     }
   }
@@ -126,6 +175,11 @@ final class SpringComponentAnalyzerTest {
         .filter(candidate -> candidate.className().equals("com.example.components." + simpleName))
         .findFirst()
         .orElseThrow();
+  }
+
+  private boolean hasComponent(SpringComponentAnalysis analysis, String simpleName) {
+    return analysis.components().stream()
+        .anyMatch(candidate -> candidate.className().equals("com.example.components." + simpleName));
   }
 
   private SpringComponentEvidence evidence(SpringComponentAnalysis analysis, String evidenceId) {

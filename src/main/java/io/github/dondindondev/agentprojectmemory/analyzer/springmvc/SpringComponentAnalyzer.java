@@ -12,12 +12,20 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
 final class SpringComponentAnalyzer {
   private static final String HIGH_CONFIDENCE = "high";
+  private static final Map<String, String> SUPPORTED_STEREOTYPE_ORIGINS = Map.ofEntries(
+      Map.entry("Component", "org.springframework.stereotype.Component"),
+      Map.entry("Service", "org.springframework.stereotype.Service"),
+      Map.entry("Repository", "org.springframework.stereotype.Repository"),
+      Map.entry("Controller", "org.springframework.stereotype.Controller"),
+      Map.entry("RestController", "org.springframework.web.bind.annotation.RestController"),
+      Map.entry("Configuration", "org.springframework.context.annotation.Configuration"));
   private static final List<String> SUPPORTED_STEREOTYPES = List.of(
       "@Component",
       "@Service",
@@ -67,9 +75,12 @@ final class SpringComponentAnalyzer {
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
+    Map<String, String> importsBySimpleName = SpringAnnotationOrigins.importsBySimpleName(compilationUnit);
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
-      List<AnnotationExpr> stereotypeAnnotations = stereotypeAnnotations(type.getAnnotations());
+      List<AnnotationExpr> stereotypeAnnotations = stereotypeAnnotations(
+          type.getAnnotations(),
+          importsBySimpleName);
       if (stereotypeAnnotations.isEmpty()) {
         continue;
       }
@@ -112,9 +123,15 @@ final class SpringComponentAnalyzer {
     }
   }
 
-  private List<AnnotationExpr> stereotypeAnnotations(List<AnnotationExpr> annotations) {
+  private List<AnnotationExpr> stereotypeAnnotations(
+      List<AnnotationExpr> annotations,
+      Map<String, String> importsBySimpleName) {
     return annotations.stream()
-        .filter(annotation -> SUPPORTED_STEREOTYPES.contains(annotationSymbol(annotation)))
+        .filter(annotation -> SpringAnnotationOrigins.supportedSimpleName(
+                annotation,
+                importsBySimpleName,
+                SUPPORTED_STEREOTYPE_ORIGINS)
+            .isPresent())
         .sorted(Comparator.comparingInt(annotation -> SUPPORTED_STEREOTYPES.indexOf(
             annotationSymbol(annotation))))
         .toList();
@@ -183,11 +200,6 @@ final class SpringComponentAnalyzer {
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
-    String name = annotation.getNameAsString();
-    int lastDot = name.lastIndexOf('.');
-    if (lastDot >= 0) {
-      return name.substring(lastDot + 1);
-    }
-    return name;
+    return SpringAnnotationOrigins.simpleAnnotationName(annotation);
   }
 }

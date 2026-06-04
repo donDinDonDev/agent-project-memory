@@ -97,6 +97,13 @@ Examples:
 
 Extracted facts should use strong evidence references and high confidence.
 
+Spring endpoint and component annotation evidence is emitted only when source-visible
+syntax supports a Spring origin: a fully qualified annotation name in the supported
+Spring package, or a simple annotation name with an explicit single-type import for the
+supported Spring annotation. Unresolved simple-name annotations, wildcard-import-only
+annotations, same-package/local fake annotations, generated-source-only annotations, and
+classpath-only annotations are not high-confidence Spring evidence and are skipped.
+
 ### v0.1 Emitted Evidence
 
 The v0.1 implementation emits these evidence records:

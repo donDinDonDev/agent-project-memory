@@ -255,6 +255,12 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
   run Maven generation, scan `target/generated-sources` by default, parse OpenAPI YAML,
   reconstruct generated APIs, resolve classpath-only interfaces, infer runtime proxies,
   or interpret unsupported Spring mapping conditions.
+- Spring MVC endpoint annotations are trusted only when source-visible syntax supports a
+  Spring origin: a fully qualified annotation name in the supported Spring package, or a
+  simple annotation name with an explicit single-type import for the supported Spring
+  annotation. Unresolved simple-name annotations, wildcard-import-only annotations,
+  same-package/local fake annotations, generated-source-only annotations, and
+  classpath-only annotations are skipped rather than emitted as endpoint facts.
 - Source-visible interface binding is established only from Java-visible source syntax:
   fully qualified implemented interface names, explicit single-type imports, or
   same-package interface names. Wildcard imports are not resolved in this v0.1 slice and
@@ -337,6 +343,12 @@ Example source-visible interface mapping source:
   supports `@Component`, `@Service`, `@Repository`, `@Controller`, `@RestController`, and
   `@Configuration`. It does not infer repository components from `extends JpaRepository`
   unless a supported stereotype annotation is directly present.
+- Direct Spring component stereotypes are trusted only when source-visible syntax
+  supports a Spring origin: a fully qualified annotation name in the supported Spring
+  package, or a simple annotation name with an explicit single-type import for the
+  supported Spring annotation. Unresolved simple-name stereotypes, wildcard-import-only
+  stereotypes, same-package/local fake stereotypes, generated-source-only stereotypes,
+  and classpath-only stereotypes are skipped rather than emitted as component facts.
 - `component.evidence_ids` references annotation evidence for the direct stereotype
   annotations and must resolve to records in `evidence-index.jsonl`.
 - `entities.analysis_status` is `"analyzed"` when the supported `src/main/java` source
