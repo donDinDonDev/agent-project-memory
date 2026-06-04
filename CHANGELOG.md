@@ -13,6 +13,9 @@ architecture documents.
 
 - Fixed malformed root `pom.xml` handling so Maven module discovery fails with a
   bounded scan error instead of treating parse failure as an empty module inventory.
+- Hardened annotation-origin checks so source-declared fake framework annotations and
+  bare/static-imported `RequestMethod` constants do not create trusted Spring MVC,
+  component, JPA, hidden HTTP surface, or Spring Test inventory facts.
 
 ## [0.2.0] - 2026-06-04
 

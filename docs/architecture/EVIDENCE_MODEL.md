@@ -100,9 +100,24 @@ Extracted facts should use strong evidence references and high confidence.
 Spring endpoint and component annotation evidence is emitted only when source-visible
 syntax supports a Spring origin: a fully qualified annotation name in the supported
 Spring package, or a simple annotation name with an explicit single-type import for the
-supported Spring annotation. Unresolved simple-name annotations, wildcard-import-only
-annotations, same-package/local fake annotations, generated-source-only annotations, and
-classpath-only annotations are not high-confidence Spring evidence and are skipped.
+supported Spring annotation, and only when that exact framework type is not declared by
+scanned source. Unresolved simple-name annotations, wildcard-import-only annotations,
+same-package/local fake annotations, source-declared fake framework annotations,
+generated-source-only annotations, and classpath-only annotations are not
+high-confidence Spring evidence and are skipped.
+
+Direct JPA annotation evidence is emitted only when source-visible syntax supports a
+supported `jakarta.persistence.*` or `javax.persistence.*` origin through an exact fully
+qualified annotation name or explicit single-type import, and that exact framework type
+is not declared by scanned source. The same source-declared-fake, unresolved, wildcard,
+generated-source-only, and classpath-only cases are skipped rather than emitted as
+high-confidence JPA evidence.
+
+Hidden HTTP surface `@RepositoryRestResource` annotation evidence and Spring Test
+annotation/import evidence follow the same external-origin rule for their supported
+Spring framework types. Source-declared fake framework FQCNs, unresolved simple names,
+wildcard-only imports, and static-import-only references do not produce high-confidence
+warning or `Spring Test` framework-signal evidence.
 
 ### v0.1 Emitted Evidence
 
@@ -262,7 +277,9 @@ The emitted warning evidence records are:
   `openapi-generator-maven-plugin` or `swagger-codegen-maven-plugin`. The matching
   artifactId line is used as the evidence excerpt.
 - `annotation` for direct source-visible `@RepositoryRestResource` annotations under
-  supported production source roots.
+  supported production source roots when the annotation origin is visible as the
+  supported Spring Data REST annotation type and that exact type is not declared by
+  scanned source.
 
 This evidence does not prove runtime Spring Data REST endpoints, generated OpenAPI
 interfaces, generated source contents, or complete HTTP API coverage. It only proves that
@@ -328,7 +345,8 @@ The v0.1 tests inventory emits only these additional evidence records:
   nested-class signals.
 - `annotation` for directly visible annotations that indicate supported test framework
   signals, such as JUnit `@Test` annotations when resolvable from imports or fully
-  qualified annotation names, and direct Spring test annotations.
+  qualified annotation names, and direct Spring test annotations when resolvable to a
+  supported external Spring Test origin that is not declared by scanned source.
 
 Test evidence uses the same stable evidence field set as the rest of
 `evidence-index.jsonl`; no new global evidence fields are introduced in v0.1.

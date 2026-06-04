@@ -4,6 +4,7 @@ import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -15,17 +16,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 final class SpringComponentAnalyzer {
   private static final String HIGH_CONFIDENCE = "high";
-  private static final Map<String, String> SUPPORTED_STEREOTYPE_ORIGINS = Map.ofEntries(
-      Map.entry("Component", "org.springframework.stereotype.Component"),
-      Map.entry("Service", "org.springframework.stereotype.Service"),
-      Map.entry("Repository", "org.springframework.stereotype.Repository"),
-      Map.entry("Controller", "org.springframework.stereotype.Controller"),
-      Map.entry("RestController", "org.springframework.web.bind.annotation.RestController"),
-      Map.entry("Configuration", "org.springframework.context.annotation.Configuration"));
+  private static final Map<String, Set<String>> SUPPORTED_STEREOTYPE_ORIGINS = Map.ofEntries(
+      Map.entry("Component", Set.of("org.springframework.stereotype.Component")),
+      Map.entry("Service", Set.of("org.springframework.stereotype.Service")),
+      Map.entry("Repository", Set.of("org.springframework.stereotype.Repository")),
+      Map.entry("Controller", Set.of("org.springframework.stereotype.Controller")),
+      Map.entry("RestController", Set.of("org.springframework.web.bind.annotation.RestController")),
+      Map.entry("Configuration", Set.of("org.springframework.context.annotation.Configuration")));
   private static final List<String> SUPPORTED_STEREOTYPES = List.of(
       "@Component",
       "@Service",
@@ -45,6 +47,8 @@ final class SpringComponentAnalyzer {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     List<SpringComponentFact> components = new ArrayList<>();
     List<SpringComponentEvidence> evidence = new ArrayList<>();
+    List<ComponentSourceFile> sourceFiles = new ArrayList<>();
+    Set<String> sourceDeclaredTypeNames = new java.util.LinkedHashSet<>();
 
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(normalizedRepositoryRoot, sourceRoot);
@@ -55,8 +59,14 @@ final class SpringComponentAnalyzer {
       }
 
       for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
-        analyzeJavaFile(normalizedRepositoryRoot, javaFile, components, evidence);
+        ComponentSourceFile sourceFile = sourceFile(normalizedRepositoryRoot, javaFile);
+        sourceFiles.add(sourceFile);
+        sourceDeclaredTypeNames.addAll(sourceFile.declaredTypeNames());
       }
+    }
+
+    for (ComponentSourceFile sourceFile : sourceFiles) {
+      analyzeJavaFile(sourceFile, sourceDeclaredTypeNames, components, evidence);
     }
 
     return new SpringComponentAnalysis(
@@ -64,11 +74,9 @@ final class SpringComponentAnalyzer {
         evidence);
   }
 
-  private void analyzeJavaFile(
+  private ComponentSourceFile sourceFile(
       Path repositoryRoot,
-      Path javaFile,
-      List<SpringComponentFact> components,
-      List<SpringComponentEvidence> evidence) throws IOException {
+      Path javaFile) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
@@ -77,17 +85,36 @@ final class SpringComponentAnalyzer {
     List<String> sourceLines = Files.readAllLines(javaFile);
     Map<String, String> importsBySimpleName = SpringAnnotationOrigins.importsBySimpleName(compilationUnit);
 
-    for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
+    return new ComponentSourceFile(
+        compilationUnit,
+        packageName,
+        sourcePath,
+        sourceLines,
+        importsBySimpleName,
+        JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
+  }
+
+  private void analyzeJavaFile(
+      ComponentSourceFile sourceFile,
+      Set<String> sourceDeclaredTypeNames,
+      List<SpringComponentFact> components,
+      List<SpringComponentEvidence> evidence) {
+    for (ClassOrInterfaceDeclaration type : sourceFile.compilationUnit().findAll(ClassOrInterfaceDeclaration.class)) {
       List<AnnotationExpr> stereotypeAnnotations = stereotypeAnnotations(
           type.getAnnotations(),
-          importsBySimpleName);
+          sourceFile.importsBySimpleName(),
+          sourceDeclaredTypeNames);
       if (stereotypeAnnotations.isEmpty()) {
         continue;
       }
 
-      String className = qualifiedClassName(packageName, type);
+      String className = qualifiedClassName(sourceFile.packageName(), type);
       List<SpringComponentEvidence> componentEvidence = stereotypeAnnotations.stream()
-          .map(annotation -> annotationEvidence(sourcePath, className, annotation, sourceLines))
+          .map(annotation -> annotationEvidence(
+              sourceFile.sourcePath(),
+              className,
+              annotation,
+              sourceFile.sourceLines()))
           .toList();
       List<String> stereotypes = componentEvidence.stream()
           .map(SpringComponentEvidence::annotationSymbol)
@@ -125,12 +152,14 @@ final class SpringComponentAnalyzer {
 
   private List<AnnotationExpr> stereotypeAnnotations(
       List<AnnotationExpr> annotations,
-      Map<String, String> importsBySimpleName) {
+      Map<String, String> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     return annotations.stream()
         .filter(annotation -> SpringAnnotationOrigins.supportedSimpleName(
                 annotation,
                 importsBySimpleName,
-                SUPPORTED_STEREOTYPE_ORIGINS)
+                SUPPORTED_STEREOTYPE_ORIGINS,
+                sourceDeclaredTypeNames)
             .isPresent())
         .sorted(Comparator.comparingInt(annotation -> SUPPORTED_STEREOTYPES.indexOf(
             annotationSymbol(annotation))))
@@ -201,5 +230,19 @@ final class SpringComponentAnalyzer {
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
     return SpringAnnotationOrigins.simpleAnnotationName(annotation);
+  }
+
+  private record ComponentSourceFile(
+      CompilationUnit compilationUnit,
+      String packageName,
+      String sourcePath,
+      List<String> sourceLines,
+      Map<String, String> importsBySimpleName,
+      Set<String> declaredTypeNames) {
+    private ComponentSourceFile {
+      sourceLines = List.copyOf(sourceLines);
+      importsBySimpleName = Map.copyOf(importsBySimpleName);
+      declaredTypeNames = Set.copyOf(declaredTypeNames);
+    }
   }
 }

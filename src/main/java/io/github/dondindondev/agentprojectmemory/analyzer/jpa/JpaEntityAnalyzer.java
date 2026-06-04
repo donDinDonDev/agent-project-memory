@@ -9,6 +9,7 @@ import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 public final class JpaEntityAnalyzer {
@@ -34,6 +36,17 @@ public final class JpaEntityAnalyzer {
   private static final String UNCERTAINTY = "target_type_not_resolved";
   private static final String SOURCE_KIND_DECLARED = "declared";
   private static final String SOURCE_KIND_MAPPED_SUPERCLASS = "mapped_superclass";
+  private static final Map<String, Set<String>> SUPPORTED_JPA_ANNOTATION_ORIGINS = Map.ofEntries(
+      Map.entry(ENTITY, Set.of("jakarta.persistence.Entity", "javax.persistence.Entity")),
+      Map.entry(TABLE, Set.of("jakarta.persistence.Table", "javax.persistence.Table")),
+      Map.entry(ID, Set.of("jakarta.persistence.Id", "javax.persistence.Id")),
+      Map.entry(MAPPED_SUPERCLASS, Set.of(
+          "jakarta.persistence.MappedSuperclass",
+          "javax.persistence.MappedSuperclass")),
+      Map.entry("ManyToOne", Set.of("jakarta.persistence.ManyToOne", "javax.persistence.ManyToOne")),
+      Map.entry("OneToMany", Set.of("jakarta.persistence.OneToMany", "javax.persistence.OneToMany")),
+      Map.entry("OneToOne", Set.of("jakarta.persistence.OneToOne", "javax.persistence.OneToOne")),
+      Map.entry("ManyToMany", Set.of("jakarta.persistence.ManyToMany", "javax.persistence.ManyToMany")));
   private static final List<String> RELATIONSHIP_ANNOTATIONS = List.of(
       "@ManyToOne",
       "@OneToMany",
@@ -61,6 +74,7 @@ public final class JpaEntityAnalyzer {
     List<JavaTypeSource> javaTypes = new ArrayList<>();
     List<JpaEntityFact> entities = new ArrayList<>();
     List<JpaEntityEvidence> evidence = new ArrayList<>();
+    Set<String> sourceDeclaredTypeNames = new LinkedHashSet<>();
 
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(normalizedRepositoryRoot, sourceRoot);
@@ -71,7 +85,7 @@ public final class JpaEntityAnalyzer {
       }
 
       for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
-        javaTypes.addAll(javaTypes(normalizedRepositoryRoot, javaFile));
+        javaTypes.addAll(javaTypes(normalizedRepositoryRoot, javaFile, sourceDeclaredTypeNames));
       }
     }
 
@@ -87,13 +101,16 @@ public final class JpaEntityAnalyzer {
 
   private List<JavaTypeSource> javaTypes(
       Path repositoryRoot,
-      Path javaFile) throws IOException {
+      Path javaFile,
+      Set<String> sourceDeclaredTypeNames) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
+    Map<String, String> importsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit);
+    sourceDeclaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
     List<JavaTypeSource> javaTypes = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
@@ -107,7 +124,9 @@ public final class JpaEntityAnalyzer {
           sourcePath,
           sourceLines,
           type,
-          qualifiedClassName(packageName, type)));
+          qualifiedClassName(packageName, type),
+          importsBySimpleName,
+          sourceDeclaredTypeNames));
     }
 
     return javaTypes;
@@ -118,7 +137,7 @@ public final class JpaEntityAnalyzer {
 
     for (JavaTypeSource javaType : javaTypes) {
       Optional<AnnotationExpr> mappedSuperclassAnnotation =
-          findAnnotation(javaType.type().getAnnotations(), MAPPED_SUPERCLASS);
+          findAnnotation(javaType, javaType.type().getAnnotations(), MAPPED_SUPERCLASS);
       if (mappedSuperclassAnnotation.isEmpty()) {
         continue;
       }
@@ -151,7 +170,7 @@ public final class JpaEntityAnalyzer {
       List<JpaEntityFact> entities,
       List<JpaEntityEvidence> evidence) {
     ClassOrInterfaceDeclaration type = javaType.type();
-    Optional<AnnotationExpr> entityAnnotation = findAnnotation(type.getAnnotations(), ENTITY);
+    Optional<AnnotationExpr> entityAnnotation = findAnnotation(javaType, type.getAnnotations(), ENTITY);
     if (entityAnnotation.isEmpty()) {
       return;
     }
@@ -164,7 +183,7 @@ public final class JpaEntityAnalyzer {
         javaType.sourceLines(),
         null));
 
-    Optional<AnnotationExpr> tableAnnotation = findAnnotation(type.getAnnotations(), TABLE);
+    Optional<AnnotationExpr> tableAnnotation = findAnnotation(javaType, type.getAnnotations(), TABLE);
     tableAnnotation
         .map(annotation -> annotationEvidence(
             javaType.sourcePath(),
@@ -190,8 +209,7 @@ public final class JpaEntityAnalyzer {
     List<JpaRelationshipFact> relationships = relationships(
         javaType.sourcePath(),
         javaType.className(),
-        type,
-        javaType.sourceLines(),
+        javaType,
         evidence);
     List<String> evidenceIds = entityEvidence.stream()
         .map(JpaEntityEvidence::id)
@@ -215,7 +233,7 @@ public final class JpaEntityAnalyzer {
     List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>();
 
     for (FieldDeclaration field : javaType.type().getFields()) {
-      Optional<AnnotationExpr> idAnnotation = findAnnotation(field.getAnnotations(), ID);
+      Optional<AnnotationExpr> idAnnotation = findAnnotation(javaType, field.getAnnotations(), ID);
       if (idAnnotation.isEmpty()) {
         continue;
       }
@@ -316,13 +334,14 @@ public final class JpaEntityAnalyzer {
   private List<JpaRelationshipFact> relationships(
       String sourcePath,
       String className,
-      ClassOrInterfaceDeclaration type,
-      List<String> sourceLines,
+      JavaTypeSource javaType,
       List<JpaEntityEvidence> evidence) {
     List<JpaRelationshipFact> relationships = new ArrayList<>();
 
-    for (FieldDeclaration field : type.getFields()) {
-      List<AnnotationExpr> relationshipAnnotations = relationshipAnnotations(field.getAnnotations());
+    for (FieldDeclaration field : javaType.type().getFields()) {
+      List<AnnotationExpr> relationshipAnnotations = relationshipAnnotations(
+          javaType,
+          field.getAnnotations());
       if (relationshipAnnotations.isEmpty()) {
         continue;
       }
@@ -334,7 +353,7 @@ public final class JpaEntityAnalyzer {
               sourcePath,
               className,
               relationshipAnnotation,
-              sourceLines,
+              javaType.sourceLines(),
               "field:" + variable.getNameAsString());
           evidence.add(relationshipEvidence);
           relationships.add(new JpaRelationshipFact(
@@ -351,9 +370,13 @@ public final class JpaEntityAnalyzer {
     return relationships;
   }
 
-  private List<AnnotationExpr> relationshipAnnotations(List<AnnotationExpr> annotations) {
+  private List<AnnotationExpr> relationshipAnnotations(
+      JavaTypeSource javaType,
+      List<AnnotationExpr> annotations) {
     return annotations.stream()
-        .filter(annotation -> RELATIONSHIP_ANNOTATIONS.contains(annotationSymbol(annotation)))
+        .filter(annotation -> supportedJpaAnnotationName(javaType, annotation)
+            .map(name -> RELATIONSHIP_ANNOTATIONS.contains("@" + name))
+            .orElse(false))
         .sorted(Comparator.comparingInt(annotation -> RELATIONSHIP_ANNOTATIONS.indexOf(
             annotationSymbol(annotation))))
         .toList();
@@ -377,10 +400,25 @@ public final class JpaEntityAnalyzer {
     }
   }
 
-  private Optional<AnnotationExpr> findAnnotation(List<AnnotationExpr> annotations, String simpleName) {
+  private Optional<AnnotationExpr> findAnnotation(
+      JavaTypeSource javaType,
+      List<AnnotationExpr> annotations,
+      String simpleName) {
     return annotations.stream()
-        .filter(annotation -> simpleAnnotationName(annotation).equals(simpleName))
+        .filter(annotation -> supportedJpaAnnotationName(javaType, annotation)
+            .filter(simpleName::equals)
+            .isPresent())
         .findFirst();
+  }
+
+  private Optional<String> supportedJpaAnnotationName(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation) {
+    return JavaSourceOrigins.supportedAnnotationSimpleName(
+        annotation,
+        javaType.importsBySimpleName(),
+        SUPPORTED_JPA_ANNOTATION_ORIGINS,
+        javaType.sourceDeclaredTypeNames());
   }
 
   private Optional<String> tableName(AnnotationExpr annotation) {
@@ -470,12 +508,7 @@ public final class JpaEntityAnalyzer {
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
-    String name = annotation.getNameAsString();
-    int lastDot = name.lastIndexOf('.');
-    if (lastDot >= 0) {
-      return name.substring(lastDot + 1);
-    }
-    return name;
+    return JavaSourceOrigins.simpleAnnotationName(annotation);
   }
 
   private record JavaTypeSource(
@@ -484,9 +517,12 @@ public final class JpaEntityAnalyzer {
       String sourcePath,
       List<String> sourceLines,
       ClassOrInterfaceDeclaration type,
-      String className) {
+      String className,
+      Map<String, String> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     private JavaTypeSource {
       sourceLines = List.copyOf(sourceLines);
+      importsBySimpleName = Map.copyOf(importsBySimpleName);
     }
   }
 

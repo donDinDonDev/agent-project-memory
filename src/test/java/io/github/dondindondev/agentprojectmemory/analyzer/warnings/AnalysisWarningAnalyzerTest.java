@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer.warnings;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -52,6 +53,20 @@ final class AnalysisWarningAnalyzerTest {
         () -> assertEquals("@RepositoryRestResource", evidence.symbolName()),
         () -> assertNotNull(evidence.lineStart()),
         () -> assertTrue(evidence.excerpt().contains("@RepositoryRestResource")));
+  }
+
+  @Test
+  void sourceDeclaredRepositoryRestResourceAnnotationDoesNotCreateWarning()
+      throws Exception {
+    Path fixtureRoot = spoofedOriginsFixtureRoot();
+    AnalysisWarningAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    assertAll(
+        () -> assertFalse(analysis.warnings().stream()
+            .anyMatch(warning -> warning.signal().equals("repository_rest_resource"))),
+        () -> assertTrue(analysis.evidence().isEmpty()));
   }
 
   @Test
@@ -207,6 +222,11 @@ final class AnalysisWarningAnalyzerTest {
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/hidden-http-warnings")).toURI());
+  }
+
+  private Path spoofedOriginsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/hidden-http-warnings-spoofed-origins")).toURI());
   }
 
   private AnalysisWarningFact warning(AnalysisWarningAnalysis analysis, String signal) {

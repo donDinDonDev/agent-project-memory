@@ -4,6 +4,7 @@ import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -16,6 +17,7 @@ import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +41,9 @@ public final class AnalysisWarningAnalyzer {
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
   private static final String REPOSITORY_REST_RESOURCE = "RepositoryRestResource";
   private static final String ROOT_BUILD_FILE = "pom.xml";
+  private static final Map<String, Set<String>> SUPPORTED_REPOSITORY_REST_RESOURCE_ORIGINS = Map.of(
+      REPOSITORY_REST_RESOURCE,
+      Set.of("org.springframework.data.rest.core.annotation.RepositoryRestResource"));
   private static final Set<String> OPENAPI_SPEC_FILENAMES = Set.of(
       "openapi.yml",
       "openapi.yaml",
@@ -259,6 +264,9 @@ public final class AnalysisWarningAnalyzer {
       String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
+    List<RepositoryRestSourceFile> sourceFiles = new ArrayList<>();
+    Set<String> sourceDeclaredTypeNames = new LinkedHashSet<>();
+
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(repositoryRoot, sourceRoot);
       if (!ScanPathContainment.isDirectoryUnderRoot(
@@ -268,50 +276,75 @@ public final class AnalysisWarningAnalyzer {
       }
 
       for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
-        analyzeRepositoryRestResourceJavaFile(
-            repositoryRoot,
-            javaFile,
-            modulePathForIds,
-            warnings,
-            evidence);
+        RepositoryRestSourceFile sourceFile = repositoryRestSourceFile(repositoryRoot, javaFile);
+        sourceFiles.add(sourceFile);
+        sourceDeclaredTypeNames.addAll(sourceFile.declaredTypeNames());
       }
+    }
+
+    for (RepositoryRestSourceFile sourceFile : sourceFiles) {
+      analyzeRepositoryRestResourceJavaFile(
+          sourceFile,
+          sourceDeclaredTypeNames,
+          modulePathForIds,
+          warnings,
+          evidence);
     }
   }
 
-  private void analyzeRepositoryRestResourceJavaFile(
+  private RepositoryRestSourceFile repositoryRestSourceFile(
       Path repositoryRoot,
-      Path javaFile,
-      String modulePathForIds,
-      List<AnalysisWarningFact> warnings,
-      List<AnalysisWarningEvidence> evidence) throws IOException {
+      Path javaFile) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile, StandardCharsets.UTF_8);
+    Map<String, String> importsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit);
 
-    for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
+    return new RepositoryRestSourceFile(
+        compilationUnit,
+        packageName,
+        sourcePath,
+        sourceLines,
+        importsBySimpleName,
+        JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
+  }
+
+  private void analyzeRepositoryRestResourceJavaFile(
+      RepositoryRestSourceFile sourceFile,
+      Set<String> sourceDeclaredTypeNames,
+      String modulePathForIds,
+      List<AnalysisWarningFact> warnings,
+      List<AnalysisWarningEvidence> evidence) {
+    for (ClassOrInterfaceDeclaration type : sourceFile.compilationUnit().findAll(ClassOrInterfaceDeclaration.class)) {
       Optional<AnnotationExpr> annotation = type.getAnnotations().stream()
-          .filter(candidate -> simpleAnnotationName(candidate).equals(REPOSITORY_REST_RESOURCE))
+          .filter(candidate -> JavaSourceOrigins.supportedAnnotationSimpleName(
+                  candidate,
+                  sourceFile.importsBySimpleName(),
+                  SUPPORTED_REPOSITORY_REST_RESOURCE_ORIGINS,
+                  sourceDeclaredTypeNames)
+              .filter(REPOSITORY_REST_RESOURCE::equals)
+              .isPresent())
           .findFirst();
       if (annotation.isEmpty()) {
         continue;
       }
 
-      String typeName = qualifiedTypeName(packageName, type);
+      String typeName = qualifiedTypeName(sourceFile.packageName(), type);
       AnalysisWarningEvidence annotationEvidence = annotationEvidence(
-          sourcePath,
+          sourceFile.sourcePath(),
           typeName,
           annotation.orElseThrow(),
-          sourceLines);
+          sourceFile.sourceLines());
       evidence.add(annotationEvidence);
       warnings.add(new AnalysisWarningFact(
           warningId(SIGNAL_REPOSITORY_REST_RESOURCE, typeName, modulePathForIds),
           CATEGORY_HIDDEN_HTTP_SURFACE,
           SIGNAL_REPOSITORY_REST_RESOURCE,
           "Direct @RepositoryRestResource detected; the analyzer warns about possible Spring Data REST HTTP surface but does not expand endpoints.",
-          sourcePath,
+          sourceFile.sourcePath(),
           List.of(annotationEvidence.id())));
     }
   }
@@ -437,12 +470,21 @@ public final class AnalysisWarningAnalyzer {
   }
 
   private String simpleAnnotationName(AnnotationExpr annotation) {
-    String name = annotation.getNameAsString();
-    int lastDot = name.lastIndexOf('.');
-    if (lastDot >= 0) {
-      return name.substring(lastDot + 1);
+    return JavaSourceOrigins.simpleAnnotationName(annotation);
+  }
+
+  private record RepositoryRestSourceFile(
+      CompilationUnit compilationUnit,
+      String packageName,
+      String sourcePath,
+      List<String> sourceLines,
+      Map<String, String> importsBySimpleName,
+      Set<String> declaredTypeNames) {
+    private RepositoryRestSourceFile {
+      sourceLines = List.copyOf(sourceLines);
+      importsBySimpleName = Map.copyOf(importsBySimpleName);
+      declaredTypeNames = Set.copyOf(declaredTypeNames);
     }
-    return name;
   }
 
   private record MavenPluginArtifactIdSignal(String artifactId, Integer lineNumber) {

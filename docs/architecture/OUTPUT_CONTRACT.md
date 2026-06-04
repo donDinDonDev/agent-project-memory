@@ -258,9 +258,17 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
 - Spring MVC endpoint annotations are trusted only when source-visible syntax supports a
   Spring origin: a fully qualified annotation name in the supported Spring package, or a
   simple annotation name with an explicit single-type import for the supported Spring
-  annotation. Unresolved simple-name annotations, wildcard-import-only annotations,
-  same-package/local fake annotations, generated-source-only annotations, and
-  classpath-only annotations are skipped rather than emitted as endpoint facts.
+  annotation, and only when that exact framework type is not declared by scanned source.
+  Unresolved simple-name annotations, wildcard-import-only annotations,
+  same-package/local fake annotations, source-declared fake framework annotations,
+  generated-source-only annotations, and classpath-only annotations are skipped rather
+  than emitted as endpoint facts.
+- `@RequestMapping(method = ...)` values are extracted only from supported Spring
+  `RequestMethod` references visible as the exact fully qualified enum type or through
+  an explicit single-type import. Bare enum constants, static-imported constants, local
+  `RequestMethod` types, wildcard-import-only references, and source-declared fake
+  `org.springframework.web.bind.annotation.RequestMethod` types produce
+  `http_method_semantics: "unsupported"` rather than declared HTTP methods.
 - Source-visible interface binding is established only from Java-visible source syntax:
   fully qualified implemented interface names, explicit single-type imports, or
   same-package interface names. Wildcard imports are not resolved in this v0.1 slice and
@@ -290,7 +298,10 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
     dependencies, properties, and arbitrary text do not produce this signal. Duplicate
     declarations of the same plugin artifact ID in one `pom.xml` emit one warning.
   - `"repository_rest_resource"`: a source-visible Java type under a supported
-    production source root has a direct `@RepositoryRestResource` annotation.
+    production source root has a direct `@RepositoryRestResource` annotation whose
+    origin is visible as `org.springframework.data.rest.core.annotation.RepositoryRestResource`
+    through an exact fully qualified annotation name or explicit single-type import, and
+    that exact framework type is not declared by scanned source.
 - `warning.message` is a concise deterministic explanation of the limitation. It must
   not summarize the referenced source file or turn the signal into endpoint facts.
 - `warning.source_path` is the repository-relative source path that produced the signal.
@@ -346,9 +357,11 @@ Example source-visible interface mapping source:
 - Direct Spring component stereotypes are trusted only when source-visible syntax
   supports a Spring origin: a fully qualified annotation name in the supported Spring
   package, or a simple annotation name with an explicit single-type import for the
-  supported Spring annotation. Unresolved simple-name stereotypes, wildcard-import-only
-  stereotypes, same-package/local fake stereotypes, generated-source-only stereotypes,
-  and classpath-only stereotypes are skipped rather than emitted as component facts.
+  supported Spring annotation, and only when that exact framework type is not declared
+  by scanned source. Unresolved simple-name stereotypes, wildcard-import-only
+  stereotypes, same-package/local fake stereotypes, source-declared fake framework
+  stereotypes, generated-source-only stereotypes, and classpath-only stereotypes are
+  skipped rather than emitted as component facts.
 - `component.evidence_ids` references annotation evidence for the direct stereotype
   annotations and must resolve to records in `evidence-index.jsonl`.
 - `entities.analysis_status` is `"analyzed"` when the supported `src/main/java` source
@@ -361,6 +374,14 @@ Example source-visible interface mapping source:
 - `entity.table_name` is the literal string from direct class-level
   `@Table(name = "...")` when present and deterministically extractable, otherwise
   `null`.
+- Direct JPA annotations are trusted only when source-visible syntax supports a
+  supported JPA origin: a fully qualified `jakarta.persistence.*` or `javax.persistence.*`
+  annotation name, or a simple annotation name with an explicit single-type import for a
+  supported JPA annotation, and only when that exact framework type is not declared by
+  scanned source. Unresolved simple-name annotations, wildcard-import-only annotations,
+  same-package/local fake annotations, source-declared fake framework annotations,
+  generated-source-only annotations, and classpath-only annotations are skipped rather
+  than emitted as entity, identifier, table, mapped-superclass, or relationship facts.
 - `entity.identifier_fields` contains field-level `@Id` facts declared directly on the
   entity class or declared on a conservative source-visible superclass chain where each
   traversed superclass is present under supported production source roots and has a
@@ -422,6 +443,13 @@ Example source-visible interface mapping source:
   evidence is attached only to top-level emitted test classes; nested emitted test
   classes use their own class or method annotation evidence so imports are not repeated
   as nested-class signals.
+- Spring Test signals are trusted only when the annotation origin is visible as a
+  supported `org.springframework.test.*` or `org.springframework.boot.test.*` type
+  through an exact fully qualified annotation name or explicit single-type import, and
+  that exact framework type is not declared by scanned source. Unresolved simple-name
+  annotations, wildcard-import-only annotations, same-package/local fake annotations,
+  source-declared fake framework annotations, and static-import-only references do not
+  emit `Spring Test` framework signals.
 - `framework_signal.name` is the detected framework family name.
 - `framework_signal.evidence_ids` references direct import or annotation evidence and
   must resolve to records in `evidence-index.jsonl`.

@@ -69,6 +69,20 @@ final class SpringComponentAnalyzerTest {
   }
 
   @Test
+  void sourceDeclaredSpringFqcnStereotypesDoNotEmitComponentFacts() throws Exception {
+    Path fixtureRoot = spoofedOriginsFixtureRoot();
+    SpringComponentAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    assertAll(
+        () -> assertFalse(analysis.components().stream()
+            .anyMatch(component -> component.className().equals(
+                "com.example.components.SourceDeclaredFqcnService"))),
+        () -> assertTrue(analysis.evidence().isEmpty()));
+  }
+
+  @Test
   void wildcardImportedSpringStereotypesDoNotEmitComponentFacts() throws Exception {
     SpringComponentAnalysis analysis = analyzeFixture();
 
@@ -168,6 +182,11 @@ final class SpringComponentAnalyzerTest {
   private Path modernJavaFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/modern-java-syntax")).toURI());
+  }
+
+  private Path spoofedOriginsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/spring-components-spoofed-origins")).toURI());
   }
 
   private SpringComponentFact component(SpringComponentAnalysis analysis, String simpleName) {

@@ -588,13 +588,13 @@ final class SpringMvcEndpointOutputGeneratorTest {
         class SharedService {
         }
 
-        @Entity
+        @jakarta.persistence.Entity
         class SharedEntity {
-          @Id
+          @jakarta.persistence.Id
           Long id;
         }
 
-        @RepositoryRestResource
+        @org.springframework.data.rest.core.annotation.RepositoryRestResource
         interface SharedRepository {
         }
         """.formatted(basePath));

@@ -184,6 +184,18 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void sourceDeclaredJpaFqcnAnnotationsDoNotEmitEntityFacts() throws Exception {
+    Path fixtureRoot = spoofedOriginsFixtureRoot();
+    JpaEntityAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    assertAll(
+        () -> assertTrue(analysis.entities().isEmpty()),
+        () -> assertTrue(analysis.evidence().isEmpty()));
+  }
+
+  @Test
   void entitiesAndNestedFactsAreSortedDeterministically() throws Exception {
     JpaEntityAnalysis analysis = analyzeFixture();
 
@@ -276,6 +288,11 @@ final class JpaEntityAnalyzerTest {
   private Path mappedSuperclassFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-mapped-superclass")).toURI());
+  }
+
+  private Path spoofedOriginsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/jpa-spoofed-origins")).toURI());
   }
 
   private JpaEntityFact entity(JpaEntityAnalysis analysis, String simpleName) {

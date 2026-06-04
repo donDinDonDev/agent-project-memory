@@ -1,5 +1,8 @@
 package com.example.modern;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
 @Entity
 class ModernEntity {
   @Id

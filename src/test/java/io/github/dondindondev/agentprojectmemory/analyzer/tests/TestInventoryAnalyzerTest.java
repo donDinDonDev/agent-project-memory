@@ -95,6 +95,24 @@ final class TestInventoryAnalyzerTest {
   }
 
   @Test
+  void springTestSignalsRequireResolvedExternalOrigin() throws Exception {
+    TestInventoryAnalysis analysis = analyzeSpoofedOriginsFixture();
+
+    TestClassFact sourceDeclared = test(analysis, "com.example.web.SourceDeclaredSpringBootTest");
+    TestClassFact unresolvedSimple = test(analysis, "com.example.web.UnresolvedSimpleSpringTest");
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertTrue(sourceDeclared.frameworkSignals().isEmpty()),
+        () -> assertTrue(unresolvedSimple.frameworkSignals().isEmpty()),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(record -> "@SpringBootTest".equals(record.symbolName()))),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(record -> record.symbolName().startsWith(
+                "import org.springframework.boot.test.context.SpringBootTest"))));
+  }
+
+  @Test
   void ambiguousSubjectNameProducesLowConfidenceAndUncertainty() throws Exception {
     TestInventoryAnalysis analysis = analyzeFixture();
 
@@ -181,6 +199,14 @@ final class TestInventoryAnalyzerTest {
         List.of(fixtureRoot.resolve("src/test/java")));
   }
 
+  private TestInventoryAnalysis analyzeSpoofedOriginsFixture() throws Exception {
+    Path fixtureRoot = spoofedOriginsFixtureRoot();
+    return analyzer.analyze(
+        fixtureRoot,
+        List.of(),
+        List.of(fixtureRoot.resolve("src/test/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/test-inventory")).toURI());
@@ -189,6 +215,11 @@ final class TestInventoryAnalyzerTest {
   private Path modernJavaFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/modern-java-syntax")).toURI());
+  }
+
+  private Path spoofedOriginsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/test-inventory-spoofed-origins")).toURI());
   }
 
   private TestClassFact test(TestInventoryAnalysis analysis, String className) {

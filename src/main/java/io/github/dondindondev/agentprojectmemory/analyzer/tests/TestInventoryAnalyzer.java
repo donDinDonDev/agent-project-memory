@@ -7,6 +7,7 @@ import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -47,16 +48,16 @@ public final class TestInventoryAnalyzer {
       "WebMvcTest",
       "DataJpaTest",
       "ContextConfiguration");
-  private static final Set<String> SPRING_TEST_ANNOTATIONS = Set.of(
-      "SpringBootTest",
-      "WebMvcTest",
-      "DataJpaTest",
-      "ContextConfiguration",
-      "ActiveProfiles",
-      "DirtiesContext",
-      "Sql",
-      "MockBean",
-      "TestConfiguration");
+  private static final Map<String, Set<String>> SPRING_TEST_ANNOTATION_ORIGINS = Map.ofEntries(
+      Map.entry("SpringBootTest", Set.of("org.springframework.boot.test.context.SpringBootTest")),
+      Map.entry("WebMvcTest", Set.of("org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest")),
+      Map.entry("DataJpaTest", Set.of("org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest")),
+      Map.entry("ContextConfiguration", Set.of("org.springframework.test.context.ContextConfiguration")),
+      Map.entry("ActiveProfiles", Set.of("org.springframework.test.context.ActiveProfiles")),
+      Map.entry("DirtiesContext", Set.of("org.springframework.test.annotation.DirtiesContext")),
+      Map.entry("Sql", Set.of("org.springframework.test.context.jdbc.Sql")),
+      Map.entry("MockBean", Set.of("org.springframework.boot.test.mock.mockito.MockBean")),
+      Map.entry("TestConfiguration", Set.of("org.springframework.boot.test.context.TestConfiguration")));
   private static final Comparator<TestClassFact> TEST_CLASS_ORDER = Comparator
       .comparing(TestClassFact::className)
       .thenComparing(TestClassFact::sourcePath);
@@ -90,6 +91,11 @@ public final class TestInventoryAnalyzer {
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         productionSourceRoots);
+    Set<String> sourceDeclaredTypeNames = sourceDeclaredTypeNames(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        productionSourceRoots,
+        testSourceRoots);
     List<TestClassFact> tests = new ArrayList<>();
     Map<String, TestInventoryEvidence> evidence = new LinkedHashMap<>();
 
@@ -99,6 +105,7 @@ public final class TestInventoryAnalyzer {
             normalizedRepositoryRoot,
             javaFile,
             productionClassesBySimpleName,
+            sourceDeclaredTypeNames,
             tests,
             evidence);
       }
@@ -114,6 +121,7 @@ public final class TestInventoryAnalyzer {
       Path repositoryRoot,
       Path javaFile,
       Map<String, List<ProductionClass>> productionClassesBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
       List<TestClassFact> tests,
       Map<String, TestInventoryEvidence> evidence) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
@@ -129,7 +137,7 @@ public final class TestInventoryAnalyzer {
         continue;
       }
 
-      if (!shouldEmitTestClass(type, importsBySimpleName)) {
+      if (!shouldEmitTestClass(type, importsBySimpleName, sourceDeclaredTypeNames)) {
         continue;
       }
 
@@ -143,6 +151,7 @@ public final class TestInventoryAnalyzer {
           type,
           !isNestedClass(type),
           importsBySimpleName,
+          sourceDeclaredTypeNames,
           sourceLines);
       frameworkEvidence.forEach(record -> evidence.putIfAbsent(record.evidence().id(), record.evidence()));
 
@@ -180,13 +189,14 @@ public final class TestInventoryAnalyzer {
       ClassOrInterfaceDeclaration type,
       boolean includeImportEvidence,
       Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
       List<String> sourceLines) {
     List<FrameworkEvidence> evidence = new ArrayList<>();
     Set<String> seen = new LinkedHashSet<>();
 
     if (includeImportEvidence) {
       for (ImportDeclaration importDeclaration : importsBySimpleName.values()) {
-        frameworkName(importDeclaration.getNameAsString(), null)
+        frameworkName(Optional.of(importDeclaration.getNameAsString()), null, sourceDeclaredTypeNames)
             .ifPresent(frameworkName -> {
               TestInventoryEvidence importEvidence = importEvidence(
                   sourcePath,
@@ -204,8 +214,9 @@ public final class TestInventoryAnalyzer {
       AnnotationExpr annotation = annotationLocation.annotation();
       Optional<String> resolvedAnnotationName = resolvedAnnotationName(annotation, importsBySimpleName);
       Optional<String> frameworkName = frameworkName(
-          resolvedAnnotationName.orElseGet(() -> simpleAnnotationName(annotation)),
-          simpleAnnotationName(annotation));
+          resolvedAnnotationName,
+          simpleAnnotationName(annotation),
+          sourceDeclaredTypeNames);
       if (frameworkName.isEmpty()) {
         continue;
       }
@@ -244,34 +255,53 @@ public final class TestInventoryAnalyzer {
     }
 
     ImportDeclaration importDeclaration = importsBySimpleName.get(annotationName);
-    if (importDeclaration == null || importDeclaration.isAsterisk()) {
+    if (importDeclaration == null || importDeclaration.isStatic() || importDeclaration.isAsterisk()) {
       return Optional.empty();
     }
     return Optional.of(importDeclaration.getNameAsString());
   }
 
-  private Optional<String> frameworkName(String resolvedName, String simpleAnnotationName) {
-    if (resolvedName.startsWith("org.junit.jupiter.")) {
+  private Optional<String> frameworkName(
+      Optional<String> resolvedName,
+      String simpleAnnotationName,
+      Set<String> sourceDeclaredTypeNames) {
+    if (resolvedName.isEmpty()) {
+      return Optional.empty();
+    }
+
+    String name = resolvedName.orElseThrow();
+    if (name.startsWith("org.junit.jupiter.")) {
       return Optional.of("JUnit Jupiter");
     }
-    if (resolvedName.startsWith("org.junit.") && !resolvedName.startsWith("org.junit.jupiter.")) {
+    if (name.startsWith("org.junit.") && !name.startsWith("org.junit.jupiter.")) {
       return Optional.of("JUnit 4");
     }
-    if (resolvedName.startsWith("org.springframework.test.")
-        || resolvedName.startsWith("org.springframework.boot.test.")) {
-      return Optional.of("Spring Test");
-    }
-    if (simpleAnnotationName != null && SPRING_TEST_ANNOTATIONS.contains(simpleAnnotationName)) {
+    if (isSupportedSpringTestAnnotationOrigin(name, simpleAnnotationName, sourceDeclaredTypeNames)) {
       return Optional.of("Spring Test");
     }
     return Optional.empty();
   }
 
+  private boolean isSupportedSpringTestAnnotationOrigin(
+      String resolvedName,
+      String simpleAnnotationName,
+      Set<String> sourceDeclaredTypeNames) {
+    return JavaSourceOrigins.supportedTypeSimpleName(
+            resolvedName,
+            Map.of(),
+            SPRING_TEST_ANNOTATION_ORIGINS,
+            sourceDeclaredTypeNames)
+        .filter(resolvedSimpleName -> simpleAnnotationName == null
+            || resolvedSimpleName.equals(simpleAnnotationName))
+        .isPresent();
+  }
+
   private boolean shouldEmitTestClass(
       ClassOrInterfaceDeclaration type,
-      Map<String, ImportDeclaration> importsBySimpleName) {
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     return hasClearTestName(type.getNameAsString())
-        || hasDirectTestClassSignal(type, importsBySimpleName);
+        || hasDirectTestClassSignal(type, importsBySimpleName, sourceDeclaredTypeNames);
   }
 
   private boolean hasClearTestName(String simpleName) {
@@ -280,9 +310,10 @@ public final class TestInventoryAnalyzer {
 
   private boolean hasDirectTestClassSignal(
       ClassOrInterfaceDeclaration type,
-      Map<String, ImportDeclaration> importsBySimpleName) {
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     for (AnnotationLocation annotationLocation : annotationLocations(type)) {
-      if (isTestClassMarker(annotationLocation, importsBySimpleName)) {
+      if (isTestClassMarker(annotationLocation, importsBySimpleName, sourceDeclaredTypeNames)) {
         return true;
       }
     }
@@ -291,7 +322,8 @@ public final class TestInventoryAnalyzer {
 
   private boolean isTestClassMarker(
       AnnotationLocation annotationLocation,
-      Map<String, ImportDeclaration> importsBySimpleName) {
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     AnnotationExpr annotation = annotationLocation.annotation();
     Optional<String> resolvedName = resolvedAnnotationName(annotation, importsBySimpleName);
     String simpleName = simpleAnnotationName(annotation);
@@ -301,7 +333,7 @@ public final class TestInventoryAnalyzer {
 
     return isJUnitNestedAnnotation(resolvedName, simpleName)
         || isJUnitFourRunWithAnnotation(resolvedName, simpleName)
-        || isSpringTestClassMarkerAnnotation(resolvedName, simpleName);
+        || isSpringTestClassMarkerAnnotation(resolvedName, simpleName, sourceDeclaredTypeNames);
   }
 
   private boolean isJUnitTestMethodAnnotation(Optional<String> resolvedName, String simpleName) {
@@ -319,10 +351,14 @@ public final class TestInventoryAnalyzer {
         && resolvedName.map(name -> name.startsWith("org.junit.")).orElse(false);
   }
 
-  private boolean isSpringTestClassMarkerAnnotation(Optional<String> resolvedName, String simpleName) {
+  private boolean isSpringTestClassMarkerAnnotation(
+      Optional<String> resolvedName,
+      String simpleName,
+      Set<String> sourceDeclaredTypeNames) {
     return SPRING_TEST_CLASS_MARKER_ANNOTATIONS.contains(simpleName)
-        && resolvedName.map(name -> name.startsWith("org.springframework.test.")
-            || name.startsWith("org.springframework.boot.test.")).orElse(false);
+        && resolvedName
+            .map(name -> isSupportedSpringTestAnnotationOrigin(name, simpleName, sourceDeclaredTypeNames))
+            .orElse(false);
   }
 
   private TestInventoryEvidence testClassEvidence(
@@ -474,6 +510,30 @@ public final class TestInventoryAnalyzer {
         .sorted(Comparator.comparing(ProductionClass::className))
         .toList());
     return classesBySimpleName;
+  }
+
+  private Set<String> sourceDeclaredTypeNames(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      List<Path> productionSourceRoots,
+      List<Path> testSourceRoots) throws IOException {
+    Set<String> declaredTypeNames = new LinkedHashSet<>();
+    List<Path> sourceRoots = new ArrayList<>();
+    sourceRoots.addAll(existingRoots(repositoryRoot, canonicalRepositoryRoot, productionSourceRoots));
+    sourceRoots.addAll(existingRoots(repositoryRoot, canonicalRepositoryRoot, testSourceRoots));
+    for (Path sourceRoot : sourceRoots.stream()
+        .distinct()
+        .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
+        .toList()) {
+      for (Path javaFile : javaFiles(canonicalRepositoryRoot, sourceRoot)) {
+        CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
+        String packageName = compilationUnit.getPackageDeclaration()
+            .map(packageDeclaration -> packageDeclaration.getName().asString())
+            .orElse("");
+        declaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
+      }
+    }
+    return declaredTypeNames;
   }
 
   private List<ProductionClass> productionClasses(Path repositoryRoot, Path javaFile) throws IOException {

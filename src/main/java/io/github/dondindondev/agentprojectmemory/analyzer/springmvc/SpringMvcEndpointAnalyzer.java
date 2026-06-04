@@ -10,6 +10,7 @@ import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -23,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 final class SpringMvcEndpointAnalyzer {
@@ -37,18 +39,22 @@ final class SpringMvcEndpointAnalyzer {
   private static final String PATH_VARIABLE = "PathVariable";
   private static final String REQUEST_PARAM = "RequestParam";
   private static final String REQUEST_BODY = "RequestBody";
-  private static final Map<String, String> SUPPORTED_SPRING_ANNOTATIONS = Map.ofEntries(
-      Map.entry(CONTROLLER, "org.springframework.stereotype.Controller"),
-      Map.entry(REST_CONTROLLER, "org.springframework.web.bind.annotation.RestController"),
-      Map.entry(REQUEST_MAPPING, "org.springframework.web.bind.annotation.RequestMapping"),
-      Map.entry(GET_MAPPING, "org.springframework.web.bind.annotation.GetMapping"),
-      Map.entry(POST_MAPPING, "org.springframework.web.bind.annotation.PostMapping"),
-      Map.entry(PUT_MAPPING, "org.springframework.web.bind.annotation.PutMapping"),
-      Map.entry(PATCH_MAPPING, "org.springframework.web.bind.annotation.PatchMapping"),
-      Map.entry(DELETE_MAPPING, "org.springframework.web.bind.annotation.DeleteMapping"),
-      Map.entry(PATH_VARIABLE, "org.springframework.web.bind.annotation.PathVariable"),
-      Map.entry(REQUEST_PARAM, "org.springframework.web.bind.annotation.RequestParam"),
-      Map.entry(REQUEST_BODY, "org.springframework.web.bind.annotation.RequestBody"));
+  private static final String REQUEST_METHOD = "RequestMethod";
+  private static final Map<String, Set<String>> SUPPORTED_SPRING_ANNOTATIONS = Map.ofEntries(
+      Map.entry(CONTROLLER, Set.of("org.springframework.stereotype.Controller")),
+      Map.entry(REST_CONTROLLER, Set.of("org.springframework.web.bind.annotation.RestController")),
+      Map.entry(REQUEST_MAPPING, Set.of("org.springframework.web.bind.annotation.RequestMapping")),
+      Map.entry(GET_MAPPING, Set.of("org.springframework.web.bind.annotation.GetMapping")),
+      Map.entry(POST_MAPPING, Set.of("org.springframework.web.bind.annotation.PostMapping")),
+      Map.entry(PUT_MAPPING, Set.of("org.springframework.web.bind.annotation.PutMapping")),
+      Map.entry(PATCH_MAPPING, Set.of("org.springframework.web.bind.annotation.PatchMapping")),
+      Map.entry(DELETE_MAPPING, Set.of("org.springframework.web.bind.annotation.DeleteMapping")),
+      Map.entry(PATH_VARIABLE, Set.of("org.springframework.web.bind.annotation.PathVariable")),
+      Map.entry(REQUEST_PARAM, Set.of("org.springframework.web.bind.annotation.RequestParam")),
+      Map.entry(REQUEST_BODY, Set.of("org.springframework.web.bind.annotation.RequestBody")));
+  private static final Map<String, Set<String>> SUPPORTED_REQUEST_METHOD_ORIGINS = Map.of(
+      REQUEST_METHOD,
+      Set.of("org.springframework.web.bind.annotation.RequestMethod"));
   private static final String PATH_VARIABLE_SOURCE = "path_variable";
   private static final String REQUEST_PARAM_SOURCE = "request_param";
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
@@ -78,6 +84,7 @@ final class SpringMvcEndpointAnalyzer {
     List<SpringMvcEndpointFact> endpoints = new ArrayList<>();
     List<SpringMvcEndpointEvidence> evidence = new ArrayList<>();
     List<SourceType> sourceTypes = new ArrayList<>();
+    Set<String> sourceDeclaredTypeNames = new LinkedHashSet<>();
 
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(normalizedRepositoryRoot, sourceRoot);
@@ -88,7 +95,7 @@ final class SpringMvcEndpointAnalyzer {
       }
 
       for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
-        sourceTypes.addAll(sourceTypes(normalizedRepositoryRoot, javaFile));
+        sourceTypes.addAll(sourceTypes(normalizedRepositoryRoot, javaFile, sourceDeclaredTypeNames));
       }
     }
 
@@ -102,7 +109,8 @@ final class SpringMvcEndpointAnalyzer {
 
   private List<SourceType> sourceTypes(
       Path repositoryRoot,
-      Path javaFile) throws IOException {
+      Path javaFile,
+      Set<String> sourceDeclaredTypeNames) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
     String packageName = compilationUnit.getPackageDeclaration()
         .map(packageDeclaration -> packageDeclaration.getName().asString())
@@ -110,6 +118,7 @@ final class SpringMvcEndpointAnalyzer {
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
     Map<String, String> importsBySimpleName = SpringAnnotationOrigins.importsBySimpleName(compilationUnit);
+    sourceDeclaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
     List<SourceType> sourceTypes = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
@@ -119,7 +128,8 @@ final class SpringMvcEndpointAnalyzer {
           type,
           sourcePath,
           sourceLines,
-          importsBySimpleName));
+          importsBySimpleName,
+          sourceDeclaredTypeNames));
     }
 
     return sourceTypes;
@@ -209,7 +219,7 @@ final class SpringMvcEndpointAnalyzer {
     if (methodPathExtraction.isDeclaredButUnsupported()) {
       return;
     }
-    ExtractedHttpMethods httpMethods = httpMethods(methodMappingAnnotation);
+    ExtractedHttpMethods httpMethods = httpMethods(controller, methodMappingAnnotation);
     ExtractedRequestMetadata requestMetadata = requestMetadata(controller, method);
     SpringMvcEndpointEvidence methodMappingEvidence = mappingEvidence(
         controller.sourcePath(),
@@ -282,7 +292,9 @@ final class SpringMvcEndpointAnalyzer {
     }
 
     InterfaceMappingCandidate candidate = candidates.get(0);
-    ExtractedHttpMethods httpMethods = httpMethods(candidate.methodMappingAnnotation());
+    ExtractedHttpMethods httpMethods = httpMethods(
+        candidate.interfaceType(),
+        candidate.methodMappingAnnotation());
     ExtractedRequestMetadata requestMetadata = requestMetadata(
         candidate.interfaceType(),
         candidate.interfaceMethod());
@@ -527,7 +539,8 @@ final class SpringMvcEndpointAnalyzer {
     return SpringAnnotationOrigins.supportedSimpleName(
         annotation,
         sourceType.importsBySimpleName(),
-        SUPPORTED_SPRING_ANNOTATIONS);
+        SUPPORTED_SPRING_ANNOTATIONS,
+        sourceType.sourceDeclaredTypeNames());
   }
 
   private ExtractedRequestMetadata requestMetadata(
@@ -662,19 +675,21 @@ final class SpringMvcEndpointAnalyzer {
     return SpringAnnotationOrigins.simpleAnnotationName(annotation);
   }
 
-  private ExtractedHttpMethods httpMethods(AnnotationExpr annotation) {
+  private ExtractedHttpMethods httpMethods(SourceType sourceType, AnnotationExpr annotation) {
     return switch (simpleAnnotationName(annotation)) {
       case GET_MAPPING -> ExtractedHttpMethods.declared(List.of("GET"));
       case POST_MAPPING -> ExtractedHttpMethods.declared(List.of("POST"));
       case PUT_MAPPING -> ExtractedHttpMethods.declared(List.of("PUT"));
       case PATCH_MAPPING -> ExtractedHttpMethods.declared(List.of("PATCH"));
       case DELETE_MAPPING -> ExtractedHttpMethods.declared(List.of("DELETE"));
-      case REQUEST_MAPPING -> requestMappingHttpMethods(annotation);
+      case REQUEST_MAPPING -> requestMappingHttpMethods(sourceType, annotation);
       default -> ExtractedHttpMethods.unsupported();
     };
   }
 
-  private ExtractedHttpMethods requestMappingHttpMethods(AnnotationExpr annotation) {
+  private ExtractedHttpMethods requestMappingHttpMethods(
+      SourceType sourceType,
+      AnnotationExpr annotation) {
     if (!annotation.isNormalAnnotationExpr()) {
       return ExtractedHttpMethods.notDeclared();
     }
@@ -682,16 +697,16 @@ final class SpringMvcEndpointAnalyzer {
     return annotation.asNormalAnnotationExpr().getPairs().stream()
         .filter(pair -> "method".equals(pair.getNameAsString()))
         .findFirst()
-        .map(pair -> requestMethodValues(pair.getValue()))
+        .map(pair -> requestMethodValues(sourceType, pair.getValue()))
         .orElseGet(ExtractedHttpMethods::notDeclared);
   }
 
-  private ExtractedHttpMethods requestMethodValues(Expression expression) {
+  private ExtractedHttpMethods requestMethodValues(SourceType sourceType, Expression expression) {
     if (expression.isArrayInitializerExpr()) {
       ArrayInitializerExpr array = expression.asArrayInitializerExpr();
       LinkedHashSet<String> methods = new LinkedHashSet<>();
       for (Expression value : array.getValues()) {
-        Optional<String> requestMethod = requestMethodName(value);
+        Optional<String> requestMethod = requestMethodName(sourceType, value);
         if (requestMethod.isEmpty()) {
           return ExtractedHttpMethods.unsupported();
         }
@@ -700,33 +715,28 @@ final class SpringMvcEndpointAnalyzer {
       return ExtractedHttpMethods.declared(List.copyOf(methods));
     }
 
-    return requestMethodName(expression)
+    return requestMethodName(sourceType, expression)
         .map(method -> ExtractedHttpMethods.declared(List.of(method)))
         .orElseGet(ExtractedHttpMethods::unsupported);
   }
 
-  private Optional<String> requestMethodName(Expression expression) {
+  private Optional<String> requestMethodName(SourceType sourceType, Expression expression) {
     if (expression.isFieldAccessExpr()) {
       String scope = expression.asFieldAccessExpr().getScope().toString();
       String methodName = expression.asFieldAccessExpr().getNameAsString();
-      if (isRequestMethodScope(scope) && REQUEST_METHOD_NAMES.contains(methodName)) {
-        return Optional.of(methodName);
-      }
-    }
-
-    if (expression.isNameExpr()) {
-      String methodName = expression.asNameExpr().getNameAsString();
-      if (REQUEST_METHOD_NAMES.contains(methodName)) {
+      boolean supportedRequestMethodScope = JavaSourceOrigins.supportedTypeSimpleName(
+              scope,
+              sourceType.importsBySimpleName(),
+              SUPPORTED_REQUEST_METHOD_ORIGINS,
+              sourceType.sourceDeclaredTypeNames())
+          .filter(REQUEST_METHOD::equals)
+          .isPresent();
+      if (supportedRequestMethodScope && REQUEST_METHOD_NAMES.contains(methodName)) {
         return Optional.of(methodName);
       }
     }
 
     return Optional.empty();
-  }
-
-  private boolean isRequestMethodScope(String scope) {
-    return "RequestMethod".equals(scope)
-        || "org.springframework.web.bind.annotation.RequestMethod".equals(scope);
   }
 
   private ExtractedPaths literalPathValues(AnnotationExpr annotation) {
@@ -1072,7 +1082,8 @@ final class SpringMvcEndpointAnalyzer {
       ClassOrInterfaceDeclaration declaration,
       String sourcePath,
       List<String> sourceLines,
-      Map<String, String> importsBySimpleName) {
+      Map<String, String> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
     private SourceType {
       sourceLines = List.copyOf(sourceLines);
       importsBySimpleName = Map.copyOf(importsBySimpleName);

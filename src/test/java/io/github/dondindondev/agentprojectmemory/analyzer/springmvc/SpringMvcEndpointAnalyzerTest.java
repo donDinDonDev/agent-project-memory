@@ -75,6 +75,21 @@ final class SpringMvcEndpointAnalyzerTest {
   }
 
   @Test
+  void sourceDeclaredSpringFqcnAnnotationsDoNotEmitEndpointFacts() throws Exception {
+    Path fixtureRoot = spoofedOriginsFixtureRoot();
+    SpringMvcEndpointAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    assertAll(
+        () -> assertFalse(hasEndpoint(
+            analysis,
+            "com.example.web.SourceDeclaredFqcnController",
+            "spoofed")),
+        () -> assertTrue(analysis.evidence().isEmpty()));
+  }
+
+  @Test
   void wildcardImportedSpringAnnotationsDoNotEmitEndpointFacts() throws Exception {
     SpringMvcEndpointAnalysis analysis = analyzeFixture();
 
@@ -362,6 +377,28 @@ final class SpringMvcEndpointAnalyzerTest {
         () -> assertEquals(List.of("GET", "POST"), endpoint.httpMethods()),
         () -> assertEquals(SpringMvcHttpMethodSemantics.DECLARED, endpoint.httpMethodSemantics()),
         () -> assertEquals(List.of("/coverage/request-both"), endpoint.paths()));
+  }
+
+  @Test
+  void requestMappingMethodValuesRequireSpringRequestMethodOrigin() throws Exception {
+    SpringMvcEndpointAnalysis analysis = analyzeFixture();
+
+    SpringMvcEndpointFact local = endpoint(
+        analysis,
+        "com.example.web.RequestMethodOriginController",
+        "localRequestMethod");
+    SpringMvcEndpointFact staticImported = endpoint(
+        analysis,
+        "com.example.web.RequestMethodOriginController",
+        "staticImportedRequestMethod");
+
+    assertAll(
+        () -> assertEquals(List.of(), local.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.UNSUPPORTED, local.httpMethodSemantics()),
+        () -> assertEquals(List.of("/local-request-method"), local.paths()),
+        () -> assertEquals(List.of(), staticImported.httpMethods()),
+        () -> assertEquals(SpringMvcHttpMethodSemantics.UNSUPPORTED, staticImported.httpMethodSemantics()),
+        () -> assertEquals(List.of("/static-request-method"), staticImported.paths()));
   }
 
   @Test
@@ -656,6 +693,11 @@ final class SpringMvcEndpointAnalyzerTest {
   private Path modernJavaFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/modern-java-syntax")).toURI());
+  }
+
+  private Path spoofedOriginsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/springmvc-spoofed-origins")).toURI());
   }
 
   private SpringMvcEndpointFact endpoint(
