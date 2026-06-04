@@ -23,18 +23,20 @@ public final class AgentGuideGenerator {
 
     JsonNode projectMap = JSON.readTree(projectMapJson);
     Map<String, EvidenceRecord> evidenceById = evidenceById(evidenceIndexJsonl);
+    List<ModuleInfo> modules = moduleInfos(projectMap.path("project").path("modules"));
+    Map<String, ModuleInfo> moduleById = moduleById(modules);
 
     StringBuilder markdown = new StringBuilder();
     markdown.append("# Agent Guide\n\n");
     markdown.append("Generated deterministically from `project-map.json` and ")
         .append("`evidence-index.jsonl`. The guide generator does not re-analyze source files.\n\n");
 
-    appendProjectLayout(markdown, projectMap.path("project"), evidenceById);
-    appendEndpoints(markdown, projectMap.path("endpoints"), evidenceById);
-    appendComponents(markdown, projectMap.path("components"), evidenceById);
-    appendEntities(markdown, projectMap.path("entities"), evidenceById);
-    appendTests(markdown, projectMap.path("tests"), evidenceById);
-    appendKnownLimits(markdown, projectMap, evidenceById);
+    appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
+    appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
+    appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
+    appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
+    appendTests(markdown, projectMap.path("tests"), moduleById, evidenceById);
+    appendKnownLimits(markdown, projectMap, moduleById, evidenceById);
     appendInspectionOrder(markdown, projectMap, evidenceById);
 
     return markdown.toString();
@@ -43,6 +45,7 @@ public final class AgentGuideGenerator {
   private void appendProjectLayout(
       StringBuilder markdown,
       JsonNode project,
+      List<ModuleInfo> modules,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected Project Layout\n\n");
 
@@ -80,12 +83,93 @@ public final class AgentGuideGenerator {
           .append("no separate test-root evidence IDs are emitted.\n");
     }
 
+    appendModuleLayout(markdown, project.path("modules"), modules, evidenceById);
     markdown.append("\n");
+  }
+
+  private void appendModuleLayout(
+      StringBuilder markdown,
+      JsonNode modulesNode,
+      List<ModuleInfo> modules,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!modulesNode.isObject()) {
+      return;
+    }
+
+    markdown.append("- Modules analysis status: ")
+        .append(code(text(modulesNode, "analysis_status")))
+        .append("\n");
+    if (modules.isEmpty()) {
+      markdown.append("- Modules: Not analyzed; no module inventory items were recorded.\n");
+      return;
+    }
+
+    for (ModuleInfo module : modules) {
+      markdown.append("- Module: Detected ")
+          .append(moduleLabel(module.moduleId(), module))
+          .append("\n");
+      markdown.append("  - POM path: ");
+      if (module.pomPath() == null || module.pomPath().isBlank()) {
+        markdown.append("Not analyzed; no POM path was recorded for this module.\n");
+      } else {
+        markdown.append("Detected ").append(code(module.pomPath())).append("\n");
+      }
+      markdown.append("  - Support status: ").append(code(module.supportStatus())).append("\n");
+      markdown.append("  - Declaration kind: ").append(code(module.declarationKind())).append("\n");
+      markdown.append("  - Declared path: ").append(code(module.declaredPath())).append("\n");
+      appendModuleRootsLine(markdown, "Source roots", module.sourceRoots(), "production");
+      appendModuleRootsLine(markdown, "Test roots", module.testRoots(), "test");
+      appendEvidenceLine(
+          markdown,
+          module.declarationEvidenceIds(),
+          evidenceById,
+          "Declaration evidence");
+      appendEvidenceLine(markdown, module.pomEvidenceIds(), evidenceById, "POM evidence");
+    }
+  }
+
+  private void appendModuleRootsLine(
+      StringBuilder markdown,
+      String label,
+      List<String> roots,
+      String rootKind) {
+    markdown.append("  - ").append(label).append(": ");
+    if (roots.isEmpty()) {
+      markdown.append("Not analyzed; no supported ")
+          .append(rootKind)
+          .append(" roots were recorded for this module.\n");
+      return;
+    }
+    markdown.append("Detected ").append(codeList(roots)).append("\n");
+    markdown.append("  - ")
+        .append(label)
+        .append(" evidence: recorded in `project-map.json`; no separate ")
+        .append(rootKind)
+        .append(" root evidence IDs are emitted.\n");
+  }
+
+  private void appendModuleLine(
+      StringBuilder markdown,
+      JsonNode fact,
+      Map<String, ModuleInfo> moduleById) {
+    String moduleId = nullableText(fact, "module_id");
+    if ((moduleId == null || moduleId.isBlank()) && moduleById.isEmpty()) {
+      return;
+    }
+    markdown.append("- Module: ");
+    if (moduleId == null || moduleId.isBlank()) {
+      markdown.append("Not analyzed; no module identity was recorded.\n");
+      return;
+    }
+    markdown.append("Detected ")
+        .append(moduleLabel(moduleId, moduleById))
+        .append("\n");
   }
 
   private void appendEndpoints(
       StringBuilder markdown,
       JsonNode endpoints,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected Spring MVC Endpoints\n\n");
 
@@ -96,6 +180,7 @@ public final class AgentGuideGenerator {
 
     for (JsonNode endpoint : endpoints) {
       markdown.append("### ").append(code(endpointLabel(endpoint))).append("\n\n");
+      appendModuleLine(markdown, endpoint, moduleById);
       markdown.append("- Controller: Detected ")
           .append(code(text(endpoint, "controller_class")))
           .append("\n");
@@ -118,6 +203,7 @@ public final class AgentGuideGenerator {
   private void appendComponents(
       StringBuilder markdown,
       JsonNode components,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected Spring Components\n\n");
     markdown.append("- Analysis status: ").append(code(text(components, "analysis_status"))).append("\n");
@@ -131,6 +217,7 @@ public final class AgentGuideGenerator {
     markdown.append("\n");
     for (JsonNode component : items) {
       markdown.append("### ").append(code(text(component, "class_name"))).append("\n\n");
+      appendModuleLine(markdown, component, moduleById);
       markdown.append("- Stereotypes: Detected ")
           .append(codeList(stringValues(component.path("stereotypes"))))
           .append("\n");
@@ -142,6 +229,7 @@ public final class AgentGuideGenerator {
   private void appendEntities(
       StringBuilder markdown,
       JsonNode entities,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected JPA Entities\n\n");
     markdown.append("- Analysis status: ").append(code(text(entities, "analysis_status"))).append("\n");
@@ -155,6 +243,7 @@ public final class AgentGuideGenerator {
     markdown.append("\n");
     for (JsonNode entity : items) {
       markdown.append("### ").append(code(text(entity, "class_name"))).append("\n\n");
+      appendModuleLine(markdown, entity, moduleById);
       String tableName = nullableText(entity, "table_name");
       List<String> tableEvidenceIds = evidenceIdsWithSymbol(
           entity.path("evidence_ids"),
@@ -236,6 +325,7 @@ public final class AgentGuideGenerator {
   private void appendTests(
       StringBuilder markdown,
       JsonNode tests,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected Tests\n\n");
     String analysisStatus = text(tests, "analysis_status");
@@ -254,13 +344,14 @@ public final class AgentGuideGenerator {
     markdown.append("\n");
     for (JsonNode test : items) {
       markdown.append("### ").append(code(text(test, "class_name"))).append("\n\n");
+      appendModuleLine(markdown, test, moduleById);
       markdown.append("- Test class: Detected ")
           .append(code(text(test, "class_name")))
           .append("\n");
       appendEvidenceLine(markdown, test.path("evidence_ids"), evidenceById);
       markdown.append("- Source: Detected ").append(code(text(test, "source_path"))).append("\n");
       appendFrameworkSignals(markdown, test.path("framework_signals"), evidenceById);
-      appendTestedSubjects(markdown, test.path("tested_subjects"), evidenceById);
+      appendTestedSubjects(markdown, test.path("tested_subjects"), moduleById, evidenceById);
       markdown.append("\n");
     }
   }
@@ -285,6 +376,7 @@ public final class AgentGuideGenerator {
   private void appendTestedSubjects(
       StringBuilder markdown,
       JsonNode testedSubjects,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     if (!testedSubjects.isArray() || testedSubjects.isEmpty()) {
       markdown.append("- Inferred tested subjects: none recorded.\n");
@@ -293,8 +385,13 @@ public final class AgentGuideGenerator {
 
     for (JsonNode subject : testedSubjects) {
       markdown.append("- Inferred tested subject: ")
-          .append(code(text(subject, "class_name")))
-          .append(" (support_type: ")
+          .append(code(text(subject, "class_name")));
+      String targetModuleId = nullableText(subject, "target_module_id");
+      if (targetModuleId != null && !targetModuleId.isBlank()) {
+        markdown.append(" in target module ")
+            .append(moduleLabel(targetModuleId, moduleById));
+      }
+      markdown.append(" (support_type: ")
           .append(code(text(subject, "support_type")))
           .append(", confidence: ")
           .append(code(text(subject, "confidence")));
@@ -310,9 +407,10 @@ public final class AgentGuideGenerator {
   private void appendKnownLimits(
       StringBuilder markdown,
       JsonNode projectMap,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Known Uncertainty And Limits\n\n");
-    appendWarnings(markdown, projectMap.path("warnings"), evidenceById);
+    appendWarnings(markdown, projectMap.path("warnings"), moduleById, evidenceById);
     markdown.append("- Not analyzed: Spring runtime behavior such as component scanning, dependency ")
         .append("injection graphs, bean lifecycle, scopes, and conditional configuration is not ")
         .append("represented by `components.items`.\n");
@@ -357,14 +455,21 @@ public final class AgentGuideGenerator {
       JsonNode projectMap,
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Practical Inspection Order For Coding Agents\n\n");
-    markdown.append("1. Start with detected build and layout facts");
-    List<String> buildPaths = evidencePaths(projectMap.path("project").path("build"), evidenceById);
-    appendPathHint(markdown, buildPaths);
+    boolean moduleAware = projectMap.path("project").path("modules").isObject();
+    if (moduleAware) {
+      markdown.append("1. Start with detected build, module, and layout facts");
+    } else {
+      markdown.append("1. Start with detected build and layout facts");
+    }
+    LinkedHashSet<String> layoutPaths = new LinkedHashSet<>();
+    layoutPaths.addAll(evidencePaths(projectMap.path("project").path("build"), evidenceById));
+    layoutPaths.addAll(evidencePaths(projectMap.path("project").path("modules"), evidenceById));
+    appendPathHint(markdown, List.copyOf(layoutPaths));
     markdown.append(".\n");
     markdown.append("2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence");
     LinkedHashSet<String> httpPaths = new LinkedHashSet<>();
     httpPaths.addAll(evidencePaths(projectMap.path("endpoints"), evidenceById));
-    httpPaths.addAll(evidencePaths(projectMap.path("warnings").path("items"), evidenceById));
+    httpPaths.addAll(hiddenHttpWarningEvidencePaths(projectMap.path("warnings"), evidenceById));
     appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");
     markdown.append("3. For Spring wiring changes, inspect detected component evidence");
@@ -381,6 +486,7 @@ public final class AgentGuideGenerator {
   private void appendWarnings(
       StringBuilder markdown,
       JsonNode warnings,
+      Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     JsonNode items = warnings.path("items");
     if (!items.isArray() || items.isEmpty()) {
@@ -391,8 +497,12 @@ public final class AgentGuideGenerator {
       markdown.append("- Warning: ")
           .append(code(text(warning, "category")))
           .append(" signal ")
-          .append(code(text(warning, "signal")))
-          .append(" at ")
+          .append(code(text(warning, "signal")));
+      String moduleDescription = moduleWarningLabel(warning, moduleById);
+      if (!moduleDescription.isBlank()) {
+        markdown.append(" for ").append(moduleDescription);
+      }
+      markdown.append(" at ")
           .append(code(text(warning, "source_path")))
           .append(". ")
           .append(text(warning, "message"))
@@ -481,7 +591,15 @@ public final class AgentGuideGenerator {
       StringBuilder markdown,
       List<String> ids,
       Map<String, EvidenceRecord> evidenceById) {
-    markdown.append("  - Evidence: ");
+    appendEvidenceLine(markdown, ids, evidenceById, "Evidence");
+  }
+
+  private void appendEvidenceLine(
+      StringBuilder markdown,
+      List<String> ids,
+      Map<String, EvidenceRecord> evidenceById,
+      String label) {
+    markdown.append("  - ").append(label).append(": ");
     if (ids.isEmpty()) {
       markdown.append("none recorded.\n");
       return;
@@ -513,6 +631,59 @@ public final class AgentGuideGenerator {
       method = "METHOD NOT DETECTED";
     }
     return method + " " + path;
+  }
+
+  private List<ModuleInfo> moduleInfos(JsonNode modulesNode) {
+    JsonNode items = modulesNode.path("items");
+    if (!items.isArray()) {
+      return List.of();
+    }
+
+    List<ModuleInfo> modules = new ArrayList<>();
+    for (JsonNode item : items) {
+      modules.add(new ModuleInfo(
+          text(item, "module_id"),
+          text(item, "module_path"),
+          nullableText(item, "pom_path"),
+          text(item, "support_status"),
+          text(item, "declaration_kind"),
+          text(item, "declared_path"),
+          stringValues(item.path("source_roots")),
+          stringValues(item.path("test_roots")),
+          stringValues(item.path("declaration_evidence_ids")),
+          stringValues(item.path("pom_evidence_ids"))));
+    }
+    return List.copyOf(modules);
+  }
+
+  private Map<String, ModuleInfo> moduleById(List<ModuleInfo> modules) {
+    Map<String, ModuleInfo> moduleById = new LinkedHashMap<>();
+    for (ModuleInfo module : modules) {
+      moduleById.put(module.moduleId(), module);
+    }
+    return moduleById;
+  }
+
+  private String moduleLabel(String moduleId, Map<String, ModuleInfo> moduleById) {
+    return moduleLabel(moduleId, moduleById.get(moduleId));
+  }
+
+  private String moduleLabel(String moduleId, ModuleInfo module) {
+    if (module == null) {
+      return code(moduleId) + " (module path not recorded)";
+    }
+    return code(moduleId) + " (path: " + code(module.modulePath()) + ")";
+  }
+
+  private String moduleWarningLabel(JsonNode warning, Map<String, ModuleInfo> moduleById) {
+    String moduleId = nullableText(warning, "module_id");
+    if (moduleId == null || moduleId.isBlank()) {
+      if (moduleById.isEmpty()) {
+        return "";
+      }
+      return "no module identity";
+    }
+    return "module " + moduleLabel(moduleId, moduleById);
   }
 
   private Map<String, EvidenceRecord> evidenceById(String evidenceIndexJsonl) throws IOException {
@@ -583,6 +754,22 @@ public final class AgentGuideGenerator {
     return List.copyOf(paths);
   }
 
+  private List<String> hiddenHttpWarningEvidencePaths(
+      JsonNode warnings,
+      Map<String, EvidenceRecord> evidenceById) {
+    LinkedHashSet<String> paths = new LinkedHashSet<>();
+    JsonNode items = warnings.path("items");
+    if (!items.isArray()) {
+      return List.of();
+    }
+    for (JsonNode warning : items) {
+      if ("hidden_http_surface".equals(text(warning, "category"))) {
+        collectEvidencePaths(warning, evidenceById, paths);
+      }
+    }
+    return List.copyOf(paths);
+  }
+
   private void collectEvidencePaths(
       JsonNode node,
       Map<String, EvidenceRecord> evidenceById,
@@ -591,16 +778,17 @@ public final class AgentGuideGenerator {
       return;
     }
     if (node.isObject()) {
-      JsonNode evidenceIds = node.path("evidence_ids");
-      if (evidenceIds.isArray()) {
-        for (String id : stringValues(evidenceIds)) {
-          EvidenceRecord evidence = evidenceById.get(id);
-          if (evidence != null && evidence.path() != null && !evidence.path().isBlank()) {
-            paths.add(evidence.path());
+      node.fields().forEachRemaining(entry -> {
+        if (entry.getKey().endsWith("evidence_ids") && entry.getValue().isArray()) {
+          for (String id : stringValues(entry.getValue())) {
+            EvidenceRecord evidence = evidenceById.get(id);
+            if (evidence != null && evidence.path() != null && !evidence.path().isBlank()) {
+              paths.add(evidence.path());
+            }
           }
         }
-      }
-      node.fields().forEachRemaining(entry -> collectEvidencePaths(entry.getValue(), evidenceById, paths));
+        collectEvidencePaths(entry.getValue(), evidenceById, paths);
+      });
       return;
     }
     if (node.isArray()) {
@@ -728,6 +916,25 @@ public final class AgentGuideGenerator {
         return path + ":" + lineStart;
       }
       return path + ":" + lineStart + "-" + lineEnd;
+    }
+  }
+
+  private record ModuleInfo(
+      String moduleId,
+      String modulePath,
+      String pomPath,
+      String supportStatus,
+      String declarationKind,
+      String declaredPath,
+      List<String> sourceRoots,
+      List<String> testRoots,
+      List<String> declarationEvidenceIds,
+      List<String> pomEvidenceIds) {
+    private ModuleInfo {
+      sourceRoots = List.copyOf(sourceRoots);
+      testRoots = List.copyOf(testRoots);
+      declarationEvidenceIds = List.copyOf(declarationEvidenceIds);
+      pomEvidenceIds = List.copyOf(pomEvidenceIds);
     }
   }
 }

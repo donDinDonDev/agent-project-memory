@@ -19,6 +19,8 @@ architecture documents.
   Maven module warnings.
 - Added module-aware execution for the existing endpoint, component, JPA entity, hidden
   HTTP surface warning, and tests inventory analyzers.
+- Added module-aware `endpoints.md` grouping and `agent-guide.md` orientation based on
+  `project.modules` and fact-level `module_id` values.
 - Adopted a public changelog.
 - Added public release process and versioning discipline documentation.
 

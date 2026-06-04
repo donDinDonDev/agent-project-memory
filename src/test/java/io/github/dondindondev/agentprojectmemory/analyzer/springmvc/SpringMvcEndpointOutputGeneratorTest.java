@@ -30,7 +30,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private final SpringMvcEndpointOutputGenerator generator = new SpringMvcEndpointOutputGenerator();
 
   @Test
-  void generatedProjectMapEvidenceIndexAndAgentGuideMatchGoldenFiles() throws Exception {
+  void generatedProjectMapEvidenceIndexMarkdownAndAgentGuideMatchGoldenFiles() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
     copyDirectory(fixtureRoot(), projectPath);
@@ -48,6 +48,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("evidence-index.jsonl"),
             Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(
+            expected("endpoints.md"),
+            Files.readString(outputDirectory.resolve("endpoints.md"))),
         () -> assertEquals(
             expected("agent-guide.md"),
             Files.readString(outputDirectory.resolve("agent-guide.md"))));
@@ -304,6 +307,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
     String billingEndpointId =
@@ -353,7 +358,13 @@ final class SpringMvcEndpointOutputGeneratorTest {
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every module-aware project-map evidence_ids entry must exist in evidence-index.jsonl"),
         () -> assertTrue(evidenceIndex.lines()
-            .noneMatch(line -> line.contains("\"path\":\"/") || line.contains("\"path\":\"./"))));
+            .noneMatch(line -> line.contains("\"path\":\"/") || line.contains("\"path\":\"./"))),
+        () -> assertEquals(
+            expected("multi-module-markdown", "endpoints.md"),
+            endpoints),
+        () -> assertEquals(
+            expected("multi-module-markdown", "agent-guide.md"),
+            agentGuide));
   }
 
   @Test
@@ -476,6 +487,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
     return Files.readString(goldenRoot().resolve(fileName));
   }
 
+  private String expected(String goldenName, String fileName) throws Exception {
+    return Files.readString(goldenRoot(goldenName).resolve(fileName));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/stage3-project-map")).toURI());
@@ -484,6 +499,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private Path goldenRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/golden/stage3-project-map")).toURI());
+  }
+
+  private Path goldenRoot(String fixtureName) throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/golden/" + fixtureName)).toURI());
   }
 
   private Path hiddenWarningFixtureRoot() throws Exception {

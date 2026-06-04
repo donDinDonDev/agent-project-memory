@@ -11,11 +11,24 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: recorded in `project-map.json`; no separate source-root evidence IDs are emitted.
 - Test roots: Detected `src/test/java`
   - Evidence: recorded in `project-map.json`; no separate test-root evidence IDs are emitted.
+- Modules analysis status: `analyzed`
+- Module: Detected `module:.` (path: `.`)
+  - POM path: Detected `pom.xml`
+  - Support status: `supported`
+  - Declaration kind: `scan_root`
+  - Declared path: `.`
+  - Source roots: Detected `src/main/java`
+  - Source roots evidence: recorded in `project-map.json`; no separate production root evidence IDs are emitted.
+  - Test roots: Detected `src/test/java`
+  - Test roots evidence: recorded in `project-map.json`; no separate test root evidence IDs are emitted.
+  - Declaration evidence: none recorded.
+  - POM evidence: `pom.xml:1` (`ev:pom.xml:1-1:build_file:pom.xml`)
 
 ## Detected Spring MVC Endpoints
 
 ### `POST /api/items`
 
+- Module: Detected `module:.` (path: `.`)
 - Controller: Detected `com.example.web.ProjectMapController`
 - Handler: Detected `createItem`
 - Mapping source: Detected `direct_handler_method` from `com.example.web.ProjectMapController#createItem` with binding `direct`
@@ -28,6 +41,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `GET /api/items/{id}`
 
+- Module: Detected `module:.` (path: `.`)
 - Controller: Detected `com.example.web.ProjectMapController`
 - Handler: Detected `getItem`
 - Mapping source: Detected `direct_handler_method` from `com.example.web.ProjectMapController#getItem` with binding `direct`
@@ -44,26 +58,31 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `com.example.components.AppConfiguration`
 
+- Module: Detected `module:.` (path: `.`)
 - Stereotypes: Detected `@Configuration`
   - Evidence: `src/main/java/com/example/components/InventoryComponents.java:20` (`ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration`)
 
 ### `com.example.components.InventoryComponent`
 
+- Module: Detected `module:.` (path: `.`)
 - Stereotypes: Detected `@Component`
   - Evidence: `src/main/java/com/example/components/InventoryComponents.java:8` (`ev:src/main/java/com/example/components/InventoryComponents.java:8-8:com.example.components.InventoryComponent:@Component`)
 
 ### `com.example.components.InventoryRepository`
 
+- Module: Detected `module:.` (path: `.`)
 - Stereotypes: Detected `@Repository`
   - Evidence: `src/main/java/com/example/components/InventoryComponents.java:16` (`ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository`)
 
 ### `com.example.components.InventoryService`
 
+- Module: Detected `module:.` (path: `.`)
 - Stereotypes: Detected `@Service`
   - Evidence: `src/main/java/com/example/components/InventoryComponents.java:12` (`ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service`)
 
 ### `com.example.web.ProjectMapController`
 
+- Module: Detected `module:.` (path: `.`)
 - Stereotypes: Detected `@RestController`
   - Evidence: `src/main/java/com/example/web/ProjectMapController.java:11` (`ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController`)
 
@@ -73,6 +92,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `com.example.domain.ProjectCustomer`
 
+- Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectCustomer`
   - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectCustomer:@Entity`)
 - Table: Detected none.
@@ -82,6 +102,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `com.example.domain.ProjectOrder`
 
+- Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectOrder`
   - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity`)
 - Table: Detected `orders`
@@ -107,6 +128,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `com.example.domain.ProjectVisit`
 
+- Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectVisit`
   - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:45` (`ev:src/main/java/com/example/domain/ProjectEntities.java:45-45:com.example.domain.ProjectVisit:@Entity`)
 - Table: Detected `visits`
@@ -121,11 +143,12 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ### `com.example.web.ProjectMapControllerTest`
 
+- Module: Detected `module:.` (path: `.`)
 - Test class: Detected `com.example.web.ProjectMapControllerTest`
   - Evidence: `src/test/java/com/example/web/ProjectMapControllerTest.java:3` (`ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file`)
 - Source: Detected `src/test/java/com/example/web/ProjectMapControllerTest.java`
 - Framework signals: Detected none.
-- Inferred tested subject: `com.example.web.ProjectMapController` (support_type: `inferred`, confidence: `medium`)
+- Inferred tested subject: `com.example.web.ProjectMapController` in target module `module:.` (path: `.`) (support_type: `inferred`, confidence: `medium`)
   - Evidence: `src/test/java/com/example/web/ProjectMapControllerTest.java:3` (`ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file`), `src/main/java/com/example/web/ProjectMapController.java:13` (`ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol`)
 
 ## Known Uncertainty And Limits
@@ -139,7 +162,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ## Practical Inspection Order For Coding Agents
 
-1. Start with detected build and layout facts in `pom.xml`.
+1. Start with detected build, module, and layout facts in `pom.xml`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/ProjectMapController.java`.
 3. For Spring wiring changes, inspect detected component evidence in `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/web/ProjectMapController.java` and avoid assuming runtime injection graphs.
 4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat relationship targets as declared-type-only.

@@ -232,7 +232,7 @@ public final class SpringMvcEndpointOutputGenerator {
 
     Files.writeString(
         outputDirectory.resolve(ENDPOINTS_FILE_NAME),
-        endpointsMarkdown(scan.endpoints()),
+        endpointsMarkdown(layout.modules(), scan.endpoints()),
         StandardCharsets.UTF_8);
     Files.writeString(
         outputDirectory.resolve(EVIDENCE_INDEX_FILE_NAME),
@@ -497,24 +497,33 @@ public final class SpringMvcEndpointOutputGenerator {
         .toList();
   }
 
-  private String endpointsMarkdown(List<ModuleScopedEndpointFact> endpoints) {
+  private String endpointsMarkdown(
+      ProjectModules modules,
+      List<ModuleScopedEndpointFact> endpoints) {
     StringBuilder markdown = new StringBuilder();
     markdown.append("# Endpoints\n\n");
 
     if (endpoints.isEmpty()) {
-      markdown.append("No Spring MVC endpoints detected under `")
-          .append(MAIN_SOURCE_ROOT)
-          .append("`.\n");
+      markdown.append("No Spring MVC endpoints detected in supported module source roots.\n");
       return markdown.toString();
     }
 
+    Map<String, MavenModuleItem> moduleById = moduleById(modules.items());
+    String currentModuleId = null;
     for (EndpointRow row : endpointRows(endpoints)) {
+      if (!row.moduleId().equals(currentModuleId)) {
+        currentModuleId = row.moduleId();
+        appendEndpointModuleHeading(markdown, currentModuleId, moduleById.get(currentModuleId));
+      }
       SpringMvcEndpointFact endpoint = row.endpoint();
-      markdown.append("## ")
+      markdown.append("### ")
           .append(row.methodLabel())
           .append(" ")
           .append(row.path())
           .append("\n\n");
+      markdown.append("- Module: ")
+          .append(moduleLabel(row.moduleId(), moduleById.get(row.moduleId())))
+          .append("\n");
       markdown.append("- Controller: ").append(code(endpoint.controllerClass())).append("\n");
       markdown.append("- Handler: ").append(code(endpoint.handlerMethod())).append("\n");
       markdown.append("- Mapping source: ")
@@ -533,7 +542,39 @@ public final class SpringMvcEndpointOutputGenerator {
       markdown.append("- Evidence: ").append(codeList(endpoint.evidenceIds())).append("\n\n");
     }
 
+    return withoutTrailingBlankLine(markdown);
+  }
+
+  private String withoutTrailingBlankLine(StringBuilder markdown) {
+    if (markdown.length() >= 2
+        && markdown.charAt(markdown.length() - 1) == '\n'
+        && markdown.charAt(markdown.length() - 2) == '\n') {
+      markdown.deleteCharAt(markdown.length() - 1);
+    }
     return markdown.toString();
+  }
+
+  private Map<String, MavenModuleItem> moduleById(List<MavenModuleItem> modules) {
+    Map<String, MavenModuleItem> moduleById = new LinkedHashMap<>();
+    for (MavenModuleItem module : modules) {
+      moduleById.put(module.moduleId(), module);
+    }
+    return moduleById;
+  }
+
+  private void appendEndpointModuleHeading(
+      StringBuilder markdown,
+      String moduleId,
+      MavenModuleItem module) {
+    markdown.append("## Module ")
+        .append(moduleLabel(moduleId, module))
+        .append("\n\n");
+    if (module == null) {
+      markdown.append("- Module metadata: not recorded in `project.modules.items`.\n\n");
+      return;
+    }
+    markdown.append("- Module path: ").append(code(module.modulePath())).append("\n");
+    markdown.append("- Support status: ").append(code(module.supportStatus())).append("\n\n");
   }
 
   private String projectMapJson(
@@ -986,17 +1027,30 @@ public final class SpringMvcEndpointOutputGenerator {
       List<String> methodLabels = endpointMethodLabels(endpoint);
       for (String path : endpoint.paths()) {
         for (String methodLabel : methodLabels) {
-          rows.add(new EndpointRow(methodLabel, path, endpoint));
+          rows.add(new EndpointRow(
+              scopedEndpoint.moduleId(),
+              scopedEndpoint.moduleOrder(),
+              methodLabel,
+              path,
+              endpoint));
         }
       }
     }
 
     return rows.stream()
-        .sorted(Comparator.comparing(EndpointRow::path)
+        .sorted(Comparator.comparingInt(EndpointRow::moduleOrder)
+            .thenComparing(EndpointRow::path)
             .thenComparing(EndpointRow::methodLabel)
             .thenComparing(row -> row.endpoint().controllerClass())
             .thenComparing(row -> row.endpoint().handlerMethod()))
         .toList();
+  }
+
+  private String moduleLabel(String moduleId, MavenModuleItem module) {
+    if (module == null) {
+      return code(moduleId) + " (module path not recorded)";
+    }
+    return code(moduleId) + " (" + code(module.modulePath()) + ")";
   }
 
   private List<String> endpointMethodLabels(SpringMvcEndpointFact endpoint) {
@@ -1355,7 +1409,12 @@ public final class SpringMvcEndpointOutputGenerator {
       int evidenceCount) {
   }
 
-  private record EndpointRow(String methodLabel, String path, SpringMvcEndpointFact endpoint) {
+  private record EndpointRow(
+      String moduleId,
+      int moduleOrder,
+      String methodLabel,
+      String path,
+      SpringMvcEndpointFact endpoint) {
   }
 
   private record ProjectLayout(

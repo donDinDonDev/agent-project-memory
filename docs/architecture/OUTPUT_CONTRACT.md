@@ -817,7 +817,7 @@ Example shape:
 - Evidence: `src/main/java/com/example/orders/OrderController.java:20`
 ```
 
-Planned v0.2 `endpoints.md` behavior:
+Current v0.2 `endpoints.md` behavior:
 
 - Endpoint sections should be grouped by module in deterministic module order.
 - The single-module root group may be omitted or rendered as the scan root when there is
@@ -868,7 +868,7 @@ Content rules:
   `evidence-index.jsonl` or evidence IDs in `project-map.json`.
 - Facts without dedicated evidence IDs, such as current source-root and test-root lists,
   must say that they are recorded in `project-map.json` and that no separate evidence ID
-  is emitted in v0.1.
+  is emitted by the current implementation.
 - Endpoint entries use cautious `Detected` wording and include controller class, handler
   method, HTTP method status, paths, request parameters, request body, response type, and
   evidence references. When `mapping_source` is available, endpoint entries should state
@@ -895,18 +895,18 @@ Content rules:
 - The known-limits section must explicitly call out `Not analyzed`, `Inferred`, and
   `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
   execution/coverage/assertion behavior, call graphs, complete subject mapping,
-  connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and
-  multi-module Maven parsing. It should also call out that generated sources,
-  OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous
-  interface endpoint bindings are not analyzed for `EVAL-8-004` decision B, and that
-  mapped-superclass identifier traversal skips unresolved, ambiguous, cyclic, and
-  non-source-visible branches.
+  connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven
+  profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven
+  modules. It should also call out that generated sources, OpenAPI YAML, generated API
+  reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings
+  are not analyzed for `EVAL-8-004` decision B, and that mapped-superclass identifier
+  traversal skips unresolved, ambiguous, cyclic, and non-source-visible branches.
 - The practical inspection order may suggest evidence paths from generated facts, but it
   must not introduce unsupported architecture, modules, domain flows, service layers, or
   source summaries. Long inline evidence path lists should be capped with a suffix that
   points readers back to `evidence-index.jsonl` for the complete source-backed evidence.
 
-Planned v0.2 `agent-guide.md` behavior:
+Current v0.2 `agent-guide.md` behavior:
 
 - The detected project layout section should summarize `project.modules.items` in
   deterministic module order, including `module_id`, `module_path`, `pom_path`,
