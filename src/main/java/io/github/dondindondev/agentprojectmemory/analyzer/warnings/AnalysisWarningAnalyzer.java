@@ -5,6 +5,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -57,8 +58,10 @@ public final class AnalysisWarningAnalyzer {
     Objects.requireNonNull(sourceRoots, "sourceRoots");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     return analyzeScope(
         normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
         normalizedRepositoryRoot,
         ROOT_BUILD_FILE,
         sourceRoots,
@@ -77,12 +80,14 @@ public final class AnalysisWarningAnalyzer {
     Objects.requireNonNull(excludedModulePaths, "excludedModulePaths");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Path moduleRoot = ".".equals(modulePath)
         ? normalizedRepositoryRoot
         : normalizedRepositoryRoot.resolve(modulePath).normalize();
     String pomPath = ".".equals(modulePath) ? ROOT_BUILD_FILE : modulePath + "/" + ROOT_BUILD_FILE;
     return analyzeScope(
         normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
         moduleRoot,
         pomPath,
         sourceRoots,
@@ -92,6 +97,7 @@ public final class AnalysisWarningAnalyzer {
 
   private AnalysisWarningAnalysis analyzeScope(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       Path scanRoot,
       String pomPath,
       List<Path> sourceRoots,
@@ -102,14 +108,22 @@ public final class AnalysisWarningAnalyzer {
 
     analyzeOpenApiSpecFiles(
         repositoryRoot,
+        canonicalRepositoryRoot,
         scanRoot,
         excludedModulePaths,
         modulePathForIds,
         warnings,
         evidence);
-    analyzeMavenPluginSignals(repositoryRoot, pomPath, modulePathForIds, warnings, evidence);
+    analyzeMavenPluginSignals(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        pomPath,
+        modulePathForIds,
+        warnings,
+        evidence);
     analyzeRepositoryRestResources(
         repositoryRoot,
+        canonicalRepositoryRoot,
         sourceRoots,
         modulePathForIds,
         warnings,
@@ -122,12 +136,17 @@ public final class AnalysisWarningAnalyzer {
 
   private void analyzeOpenApiSpecFiles(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       Path scanRoot,
       List<String> excludedModulePaths,
       String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
-    for (Path specFile : repositoryFiles(repositoryRoot, scanRoot, excludedModulePaths)) {
+    for (Path specFile : repositoryFiles(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        scanRoot,
+        excludedModulePaths)) {
       String fileName = specFile.getFileName().toString().toLowerCase(Locale.ROOT);
       if (!OPENAPI_SPEC_FILENAMES.contains(fileName)) {
         continue;
@@ -158,12 +177,13 @@ public final class AnalysisWarningAnalyzer {
 
   private void analyzeMavenPluginSignals(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       String pomPath,
       String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
     Path pom = repositoryRoot.resolve(pomPath);
-    if (!Files.isRegularFile(pom)) {
+    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, pom)) {
       return;
     }
 
@@ -234,17 +254,20 @@ public final class AnalysisWarningAnalyzer {
 
   private void analyzeRepositoryRestResources(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       List<Path> sourceRoots,
       String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(repositoryRoot, sourceRoot);
-      if (!Files.isDirectory(normalizedSourceRoot)) {
+      if (!ScanPathContainment.isDirectoryUnderRoot(
+          canonicalRepositoryRoot,
+          normalizedSourceRoot)) {
         continue;
       }
 
-      for (Path javaFile : javaFiles(normalizedSourceRoot)) {
+      for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
         analyzeRepositoryRestResourceJavaFile(
             repositoryRoot,
             javaFile,
@@ -318,15 +341,16 @@ public final class AnalysisWarningAnalyzer {
 
   private List<Path> repositoryFiles(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       Path scanRoot,
       List<String> excludedModulePaths) throws IOException {
-    if (!Files.isDirectory(scanRoot)) {
+    if (!ScanPathContainment.isDirectoryUnderRoot(canonicalRepositoryRoot, scanRoot)) {
       return List.of();
     }
 
     try (Stream<Path> paths = Files.walk(scanRoot)) {
       return paths
-          .filter(path -> Files.isRegularFile(path)
+          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
               && !isExcluded(repositoryRoot, path)
               && !isExcludedModulePath(repositoryRoot, path, excludedModulePaths))
           .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
@@ -367,10 +391,11 @@ public final class AnalysisWarningAnalyzer {
     return repositoryRoot.resolve(sourceRoot).normalize();
   }
 
-  private List<Path> javaFiles(Path sourceRoot) throws IOException {
+  private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
     try (Stream<Path> paths = Files.walk(sourceRoot)) {
       return paths
-          .filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".java"))
+          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
+              && path.getFileName().toString().endsWith(".java"))
           .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
           .toList();
     }

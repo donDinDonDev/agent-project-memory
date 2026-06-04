@@ -6,6 +6,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryEvidence;
@@ -200,15 +201,20 @@ public final class SpringMvcEndpointOutputGenerator {
     Objects.requireNonNull(outputDirectory, "outputDirectory");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis = moduleDiscoveryAnalyzer.analyze(
         normalizedRepositoryRoot);
-    ProjectLayout layout = detectLayout(normalizedRepositoryRoot, moduleDiscoveryAnalysis);
+    ProjectLayout layout = detectLayout(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        moduleDiscoveryAnalysis);
     if (!shouldGenerate(layout, moduleDiscoveryAnalysis)) {
       return new Result(false, 0, 0, 0, 0, 0);
     }
 
     ModuleAwareScan scan = analyzeModules(
         normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
         layout.modules(),
         moduleDiscoveryAnalysis.warnings());
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
@@ -260,13 +266,19 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private ProjectLayout detectLayout(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis) throws IOException {
-    Optional<EvidenceRecord> buildFileEvidence = buildFileEvidence(repositoryRoot);
+    Optional<EvidenceRecord> buildFileEvidence = buildFileEvidence(
+        repositoryRoot,
+        canonicalRepositoryRoot);
     BuildMetadata build = buildFileEvidence
         .map(evidence -> new BuildMetadata("maven", ROOT_BUILD_FILE, List.of(evidence.id())))
         .orElseGet(() -> new BuildMetadata("not_detected", null, List.of()));
 
-    ProjectModules modules = projectModules(repositoryRoot, moduleDiscoveryAnalysis);
+    ProjectModules modules = projectModules(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        moduleDiscoveryAnalysis);
     List<String> sourceRoots = modules.items().stream()
         .flatMap(module -> module.sourceRoots().stream())
         .sorted()
@@ -281,13 +293,20 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private ProjectModules projectModules(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis) {
     if (!MODULE_ANALYSIS_NOT_DETECTED.equals(moduleDiscoveryAnalysis.analysisStatus())) {
       return new ProjectModules(moduleDiscoveryAnalysis.analysisStatus(), moduleDiscoveryAnalysis.items());
     }
 
-    List<String> sourceRoots = detectedRoots(repositoryRoot, List.of(MAIN_SOURCE_ROOT));
-    List<String> testRoots = detectedRoots(repositoryRoot, List.of(TEST_SOURCE_ROOT));
+    List<String> sourceRoots = detectedRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        List.of(MAIN_SOURCE_ROOT));
+    List<String> testRoots = detectedRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        List.of(TEST_SOURCE_ROOT));
     if (sourceRoots.isEmpty() && testRoots.isEmpty()) {
       return new ProjectModules(MODULE_ANALYSIS_NOT_DETECTED, List.of());
     }
@@ -309,6 +328,7 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private ModuleAwareScan analyzeModules(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       ProjectModules modules,
       List<MavenModuleWarning> moduleWarnings) throws IOException {
     List<ModuleScopedEndpointFact> endpoints = new ArrayList<>();
@@ -352,9 +372,15 @@ public final class SpringMvcEndpointOutputGenerator {
       int order = moduleOrder.getOrDefault(module.moduleId(), Integer.MAX_VALUE);
       List<Path> sourceRoots = module.sourceRoots().stream()
           .map(repositoryRoot::resolve)
+          .filter(sourceRoot -> ScanPathContainment.isDirectoryUnderRoot(
+              canonicalRepositoryRoot,
+              sourceRoot))
           .toList();
       List<Path> testRoots = module.testRoots().stream()
           .map(repositoryRoot::resolve)
+          .filter(testRoot -> ScanPathContainment.isDirectoryUnderRoot(
+              canonicalRepositoryRoot,
+              testRoot))
           .toList();
 
       if (!sourceRoots.isEmpty()) {
@@ -434,9 +460,11 @@ public final class SpringMvcEndpointOutputGenerator {
     return order;
   }
 
-  private Optional<EvidenceRecord> buildFileEvidence(Path repositoryRoot) throws IOException {
+  private Optional<EvidenceRecord> buildFileEvidence(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot) throws IOException {
     Path buildFile = repositoryRoot.resolve(ROOT_BUILD_FILE);
-    if (!Files.isRegularFile(buildFile)) {
+    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, buildFile)) {
       return Optional.empty();
     }
 
@@ -457,9 +485,14 @@ public final class SpringMvcEndpointOutputGenerator {
         HIGH_CONFIDENCE));
   }
 
-  private List<String> detectedRoots(Path repositoryRoot, List<String> candidates) {
+  private List<String> detectedRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      List<String> candidates) {
     return candidates.stream()
-        .filter(candidate -> Files.isDirectory(repositoryRoot.resolve(candidate)))
+        .filter(candidate -> ScanPathContainment.isDirectoryUnderRoot(
+            canonicalRepositoryRoot,
+            repositoryRoot.resolve(candidate)))
         .sorted()
         .toList();
   }

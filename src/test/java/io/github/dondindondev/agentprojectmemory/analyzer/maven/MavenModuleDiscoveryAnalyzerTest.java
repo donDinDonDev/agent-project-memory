@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -131,6 +133,80 @@ final class MavenModuleDiscoveryAnalyzerTest {
         () -> assertEquals("pom.xml", warning.sourcePath()),
         () -> assertTrue(warning.message().contains("does not have a child pom.xml")),
         () -> assertEquals(missing.declarationEvidenceIds(), warning.evidenceIds()),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void childPomSymlinkEscapingScanRootIsRejectedWithoutOutsidePomEvidence() throws Exception {
+    Path repositoryRoot = repository("child-pom-symlink-escape");
+    Path outsidePom = tempDir.resolve("outside-pom.xml");
+    Files.writeString(outsidePom, """
+        <!-- OUTSIDE_POM_SECRET_LINE -->
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+          </modules>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("services/orders"));
+    createSymbolicLink(repositoryRoot.resolve("services/orders/pom.xml"), outsidePom);
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+
+    assertAll(
+        () -> assertEquals(List.of(), analysis.items()),
+        () -> assertEquals(
+            List.of("invalid_module_path"),
+            analysis.warnings().stream().map(MavenModuleWarning::signal).toList()),
+        () -> assertTrue(analysis.warnings().stream().allMatch(warning -> warning.moduleId() == null)),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> "services/orders/pom.xml".equals(evidence.sourcePath()))),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> evidence.excerpt().contains("OUTSIDE_POM_SECRET_LINE"))),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void sourceAndTestRootSymlinksEscapingScanRootAreIgnored() throws Exception {
+    Path repositoryRoot = repository("source-test-root-symlink-escape");
+    Path outsideMain = tempDir.resolve("outside-main");
+    Path outsideTest = tempDir.resolve("outside-test");
+    Files.createDirectories(outsideMain);
+    Files.createDirectories(outsideTest);
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+          </modules>
+        </project>
+        """);
+    writePom(repositoryRoot.resolve("services/orders/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("services/orders/src/main"));
+    Files.createDirectories(repositoryRoot.resolve("services/orders/src/test"));
+    createSymbolicLink(repositoryRoot.resolve("services/orders/src/main/java"), outsideMain);
+    createSymbolicLink(repositoryRoot.resolve("services/orders/src/test/java"), outsideTest);
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem orders = item(analysis, "module:services/orders");
+    MavenModuleWarning warning = warning(analysis, "unsupported_module");
+
+    assertAll(
+        () -> assertEquals("unsupported", orders.supportStatus()),
+        () -> assertEquals(List.of(), orders.sourceRoots()),
+        () -> assertEquals(List.of(), orders.testRoots()),
+        () -> assertEquals(
+            List.of("unsupported_module"),
+            analysis.warnings().stream().map(MavenModuleWarning::signal).toList()),
+        () -> assertEquals("module:services/orders", warning.moduleId()),
         () -> assertEvidenceIdsResolve(analysis));
   }
 
@@ -336,6 +412,14 @@ final class MavenModuleDiscoveryAnalyzerTest {
   private void writePom(Path pom, String xml) throws Exception {
     Files.createDirectories(pom.getParent());
     Files.writeString(pom, xml);
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
   }
 
   private MavenModuleItem item(MavenModuleDiscoveryAnalysis analysis, String moduleId) {

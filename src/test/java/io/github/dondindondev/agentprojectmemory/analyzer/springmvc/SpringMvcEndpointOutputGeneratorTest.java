@@ -2,8 +2,11 @@ package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -397,6 +400,55 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(agentGuide.contains("Warning: `maven_module` signal `missing_child_pom`")));
   }
 
+  @Test
+  void moduleSourceRootSymlinkEscapingScanRootDoesNotSerializeOutsideJavaEvidence()
+      throws Exception {
+    Path projectPath = tempDir.resolve("source-root-symlink-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Path outsideSourceRoot = tempDir.resolve("outside-source-root");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/orders/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(outsideSourceRoot.resolve("com/example/web/OutsideController.java"), """
+        package com.example.web;
+
+        // OUTSIDE_CONTROLLER_SECRET_LINE
+        @RestController
+        class OutsideController {
+          @GetMapping("/outside")
+          String outside() {
+            return "outside";
+          }
+        }
+        """);
+    Files.createDirectories(projectPath.resolve("services/orders/src/main"));
+    createSymbolicLink(projectPath.resolve("services/orders/src/main/java"), outsideSourceRoot);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
+        () -> assertTrue(projectMap.contains("\"source_roots\": []")),
+        () -> assertFalse(projectMap.contains("OutsideController")),
+        () -> assertFalse(evidenceIndex.contains("OutsideController")),
+        () -> assertFalse(evidenceIndex.contains("OUTSIDE_CONTROLLER_SECRET_LINE")));
+  }
+
   private Set<String> projectMapEvidenceIds(String projectMap) {
     Set<String> ids = new HashSet<>();
     var arrayMatcher = EVIDENCE_ID_ARRAY.matcher(projectMap);
@@ -482,6 +534,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private void writeFile(Path path, String content) throws Exception {
     Files.createDirectories(path.getParent());
     Files.writeString(path, content);
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
   }
 
   private int countOccurrences(String value, String needle) {

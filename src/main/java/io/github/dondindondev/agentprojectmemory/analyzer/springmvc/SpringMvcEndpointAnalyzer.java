@@ -12,6 +12,7 @@ import com.github.javaparser.ast.expr.ArrayInitializerExpr;
 import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -62,17 +63,20 @@ final class SpringMvcEndpointAnalyzer {
     Objects.requireNonNull(sourceRoots, "sourceRoots");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     List<SpringMvcEndpointFact> endpoints = new ArrayList<>();
     List<SpringMvcEndpointEvidence> evidence = new ArrayList<>();
     List<SourceType> sourceTypes = new ArrayList<>();
 
     for (Path sourceRoot : sourceRoots) {
       Path normalizedSourceRoot = normalizeSourceRoot(normalizedRepositoryRoot, sourceRoot);
-      if (!Files.isDirectory(normalizedSourceRoot)) {
+      if (!ScanPathContainment.isDirectoryUnderRoot(
+          canonicalRepositoryRoot,
+          normalizedSourceRoot)) {
         continue;
       }
 
-      for (Path javaFile : javaFiles(normalizedSourceRoot)) {
+      for (Path javaFile : javaFiles(canonicalRepositoryRoot, normalizedSourceRoot)) {
         sourceTypes.addAll(sourceTypes(normalizedRepositoryRoot, javaFile));
       }
     }
@@ -465,10 +469,11 @@ final class SpringMvcEndpointAnalyzer {
     return repositoryRoot.resolve(sourceRoot).normalize();
   }
 
-  private List<Path> javaFiles(Path sourceRoot) throws IOException {
+  private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
     try (Stream<Path> paths = Files.walk(sourceRoot)) {
       return paths
-          .filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".java"))
+          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
+              && path.getFileName().toString().endsWith(".java"))
           .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
           .toList();
     }

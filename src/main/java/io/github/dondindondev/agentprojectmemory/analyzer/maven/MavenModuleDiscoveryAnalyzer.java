@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -49,8 +50,9 @@ public final class MavenModuleDiscoveryAnalyzer {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Path rootPom = normalizedRepositoryRoot.resolve(ROOT_BUILD_FILE);
-    if (!Files.isRegularFile(rootPom)) {
+    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, rootPom)) {
       return new MavenModuleDiscoveryAnalysis(
           ANALYSIS_STATUS_NOT_DETECTED,
           List.of(),
@@ -68,8 +70,14 @@ public final class MavenModuleDiscoveryAnalyzer {
         ROOT_BUILD_FILE);
     addEvidence(evidence, rootPomEvidence);
 
-    List<String> rootSourceRoots = detectedRoots(normalizedRepositoryRoot, ".");
-    List<String> rootTestRoots = detectedTestRoots(normalizedRepositoryRoot, ".");
+    List<String> rootSourceRoots = detectedRoots(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        ".");
+    List<String> rootTestRoots = detectedTestRoots(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        ".");
     List<ObservedModuleDeclaration> declarations = observedModuleDeclarations(
         normalizedRepositoryRoot,
         normalizedRepositoryRoot,
@@ -110,11 +118,18 @@ public final class MavenModuleDiscoveryAnalyzer {
 
     for (ObservedModuleDeclaration declaration : uniqueDeclarations.values()) {
       String modulePath = declaration.normalizedPath().orElseThrow();
-      Path childPom = normalizedRepositoryRoot.resolve(modulePath).resolve(ROOT_BUILD_FILE).normalize();
+      Path childModuleDirectory = normalizedRepositoryRoot.resolve(modulePath).normalize();
+      Path childPom = childModuleDirectory.resolve(ROOT_BUILD_FILE).normalize();
       String childPomPath = repositoryRelativePath(normalizedRepositoryRoot, childPom);
       List<String> declarationEvidenceIds = List.of(declaration.evidence().id());
 
-      if (!Files.isRegularFile(childPom)) {
+      if (existsButEscapesRoot(canonicalRepositoryRoot, childModuleDirectory)
+          || existsButEscapesRoot(canonicalRepositoryRoot, childPom)) {
+        warnings.add(invalidModulePathWarning(declaration));
+        continue;
+      }
+
+      if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, childPom)) {
         moduleItems.add(new MavenModuleItem(
             moduleId(modulePath),
             modulePath,
@@ -136,8 +151,14 @@ public final class MavenModuleDiscoveryAnalyzer {
           childPomPath);
       addEvidence(evidence, childPomEvidence);
 
-      List<String> sourceRoots = detectedRoots(normalizedRepositoryRoot, modulePath);
-      List<String> testRoots = detectedTestRoots(normalizedRepositoryRoot, modulePath);
+      List<String> sourceRoots = detectedRoots(
+          normalizedRepositoryRoot,
+          canonicalRepositoryRoot,
+          modulePath);
+      List<String> testRoots = detectedTestRoots(
+          normalizedRepositoryRoot,
+          canonicalRepositoryRoot,
+          modulePath);
       boolean supported = !sourceRoots.isEmpty() || !testRoots.isEmpty();
 
       moduleItems.add(new MavenModuleItem(
@@ -190,20 +211,45 @@ public final class MavenModuleDiscoveryAnalyzer {
             .toList());
   }
 
-  private List<String> detectedRoots(Path repositoryRoot, String modulePath) {
-    return detectedModuleRoots(repositoryRoot, modulePath, MAIN_SOURCE_ROOT);
+  private List<String> detectedRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      String modulePath) {
+    return detectedModuleRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        modulePath,
+        MAIN_SOURCE_ROOT);
   }
 
-  private List<String> detectedTestRoots(Path repositoryRoot, String modulePath) {
-    return detectedModuleRoots(repositoryRoot, modulePath, TEST_SOURCE_ROOT);
+  private List<String> detectedTestRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      String modulePath) {
+    return detectedModuleRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        modulePath,
+        TEST_SOURCE_ROOT);
   }
 
-  private List<String> detectedModuleRoots(Path repositoryRoot, String modulePath, String rootName) {
+  private List<String> detectedModuleRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      String modulePath,
+      String rootName) {
     String root = ".".equals(modulePath) ? rootName : modulePath + "/" + rootName;
-    if (!Files.isDirectory(repositoryRoot.resolve(root))) {
+    if (!ScanPathContainment.isDirectoryUnderRoot(
+        canonicalRepositoryRoot,
+        repositoryRoot.resolve(root))) {
       return List.of();
     }
     return List.of(root);
+  }
+
+  private boolean existsButEscapesRoot(Path canonicalRepositoryRoot, Path path) {
+    return Files.exists(path)
+        && ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, path).isEmpty();
   }
 
   private MavenModuleDiscoveryEvidence pomEvidence(

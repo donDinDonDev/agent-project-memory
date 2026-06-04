@@ -8,6 +8,7 @@ import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -76,19 +77,24 @@ public final class TestInventoryAnalyzer {
     Objects.requireNonNull(testSourceRoots, "testSourceRoots");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
-    List<Path> existingTestRoots = existingRoots(normalizedRepositoryRoot, testSourceRoots);
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
+    List<Path> existingTestRoots = existingRoots(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        testSourceRoots);
     if (existingTestRoots.isEmpty()) {
       return new TestInventoryAnalysis(NOT_DETECTED, List.of(), List.of());
     }
 
     Map<String, List<ProductionClass>> productionClassesBySimpleName = productionClassesBySimpleName(
         normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
         productionSourceRoots);
     List<TestClassFact> tests = new ArrayList<>();
     Map<String, TestInventoryEvidence> evidence = new LinkedHashMap<>();
 
     for (Path testRoot : existingTestRoots) {
-      for (Path javaFile : javaFiles(testRoot)) {
+      for (Path javaFile : javaFiles(canonicalRepositoryRoot, testRoot)) {
         analyzeTestFile(
             normalizedRepositoryRoot,
             javaFile,
@@ -448,10 +454,14 @@ public final class TestInventoryAnalyzer {
 
   private Map<String, List<ProductionClass>> productionClassesBySimpleName(
       Path repositoryRoot,
+      Path canonicalRepositoryRoot,
       List<Path> productionSourceRoots) throws IOException {
     Map<String, List<ProductionClass>> classesBySimpleName = new LinkedHashMap<>();
-    for (Path sourceRoot : existingRoots(repositoryRoot, productionSourceRoots)) {
-      for (Path javaFile : javaFiles(sourceRoot)) {
+    for (Path sourceRoot : existingRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        productionSourceRoots)) {
+      for (Path javaFile : javaFiles(canonicalRepositoryRoot, sourceRoot)) {
         for (ProductionClass productionClass : productionClasses(repositoryRoot, javaFile)) {
           classesBySimpleName
               .computeIfAbsent(productionClass.simpleName(), ignored -> new ArrayList<>())
@@ -500,10 +510,15 @@ public final class TestInventoryAnalyzer {
     return productionClasses;
   }
 
-  private List<Path> existingRoots(Path repositoryRoot, List<Path> sourceRoots) {
+  private List<Path> existingRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      List<Path> sourceRoots) {
     return sourceRoots.stream()
         .map(sourceRoot -> normalizeSourceRoot(repositoryRoot, sourceRoot))
-        .filter(Files::isDirectory)
+        .filter(sourceRoot -> ScanPathContainment.isDirectoryUnderRoot(
+            canonicalRepositoryRoot,
+            sourceRoot))
         .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
         .toList();
   }
@@ -516,10 +531,11 @@ public final class TestInventoryAnalyzer {
     return repositoryRoot.resolve(sourceRoot).normalize();
   }
 
-  private List<Path> javaFiles(Path sourceRoot) throws IOException {
+  private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
     try (Stream<Path> paths = Files.walk(sourceRoot)) {
       return paths
-          .filter(path -> Files.isRegularFile(path) && path.getFileName().toString().endsWith(".java"))
+          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
+              && path.getFileName().toString().endsWith(".java"))
           .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
           .toList();
     }
