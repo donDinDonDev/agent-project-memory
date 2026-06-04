@@ -505,7 +505,7 @@ public final class AgentGuideGenerator {
       markdown.append(" at ")
           .append(code(text(warning, "source_path")))
           .append(". ")
-          .append(text(warning, "message"))
+          .append(MarkdownRenderer.text(text(warning, "message")))
           .append("\n");
       appendEvidenceLine(markdown, warning.path("evidence_ids"), evidenceById);
     }
@@ -884,19 +884,11 @@ public final class AgentGuideGenerator {
   }
 
   private String codeList(List<String> values) {
-    if (values.isEmpty()) {
-      return "none recorded";
-    }
-
-    StringJoiner joiner = new StringJoiner(", ");
-    for (String value : values) {
-      joiner.add(code(value));
-    }
-    return joiner.toString();
+    return MarkdownRenderer.inlineCodeList(values, "none recorded");
   }
 
   private String code(String value) {
-    return "`" + value.replace("`", "\\`") + "`";
+    return MarkdownRenderer.inlineCode(value);
   }
 
   private record EvidenceRecord(

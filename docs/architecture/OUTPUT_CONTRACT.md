@@ -920,6 +920,20 @@ Current v0.2 `agent-guide.md` behavior:
   contents, or cross-module architecture unless future deterministic facts explicitly
   support those claims.
 
+Markdown rendering safety:
+
+- Markdown generators must render source-derived values through Markdown-safe presentation
+  helpers before writing `endpoints.md` or `agent-guide.md`.
+- Source-derived inline text, inline code, module labels and paths, endpoint paths,
+  request parameter labels, warning paths and messages, evidence references, and evidence
+  locations must not be able to introduce new Markdown headings, list items, evidence
+  lines, tables, links, or HTML when the source value contains newlines, control
+  characters, backticks, or Markdown punctuation.
+- Markdown presentation may normalize control characters and line breaks into visible
+  escaped sequences such as `\n`, `\r`, `\t`, or `\u001B`. This does not change the
+  corresponding `project-map.json` or `evidence-index.jsonl` values, which keep their
+  JSON/JSONL escaping and semantics.
+
 ## Contract Rules
 
 - Output changes require updating this file.

@@ -23,6 +23,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningFact;
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
+import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -520,9 +521,7 @@ public final class SpringMvcEndpointOutputGenerator {
       }
       SpringMvcEndpointFact endpoint = row.endpoint();
       markdown.append("### ")
-          .append(row.methodLabel())
-          .append(" ")
-          .append(row.path())
+          .append(MarkdownRenderer.text(row.methodLabel() + " " + row.path()))
           .append("\n\n");
       markdown.append("- Module: ")
           .append(moduleLabel(row.moduleId(), moduleById.get(row.moduleId())))
@@ -1374,19 +1373,11 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private String codeList(List<String> values) {
-    if (values.isEmpty()) {
-      return "none detected";
-    }
-
-    StringJoiner joiner = new StringJoiner(", ");
-    for (String value : values) {
-      joiner.add(code(value));
-    }
-    return joiner.toString();
+    return MarkdownRenderer.inlineCodeList(values, "none detected");
   }
 
   private String code(String value) {
-    return "`" + value.replace("`", "\\`") + "`";
+    return MarkdownRenderer.inlineCode(value);
   }
 
   private static String firstPath(SpringMvcEndpointFact endpoint) {
