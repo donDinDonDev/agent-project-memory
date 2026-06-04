@@ -36,6 +36,11 @@ architecture documents.
 - Clarified public agent boundaries, issue/PR scope wording, development versioning, and
   checkpoint-vs-release commit expectations.
 
+### Security
+
+- Fixed unsafe `.project-memory` symlink handling so scan output directories and
+  generated output file targets must stay under the canonical scan root.
+
 ## [0.1.0] - 2026-06-03
 
 ### Added

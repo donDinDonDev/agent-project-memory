@@ -1,12 +1,12 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
-import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryEvidence;
@@ -26,6 +26,7 @@ import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -230,22 +231,26 @@ public final class SpringMvcEndpointOutputGenerator {
         layout,
         scan);
 
-    Files.writeString(
-        outputDirectory.resolve(ENDPOINTS_FILE_NAME),
-        endpointsMarkdown(layout.modules(), scan.endpoints()),
-        StandardCharsets.UTF_8);
-    Files.writeString(
-        outputDirectory.resolve(EVIDENCE_INDEX_FILE_NAME),
-        evidenceIndexJsonl,
-        StandardCharsets.UTF_8);
-    Files.writeString(
-        outputDirectory.resolve(PROJECT_MAP_FILE_NAME),
-        projectMapJson,
-        StandardCharsets.UTF_8);
-    Files.writeString(
-        outputDirectory.resolve(AGENT_GUIDE_FILE_NAME),
-        agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl),
-        StandardCharsets.UTF_8);
+    writeGeneratedFile(
+        canonicalRepositoryRoot,
+        outputDirectory,
+        ENDPOINTS_FILE_NAME,
+        endpointsMarkdown(layout.modules(), scan.endpoints()));
+    writeGeneratedFile(
+        canonicalRepositoryRoot,
+        outputDirectory,
+        EVIDENCE_INDEX_FILE_NAME,
+        evidenceIndexJsonl);
+    writeGeneratedFile(
+        canonicalRepositoryRoot,
+        outputDirectory,
+        PROJECT_MAP_FILE_NAME,
+        projectMapJson);
+    writeGeneratedFile(
+        canonicalRepositoryRoot,
+        outputDirectory,
+        AGENT_GUIDE_FILE_NAME,
+        agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl));
 
     return new Result(
         true,
@@ -1398,6 +1403,36 @@ public final class SpringMvcEndpointOutputGenerator {
       return "";
     }
     return value;
+  }
+
+  private void writeGeneratedFile(
+      Path canonicalRepositoryRoot,
+      Path outputDirectory,
+      String fileName,
+      String content) throws IOException {
+    Path target = outputDirectory.resolve(fileName);
+    if (Files.isSymbolicLink(target)) {
+      throw new IOException("Output file must not be a symbolic link: " + target);
+    }
+
+    if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
+        && !isRegularFileUnderRoot(canonicalRepositoryRoot, target)) {
+      throw new IOException(
+          "Output file target is not a regular file under scan root: " + target);
+    }
+
+    Files.writeString(target, content, StandardCharsets.UTF_8);
+
+    if (!isRegularFileUnderRoot(canonicalRepositoryRoot, target)) {
+      throw new IOException(
+          "Output file target is not a regular file under scan root: " + target);
+    }
+  }
+
+  private boolean isRegularFileUnderRoot(Path canonicalRepositoryRoot, Path target) {
+    return ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, target)
+        .filter(Files::isRegularFile)
+        .isPresent();
   }
 
   public record Result(

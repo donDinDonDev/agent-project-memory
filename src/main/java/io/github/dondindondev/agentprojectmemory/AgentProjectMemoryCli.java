@@ -1,10 +1,12 @@
 package io.github.dondindondev.agentprojectmemory;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Objects;
 
@@ -69,8 +71,21 @@ public final class AgentProjectMemoryCli {
       return scanError("Path is not a directory: " + rawPath);
     }
 
-    Path outputDirectory = projectPath.resolve(OUTPUT_DIRECTORY_NAME);
-    if (Files.exists(outputDirectory) && !Files.isDirectory(outputDirectory)) {
+    Path normalizedProjectPath = projectPath.toAbsolutePath().normalize();
+    Path canonicalProjectPath;
+    try {
+      canonicalProjectPath = ScanPathContainment.canonicalRoot(normalizedProjectPath);
+    } catch (IOException ex) {
+      return scanError("Could not resolve scan root: " + rawPath);
+    }
+
+    Path outputDirectory = normalizedProjectPath.resolve(OUTPUT_DIRECTORY_NAME);
+    if (Files.isSymbolicLink(outputDirectory)) {
+      return scanError("Output path must not be a symbolic link: " + outputDirectory);
+    }
+
+    if (Files.exists(outputDirectory, LinkOption.NOFOLLOW_LINKS)
+        && !Files.isDirectory(outputDirectory, LinkOption.NOFOLLOW_LINKS)) {
       return scanError("Output path exists and is not a directory: " + outputDirectory);
     }
 
@@ -80,12 +95,24 @@ public final class AgentProjectMemoryCli {
       return scanError("Could not create output directory: " + outputDirectory);
     }
 
-    out.println("Prepared " + outputDirectory.toAbsolutePath().normalize());
+    if (Files.isSymbolicLink(outputDirectory)) {
+      return scanError("Output path must not be a symbolic link: " + outputDirectory);
+    }
+
+    Path containedOutputDirectory = ScanPathContainment
+        .realPathUnderRoot(canonicalProjectPath, outputDirectory)
+        .filter(Files::isDirectory)
+        .orElse(null);
+    if (containedOutputDirectory == null) {
+      return scanError("Output directory is not contained under scan root: " + outputDirectory);
+    }
+
+    out.println("Prepared " + containedOutputDirectory.toAbsolutePath().normalize());
 
     try {
       SpringMvcEndpointOutputGenerator.Result result = endpointOutputGenerator.generate(
-          projectPath,
-          outputDirectory);
+          normalizedProjectPath,
+          containedOutputDirectory);
       if (result.generated()) {
         out.println(
             "Generated project-map.json with "

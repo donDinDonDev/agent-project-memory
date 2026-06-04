@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -173,6 +175,46 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRejectsProjectMemorySymlinkAndDoesNotWriteOutsideScanRoot() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+    Path outsideOutputDirectory = tempDir.resolve("outside-output");
+    Files.createDirectories(outsideOutputDirectory);
+    createSymbolicLink(projectPath.resolve(".project-memory"), outsideOutputDirectory);
+
+    CliResult result = runCli("scan", projectPath.toString());
+
+    assertAll(
+        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output path must not be a symbolic link")),
+        () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("endpoints.md"))),
+        () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanRejectsGeneratedOutputFileSymlinkAndDoesNotWriteOutsideScanRoot() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    Path outsideOutputFile = tempDir.resolve("outside-endpoints.md");
+    Files.writeString(outsideOutputFile, "outside content");
+    createSymbolicLink(outputDirectory.resolve("endpoints.md"), outsideOutputFile);
+
+    CliResult result = runCli("scan", projectPath.toString());
+
+    assertAll(
+        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output file must not be a symbolic link")),
+        () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanReturnsNonZeroWhenProjectMemoryPathIsAFile() throws Exception {
     Path conflictingOutputPath = tempDir.resolve(".project-memory");
     Files.writeString(conflictingOutputPath, "not a directory");
@@ -211,6 +253,14 @@ final class AgentProjectMemoryCliTest {
           Files.copy(sourcePath, targetPath, StandardCopyOption.REPLACE_EXISTING);
         }
       }
+    }
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (IOException | SecurityException | UnsupportedOperationException ex) {
+      assumeTrue(false, "Symbolic links are unavailable: " + ex.getMessage());
     }
   }
 
