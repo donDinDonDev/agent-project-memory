@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
@@ -52,6 +53,38 @@ final class MavenModuleDiscoveryAnalyzerTest {
         () -> assertEquals(List.of("ev:pom.xml:1-1:build_file:pom.xml"), rootModule.pomEvidenceIds()),
         () -> assertEquals(List.of(), analysis.warnings()),
         () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void malformedRootPomWithModuleSignalFailsInsteadOfSilentSingleModuleDiscovery()
+      throws Exception {
+    Path repositoryRoot = repository("malformed-root-pom");
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/hidden</module>
+          </modules>
+          <broken>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("src/main/java"));
+    writePom(repositoryRoot.resolve("services/hidden/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("services/hidden/src/main/java"));
+
+    IOException exception = assertThrows(
+        IOException.class,
+        () -> analyzer.analyze(repositoryRoot));
+
+    assertAll(
+        () -> assertTrue(exception.getMessage()
+            .contains("Could not parse Maven module declarations in pom.xml")),
+        () -> assertTrue(exception.getMessage().contains("malformed XML")),
+        () -> assertTrue(exception.getMessage().contains("line")),
+        () -> assertFalse(exception.getMessage().contains("services/hidden")));
   }
 
   @Test

@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Security
+
+- Fixed malformed root `pom.xml` handling so Maven module discovery fails with a
+  bounded scan error instead of treating parse failure as an empty module inventory.
+
 ## [0.2.0] - 2026-06-04
 
 ### Added

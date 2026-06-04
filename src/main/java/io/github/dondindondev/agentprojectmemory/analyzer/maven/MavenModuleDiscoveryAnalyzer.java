@@ -14,10 +14,12 @@ import java.util.Map;
 import java.util.Objects;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
 import org.xml.sax.ext.DefaultHandler2;
 
 public final class MavenModuleDiscoveryAnalyzer {
@@ -279,7 +281,7 @@ public final class MavenModuleDiscoveryAnalyzer {
       Path pom,
       String sourcePath) throws IOException {
     List<String> sourceLines = Files.readAllLines(pom, StandardCharsets.UTF_8);
-    List<ModuleDeclaration> declarations = moduleDeclarations(pom);
+    List<ModuleDeclaration> declarations = moduleDeclarations(pom, sourcePath);
     List<PreliminaryObservedModuleDeclaration> preliminary = declarations.stream()
         .map(declaration -> {
           NormalizedModulePath normalizedPath = normalizeModulePath(
@@ -351,17 +353,41 @@ public final class MavenModuleDiscoveryAnalyzer {
     return "<module>" + declaration.rawText().trim() + "</module>";
   }
 
-  private List<ModuleDeclaration> moduleDeclarations(Path pom) throws IOException {
+  private List<ModuleDeclaration> moduleDeclarations(Path pom, String sourcePath) throws IOException {
     ModuleDeclarationHandler handler = new ModuleDeclarationHandler();
-    try (InputStream input = Files.newInputStream(pom)) {
-      SAXParserFactory factory = secureSaxParserFactory();
-      factory.newSAXParser().parse(input, handler);
-    } catch (SAXException exception) {
-      return List.of();
-    } catch (ParserConfigurationException exception) {
+    SAXParser parser;
+    try {
+      parser = secureSaxParserFactory().newSAXParser();
+    } catch (ParserConfigurationException | SAXException exception) {
       throw new IOException("Unable to configure secure XML parser for " + pom, exception);
     }
+
+    try (InputStream input = Files.newInputStream(pom)) {
+      parser.parse(input, handler);
+    } catch (SAXException exception) {
+      throw malformedPomException(sourcePath, exception);
+    }
     return handler.declarations();
+  }
+
+  private IOException malformedPomException(String sourcePath, SAXException exception) {
+    String location = "";
+    if (exception instanceof SAXParseException parseException) {
+      int line = parseException.getLineNumber();
+      int column = parseException.getColumnNumber();
+      if (line > 0 && column > 0) {
+        location = " at line " + line + ", column " + column;
+      } else if (line > 0) {
+        location = " at line " + line;
+      }
+    }
+    return new IOException(
+        "Could not parse Maven module declarations in "
+            + sourcePath
+            + ": malformed XML"
+            + location
+            + ".",
+        exception);
   }
 
   private SAXParserFactory secureSaxParserFactory() throws ParserConfigurationException, SAXException {
