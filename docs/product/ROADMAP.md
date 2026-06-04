@@ -70,8 +70,8 @@ Expected scope:
 
 The v0.2 module-aware JSON output and evidence contract is documented in
 `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`.
-Markdown module grouping is implemented; real-project evaluation remains pending
-release-track work.
+Markdown module grouping and real-project evaluation are complete; release readiness
+materials and the repository-wide security gate are active release-track work.
 
 Non-goals:
 
@@ -92,8 +92,8 @@ Planned goal sequence:
 3. Run existing analyzers module-aware. (implemented for public JSON output)
 4. Update Markdown generators. (implemented for module-aware Markdown output)
 5. Add multi-module fixtures and golden checks. (implemented for Markdown output)
-6. Evaluate on pinned real Maven multi-module projects.
-7. Prepare v0.2 release materials.
+6. Evaluate on pinned real Maven multi-module projects. (completed)
+7. Prepare v0.2 release materials. (active)
 
 ## v0.3.0: Build And Configuration Model
 

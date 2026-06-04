@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-04
+
 ### Added
 
 - Added public post-v0.1 strategy documentation.
@@ -21,6 +23,9 @@ architecture documents.
   HTTP surface warning, and tests inventory analyzers.
 - Added module-aware `endpoints.md` grouping and `agent-guide.md` orientation based on
   `project.modules` and fact-level `module_id` values.
+- Added a real-project v0.2 evaluation report for pinned Maven multi-module
+  Java/Spring projects.
+- Added v0.2 release notes.
 - Adopted a public changelog.
 - Added public release process and versioning discipline documentation.
 
@@ -38,10 +43,30 @@ architecture documents.
 
 ### Security
 
+- Added v0.2 Codex Security gate requirements for the implementation range and
+  repository-wide release-candidate scan.
 - Fixed unsafe `.project-memory` symlink handling so scan output directories and
   generated output file targets must stay under the canonical scan root.
 - Fixed hardlinked generated output targets so scans cannot overwrite outside aliases
   through pre-existing multi-link `.project-memory` files.
+
+### Not Included
+
+- Gradle support.
+- Maven profile resolution.
+- Effective POM reconstruction.
+- Dependency graph reconstruction.
+- Maven execution or code generation during scan.
+- Default scanning of generated source roots.
+- OpenAPI YAML/JSON parsing or generated API reconstruction.
+- Full Java symbol solving.
+- Runtime Spring handler mapping, bean graph, or component scanning reconstruction.
+- Full ORM runtime behavior.
+- Test execution, coverage, CI, or call graph analysis.
+- Local Markdown/document ingestion.
+- Connectors for YouTrack, Jira, Confluence, GitHub, or GitLab.
+- LLM calls in the core analyzer.
+- SaaS, web UI, repository chat, generic RAG, or automatic code modification.
 
 ## [0.1.0] - 2026-06-03
 
