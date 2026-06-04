@@ -175,6 +175,25 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void repeatedScanRewritesExistingGeneratedOutputFile() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+
+    assertEquals(0, runCli("scan", projectPath.toString()).exitCode());
+    Path projectMap = projectPath.resolve(".project-memory/project-map.json");
+    Files.writeString(projectMap, "stale generated content");
+
+    CliResult result = runCli("scan", projectPath.toString());
+    String rewrittenProjectMap = Files.readString(projectMap);
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertFalse(rewrittenProjectMap.contains("stale generated content")));
+  }
+
+  @Test
   void scanRejectsProjectMemorySymlinkAndDoesNotWriteOutsideScanRoot() throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
     copyDirectory(fixtureRoot(), projectPath);
@@ -210,6 +229,30 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stderr().contains("Output file must not be a symbolic link")),
         () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanRejectsGeneratedOutputFileHardLinkAndDoesNotWriteOutsideAlias() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    Path outsideOutputFile = tempDir.resolve("outside-project-map.json");
+    Files.writeString(outsideOutputFile, "outside content");
+    createHardLink(outputDirectory.resolve("project-map.json"), outsideOutputFile);
+
+    CliResult result = runCli("scan", projectPath.toString());
+
+    assertAll(
+        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output file must not have multiple hard links")),
+        () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
+        () -> assertEquals(
+            "outside content",
+            Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
   }
@@ -261,6 +304,14 @@ final class AgentProjectMemoryCliTest {
       Files.createSymbolicLink(link, target);
     } catch (IOException | SecurityException | UnsupportedOperationException ex) {
       assumeTrue(false, "Symbolic links are unavailable: " + ex.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path target) throws Exception {
+    try {
+      Files.createLink(link, target);
+    } catch (IOException | SecurityException | UnsupportedOperationException ex) {
+      assumeTrue(false, "Hard links are unavailable: " + ex.getMessage());
     }
   }
 

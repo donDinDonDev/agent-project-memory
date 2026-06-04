@@ -40,6 +40,8 @@ architecture documents.
 
 - Fixed unsafe `.project-memory` symlink handling so scan output directories and
   generated output file targets must stay under the canonical scan root.
+- Fixed hardlinked generated output targets so scans cannot overwrite outside aliases
+  through pre-existing multi-link `.project-memory` files.
 
 ## [0.1.0] - 2026-06-03
 

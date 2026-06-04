@@ -25,9 +25,11 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -231,26 +233,22 @@ public final class SpringMvcEndpointOutputGenerator {
         layout,
         scan);
 
-    writeGeneratedFile(
+    writeGeneratedFiles(
         canonicalRepositoryRoot,
         outputDirectory,
-        ENDPOINTS_FILE_NAME,
-        endpointsMarkdown(layout.modules(), scan.endpoints()));
-    writeGeneratedFile(
-        canonicalRepositoryRoot,
-        outputDirectory,
-        EVIDENCE_INDEX_FILE_NAME,
-        evidenceIndexJsonl);
-    writeGeneratedFile(
-        canonicalRepositoryRoot,
-        outputDirectory,
-        PROJECT_MAP_FILE_NAME,
-        projectMapJson);
-    writeGeneratedFile(
-        canonicalRepositoryRoot,
-        outputDirectory,
-        AGENT_GUIDE_FILE_NAME,
-        agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl));
+        List.of(
+            new GeneratedOutputFile(
+                ENDPOINTS_FILE_NAME,
+                endpointsMarkdown(layout.modules(), scan.endpoints())),
+            new GeneratedOutputFile(
+                EVIDENCE_INDEX_FILE_NAME,
+                evidenceIndexJsonl),
+            new GeneratedOutputFile(
+                PROJECT_MAP_FILE_NAME,
+                projectMapJson),
+            new GeneratedOutputFile(
+                AGENT_GUIDE_FILE_NAME,
+                agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl))));
 
     return new Result(
         true,
@@ -1405,27 +1403,99 @@ public final class SpringMvcEndpointOutputGenerator {
     return value;
   }
 
+  private void writeGeneratedFiles(
+      Path canonicalRepositoryRoot,
+      Path outputDirectory,
+      List<GeneratedOutputFile> files) throws IOException {
+    for (GeneratedOutputFile file : files) {
+      validateGeneratedOutputTarget(
+          canonicalRepositoryRoot,
+          outputDirectory.resolve(file.fileName()));
+    }
+
+    for (GeneratedOutputFile file : files) {
+      writeGeneratedFile(
+          canonicalRepositoryRoot,
+          outputDirectory,
+          file.fileName(),
+          file.content());
+    }
+  }
+
   private void writeGeneratedFile(
       Path canonicalRepositoryRoot,
       Path outputDirectory,
       String fileName,
       String content) throws IOException {
     Path target = outputDirectory.resolve(fileName);
+    validateGeneratedOutputTarget(canonicalRepositoryRoot, target);
+
+    Path tempFile = Files.createTempFile(outputDirectory, "." + fileName + ".", ".tmp");
+    boolean moved = false;
+    try {
+      if (!isRegularFileUnderRoot(canonicalRepositoryRoot, tempFile)) {
+        throw new IOException(
+            "Temporary output file is not a regular file under scan root: " + tempFile);
+      }
+
+      Files.writeString(tempFile, content, StandardCharsets.UTF_8);
+      validateGeneratedOutputTarget(canonicalRepositoryRoot, target);
+      moveGeneratedFile(tempFile, target);
+      moved = true;
+
+      if (!isRegularFileUnderRoot(canonicalRepositoryRoot, target)) {
+        throw new IOException(
+            "Output file target is not a regular file under scan root: " + target);
+      }
+    } finally {
+      if (!moved) {
+        Files.deleteIfExists(tempFile);
+      }
+    }
+  }
+
+  private void validateGeneratedOutputTarget(Path canonicalRepositoryRoot, Path target)
+      throws IOException {
     if (Files.isSymbolicLink(target)) {
       throw new IOException("Output file must not be a symbolic link: " + target);
     }
 
-    if (Files.exists(target, LinkOption.NOFOLLOW_LINKS)
-        && !isRegularFileUnderRoot(canonicalRepositoryRoot, target)) {
-      throw new IOException(
-          "Output file target is not a regular file under scan root: " + target);
+    if (!Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
+      return;
     }
-
-    Files.writeString(target, content, StandardCharsets.UTF_8);
 
     if (!isRegularFileUnderRoot(canonicalRepositoryRoot, target)) {
       throw new IOException(
           "Output file target is not a regular file under scan root: " + target);
+    }
+
+    Long linkCount = hardLinkCount(target);
+    if (linkCount != null && linkCount > 1) {
+      throw new IOException("Output file must not have multiple hard links: " + target);
+    }
+  }
+
+  private void moveGeneratedFile(Path tempFile, Path target) throws IOException {
+    try {
+      Files.move(
+          tempFile,
+          target,
+          StandardCopyOption.ATOMIC_MOVE,
+          StandardCopyOption.REPLACE_EXISTING);
+    } catch (AtomicMoveNotSupportedException ex) {
+      Files.move(tempFile, target, StandardCopyOption.REPLACE_EXISTING);
+    }
+  }
+
+  private Long hardLinkCount(Path target) throws IOException {
+    try {
+      Object value = Files.getAttribute(target, "unix:nlink", LinkOption.NOFOLLOW_LINKS);
+      if (value instanceof Number number) {
+        return number.longValue();
+      }
+      return null;
+    } catch (IllegalArgumentException | UnsupportedOperationException ex) {
+      return null;
     }
   }
 
@@ -1442,6 +1512,9 @@ public final class SpringMvcEndpointOutputGenerator {
       int entityCount,
       int testCount,
       int evidenceCount) {
+  }
+
+  private record GeneratedOutputFile(String fileName, String content) {
   }
 
   private record EndpointRow(
