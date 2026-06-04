@@ -62,6 +62,8 @@ public final class MarkdownRenderer {
       case '\n' -> normalized.append("\\n");
       case '\r' -> normalized.append("\\r");
       case '\t' -> normalized.append("\\t");
+      case 0x2028 -> normalized.append("\\u2028");
+      case 0x2029 -> normalized.append("\\u2029");
       default -> {
         if (Character.isISOControl(codePoint) || isBidirectionalControl(codePoint)) {
           normalized.append(String.format(Locale.ROOT, "\\u%04X", codePoint));

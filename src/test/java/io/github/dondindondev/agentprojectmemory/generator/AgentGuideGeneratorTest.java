@@ -43,6 +43,115 @@ final class AgentGuideGeneratorTest {
         """));
   }
 
+  @Test
+  void evidenceClassificationUsesResolvedSymbolNameOnly() throws Exception {
+    String misleadingEntityEvidenceId =
+        "ev:src/main/java/com/example/:@Table/Entity.java:1-1:com.example.TableNameSpoof:@Entity";
+    String unresolvedEvidenceId =
+        "ev:src/main/java/com/example/Entity.java:2-2:source-controlled:@Table";
+    String projectMap = """
+        {
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": []
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": [
+              {
+                "id": "entity:com.example.TableNameSpoof",
+                "class_name": "com.example.TableNameSpoof",
+                "table_name": "orders",
+                "identifier_fields": [],
+                "relationships": [],
+                "evidence_ids": [
+                  "%s",
+                  "%s"
+                ]
+              }
+            ]
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          }
+        }
+        """.formatted(misleadingEntityEvidenceId, unresolvedEvidenceId);
+    String evidenceIndex = """
+        {"id":"%s","source_type":"annotation","path":"src/main/java/com/example/:@Table/Entity.java","class_name":"com.example.TableNameSpoof","method_name":null,"symbol_name":"@Entity","line_start":1,"line_end":1,"excerpt":"@Entity","confidence":"high"}
+        """.formatted(misleadingEntityEvidenceId);
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains("""
+        - Entity: Detected `com.example.TableNameSpoof`
+          - Evidence: `src/main/java/com/example/:@Table/Entity.java:1` (`ev:src/main/java/com/example/:@Table/Entity.java:1-1:com.example.TableNameSpoof:@Entity`), `ev:src/main/java/com/example/Entity.java:2-2:source-controlled:@Table` (unresolved evidence record)
+        - Table: Detected `orders`
+          - Evidence: none recorded.
+        """));
+  }
+
+  @Test
+  void evidenceJsonlParsingDoesNotSplitOnUnicodeLineSeparatorsInsideStrings()
+      throws Exception {
+    String lineSeparator = "\u2028";
+    String paragraphSeparator = "\u2029";
+    String projectMap = """
+        {
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": [
+                "ev:root-build"
+              ]
+            },
+            "source_roots": [],
+            "test_roots": []
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:root-build","source_type":"build_file","path":"pom.xml%sline%sparagraph","class_name":null,"method_name":null,"symbol_name":"pom.xml","line_start":1,"line_end":1,"excerpt":"<project>%s</project>%s","confidence":"high"}
+        """.formatted(lineSeparator, paragraphSeparator, lineSeparator, paragraphSeparator);
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains(
+        "`pom.xml\\u2028line\\u2029paragraph:1` (`ev:root-build`)"));
+  }
+
   private void assertEvidenceIsAttachedToDetectedClaims(String guide) {
     assertTrue(guide.contains("""
         - Entity: Detected `com.example.domain.ProjectOrder`

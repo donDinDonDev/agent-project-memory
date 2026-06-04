@@ -688,7 +688,7 @@ public final class AgentGuideGenerator {
 
   private Map<String, EvidenceRecord> evidenceById(String evidenceIndexJsonl) throws IOException {
     Map<String, EvidenceRecord> evidenceById = new LinkedHashMap<>();
-    for (String line : evidenceIndexJsonl.split("\\R")) {
+    for (String line : physicalJsonlLines(evidenceIndexJsonl)) {
       if (line.isBlank()) {
         continue;
       }
@@ -702,6 +702,29 @@ public final class AgentGuideGenerator {
       evidenceById.put(record.id(), record);
     }
     return evidenceById;
+  }
+
+  private List<String> physicalJsonlLines(String jsonl) {
+    List<String> lines = new ArrayList<>();
+    int start = 0;
+    for (int index = 0; index < jsonl.length(); index++) {
+      if (jsonl.charAt(index) == '\n') {
+        int end = index;
+        if (end > start && jsonl.charAt(end - 1) == '\r') {
+          end--;
+        }
+        lines.add(jsonl.substring(start, end));
+        start = index + 1;
+      }
+    }
+    if (start < jsonl.length()) {
+      int end = jsonl.length();
+      if (end > start && jsonl.charAt(end - 1) == '\r') {
+        end--;
+      }
+      lines.add(jsonl.substring(start, end));
+    }
+    return lines;
   }
 
   private List<String> evidenceIdsWithSymbol(
@@ -742,10 +765,7 @@ public final class AgentGuideGenerator {
       Map<String, EvidenceRecord> evidenceById,
       String symbolName) {
     EvidenceRecord evidence = evidenceById.get(id);
-    if (evidence != null && symbolName.equals(evidence.symbolName())) {
-      return true;
-    }
-    return id.contains(":" + symbolName);
+    return evidence != null && symbolName.equals(evidence.symbolName());
   }
 
   private List<String> evidencePaths(JsonNode node, Map<String, EvidenceRecord> evidenceById) {

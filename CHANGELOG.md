@@ -16,6 +16,9 @@ architecture documents.
 - Hardened annotation-origin checks so source-declared fake framework annotations and
   bare/static-imported `RequestMethod` constants do not create trusted Spring MVC,
   component, JPA, hidden HTTP surface, or Spring Test inventory facts.
+- Escaped Unicode line and paragraph separators in generated JSON/JSONL strings, and
+  stopped `agent-guide.md` evidence classification from inferring evidence type from
+  unresolved evidence ID substrings.
 
 ## [0.2.0] - 2026-06-04
 

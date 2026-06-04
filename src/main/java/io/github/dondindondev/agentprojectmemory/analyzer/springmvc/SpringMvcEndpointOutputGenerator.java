@@ -1353,8 +1353,12 @@ public final class SpringMvcEndpointOutputGenerator {
         case '\r' -> escaped.append("\\r");
         case '\t' -> escaped.append("\\t");
         default -> {
-          if (character < 0x20) {
-            escaped.append(String.format("\\u%04x", (int) character));
+          if (character == 0x2028) {
+            escaped.append("\\u2028");
+          } else if (character == 0x2029) {
+            escaped.append("\\u2029");
+          } else if (character < 0x20) {
+            escaped.append(String.format(Locale.ROOT, "\\u%04x", (int) character));
           } else {
             escaped.append(character);
           }

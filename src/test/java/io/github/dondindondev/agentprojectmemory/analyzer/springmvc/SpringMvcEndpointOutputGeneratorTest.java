@@ -322,6 +322,68 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void jsonOutputsEscapeUnicodeLineSeparatorsBeforeAgentGuideGeneration() throws Exception {
+    String lineSeparator = "\u2028";
+    String paragraphSeparator = "\u2029";
+    String escapedLineSeparator = "\\" + "u2028";
+    String escapedParagraphSeparator = "\\" + "u2029";
+    Path projectPath = tempDir.resolve("unicode-line-separator-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(
+        projectPath.resolve(
+            "src/main/java/com/example/path"
+                + lineSeparator
+                + "line"
+                + paragraphSeparator
+                + "paragraph/UnicodeController.java"),
+        """
+            package com.example.web;
+
+            @org.springframework.web.bind.annotation.RestController
+            @org.springframework.web.bind.annotation.RequestMapping("/api")
+            class UnicodeController {
+              @org.springframework.web.bind.annotation.GetMapping("/safe%sline%sparagraph")
+              String unicode(@org.springframework.web.bind.annotation.RequestParam(name = "q%sline%sparagraph") String query) {
+                return "ok";
+              }
+            }
+            """.formatted(
+                escapedLineSeparator,
+                escapedParagraphSeparator,
+                escapedLineSeparator,
+                escapedParagraphSeparator));
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(1, result.endpointCount()),
+        () -> assertFalse(projectMap.contains(lineSeparator)),
+        () -> assertFalse(projectMap.contains(paragraphSeparator)),
+        () -> assertFalse(evidenceIndex.contains(lineSeparator)),
+        () -> assertFalse(evidenceIndex.contains(paragraphSeparator)),
+        () -> assertFalse(agentGuide.contains(lineSeparator)),
+        () -> assertFalse(agentGuide.contains(paragraphSeparator)),
+        () -> assertTrue(projectMap.contains(escapedLineSeparator)),
+        () -> assertTrue(projectMap.contains(escapedParagraphSeparator)),
+        () -> assertTrue(evidenceIndex.contains(escapedLineSeparator)),
+        () -> assertTrue(evidenceIndex.contains(escapedParagraphSeparator)),
+        () -> assertTrue(agentGuide.contains(escapedLineSeparator)),
+        () -> assertTrue(agentGuide.contains(escapedParagraphSeparator)),
+        () -> assertTrue(agentGuide.contains("# Agent Guide")));
+  }
+
+  @Test
   void multiModuleProjectMapIsModuleAwareAndEvidenceBacked() throws Exception {
     Path projectPath = tempDir.resolve("multi-module-project");
     Path outputDirectory = projectPath.resolve(".project-memory");
