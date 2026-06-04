@@ -126,6 +126,8 @@ Before preparing a release candidate:
 - Confirm release notes exist or are drafted for the release.
 - Confirm evaluation reports are updated when the release includes meaningful analyzer
   expansion.
+- Run any Codex Security gate defined by the active release track before tagging or
+  publishing.
 - Confirm no connector, network, AI, SaaS, web UI, repo chat, generic RAG, or automatic
   code-modification scope entered the release accidentally.
 
