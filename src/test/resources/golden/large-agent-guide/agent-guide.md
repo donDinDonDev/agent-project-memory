@@ -8,9 +8,9 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Root build file: Detected `pom.xml`
   - Evidence: `pom.xml:1` (`ev:pom.xml:1-1:build_file:pom.xml`)
 - Source roots: Detected `src/main/java`
-  - Evidence: recorded in `project-map.json`; no separate source-root evidence IDs are emitted in v0.1.
+  - Evidence: recorded in `project-map.json`; no separate source-root evidence IDs are emitted.
 - Test roots: Detected `src/test/java`
-  - Evidence: recorded in `project-map.json`; no separate test-root evidence IDs are emitted in v0.1.
+  - Evidence: recorded in `project-map.json`; no separate test-root evidence IDs are emitted.
 
 ## Detected Spring MVC Endpoints
 

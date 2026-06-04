@@ -6,7 +6,7 @@ Any output field addition, removal, rename, or semantic change requires updating
 
 ## Directory Structure
 
-The v0.1 target scan output is:
+The current scan output uses the same four files introduced in v0.1:
 
 ```text
 .project-memory/
@@ -16,9 +16,10 @@ The v0.1 target scan output is:
   agent-guide.md
 ```
 
-In the current implementation, `scan <path>` writes all four files when a
-Maven-style `src/main/java` source root exists. Unsupported directories still only get a
-prepared `.project-memory/` directory and do not get contract output files.
+In the current implementation, `scan <path>` writes all four files when supported Maven
+module roots, supported root source or test roots, or Maven module warnings are
+detected. Unsupported directories still only get a prepared `.project-memory/`
+directory and do not get contract output files.
 
 `EVAL-8-004` decision B keeps endpoint extraction limited to source-visible Java inputs
 under supported production source roots, while adding uniquely bound interface-declared
@@ -28,12 +29,11 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. It contains the minimal
-stable v0.1 slice for the currently supported local single-module
-Maven-style Spring MVC endpoint, hidden HTTP surface warning, direct Spring component,
-direct JPA entity, and tests inventory scan.
+`project-map.json` is the machine-readable project memory file. The current public
+contract is the v0.2 module-aware Maven slice. The v0.1 single-module shape below is
+kept as historical compatibility context for fields that v0.2 preserves.
 
-The current implementation writes this top-level object:
+The v0.1 baseline wrote this top-level object:
 
 ```json
 {
@@ -190,7 +190,7 @@ The current implementation writes this top-level object:
 
 Field rules:
 
-- `schema_version` is the string `"0.1"` for this output contract slice.
+- `schema_version` is the string `"0.1"` for the v0.1 output contract slice.
 - `project.root` is `"."` because the output is relative to the scanned repository root.
 - `project.build.system` is `"maven"` when a root `pom.xml` file is detected and
   `"not_detected"` otherwise.
@@ -433,12 +433,11 @@ Example source-visible interface mapping source:
 - The tests inventory does not claim code coverage, test execution results, direct
   behavioral assertion analysis, call graph resolution, or complete subject mapping.
 
-### Planned v0.2 Module-Aware Maven Contract
+### v0.2 Module-Aware Maven Contract
 
-This section defines planned v0.2 design behavior only. The current v0.1 implementation
-does not emit these module-aware fields.
+This section defines the current public v0.2 module-aware Maven JSON contract.
 
-The planned v0.2 module-aware contract uses:
+The v0.2 module-aware contract uses:
 
 - `schema_version: "0.2"` only for an atomic public output state that includes both
   `project.modules` and direct `module_id` fields on every emitted module-owned
@@ -447,7 +446,7 @@ The planned v0.2 module-aware contract uses:
 - Existing v0.1 fact arrays, with direct `module_id` fields added to module-owned facts.
 - Existing evidence fields; Maven module discovery reuses `build_file` evidence.
 
-The planned v0.2 `project-map.json` project shape is:
+The v0.2 `project-map.json` project shape is:
 
 ```json
 {
@@ -508,7 +507,7 @@ The planned v0.2 `project-map.json` project shape is:
 }
 ```
 
-Planned module identity rules:
+Module identity rules:
 
 - `module_id` is stable within a repository because it is derived from the normalized
   repository-relative module path, not from Maven coordinates, artifact IDs, display
@@ -524,32 +523,32 @@ Planned module identity rules:
 - Maven profile resolution, effective POM reconstruction, parent inheritance, dependency
   graph reconstruction, and Maven execution are not part of module identity.
 
-Planned single-module compatibility rules:
+Single-module compatibility rules:
 
-- v0.1 output remains `schema_version: "0.1"` until module-aware support is implemented.
 - v0.2 single-module scans use `schema_version: "0.2"` and include one module item for
   the scan root with `module_id: "module:."`.
-- There is no valid planned inventory-only `schema_version: "0.2"` state. Normal public
+- There is no valid inventory-only `schema_version: "0.2"` state. Normal public
   scan output must not emit `project.modules` under `schema_version: "0.2"` while any
   emitted module-owned endpoint, warning, component, entity, or test fact lacks
   `module_id`.
-- An implementation checkpoint may build module discovery before analyzer execution, but
-  until `project.modules` and fact-level `module_id` are emitted together, normal scan
-  output must remain on the v0.1 contract and keep module inventory internal or
-  test-scoped.
 - v0.2 single-module scans keep the existing output files and preserve v0.1 top-level
   `project.source_roots`, `project.test_roots`, and root-module fact ID shapes.
 - v0.2 multi-module scans keep `project.source_roots` and `project.test_roots` as
   compatibility summaries containing all supported repository-relative roots sorted
   deterministically. Per-module roots in `project.modules.items` are authoritative.
 
-Planned module inventory rules:
+Module inventory rules:
 
 - `project.modules.analysis_status` is `"analyzed"` when module discovery runs. It may
   be `"not_detected"` only when no Maven build input is available for module discovery.
 - `project.modules.items` contains the scan root when the scan is single-module or when
   the root has supported production or test roots, plus valid unique child module paths
   declared by the root `<modules>` section.
+- For compatibility with pre-v0.2 local source-root scans, when no root `pom.xml` is
+  present but supported root source or test roots are detected, `project.modules` uses
+  `analysis_status: "not_detected"` and emits a scan-root module with `module_id:
+  "module:."`, `module_path: "."`, `pom_path: null`, empty POM evidence, and the
+  detected root source or test roots.
 - `source_roots` and `test_roots` inside a module item contain repository-relative roots
   under that module. They are empty arrays when no supported root of that kind is
   detected.
@@ -569,7 +568,7 @@ Planned module inventory rules:
 - `pom_evidence_ids` references `build_file` evidence for the detected root or child
   `pom.xml`. It is an empty array for a valid declaration whose child POM is missing.
 
-Planned fact-level module identity rules:
+Fact-level module identity rules:
 
 - Endpoint facts, component facts, entity facts, test facts, and warning items include a
   direct `module_id` field in v0.2.
@@ -586,7 +585,7 @@ Planned fact-level module identity rules:
   module facts include the module identity in their stable IDs to avoid collisions with
   facts from other modules.
 
-Example planned v0.2 endpoint fact:
+Example v0.2 endpoint fact:
 
 ```json
 {
@@ -617,9 +616,9 @@ Example planned v0.2 endpoint fact:
 }
 ```
 
-Planned module warning rules:
+Module warning rules:
 
-- In planned v0.2 output, `warnings.analysis_status` is `"analyzed"` when at least one
+- In v0.2 output, `warnings.analysis_status` is `"analyzed"` when at least one
   warning-producing analyzer runs, including Maven module discovery or hidden HTTP
   surface analysis. It is `"not_detected"` only when no warning-producing analyzer has
   supported input.
@@ -667,7 +666,7 @@ Planned module warning rules:
   appear in `project.modules.items` with the corresponding `support_status`.
 - Module warnings do not create endpoint, component, entity, or test facts.
 
-Example planned v0.2 module warning:
+Example v0.2 module warning:
 
 ```json
 {
@@ -683,7 +682,7 @@ Example planned v0.2 module warning:
 }
 ```
 
-Planned deterministic sorting rules:
+Deterministic sorting rules:
 
 - Module inventory items are sorted with `module:.` first, followed by lexicographic
   `module_path` order.
@@ -708,7 +707,7 @@ Planned deterministic sorting rules:
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
-The v0.1 implementation emits a stable field order:
+The implementation emits a stable field order:
 
 ```json
 {"id":"ev:src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController","source_type":"annotation","path":"src/main/java/com/example/orders/OrderController.java","class_name":"com.example.orders.OrderController","method_name":null,"symbol_name":"@RestController","line_start":18,"line_end":18,"excerpt":"@RestController","confidence":"high"}
@@ -717,7 +716,7 @@ The v0.1 implementation emits a stable field order:
 
 Evidence entries should follow `docs/architecture/EVIDENCE_MODEL.md`.
 
-The v0.1 implementation emits:
+The current implementation emits:
 
 - `build_file` evidence for root `pom.xml` when present.
 - `annotation` evidence for extracted Spring MVC controller, endpoint, request parameter,
@@ -759,7 +758,7 @@ evidence shape for the field-level `@Id` declaration and the class-level
 `@MappedSuperclass` declaration on `declaring_class`, including when that declaring class
 is reached through a conservative source-visible mapped-superclass chain.
 
-Planned v0.2 Maven module discovery also does not add new evidence fields. Root
+v0.2 Maven module discovery also does not add new evidence fields. Root
 `<modules>` entries and child POM files reuse `build_file` evidence:
 
 - Root `<module>` declaration evidence uses `path: "pom.xml"`, `source_type:

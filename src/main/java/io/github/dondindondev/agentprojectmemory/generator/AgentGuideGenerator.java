@@ -68,7 +68,7 @@ public final class AgentGuideGenerator {
     } else {
       markdown.append("- Source roots: Detected ").append(codeList(sourceRoots)).append("\n");
       markdown.append("  - Evidence: recorded in `project-map.json`; ")
-          .append("no separate source-root evidence IDs are emitted in v0.1.\n");
+          .append("no separate source-root evidence IDs are emitted.\n");
     }
 
     List<String> testRoots = stringValues(project.path("test_roots"));
@@ -77,7 +77,7 @@ public final class AgentGuideGenerator {
     } else {
       markdown.append("- Test roots: Detected ").append(codeList(testRoots)).append("\n");
       markdown.append("  - Evidence: recorded in `project-map.json`; ")
-          .append("no separate test-root evidence IDs are emitted in v0.1.\n");
+          .append("no separate test-root evidence IDs are emitted.\n");
     }
 
     markdown.append("\n");
@@ -325,8 +325,14 @@ public final class AgentGuideGenerator {
     markdown.append("- Inferred: tested-subject relations use naming conventions only. Test execution, ")
         .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
         .append("analyzed.\n");
-    markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
-        .append("Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.\n");
+    if (projectMap.path("project").path("modules").isObject()) {
+      markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
+          .append("Gradle/Kotlin support, Maven profiles, effective POM reconstruction, ")
+          .append("dependency graphs, and recursive nested Maven modules are outside this guide.\n");
+    } else {
+      markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
+          .append("Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.\n");
+    }
     markdown.append("- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, ")
         .append("classpath-only interfaces, and ambiguous interface endpoint bindings are outside ")
         .append("the source-visible interface endpoint support.\n");

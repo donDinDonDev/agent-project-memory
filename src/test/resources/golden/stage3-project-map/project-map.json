@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.1",
+  "schema_version": "0.2",
   "project": {
     "root": ".",
     "build": {
@@ -14,11 +14,35 @@
     ],
     "test_roots": [
       "src/test/java"
-    ]
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [
+            "src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ]
+        }
+      ]
+    }
   },
   "endpoints": [
     {
       "id": "endpoint:com.example.web.ProjectMapController#createItem",
+      "module_id": "module:.",
       "controller_class": "com.example.web.ProjectMapController",
       "handler_method": "createItem",
       "http_methods": [
@@ -51,6 +75,7 @@
     },
     {
       "id": "endpoint:com.example.web.ProjectMapController#getItem",
+      "module_id": "module:.",
       "controller_class": "com.example.web.ProjectMapController",
       "handler_method": "getItem",
       "http_methods": [
@@ -109,6 +134,7 @@
     "items": [
       {
         "id": "component:com.example.components.AppConfiguration",
+        "module_id": "module:.",
         "class_name": "com.example.components.AppConfiguration",
         "stereotypes": [
           "@Configuration"
@@ -119,6 +145,7 @@
       },
       {
         "id": "component:com.example.components.InventoryComponent",
+        "module_id": "module:.",
         "class_name": "com.example.components.InventoryComponent",
         "stereotypes": [
           "@Component"
@@ -129,6 +156,7 @@
       },
       {
         "id": "component:com.example.components.InventoryRepository",
+        "module_id": "module:.",
         "class_name": "com.example.components.InventoryRepository",
         "stereotypes": [
           "@Repository"
@@ -139,6 +167,7 @@
       },
       {
         "id": "component:com.example.components.InventoryService",
+        "module_id": "module:.",
         "class_name": "com.example.components.InventoryService",
         "stereotypes": [
           "@Service"
@@ -149,6 +178,7 @@
       },
       {
         "id": "component:com.example.web.ProjectMapController",
+        "module_id": "module:.",
         "class_name": "com.example.web.ProjectMapController",
         "stereotypes": [
           "@RestController"
@@ -164,6 +194,7 @@
     "items": [
       {
         "id": "entity:com.example.domain.ProjectCustomer",
+        "module_id": "module:.",
         "class_name": "com.example.domain.ProjectCustomer",
         "table_name": null,
         "identifier_fields": [
@@ -184,6 +215,7 @@
       },
       {
         "id": "entity:com.example.domain.ProjectOrder",
+        "module_id": "module:.",
         "class_name": "com.example.domain.ProjectOrder",
         "table_name": "orders",
         "identifier_fields": [
@@ -246,6 +278,7 @@
       },
       {
         "id": "entity:com.example.domain.ProjectVisit",
+        "module_id": "module:.",
         "class_name": "com.example.domain.ProjectVisit",
         "table_name": "visits",
         "identifier_fields": [
@@ -272,12 +305,14 @@
     "analysis_status": "analyzed",
     "items": [
       {
+        "module_id": "module:.",
         "class_name": "com.example.web.ProjectMapControllerTest",
         "source_path": "src/test/java/com/example/web/ProjectMapControllerTest.java",
         "framework_signals": [],
         "tested_subjects": [
           {
             "class_name": "com.example.web.ProjectMapController",
+            "target_module_id": "module:.",
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,

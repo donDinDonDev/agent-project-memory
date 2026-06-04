@@ -255,6 +255,148 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "Warning evidence_ids must resolve in evidence-index.jsonl"));
   }
 
+  @Test
+  void multiModuleProjectMapIsModuleAwareAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("multi-module-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+            <module>services/billing</module>
+            <module>services/missing</module>
+            <module>libraries/shared</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/orders/pom.xml"), """
+        <project>
+          <build>
+            <plugins>
+              <plugin>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/billing/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(projectPath.resolve("libraries/shared/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeModuleSources(projectPath, "services/orders", "/orders");
+    writeModuleSources(projectPath, "services/billing", "/billing");
+    writeFile(
+        projectPath.resolve("services/orders/src/main/resources/openapi.yml"),
+        "openapi: 3.0.0\n");
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    String billingEndpointId =
+        "\"id\": \"endpoint:module:services/billing:com.example.shared.SharedController#health\"";
+    String ordersEndpointId =
+        "\"id\": \"endpoint:module:services/orders:com.example.shared.SharedController#health\"";
+    String billingComponentId =
+        "\"id\": \"component:module:services/billing:com.example.shared.SharedController\"";
+    String ordersComponentId =
+        "\"id\": \"component:module:services/orders:com.example.shared.SharedController\"";
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(2, result.endpointCount()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"modules\": {")),
+        () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/billing\"")),
+        () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/orders\"")),
+        () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
+        () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"missing_child_pom\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"unsupported_module\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"openapi_spec_file\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_openapi_swagger_codegen_plugin\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"repository_rest_resource\"")),
+        () -> assertTrue(projectMap.contains(billingEndpointId)),
+        () -> assertTrue(projectMap.contains(ordersEndpointId)),
+        () -> assertTrue(projectMap.indexOf(billingEndpointId) < projectMap.indexOf(ordersEndpointId)),
+        () -> assertTrue(projectMap.contains(billingComponentId)),
+        () -> assertTrue(projectMap.contains(ordersComponentId)),
+        () -> assertTrue(projectMap.indexOf(billingComponentId) < projectMap.indexOf(ordersComponentId)),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"entity:module:services/billing:com.example.shared.SharedEntity\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"entity:module:services/orders:com.example.shared.SharedEntity\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"target_module_id\": \"module:services/billing\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"target_module_id\": \"module:services/orders\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"source_path\": \"services/orders/src/main/resources/openapi.yml\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"source_path\": \"services/orders/pom.xml\"")),
+        () -> assertEquals(1, countOccurrences(projectMap, billingEndpointId)),
+        () -> assertEquals(1, countOccurrences(projectMap, ordersEndpointId)),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Every module-aware project-map evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertTrue(evidenceIndex.lines()
+            .noneMatch(line -> line.contains("\"path\":\"/") || line.contains("\"path\":\"./"))));
+  }
+
+  @Test
+  void mavenModuleWarningsGenerateOutputWithoutSupportedJavaRoots() throws Exception {
+    Path projectPath = tempDir.resolve("warnings-only-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/missing</module>
+          </modules>
+        </project>
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertEquals(0, result.componentCount()),
+        () -> assertEquals(0, result.entityCount()),
+        () -> assertEquals(0, result.testCount()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"source_roots\": []")),
+        () -> assertTrue(projectMap.contains("\"test_roots\": []")),
+        () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"missing_child_pom\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"warnings\": {\n    \"analysis_status\": \"analyzed\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"components\": {\n    \"analysis_status\": \"not_detected\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"entities\": {\n    \"analysis_status\": \"not_detected\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"tests\": {\n    \"analysis_status\": \"not_detected\"")),
+        () -> assertTrue(evidenceIndex.contains("build_file:module:services/missing")),
+        () -> assertTrue(endpoints.contains("No Spring MVC endpoints detected")),
+        () -> assertTrue(agentGuide.contains("Warning: `maven_module` signal `missing_child_pom`")));
+  }
+
   private Set<String> projectMapEvidenceIds(String projectMap) {
     Set<String> ids = new HashSet<>();
     var arrayMatcher = EVIDENCE_ID_ARRAY.matcher(projectMap);
@@ -295,6 +437,61 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private Path hiddenWarningFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/hidden-http-warnings")).toURI());
+  }
+
+  private void writeModuleSources(Path projectPath, String modulePath, String basePath) throws Exception {
+    writeFile(projectPath.resolve(modulePath + "/src/main/java/com/example/shared/SharedController.java"), """
+        package com.example.shared;
+
+        @RestController
+        @RequestMapping("%s")
+        class SharedController {
+          @GetMapping("/health")
+          String health() {
+            return "ok";
+          }
+        }
+
+        @Service
+        class SharedService {
+        }
+
+        @Entity
+        class SharedEntity {
+          @Id
+          Long id;
+        }
+
+        @RepositoryRestResource
+        interface SharedRepository {
+        }
+        """.formatted(basePath));
+    writeFile(projectPath.resolve(modulePath + "/src/test/java/com/example/shared/SharedControllerTest.java"), """
+        package com.example.shared;
+
+        import org.junit.jupiter.api.Test;
+
+        class SharedControllerTest {
+          @Test
+          void health() {
+          }
+        }
+        """);
+  }
+
+  private void writeFile(Path path, String content) throws Exception {
+    Files.createDirectories(path.getParent());
+    Files.writeString(path, content);
+  }
+
+  private int countOccurrences(String value, String needle) {
+    int count = 0;
+    int index = value.indexOf(needle);
+    while (index >= 0) {
+      count++;
+      index = value.indexOf(needle, index + needle.length());
+    }
+    return count;
   }
 
   private void copyDirectory(Path source, Path target) throws Exception {

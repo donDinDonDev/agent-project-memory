@@ -68,9 +68,9 @@ a file path.
 
 Extracted facts are directly observed in source files or documents.
 
-In the current v0.1 implementation, extracted facts come from root Maven build files,
-supported Java production source roots, and supported Java test roots. Local Markdown
-or document ingestion is future work.
+In the current implementation, extracted facts come from root and child Maven build
+files, supported Java production source roots, and supported Java test roots. Local
+Markdown or document ingestion is future work.
 
 Examples:
 
@@ -130,16 +130,13 @@ The v0.1 implementation emits these evidence records:
 - Hidden HTTP surface warning evidence described in the v0.1 Warning Evidence section
   below.
 
-v0.1 does not emit evidence records for Maven modules, local Markdown/documents,
-connectors, generated guidance, coverage data, test execution results, behavioral
-assertion analysis, or LLM output.
+The analyzer does not emit evidence records for local Markdown/documents, connectors,
+generated guidance, coverage data, test execution results, behavioral assertion
+analysis, or LLM output.
 
-### Planned v0.2 Maven Module Evidence
+### v0.2 Maven Module Evidence
 
-This section describes planned v0.2 design behavior only. The current v0.1
-implementation does not emit Maven module discovery evidence.
-
-Planned v0.2 module discovery reuses the existing evidence field set and the existing
+v0.2 module discovery reuses the existing evidence field set and the existing
 `build_file` evidence type. No new global evidence fields are planned for module-aware
 Maven discovery.
 
@@ -183,7 +180,7 @@ root and child POM files. It does not require running Maven, resolving profiles,
 reconstructing effective POMs, resolving dependencies, scanning generated sources by
 default, or discovering Gradle projects.
 
-Planned v0.2 module warnings use this same evidence:
+v0.2 module warnings use this same evidence:
 
 - `invalid_module_path`, `missing_child_pom`, and `duplicate_module_path` warnings should
   reference root `<module>` declaration evidence.

@@ -72,10 +72,17 @@ java -jar target/agent-project-memory-0.1.0.jar scan /path/to/java-spring-projec
 ```
 
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
-rewritten deterministically when a supported source root exists.
+rewritten deterministically when supported Maven module roots, supported root source or
+test roots, or Maven module warnings are detected.
 
-When the scanned path has a Maven-style Java source root at `src/main/java`, the current
-implementation analyzes Spring MVC controllers and source-visible interface-declared
+When the scanned path has a root `pom.xml`, the current implementation discovers the
+scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
+Spring component, JPA entity, hidden HTTP surface warning, and tests inventory analyzers
+per supported module. For compatibility with earlier local source-root scans, a
+repository without a root `pom.xml` but with supported root source or test roots is
+represented as the scan-root module with module discovery marked `not_detected`.
+
+The analyzer extracts Spring MVC controllers and source-visible interface-declared
 Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spring
 stereotype components on classes and interfaces, deterministic hidden HTTP surface
 warnings, direct JPA entity annotations with conservative source-visible
@@ -89,11 +96,13 @@ conservative helper filtering, then writes:
 <path>/.project-memory/agent-guide.md
 ```
 
-`project-map.json` is the minimal stable machine-readable project map for the currently
-supported single-module scan. It includes detected root `pom.xml` build metadata when
-present, standard Maven source roots, Spring MVC endpoint facts, hidden HTTP surface
-warnings that are not expanded into endpoint facts, direct component inventory, direct
-JPA entity facts, a minimal tests inventory, and evidence ID references.
+`project-map.json` is the minimal stable machine-readable project map. It currently uses
+`schema_version: "0.2"` and includes detected root `pom.xml` build metadata when
+present, Maven module inventory, compatibility source and test root summaries, direct
+`module_id` fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface
+and Maven module warnings that are not expanded into endpoint facts, direct component
+inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
+references.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -161,20 +170,24 @@ references.
 
 ## Project Status
 
-The current implementation is the v0.1 public release slice after Stage 8 evaluation.
-Roadmap Stages 0 through 8 are closed for v0.1. Future connector/import work is
+The v0.1 public release slice after Stage 8 evaluation is complete. Current development
+is on the v0.2 module-aware Maven release track. Future connector/import work is
 post-v0.1 and is not started.
 
-The v0.1 implementation includes a Java 21 Maven CLI, JavaParser-backed Spring MVC
-endpoint extraction, source-visible interface mapping support when uniquely bindable,
-stable `project-map.json` and `evidence-index.jsonl` outputs, deterministic direct
-Spring component and JPA entity inventories, deterministic hidden HTTP surface warnings,
-a minimal deterministic tests inventory, deterministic `endpoints.md`, and deterministic
+The current implementation includes a Java 21 Maven CLI, root-declared Maven module
+discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
+mapping support when uniquely bindable, stable `project-map.json` and
+`evidence-index.jsonl` outputs, deterministic direct Spring component and JPA entity
+inventories, deterministic hidden HTTP surface and Maven module warnings, a minimal
+deterministic tests inventory, deterministic `endpoints.md`, and deterministic
 `agent-guide.md` generation from the structured facts and evidence index.
 
-Current v0.1 limitations:
+Current limitations:
 
-- Maven detection is limited to root `pom.xml`; full Maven module parsing is not implemented.
+- Maven module support is limited to the scan root and modules declared directly under
+  the root `pom.xml` `<modules>` section. It does not resolve Maven profiles, recursively
+  discover nested modules, reconstruct effective POMs, build dependency graphs, or run
+  Maven.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from
@@ -189,32 +202,32 @@ Current v0.1 limitations:
   generated values, column or join-column details, repository analysis, schema
   generation, transactional semantics, symbol solving, or ORM runtime behavior.
 - Hidden HTTP surface warnings are limited to OpenAPI/Swagger spec filename presence,
-  root `pom.xml` OpenAPI/Swagger Maven plugin declarations under `<build><plugins>` or
-  `<build><pluginManagement><plugins>`, and direct `@RepositoryRestResource`. They do
-  not create endpoint facts, parse OpenAPI YAML, run
+  supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
+  `<build><plugins>` or `<build><pluginManagement><plugins>`, and direct
+  `@RepositoryRestResource`. They do not create endpoint facts, parse OpenAPI YAML, run
   Maven generation, scan `target/generated-sources` by default, or reconstruct generated
   APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
-- Tests inventory is limited to test-like Java classes under standard single-module
-  Maven `src/test/java`; helper/support/configuration declarations without clear test
+- Tests inventory is limited to test-like Java classes under supported standard Maven
+  `src/test/java` roots; helper/support/configuration declarations without clear test
   naming or direct test-class marker annotations are omitted.
 - Test framework signals are limited to directly visible imports and annotations for
   JUnit Jupiter, JUnit 4, and Spring Test signals. Import evidence is attached only to
   top-level emitted test classes; nested emitted test classes use their own class or
   method annotation evidence.
 - Tested-subject relations are inferred only from test class naming conventions against
-  production classes under `src/main/java`; ambiguous simple-name matches are marked with
-  low confidence and explicit uncertainty.
+  production classes in the same supported module; ambiguous simple-name matches are
+  marked with low confidence and explicit uncertainty.
 - Tests inventory does not claim code coverage, test execution results, behavioral
   assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
 - `agent-guide.md` is generated from existing deterministic output facts only. It does not
   ingest local documentation, summarize source files, infer architecture layers, or add
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.
-- Local Markdown/document ingestion is not implemented in v0.1.
-- `evidence-index.jsonl` currently contains root `pom.xml` `build_file` evidence when
-  present plus Spring MVC endpoint, warning, component stereotype, JPA annotation, and
-  tests inventory evidence.
+- Local Markdown/document ingestion is not implemented.
+- `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
+  evidence when present plus Spring MVC endpoint, warning, component stereotype, JPA
+  annotation, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

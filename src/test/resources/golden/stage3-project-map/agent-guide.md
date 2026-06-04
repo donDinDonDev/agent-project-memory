@@ -8,9 +8,9 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Root build file: Detected `pom.xml`
   - Evidence: `pom.xml:1` (`ev:pom.xml:1-1:build_file:pom.xml`)
 - Source roots: Detected `src/main/java`
-  - Evidence: recorded in `project-map.json`; no separate source-root evidence IDs are emitted in v0.1.
+  - Evidence: recorded in `project-map.json`; no separate source-root evidence IDs are emitted.
 - Test roots: Detected `src/test/java`
-  - Evidence: recorded in `project-map.json`; no separate test-root evidence IDs are emitted in v0.1.
+  - Evidence: recorded in `project-map.json`; no separate test-root evidence IDs are emitted.
 
 ## Detected Spring MVC Endpoints
 
@@ -134,7 +134,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
-- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.
+- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 
 ## Practical Inspection Order For Coding Agents

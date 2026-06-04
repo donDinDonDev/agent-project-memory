@@ -14,6 +14,11 @@ architecture documents.
 - Added public post-v0.1 strategy documentation.
 - Added public v0.2 module-aware Maven planning documentation.
 - Documented planned v0.2 module-aware output and evidence contract decisions.
+- Added public `schema_version: "0.2"` project-map output with `project.modules`,
+  compatibility root summaries, direct `module_id` on module-owned facts, and
+  Maven module warnings.
+- Added module-aware execution for the existing endpoint, component, JPA entity, hidden
+  HTTP surface warning, and tests inventory analyzers.
 - Adopted a public changelog.
 - Added public release process and versioning discipline documentation.
 
@@ -23,6 +28,8 @@ architecture documents.
   tracks.
 - Clarified planned v0.2 module-aware schema atomicity, warning analysis status, and
   Maven module warning ID/sort semantics.
+- Moved normal generated `project-map.json` output from the v0.1 single-module contract
+  to the atomic v0.2 module-aware JSON boundary.
 - Clarified release authority and changelog expectations in contributor documentation.
 - Clarified public agent boundaries, issue/PR scope wording, development versioning, and
   checkpoint-vs-release commit expectations.

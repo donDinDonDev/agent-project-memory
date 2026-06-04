@@ -101,6 +101,27 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRootPomOnlyDoesNotCreateContractOutputFiles() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(Files.isDirectory(outputDirectory)),
+        () -> assertFalse(result.stdout().contains("Generated project-map.json")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanMavenStyleSourceRootGeneratesProjectMapEndpointsEvidenceIndexAndAgentGuide()
       throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
@@ -119,7 +140,9 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.1\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"modules\": {")),
+        () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": [")),
         () -> assertTrue(projectMap.contains("\"src/main/java\"")),
         () -> assertTrue(projectMap.contains("\"endpoints\": [")),

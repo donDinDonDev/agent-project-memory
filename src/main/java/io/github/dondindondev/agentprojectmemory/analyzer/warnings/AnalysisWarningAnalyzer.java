@@ -57,12 +57,63 @@ public final class AnalysisWarningAnalyzer {
     Objects.requireNonNull(sourceRoots, "sourceRoots");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    return analyzeScope(
+        normalizedRepositoryRoot,
+        normalizedRepositoryRoot,
+        ROOT_BUILD_FILE,
+        sourceRoots,
+        List.of(),
+        ".");
+  }
+
+  public AnalysisWarningAnalysis analyzeModule(
+      Path repositoryRoot,
+      String modulePath,
+      List<Path> sourceRoots,
+      List<String> excludedModulePaths) throws IOException {
+    Objects.requireNonNull(repositoryRoot, "repositoryRoot");
+    Objects.requireNonNull(modulePath, "modulePath");
+    Objects.requireNonNull(sourceRoots, "sourceRoots");
+    Objects.requireNonNull(excludedModulePaths, "excludedModulePaths");
+
+    Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path moduleRoot = ".".equals(modulePath)
+        ? normalizedRepositoryRoot
+        : normalizedRepositoryRoot.resolve(modulePath).normalize();
+    String pomPath = ".".equals(modulePath) ? ROOT_BUILD_FILE : modulePath + "/" + ROOT_BUILD_FILE;
+    return analyzeScope(
+        normalizedRepositoryRoot,
+        moduleRoot,
+        pomPath,
+        sourceRoots,
+        excludedModulePaths,
+        modulePath);
+  }
+
+  private AnalysisWarningAnalysis analyzeScope(
+      Path repositoryRoot,
+      Path scanRoot,
+      String pomPath,
+      List<Path> sourceRoots,
+      List<String> excludedModulePaths,
+      String modulePathForIds) throws IOException {
     List<AnalysisWarningFact> warnings = new ArrayList<>();
     List<AnalysisWarningEvidence> evidence = new ArrayList<>();
 
-    analyzeOpenApiSpecFiles(normalizedRepositoryRoot, warnings, evidence);
-    analyzeMavenPluginSignals(normalizedRepositoryRoot, warnings, evidence);
-    analyzeRepositoryRestResources(normalizedRepositoryRoot, sourceRoots, warnings, evidence);
+    analyzeOpenApiSpecFiles(
+        repositoryRoot,
+        scanRoot,
+        excludedModulePaths,
+        modulePathForIds,
+        warnings,
+        evidence);
+    analyzeMavenPluginSignals(repositoryRoot, pomPath, modulePathForIds, warnings, evidence);
+    analyzeRepositoryRestResources(
+        repositoryRoot,
+        sourceRoots,
+        modulePathForIds,
+        warnings,
+        evidence);
 
     return new AnalysisWarningAnalysis(
         warnings.stream().sorted(WARNING_ORDER).toList(),
@@ -71,9 +122,12 @@ public final class AnalysisWarningAnalyzer {
 
   private void analyzeOpenApiSpecFiles(
       Path repositoryRoot,
+      Path scanRoot,
+      List<String> excludedModulePaths,
+      String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
-    for (Path specFile : repositoryFiles(repositoryRoot)) {
+    for (Path specFile : repositoryFiles(repositoryRoot, scanRoot, excludedModulePaths)) {
       String fileName = specFile.getFileName().toString().toLowerCase(Locale.ROOT);
       if (!OPENAPI_SPEC_FILENAMES.contains(fileName)) {
         continue;
@@ -93,10 +147,10 @@ public final class AnalysisWarningAnalyzer {
           HIGH_CONFIDENCE);
       evidence.add(specEvidence);
       warnings.add(new AnalysisWarningFact(
-          warningId(SIGNAL_OPENAPI_SPEC_FILE, sourcePath),
+          warningId(SIGNAL_OPENAPI_SPEC_FILE, sourcePath, modulePathForIds),
           CATEGORY_HIDDEN_HTTP_SURFACE,
           SIGNAL_OPENAPI_SPEC_FILE,
-          "OpenAPI/Swagger spec file detected by filename only; v0.1 does not parse specs or reconstruct generated APIs.",
+          "OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.",
           sourcePath,
           List.of(specEvidence.id())));
     }
@@ -104,9 +158,11 @@ public final class AnalysisWarningAnalyzer {
 
   private void analyzeMavenPluginSignals(
       Path repositoryRoot,
+      String pomPath,
+      String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
-    Path pom = repositoryRoot.resolve(ROOT_BUILD_FILE);
+    Path pom = repositoryRoot.resolve(pomPath);
     if (!Files.isRegularFile(pom)) {
       return;
     }
@@ -121,10 +177,10 @@ public final class AnalysisWarningAnalyzer {
       Integer lineNumber = signal.lineNumber();
       String lineRange = lineNumber == null ? "unknown" : lineNumber + "-" + lineNumber;
       AnalysisWarningEvidence pluginEvidence = new AnalysisWarningEvidence(
-          "ev:" + ROOT_BUILD_FILE + ":" + lineRange
+          "ev:" + pomPath + ":" + lineRange
               + ":build_file:" + signal.artifactId(),
           BUILD_FILE_SOURCE_TYPE,
-          ROOT_BUILD_FILE,
+          pomPath,
           null,
           null,
           signal.artifactId(),
@@ -134,11 +190,11 @@ public final class AnalysisWarningAnalyzer {
           HIGH_CONFIDENCE);
       evidence.add(pluginEvidence);
       warnings.add(new AnalysisWarningFact(
-          warningId(SIGNAL_MAVEN_CODEGEN_PLUGIN, ROOT_BUILD_FILE + ":" + signal.artifactId()),
+          warningId(SIGNAL_MAVEN_CODEGEN_PLUGIN, pomPath + ":" + signal.artifactId(), modulePathForIds),
           CATEGORY_HIDDEN_HTTP_SURFACE,
           SIGNAL_MAVEN_CODEGEN_PLUGIN,
-          "Maven OpenAPI/Swagger code generation plugin signal detected; v0.1 does not run generation or scan generated sources by default.",
-          ROOT_BUILD_FILE,
+          "Maven OpenAPI/Swagger code generation plugin signal detected; the analyzer does not run generation or scan generated sources by default.",
+          pomPath,
           List.of(pluginEvidence.id())));
     }
   }
@@ -179,6 +235,7 @@ public final class AnalysisWarningAnalyzer {
   private void analyzeRepositoryRestResources(
       Path repositoryRoot,
       List<Path> sourceRoots,
+      String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
     for (Path sourceRoot : sourceRoots) {
@@ -188,7 +245,12 @@ public final class AnalysisWarningAnalyzer {
       }
 
       for (Path javaFile : javaFiles(normalizedSourceRoot)) {
-        analyzeRepositoryRestResourceJavaFile(repositoryRoot, javaFile, warnings, evidence);
+        analyzeRepositoryRestResourceJavaFile(
+            repositoryRoot,
+            javaFile,
+            modulePathForIds,
+            warnings,
+            evidence);
       }
     }
   }
@@ -196,6 +258,7 @@ public final class AnalysisWarningAnalyzer {
   private void analyzeRepositoryRestResourceJavaFile(
       Path repositoryRoot,
       Path javaFile,
+      String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
     CompilationUnit compilationUnit = JavaSourceParser.parse(javaFile);
@@ -221,10 +284,10 @@ public final class AnalysisWarningAnalyzer {
           sourceLines);
       evidence.add(annotationEvidence);
       warnings.add(new AnalysisWarningFact(
-          warningId(SIGNAL_REPOSITORY_REST_RESOURCE, typeName),
+          warningId(SIGNAL_REPOSITORY_REST_RESOURCE, typeName, modulePathForIds),
           CATEGORY_HIDDEN_HTTP_SURFACE,
           SIGNAL_REPOSITORY_REST_RESOURCE,
-          "Direct @RepositoryRestResource detected; v0.1 warns about possible Spring Data REST HTTP surface but does not expand endpoints.",
+          "Direct @RepositoryRestResource detected; the analyzer warns about possible Spring Data REST HTTP surface but does not expand endpoints.",
           sourcePath,
           List.of(annotationEvidence.id())));
     }
@@ -253,10 +316,19 @@ public final class AnalysisWarningAnalyzer {
         HIGH_CONFIDENCE);
   }
 
-  private List<Path> repositoryFiles(Path repositoryRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(repositoryRoot)) {
+  private List<Path> repositoryFiles(
+      Path repositoryRoot,
+      Path scanRoot,
+      List<String> excludedModulePaths) throws IOException {
+    if (!Files.isDirectory(scanRoot)) {
+      return List.of();
+    }
+
+    try (Stream<Path> paths = Files.walk(scanRoot)) {
       return paths
-          .filter(path -> Files.isRegularFile(path) && !isExcluded(repositoryRoot, path))
+          .filter(path -> Files.isRegularFile(path)
+              && !isExcluded(repositoryRoot, path)
+              && !isExcludedModulePath(repositoryRoot, path, excludedModulePaths))
           .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
           .toList();
     }
@@ -267,6 +339,20 @@ public final class AnalysisWarningAnalyzer {
     for (Path part : relativePath) {
       String name = part.toString();
       if (".git".equals(name) || ".project-memory".equals(name) || "target".equals(name)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isExcludedModulePath(
+      Path repositoryRoot,
+      Path path,
+      List<String> excludedModulePaths) {
+    Path normalizedPath = path.toAbsolutePath().normalize();
+    for (String excludedModulePath : excludedModulePaths) {
+      Path excludedPath = repositoryRoot.resolve(excludedModulePath).normalize();
+      if (normalizedPath.startsWith(excludedPath)) {
         return true;
       }
     }
@@ -290,8 +376,12 @@ public final class AnalysisWarningAnalyzer {
     }
   }
 
-  private String warningId(String signal, String sourceKey) {
-    return "warning:" + CATEGORY_HIDDEN_HTTP_SURFACE + ":" + signal + ":" + sourceKey;
+  private String warningId(String signal, String sourceKey, String modulePathForIds) {
+    if (modulePathForIds == null || ".".equals(modulePathForIds)) {
+      return "warning:" + CATEGORY_HIDDEN_HTTP_SURFACE + ":" + signal + ":" + sourceKey;
+    }
+    return "warning:" + CATEGORY_HIDDEN_HTTP_SURFACE + ":" + signal
+        + ":module:" + modulePathForIds + ":" + sourceKey;
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {
