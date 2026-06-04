@@ -194,6 +194,40 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanMalformedJavaReturnsBoundedErrorWithoutGeneratedContractOutputFiles()
+      throws Exception {
+    Path javaFile = tempDir.resolve("src/main/java/com/example/BrokenController.java");
+    Files.createDirectories(javaFile.getParent());
+    Files.writeString(javaFile, """
+        package com.example;
+
+        public class BrokenController {
+          public void broken( {
+          }
+        }
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+
+    assertAll(
+        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertTrue(
+            result.stderr().contains(
+                "Could not generate project memory output: Could not parse Java source:")),
+        () -> assertTrue(result.stderr().contains("BrokenController.java")),
+        () -> assertTrue(result.stderr().contains("1 parse problem")),
+        () -> assertTrue(result.stderr().contains("first problem at line")),
+        () -> assertFalse(result.stderr().contains("ParseProblemException")),
+        () -> assertFalse(result.stderr().contains("com.github.javaparser")),
+        () -> assertFalse(result.stderr().contains("\tat ")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanRejectsProjectMemorySymlinkAndDoesNotWriteOutsideScanRoot() throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
     copyDirectory(fixtureRoot(), projectPath);
