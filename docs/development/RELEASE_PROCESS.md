@@ -126,12 +126,19 @@ Before preparing a release candidate:
 - Confirm release notes exist or are drafted for the release.
 - Confirm evaluation reports are updated when the release includes meaningful analyzer
   expansion.
+- Before creating a release tag, finalize release documentation in release-ready wording.
+  The tag must point to a commit whose `CHANGELOG.md`, roadmap/status docs, README
+  version references, and release notes already describe the release as ready/released
+  rather than pending.
 - Run any Codex Security gate defined by the active release track before tagging or
   publishing.
-- If the active release track identifies a final security discovery baseline, do not run
-  another open-ended repository-wide scan for the same release unless the maintainer
-  explicitly reopens that gate. Verify that every baseline finding is fixed, explicitly
-  deferred, or maintainer-accepted using targeted verification.
+- Treat a repository-wide Codex Security release scan as an open-ended discovery
+  baseline, not as routine fix verification. If the active release track identifies a
+  final security discovery baseline, do not run another open-ended repository-wide scan
+  for the same release unless the maintainer explicitly reopens that gate because the
+  baseline is invalid or incomplete. Verify that every baseline finding is fixed,
+  explicitly deferred, or maintainer-accepted using closed-set targeted verification,
+  focused security re-review, or security-diff scans of fix commits.
 - Confirm no connector, network, AI, SaaS, web UI, repo chat, generic RAG, or automatic
   code-modification scope entered the release accidentally.
 
