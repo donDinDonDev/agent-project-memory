@@ -94,6 +94,11 @@ Examples:
   surface warning signal.
 - A direct source-visible `@RepositoryRestResource` annotation as a hidden HTTP surface
   warning signal.
+- Planned v0.3 source-visible Maven metadata, dependency, plugin, and generator signals
+  extracted from local `pom.xml` files.
+- Planned v0.3 resource-root and configuration-file presence facts, where configuration
+  evidence is path-oriented and does not include configuration values.
+- Planned v0.3 direct source-visible `@SpringBootApplication` application signals.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -215,6 +220,90 @@ v0.2 module warnings use this same evidence:
   and, when available, evidence for the nested `<module>` declaration in that child POM.
 - `unsupported_module` warnings should reference child POM evidence and any root
   declaration evidence that led to the module candidate.
+
+### Planned v0.3 Build And Configuration Evidence
+
+v0.3 build/configuration analysis should reuse the existing evidence field set and the
+existing evidence types. No new global evidence fields are planned for the v0.3
+build/configuration contract.
+
+Maven metadata evidence:
+
+- Direct source-visible Maven metadata such as `groupId`, `artifactId`, `version`,
+  `packaging`, and parent coordinates should use `source_type: "build_file"`.
+- Evidence paths should point to the module POM, such as `pom.xml` for the scan root or
+  `services/orders/pom.xml` for a child module.
+- `symbol_name` should identify the bounded Maven element or section, such as
+  `maven:project:artifactId`, `maven:project:packaging`, or `maven:parent:version`.
+- `line_start` and `line_end` should point to the XML element line or element range when
+  known.
+- `excerpt` may preserve a short normalized XML element observation for source-visible
+  Maven metadata. This proves only the direct POM text. It does not prove Maven defaults,
+  parent inheritance, profile activation, property resolution, effective POM values, or
+  runtime build behavior.
+
+Dependency evidence:
+
+- Direct `<dependencies><dependency>` declarations should use `build_file` evidence for
+  the dependency declaration and, when available, for directly declared coordinate,
+  scope, optional, type, and classifier elements.
+- Direct `<dependencyManagement><dependencies><dependency>` declarations should also use
+  `build_file` evidence, but the emitted facts must remain management declarations, not
+  active resolved dependencies.
+- Evidence for dependency values supports only direct source-visible XML text. It does
+  not prove resolved versions, inherited values, transitive dependencies, conflict
+  mediation, active profiles, repository availability, or effective dependency graphs.
+- Property references such as `${revision}` should remain source-visible
+  `property_reference` values. v0.3 evidence does not resolve project properties.
+
+Plugin and generator signal evidence:
+
+- Direct `<build><plugins><plugin>` and
+  `<build><pluginManagement><plugins><plugin>` declarations should use `build_file`
+  evidence for plugin declarations and directly visible coordinates.
+- Plugin execution IDs, phases, and goals may use `build_file` evidence when directly
+  visible in the module POM. This evidence does not prove Maven lifecycle execution,
+  inherited executions, default goals, or resolved plugin behavior.
+- Bounded plugin configuration and generator signals should use `build_file` evidence
+  with a `symbol_name` that identifies the element or signal, such as
+  `maven:plugin:configuration:inputSpec`.
+- Evidence excerpts for plugin configuration signals should use bounded normalized
+  snippets that identify the signal. They must not include arbitrary nested plugin
+  configuration values.
+- OpenAPI/Swagger, annotation processor, and generated-source plugin evidence supports
+  warnings only. It does not prove generated source contents, generated API operations,
+  endpoint facts, or runtime behavior.
+
+Resource and config discovery evidence:
+
+- Resource roots should be recorded in `project-map.json` as path inventory entries with
+  empty evidence IDs in the planned initial v0.3 contract, following the existing
+  source-root and test-root summary pattern. The existing evidence model does not define
+  a directory evidence type.
+- Spring application and logging configuration file presence should use `config_file`
+  evidence with the repository-relative file path, nullable `class_name` and
+  `method_name`, nullable line fields unless line ranges are known without reading file
+  contents, and `confidence: "high"`.
+- Config discovery evidence must be path-oriented. `excerpt` should be a bounded
+  filename/path observation such as `config file detected: application.yml`.
+- v0.3 config evidence must not include configuration file contents, property keys,
+  property values, YAML node content, XML element content, environment placeholders,
+  decrypted secrets, or config excerpts.
+- Filename-derived profile names for files such as `application-prod.yml` are evidence
+  for filename shape only. They do not prove active Spring profiles, runtime precedence,
+  or effective configuration.
+
+Spring Boot application evidence:
+
+- Direct `@SpringBootApplication` application signals should use `annotation` evidence
+  under supported production source roots when the annotation origin is visible as the
+  supported Spring Boot annotation type and that exact type is not declared by scanned
+  source.
+- A source-visible Java `main` method used to strengthen the application signal should
+  use `code_symbol` evidence for that method.
+- This evidence supports only a direct source-visible application signal. It does not
+  prove executable jar packaging, active profiles, auto-configuration behavior,
+  component scanning result, deployment behavior, or actual process entrypoint behavior.
 
 ### Spring MVC Interface Mapping Evidence
 

@@ -23,9 +23,33 @@ Walks the local repository, applies ignore rules, identifies candidate project f
 ### Build Detector
 
 Detects Maven project structure and build metadata needed by analyzers. The current
-implementation detects a root `pom.xml` when present and standard single-module Maven
-source roots such as `src/main/java` and `src/test/java`. Full Maven module parsing is a
-later roadmap item and is not implemented in the current slice.
+implementation detects a root `pom.xml` when present, root-declared Maven child modules
+from the root `<modules>` section, child `pom.xml` files for supported modules, and
+standard Maven source and test roots such as `src/main/java` and `src/test/java`.
+
+The current implementation does not resolve Maven profiles, recursively discover nested
+modules, reconstruct effective POMs, resolve dependencies, run Maven, scan generated
+source roots by default, or discover Gradle projects.
+
+### Planned Build And Configuration Analyzer
+
+The planned v0.3 build and configuration analyzer should add source-visible
+module-owned build/config facts after the contract in
+`docs/architecture/OUTPUT_CONTRACT.md` is implemented. Its scope is direct local POM,
+resource, config-file, and source annotation observations:
+
+- direct Maven metadata, dependency declarations, dependency-management declarations,
+  plugin declarations, plugin-management declarations, and bounded generator signals;
+- standard resource roots and supported Spring application or logging config filenames;
+- direct `@SpringBootApplication` application class and source-visible `main` method
+  signals;
+- generated-source and generator-plugin warnings that remain separate from endpoint,
+  generated API, and generated source facts.
+
+This planned analyzer must not execute Maven, reconstruct effective POMs, activate
+profiles, resolve remote dependencies, interpret config values, extract secrets, scan
+generated sources by default, parse OpenAPI specs, or turn build/config warnings into
+application facts.
 
 ### Java/Spring Analyzer
 

@@ -744,6 +744,474 @@ Deterministic sorting rules:
 - Evidence entries keep the existing sort order by path, line range, class, method,
   symbol, and ID.
 
+### Planned v0.3 Build And Configuration Contract
+
+This section defines the planned v0.3 build/configuration JSON contract. It is design
+guidance for the v0.3 release track and does not describe current v0.2 implementation
+behavior.
+
+The planned v0.3 contract uses:
+
+- `schema_version: "0.3"` only for an atomic public output state that keeps the v0.2
+  module-aware contract and adds the complete v0.3 build/config section shape for every
+  emitted module item.
+- The same four output files under `.project-memory/`.
+- A module-owned `build_config` object inside each `project.modules.items[]` entry.
+- Existing evidence fields and evidence types. Maven observations reuse `build_file`;
+  configuration-file observations reuse `config_file`; resource-root inventory entries
+  use empty evidence IDs in the planned initial v0.3 contract; Spring Boot application
+  signals reuse `annotation` and `code_symbol`.
+
+Schema and compatibility rules:
+
+- `schema_version: "0.3"` builds on the v0.2 boundary. Normal public v0.3 output must
+  still include `project.modules` and direct `module_id` fields on emitted module-owned
+  endpoint, warning, component, entity, and test facts.
+- There is no valid public partial `schema_version: "0.3"` state where only Maven
+  metadata, only dependencies, only plugins, only config files, or only Spring Boot
+  application signals are emitted while other required v0.3 `build_config` subsection
+  shells are absent.
+- Implementation checkpoints before the complete public v0.3 boundary should either keep
+  unfinished data internal/test-scoped or emit the complete designed section shape with
+  explicit `analysis_status` values.
+- v0.3 single-module scans keep the existing output files and preserve v0.2
+  single-module compatibility for root-module fact IDs, top-level `project.source_roots`,
+  and top-level `project.test_roots`.
+- Root-level `project.build` remains a scan-level compatibility summary for build system
+  detection. It must not become an effective Maven model.
+
+The planned v0.3 module item shape extends the v0.2 item shape like this:
+
+```json
+{
+  "module_id": "module:services/orders",
+  "module_path": "services/orders",
+  "pom_path": "services/orders/pom.xml",
+  "source_roots": ["services/orders/src/main/java"],
+  "test_roots": ["services/orders/src/test/java"],
+  "support_status": "supported",
+  "declaration_kind": "root_modules_entry",
+  "declared_path": "services/orders",
+  "declaration_evidence_ids": [
+    "ev:pom.xml:14-14:build_file:module:services/orders"
+  ],
+  "pom_evidence_ids": [
+    "ev:services/orders/pom.xml:1-1:build_file:pom.xml"
+  ],
+  "build_config": {
+    "analysis_status": "analyzed",
+    "maven": {
+      "metadata": {
+        "analysis_status": "analyzed",
+        "group_id": {
+          "value": "com.example",
+          "value_kind": "literal",
+          "evidence_ids": [
+            "ev:services/orders/pom.xml:5-5:build_file:maven:project:groupId"
+          ]
+        },
+        "artifact_id": {
+          "value": "orders-service",
+          "value_kind": "literal",
+          "evidence_ids": [
+            "ev:services/orders/pom.xml:6-6:build_file:maven:project:artifactId"
+          ]
+        },
+        "version": {
+          "value": "${revision}",
+          "value_kind": "property_reference",
+          "evidence_ids": [
+            "ev:services/orders/pom.xml:7-7:build_file:maven:project:version"
+          ]
+        },
+        "packaging": {
+          "value": null,
+          "value_kind": "not_declared",
+          "evidence_ids": []
+        },
+        "parent": {
+          "analysis_status": "analyzed",
+          "group_id": {
+            "value": "com.example",
+            "value_kind": "literal",
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:10-10:build_file:maven:parent:groupId"
+            ]
+          },
+          "artifact_id": {
+            "value": "example-parent",
+            "value_kind": "literal",
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:11-11:build_file:maven:parent:artifactId"
+            ]
+          },
+          "version": {
+            "value": "1.0.0",
+            "value_kind": "literal",
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:12-12:build_file:maven:parent:version"
+            ]
+          },
+          "relative_path": {
+            "value": "../pom.xml",
+            "value_kind": "literal",
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:13-13:build_file:maven:parent:relativePath"
+            ]
+          }
+        }
+      },
+      "dependencies": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "maven_dependency:module:services/orders:direct:org.springframework.boot:spring-boot-starter-web:decl:000001",
+            "declaration_kind": "direct_dependency",
+            "declaration_ordinal": 1,
+            "group_id": {
+              "value": "org.springframework.boot",
+              "value_kind": "literal",
+              "evidence_ids": [
+                "ev:services/orders/pom.xml:24-24:build_file:maven:dependency:000001:groupId"
+              ]
+            },
+            "artifact_id": {
+              "value": "spring-boot-starter-web",
+              "value_kind": "literal",
+              "evidence_ids": [
+                "ev:services/orders/pom.xml:25-25:build_file:maven:dependency:000001:artifactId"
+              ]
+            },
+            "version": {
+              "value": null,
+              "value_kind": "not_declared",
+              "evidence_ids": []
+            },
+            "scope": {
+              "value": null,
+              "value_kind": "not_declared",
+              "evidence_ids": []
+            },
+            "optional": {
+              "value": null,
+              "value_kind": "not_declared",
+              "evidence_ids": []
+            },
+            "type": {
+              "value": null,
+              "value_kind": "not_declared",
+              "evidence_ids": []
+            },
+            "classifier": {
+              "value": null,
+              "value_kind": "not_declared",
+              "evidence_ids": []
+            },
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:23-27:build_file:maven:dependency:000001"
+            ]
+          }
+        ]
+      },
+      "dependency_management": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "plugins": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "maven_plugin:module:services/orders:direct:org.openapitools:openapi-generator-maven-plugin:decl:000001",
+            "declaration_kind": "direct_plugin",
+            "declaration_ordinal": 1,
+            "group_id": {
+              "value": "org.openapitools",
+              "value_kind": "literal",
+              "evidence_ids": [
+                "ev:services/orders/pom.xml:45-45:build_file:maven:plugin:000001:groupId"
+              ]
+            },
+            "artifact_id": {
+              "value": "openapi-generator-maven-plugin",
+              "value_kind": "literal",
+              "evidence_ids": [
+                "ev:services/orders/pom.xml:46-46:build_file:maven:plugin:000001:artifactId"
+              ]
+            },
+            "version": {
+              "value": "${openapi.generator.version}",
+              "value_kind": "property_reference",
+              "evidence_ids": [
+                "ev:services/orders/pom.xml:47-47:build_file:maven:plugin:000001:version"
+              ]
+            },
+            "executions": [
+              {
+                "execution_id": "generate-api",
+                "phase": {
+                  "value": "generate-sources",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:services/orders/pom.xml:53-53:build_file:maven:plugin:000001:execution:000001:phase"
+                  ]
+                },
+                "goals": [
+                  {
+                    "value": "generate",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:services/orders/pom.xml:56-56:build_file:maven:plugin:000001:execution:000001:goal:generate"
+                    ]
+                  }
+                ],
+                "evidence_ids": [
+                  "ev:services/orders/pom.xml:50-58:build_file:maven:plugin:000001:execution:000001"
+                ]
+              }
+            ],
+            "configuration_signals": [
+              {
+                "signal": "input_spec_config_present",
+                "evidence_ids": [
+                  "ev:services/orders/pom.xml:61-61:build_file:maven:plugin:000001:configuration:inputSpec"
+                ]
+              }
+            ],
+            "generator_signals": [
+              {
+                "signal": "openapi_swagger_codegen",
+                "evidence_ids": [
+                  "ev:services/orders/pom.xml:46-46:build_file:maven:plugin:000001:artifactId"
+                ]
+              }
+            ],
+            "evidence_ids": [
+              "ev:services/orders/pom.xml:44-63:build_file:maven:plugin:000001"
+            ]
+          }
+        ]
+      },
+      "plugin_management": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "resources": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "resource_root:module:services/orders:main:services/orders/src/main/resources",
+          "scope": "main",
+          "path": "services/orders/src/main/resources",
+          "evidence_ids": []
+        }
+      ]
+    },
+    "config_files": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "config_file:module:services/orders:spring_application:services/orders/src/main/resources/application-prod.yml",
+          "path": "services/orders/src/main/resources/application-prod.yml",
+          "resource_scope": "main",
+          "config_kind": "spring_application",
+          "format": "yaml",
+          "profile_name": "prod",
+          "profile_source": "filename_only",
+          "evidence_ids": [
+            "ev:services/orders/src/main/resources/application-prod.yml:unknown:config_file:application-prod.yml"
+          ]
+        }
+      ]
+    },
+    "spring_boot_applications": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_boot_application:module:services/orders:com.example.orders.OrdersApplication",
+          "class_name": "com.example.orders.OrdersApplication",
+          "source_path": "services/orders/src/main/java/com/example/orders/OrdersApplication.java",
+          "application_signal": "spring_boot_application_with_main_method",
+          "main_method": {
+            "present": true,
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/OrdersApplication.java:12-12:com.example.orders.OrdersApplication#main:code_symbol"
+            ]
+          },
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/OrdersApplication.java:8-8:com.example.orders.OrdersApplication:@SpringBootApplication",
+            "ev:services/orders/src/main/java/com/example/orders/OrdersApplication.java:12-12:com.example.orders.OrdersApplication#main:code_symbol"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+Build/config analysis status rules:
+
+- `build_config.analysis_status` is `"analyzed"` when at least one planned v0.3
+  build/config analyzer runs for the module. It is `"not_detected"` when the module has
+  no supported POM, source, resource, or config input for v0.3 build/config analysis.
+- Maven subsection `analysis_status` values are `"analyzed"` when a module POM is
+  present and parsed for the relevant subsection. They are `"not_detected"` when the
+  module has no POM available to that analyzer.
+- Resource, config, and Spring Boot subsection `analysis_status` values are `"analyzed"`
+  when the relevant analyzer runs for supported module roots, even when the resulting
+  item list is empty. They are `"not_detected"` only when no supported input root exists.
+
+Maven value rules:
+
+- Maven scalar values use the object shape `{ "value": ..., "value_kind": ...,
+  "evidence_ids": [...] }`.
+- `value_kind` is one of:
+  - `"literal"`: directly declared literal XML text.
+  - `"property_reference"`: directly declared `${...}` style property reference.
+  - `"expression"`: directly declared text containing non-literal Maven expressions.
+  - `"not_declared"`: the XML element is absent.
+  - `"unsupported"`: the XML element is present but cannot be represented
+    deterministically.
+- Missing `groupId`, `version`, or `packaging` values must not be filled from parent
+  inheritance, Maven defaults, dependency management, active profiles, or effective POM
+  behavior.
+- Parent coordinates are recorded only under `metadata.parent`. Recording parent
+  coordinates does not resolve the module's effective coordinates.
+- `metadata.parent.analysis_status` is `"analyzed"` when a direct `<parent>` element is
+  present in the module POM and `"not_detected"` when no direct `<parent>` element is
+  present. Parent value fields use the same Maven scalar value object as module metadata.
+
+Dependency inventory rules:
+
+- `dependencies.items` contains only direct `<dependencies><dependency>` declarations in
+  the module POM.
+- `dependency_management.items` contains only direct
+  `<dependencyManagement><dependencies><dependency>` declarations in the module POM.
+- `declaration_kind` is `"direct_dependency"` for active direct declarations and
+  `"dependency_management"` for management declarations.
+- Dependency management declarations must not be rendered as active dependencies.
+- Dependency facts preserve source-visible coordinate, scope, optional, type, and
+  classifier text. They do not claim resolved versions, transitive dependencies,
+  inherited scopes, profile activation, conflict mediation, repository availability, or
+  effective dependency graphs.
+- Property references remain source-visible `property_reference` values. v0.3 does not
+  resolve project properties.
+
+Plugin inventory and generator signal rules:
+
+- `plugins.items` contains only direct `<build><plugins><plugin>` declarations in the
+  module POM.
+- `plugin_management.items` contains only direct
+  `<build><pluginManagement><plugins><plugin>` declarations in the module POM.
+- `declaration_kind` is `"direct_plugin"` for direct plugin declarations and
+  `"plugin_management"` for plugin-management declarations.
+- Plugin-management declarations must not be rendered as active execution behavior.
+- Plugin facts may include direct source-visible execution IDs, phases, and goals.
+  They must not reconstruct Maven lifecycle bindings, default goals, inherited
+  executions, resolved plugin versions, or full plugin execution behavior.
+- `configuration_signals` records only bounded signal names and evidence IDs. It must not
+  store arbitrary plugin configuration values.
+- Planned bounded configuration signals include
+  `"input_spec_config_present"`, `"generated_sources_config_present"`,
+  `"annotation_processor_paths_present"`, and `"add_source_goal_present"`.
+- `generator_signals` records conservative plugin-level signals such as
+  `"openapi_swagger_codegen"`, `"source_generator_plugin"`, and
+  `"annotation_processor"`.
+- Generator and OpenAPI/Swagger plugin signals do not create endpoint facts, API
+  operation facts, generated source facts, or generated API reconstruction.
+
+Resource and config discovery rules:
+
+- Resource roots are repository-relative paths under supported modules.
+- `resource.scope` is `"main"` for `src/main/resources` and `"test"` for
+  `src/test/resources`.
+- Resource-root entries are path inventory facts. In the planned initial v0.3 contract
+  they use empty `evidence_ids`, matching the current source-root and test-root summary
+  pattern, because the existing evidence model has no directory evidence type.
+- Config file facts record file paths and filename-derived metadata only.
+- `config_kind` is one of:
+  - `"spring_application"` for `application.properties`, `application.yml`,
+    `application.yaml`, and supported `application-*` profile filenames.
+  - `"logging_config"` for supported logging configuration filenames.
+- `format` is one of `"properties"`, `"yaml"`, `"xml"`, or `"unknown"`.
+- `profile_name` is the filename-derived profile segment for profile-specific Spring
+  application files, or `null` for default application files and non-profile config
+  files.
+- `profile_source` is `"filename_only"` when `profile_name` is present and `null`
+  otherwise.
+- Profile names do not imply profile activation, runtime precedence, environment
+  selection, or effective Spring configuration.
+- Config discovery must not parse or store property keys, property values, YAML node
+  content, XML element content, environment placeholders, decrypted secrets, or config
+  excerpts.
+
+Spring Boot application signal rules:
+
+- `spring_boot_applications.items` contains direct source-visible
+  `@SpringBootApplication` class signals under supported production source roots.
+- `application_signal` is one of:
+  - `"spring_boot_application_annotation_only"` when the annotation is present but no
+    supported source-visible `main` method is detected on that class.
+  - `"spring_boot_application_with_main_method"` when the annotation and a supported
+    source-visible `main` method are both detected on that class.
+- These facts do not claim executable jar packaging, active profiles, runtime
+  auto-configuration, bean graph, component scanning result, deployment behavior, or
+  actual process entrypoint behavior.
+
+Planned v0.3 warning rules:
+
+- Generated-source and generator warnings are emitted in `warnings.items`.
+- Planned generated-source warning items use `category: "generated_source"`.
+- Generated-source warning IDs begin with `warning:generated_source:<signal>:` and use
+  only normalized repository-relative module paths, source paths, or zero-padded
+  `decl:<ordinal>` declaration/signal ordinals as discriminators.
+- POM-derived plugin, annotation-processor, and generated-source configuration warnings
+  should include the module path plus a bounded declaration or signal ordinal in the
+  warning ID. Repository-path generated-source root warnings should include the detected
+  normalized generated-source root path.
+- Warnings include direct `module_id` when the signal belongs to a valid module.
+- Planned generated-source warning signals include:
+  - `"maven_generator_plugin"`;
+  - `"maven_openapi_swagger_codegen_plugin"`;
+  - `"maven_annotation_processor"`;
+  - `"maven_generated_source_config"`;
+  - `"maven_build_helper_add_source"`;
+  - `"generated_source_root_path_detected"`.
+- OpenAPI/Swagger plugin declarations may also continue to emit the existing
+  `hidden_http_surface` warning signal where appropriate. The warning remains a warning
+  and must not create endpoint or API facts.
+- If the same OpenAPI/Swagger plugin declaration supports both a planned
+  `generated_source` warning and an existing `hidden_http_surface` warning, each warning
+  keeps its own category and ID namespace.
+- Warning messages must use detected-signal wording. They must not summarize generated
+  source contents, generated API operations, runtime build behavior, or effective Maven
+  execution.
+
+Sensitive config handling rules:
+
+- `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md` must
+  not include config file contents, property keys, property values, YAML node content,
+  XML element content, decrypted values, or secret-looking values from config files.
+- `config_file` evidence excerpts for v0.3 config discovery must be bounded path or
+  filename observations such as `config file detected: application.yml`.
+- Any future proposal to store config keys, selected safe values, or source excerpts from
+  config files requires an explicit contract update, evidence model update if needed,
+  sensitive-fixture tests, and a security gate.
+
+Deterministic sorting rules:
+
+- Build/config module sections follow the existing v0.2 module order.
+- Dependency and dependency-management items are sorted by `group_id.value`,
+  `artifact_id.value`, `type.value`, `classifier.value`, `scope.value`,
+  `declaration_ordinal`, and `id`, with `null` values sorting after strings.
+- Plugin and plugin-management items are sorted by `group_id.value`,
+  `artifact_id.value`, `declaration_ordinal`, and `id`.
+- Resource roots are sorted by `scope`, `path`, and `id`.
+- Config files are sorted by `resource_scope`, `config_kind`, `path`, and `id`.
+- Spring Boot application signals are sorted by `class_name`, `source_path`, and `id`.
+- Generated-source warnings follow the existing warning sort order by `category`,
+  `signal`, module order, `source_path`, and `id`.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -959,6 +1427,33 @@ Current v0.2 `agent-guide.md` behavior:
   not infer dependency direction, runtime Spring boundaries, ownership, generated API
   contents, or cross-module architecture unless future deterministic facts explicitly
   support those claims.
+
+Planned v0.3 `agent-guide.md` behavior:
+
+- The guide should add a `Build And Configuration Orientation` section generated from
+  planned v0.3 `build_config` facts.
+- Maven metadata, dependency, and plugin sections must use `Source-visible` wording and
+  must not claim effective POM coordinates, inherited values, transitive dependencies,
+  resolved plugin versions, lifecycle execution, profile activation, or remote
+  repository availability.
+- Dependency-management and plugin-management declarations must be labeled as management
+  declarations, not as active dependencies or active plugin executions.
+- Resource and config summaries may list detected resource roots and config file paths,
+  config kind, format, and filename-derived profile name. They must not print config
+  file contents, property keys, property values, YAML node content, XML element content,
+  environment placeholders, decrypted secrets, or config excerpts.
+- Spring Boot application entries must use `Detected` wording for direct
+  `@SpringBootApplication` and source-visible `main` method signals. They must not claim
+  executable packaging, active profiles, runtime auto-configuration, bean graph,
+  component scanning result, deployment behavior, or actual process entrypoint behavior.
+- Generated-source, OpenAPI/Swagger, annotation-processor, and generator plugin signals
+  should appear as warnings or known limits. They must not be rendered as detected
+  endpoints, generated APIs, implemented API operations, or generated source contents.
+- The known-limits section should explicitly state that v0.3 build/config facts are
+  direct local source observations only, and that Maven execution, effective POM
+  reconstruction, profile activation, remote dependency resolution, config value
+  interpretation, secret extraction, and default generated-source scanning are not
+  performed.
 
 Markdown rendering safety:
 

@@ -137,7 +137,9 @@ Start here:
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
 - Post-v0.1 direction:
   [docs/product/POST_V0_1_STRATEGY.md](docs/product/POST_V0_1_STRATEGY.md) and
-  the public v0.2 roadmap and release notes.
+  the public v0.2 roadmap and release notes;
+  active v0.3 build/configuration planning:
+  the public v0.3 roadmap and release notes.
 - Output and evidence contracts:
   [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
   [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).

@@ -57,7 +57,9 @@ Public documents should stay concise and useful for users and contributors:
 - `docs/product/MVP_SPEC.md` defines the v0.1 baseline.
 - `docs/product/ROADMAP.md` describes release tracks.
 - the public v0.2 roadmap and release notes describes the next planned release
-  track.
+  track after v0.1 and remains the v0.2 historical plan.
+- the public v0.3 roadmap and release notes describes the planned v0.3 build and
+  configuration model.
 - `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`
   govern generated output and evidence semantics.
 

@@ -9,7 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- Added public v0.3 build/configuration planning documentation.
+
+### Changed
+
+- Documented planned `schema_version: "0.3"` build/configuration output and evidence
+  contract decisions for source-visible Maven, resource, config-file, Spring Boot, and
+  generated-source warning signals.
 
 ## [0.2.0] - 2026-06-05
 

@@ -10,7 +10,7 @@ list. Connector/import work remains post-v0.1 future work and is not started.
 
 For strategic context, see
 [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release track, see
-the public v0.2 roadmap and release notes.
+the public v0.3 roadmap and release notes.
 
 ## Roadmap Principles
 
@@ -98,6 +98,9 @@ Planned goal sequence:
 
 ## v0.3.0: Build And Configuration Model
 
+Planning boundary and contract decisions:
+the public v0.3 roadmap and release notes.
+
 Expected direction:
 
 - Per-module Maven metadata where source-visible.
@@ -108,6 +111,11 @@ Expected direction:
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.
+
+The planned v0.3 contract uses source-visible Maven, resource, config, and Spring Boot
+signals only. Config discovery is path-oriented and must not store configuration values.
+Generated-source and generator plugin signals remain warnings until future explicit scan
+modes are designed.
 
 ## v0.4.0: Declared And Generated API Surface
 
