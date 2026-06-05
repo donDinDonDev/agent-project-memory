@@ -15,8 +15,8 @@ The required repository-wide Codex Security release-candidate gate has completed
 the current v0.2 chain: the second scan at HEAD `451a75a` is the final discovery
 baseline, `CS-APM-RC-006` through `CS-APM-RC-012` are fixed and checkpointed in
 `53a4fab`, `3156238`, and `6b49306`, and no security blockers remain from that final
-baseline. Do not run another open-ended repository-wide security scan before `v0.2.0`;
-use targeted verification only for known findings or release-readiness checks.
+baseline. No additional open-ended repository-wide security scan was run for `v0.2.0`;
+targeted verification was used for known findings and release-readiness checks.
 
 ## Scope
 
@@ -127,7 +127,7 @@ outputs instead of presenting it as a direct fact.
 
 ## Validation
 
-The v0.2 release-readiness pass is expected to run:
+The v0.2 release-readiness pass ran:
 
 ```sh
 git status --short
@@ -138,10 +138,9 @@ git diff --stat
 ```
 
 The active release track's repository-wide Codex Security release-candidate scan
-requirement has completed. The second scan at HEAD `451a75a` is the final v0.2
-discovery baseline, its `CS-APM-RC-006` through `CS-APM-RC-012` findings are fixed and
-checkpointed, and no additional open-ended repository-wide security scan is required
-before `v0.2.0`.
+requirement completed. The second scan at HEAD `451a75a` is the final v0.2 discovery
+baseline, its `CS-APM-RC-006` through `CS-APM-RC-012` findings are fixed and
+checkpointed, and no additional open-ended repository-wide security scan was required
+for `v0.2.0`.
 
-Binary release artifact names should match the maintainer-approved release version in
-`pom.xml` before final tagging or publishing.
+Binary release artifact names match the maintainer-approved release version in `pom.xml`.
