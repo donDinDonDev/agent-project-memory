@@ -717,6 +717,161 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void mavenPluginsAndGeneratedSourceWarningsAreModuleOwnedAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("maven-plugins-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+            <module>services/billing</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/orders/pom.xml"), """
+        <project>
+          <build>
+            <pluginManagement>
+              <plugins>
+                <plugin>
+                  <groupId>org.apache.maven.plugins</groupId>
+                  <artifactId>maven-compiler-plugin</artifactId>
+                  <configuration>
+                    <annotationProcessorPaths>
+                      <path>
+                        <groupId>com.example</groupId>
+                        <artifactId>processor</artifactId>
+                      </path>
+                    </annotationProcessorPaths>
+                  </configuration>
+                </plugin>
+              </plugins>
+            </pluginManagement>
+            <plugins>
+              <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <version>${openapi.generator.version}</version>
+                <executions>
+                  <execution>
+                    <id>generate-api</id>
+                    <phase>generate-sources</phase>
+                    <goals>
+                      <goal>generate</goal>
+                    </goals>
+                    <configuration>
+                      <generatedSourcesDirectory>target/generated-sources/private</generatedSourcesDirectory>
+                    </configuration>
+                  </execution>
+                </executions>
+                <configuration>
+                  <inputSpec>src/main/resources/private-api.yml</inputSpec>
+                </configuration>
+              </plugin>
+              <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <executions>
+                  <execution>
+                    <goals>
+                      <goal>add-source</goal>
+                    </goals>
+                  </execution>
+                </executions>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/billing/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(projectPath.resolve("services/orders/src/main/java"));
+    Files.createDirectories(projectPath.resolve("services/billing/src/main/java"));
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    JsonNode ordersMaven = moduleNode(projectMap, "module:services/orders")
+        .path("build_config")
+        .path("maven");
+    JsonNode billingMaven = moduleNode(projectMap, "module:services/billing")
+        .path("build_config")
+        .path("maven");
+    JsonNode firstOrdersPlugin = ordersMaven.path("plugins").path("items").get(0);
+    JsonNode secondOrdersPlugin = ordersMaven.path("plugins").path("items").get(1);
+    JsonNode managedOrdersPlugin = ordersMaven.path("plugin_management").path("items").get(0);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertTrue(projectMap.contains("\"endpoints\": [],")),
+        () -> assertEquals("analyzed", ordersMaven.path("plugins").path("analysis_status").asText()),
+        () -> assertEquals(2, ordersMaven.path("plugins").path("items").size()),
+        () -> assertEquals(1, ordersMaven.path("plugin_management").path("items").size()),
+        () -> assertEquals(
+            "build-helper-maven-plugin",
+            firstOrdersPlugin.path("artifact_id").path("value").asText()),
+        () -> assertEquals("add_source_goal_present",
+            firstOrdersPlugin.path("configuration_signals").get(0).path("signal").asText()),
+        () -> assertEquals(
+            "openapi-generator-maven-plugin",
+            secondOrdersPlugin.path("artifact_id").path("value").asText()),
+        () -> assertEquals(
+            "${openapi.generator.version}",
+            secondOrdersPlugin.path("version").path("value").asText()),
+        () -> assertEquals(
+            "property_reference",
+            secondOrdersPlugin.path("version").path("value_kind").asText()),
+        () -> assertEquals("generate-api",
+            secondOrdersPlugin.path("executions").get(0).path("execution_id").asText()),
+        () -> assertEquals(
+            "generate-sources",
+            secondOrdersPlugin.path("executions").get(0).path("phase").path("value").asText()),
+        () -> assertEquals(
+            "openapi_swagger_codegen",
+            secondOrdersPlugin.path("generator_signals").get(0).path("signal").asText()),
+        () -> assertEquals(
+            "maven-compiler-plugin",
+            managedOrdersPlugin.path("artifact_id").path("value").asText()),
+        () -> assertEquals(
+            "plugin_management",
+            managedOrdersPlugin.path("declaration_kind").asText()),
+        () -> assertEquals(
+            "annotation_processor",
+            managedOrdersPlugin.path("generator_signals").get(0).path("signal").asText()),
+        () -> assertEquals(0, billingMaven.path("plugins").path("items").size()),
+        () -> assertEquals(
+            "analyzed",
+            billingMaven.path("plugins").path("analysis_status").asText()),
+        () -> assertTrue(projectMap.contains("\"category\": \"generated_source\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_openapi_swagger_codegen_plugin\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_annotation_processor\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_generated_source_config\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"maven_build_helper_add_source\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"id\": \"warning:generated_source:maven_annotation_processor:module:services/orders:plugin_management:decl:000001\"")),
+        () -> assertFalse(projectMap.contains("private-api.yml")),
+        () -> assertFalse(projectMap.contains("target/generated-sources/private")),
+        () -> assertFalse(evidenceIndex.contains("private-api.yml")),
+        () -> assertFalse(evidenceIndex.contains("target/generated-sources/private")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:plugin:000001:artifactId\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"symbol_name\":\"maven:plugin_management:000001:configuration:annotationProcessorPaths\"")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Maven plugin evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
   void pomOnlyAggregatorProjectGeneratesSourceVisibleMetadataOutput() throws Exception {
     Path projectPath = tempDir.resolve("pom-only-aggregator-project");
     Path outputDirectory = projectPath.resolve(".project-memory");

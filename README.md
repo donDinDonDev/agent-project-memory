@@ -89,7 +89,7 @@ stereotype components on classes and interfaces, deterministic hidden HTTP surfa
 warnings, direct JPA entity annotations with conservative source-visible
 mapped-superclass identifier fields, standard Maven test-root classes with conservative
 helper filtering, direct source-visible Maven metadata from module POMs, and direct
-source-visible Maven dependency declarations from module POMs, then writes:
+source-visible Maven dependency and plugin declarations from module POMs, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -103,13 +103,15 @@ source-visible Maven dependency declarations from module POMs, then writes:
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
-`dependency_management`, compatibility source and test root summaries, direct
-`module_id` fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface
-and Maven module warnings that are not expanded into endpoint facts, direct component
-inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
-references. v0.3 build/config subsections whose analyzers are not implemented yet are
-emitted with `analysis_status: "not_analyzed"` and do not claim an empty plugin,
-resource, config-file, or Spring Boot application inventory.
+`dependency_management`, module-owned source-visible Maven plugin inventory under
+`project.modules.items[].build_config.maven.plugins` and `plugin_management`, compatibility
+source and test root summaries, direct `module_id` fields on module-owned facts, Spring
+MVC endpoint facts, hidden HTTP surface, generated-source, and Maven module warnings that
+are not expanded into endpoint/API facts, direct component inventory, direct JPA entity
+facts, a minimal tests inventory, and evidence ID references. v0.3 build/config
+subsections whose analyzers are not implemented yet are emitted with
+`analysis_status: "not_analyzed"` and do not claim an empty resource, config-file, or
+Spring Boot application inventory.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -188,10 +190,11 @@ The current implementation includes a Java 21 Maven CLI, root-declared Maven mod
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
 mapping support when uniquely bindable, stable `project-map.json` and
 `evidence-index.jsonl` outputs, deterministic module-owned source-visible Maven
-metadata and dependency extraction, deterministic direct Spring component and JPA entity
-inventories, deterministic hidden HTTP surface and Maven module warnings, a minimal
-deterministic tests inventory, deterministic `endpoints.md`, and deterministic
-`agent-guide.md` generation from the structured facts and evidence index.
+metadata, dependency, and plugin extraction, deterministic direct Spring component and
+JPA entity inventories, deterministic hidden HTTP surface, generated-source, and Maven
+module warnings, a minimal deterministic tests inventory, deterministic `endpoints.md`,
+and deterministic `agent-guide.md` generation from the structured facts and evidence
+index.
 
 Current limitations:
 
@@ -210,9 +213,17 @@ Current limitations:
   `classifier` text when present, preserves property references and expressions as
   source-visible values, and does not resolve parent, managed, profile, effective, or
   transitive dependency behavior.
-- Plugin, plugin-management, resource, config-file, and Spring Boot application
-  build/config subsections are not implemented yet and are represented as
-  `analysis_status: "not_analyzed"` in the staged v0.3 output.
+- Maven plugin inventory is limited to direct source-visible module POM
+  `<build><plugins><plugin>` declarations and separate direct
+  `<build><pluginManagement><plugins><plugin>` management declarations. It preserves
+  direct plugin coordinates, bounded direct execution IDs, phases, goals, and conservative
+  configuration/generator signal names without storing arbitrary plugin configuration
+  values. It does not resolve plugin versions, reconstruct lifecycle bindings, inherit
+  executions, execute plugins, scan generated sources by default, parse OpenAPI specs, or
+  create generated API/endpoint facts from plugin signals.
+- Resource, config-file, and Spring Boot application build/config subsections are not
+  implemented yet and are represented as `analysis_status: "not_analyzed"` in the staged
+  v0.3 output.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from
@@ -226,12 +237,13 @@ Current limitations:
 - Entity analysis does not implement getter/property-access mapping, embedded IDs,
   generated values, column or join-column details, repository analysis, schema
   generation, transactional semantics, symbol solving, or ORM runtime behavior.
-- Hidden HTTP surface warnings are limited to OpenAPI/Swagger spec filename presence,
+- Hidden HTTP surface and generated-source warnings are limited to OpenAPI/Swagger spec filename presence,
   supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
-  `<build><plugins>` or `<build><pluginManagement><plugins>`, and direct
-  `@RepositoryRestResource`. They do not create endpoint facts, parse OpenAPI YAML, run
-  Maven generation, scan `target/generated-sources` by default, or reconstruct generated
-  APIs.
+  `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,
+  annotation-processor, generated-source configuration, and build-helper add-source
+  signals, and direct `@RepositoryRestResource`. They do not create endpoint facts, parse
+  OpenAPI YAML, run Maven generation, scan `target/generated-sources` by default, or
+  reconstruct generated APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
 - Tests inventory is limited to test-like Java classes under supported standard Maven

@@ -241,13 +241,14 @@ Maven metadata evidence:
   Maven metadata. This proves only the direct POM text. It does not prove Maven defaults,
   parent inheritance, profile activation, property resolution, effective POM values, or
   runtime build behavior.
-- The current staged v0.3 Maven metadata and dependency implementation emits this
-  metadata evidence where a module POM is present, plus dependency evidence for direct
-  `<dependencies><dependency>` declarations and separate
-  `<dependencyManagement><dependencies><dependency>` management declarations. Future
-  v0.3 subsections that are represented with `analysis_status: "not_analyzed"` emit no
-  plugin, resource, config-file, or Spring Boot application evidence and make no absence
-  claim.
+- The current staged v0.3 Maven metadata, dependency, and plugin implementation emits
+  this metadata evidence where a module POM is present, plus dependency evidence for
+  direct `<dependencies><dependency>` declarations, separate
+  `<dependencyManagement><dependencies><dependency>` management declarations, plugin
+  evidence for direct `<build><plugins><plugin>` declarations, and separate
+  `<build><pluginManagement><plugins><plugin>` management declarations. Future v0.3
+  subsections that are represented with `analysis_status: "not_analyzed"` emit no
+  resource, config-file, or Spring Boot application evidence and make no absence claim.
 
 Dependency evidence:
 
@@ -283,6 +284,10 @@ Plugin and generator signal evidence:
 - OpenAPI/Swagger, annotation processor, and generated-source plugin evidence supports
   warnings only. It does not prove generated source contents, generated API operations,
   endpoint facts, or runtime behavior.
+- The current staged v0.3 plugin analyzer emits plugin declaration and execution evidence
+  excerpts as bounded declaration observations, not full `<plugin>` or `<execution>`
+  source blocks, so arbitrary `<configuration>` values are not serialized through those
+  evidence records.
 
 Resource and config discovery evidence:
 

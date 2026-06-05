@@ -161,6 +161,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ## Known Uncertainty And Limits
 
+- Warning: `generated_source` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, parse specs, scan generated sources by default, or create endpoint/API facts from this signal.
+  - Evidence: `services/orders/pom.xml:5` (`ev:services/orders/pom.xml:5-5:build_file:maven:plugin:000001:artifactId`)
 - Warning: `hidden_http_surface` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin signal detected; the analyzer does not run generation or scan generated sources by default.
   - Evidence: `services/orders/pom.xml:5` (`ev:services/orders/pom.xml:5-5:build_file:openapi-generator-maven-plugin`)
 - Warning: `hidden_http_surface` signal `openapi_spec_file` for module `module:services/orders` (path: `services/orders`) at `services/orders/src/main/resources/openapi.yml`. OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.

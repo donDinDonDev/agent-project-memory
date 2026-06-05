@@ -16,6 +16,9 @@ architecture documents.
   module `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates.
 - Added staged v0.3 module-owned source-visible Maven dependency inventory for direct
   dependencies and separate dependency-management declarations.
+- Added staged v0.3 module-owned source-visible Maven plugin inventory for direct
+  plugins, separate plugin-management declarations, bounded direct execution/configuration
+  signals, and conservative generated-source warnings.
 
 ### Changed
 
@@ -27,6 +30,8 @@ architecture documents.
   `analysis_status: "not_analyzed"` without claiming empty inventories.
 - Changed Maven `dependencies` and `dependency_management` build/config subsections from
   staged placeholders to analyzed source-visible inventories.
+- Changed Maven `plugins` and `plugin_management` build/config subsections from staged
+  placeholders to analyzed source-visible inventories.
 
 ## [0.2.0] - 2026-06-05
 

@@ -30,7 +30,8 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.3 module-aware Maven metadata and dependency inventory slice.
+contract is the staged v0.3 module-aware Maven metadata, dependency, and plugin
+inventory slice.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -749,10 +750,10 @@ Deterministic sorting rules:
 
 This section defines the v0.3 build/configuration JSON contract. The current staged
 implementation emits source-visible Maven metadata, source-visible Maven dependency
-inventory, and the complete `build_config` section shell. Future v0.3 subsections that
-are not implemented yet use `analysis_status: "not_analyzed"` and empty `items` arrays
-so they do not claim absence of plugins, resources, config files, or Spring Boot
-application signals.
+inventory, source-visible Maven plugin inventory, and the complete `build_config`
+section shell. Future v0.3 subsections that are not implemented yet use
+`analysis_status: "not_analyzed"` and empty `items` arrays so they do not claim absence
+of resources, config files, or Spring Boot application signals.
 
 The planned v0.3 contract uses:
 
@@ -1065,18 +1066,17 @@ Build/config analysis status rules:
 - Maven subsection `analysis_status` values are `"analyzed"` when a module POM is
   present and parsed for the relevant subsection. They are `"not_detected"` when the
   module has no POM available to that analyzer.
-- In the current staged v0.3 metadata and dependency slice,
+- In the current staged v0.3 metadata, dependency, and plugin slice,
   `maven.metadata.analysis_status`, `dependencies.analysis_status`, and
-  `dependency_management.analysis_status` are `"analyzed"` when a module POM is present
-  and parsed for the relevant direct POM observations. `plugins` and `plugin_management`
-  use `"not_analyzed"` with empty `items` arrays until their bounded analyzers are
-  implemented. Those plugin empty arrays must not be read as plugin inventory results.
+  `dependency_management.analysis_status`, plus `plugins.analysis_status` and
+  `plugin_management.analysis_status` are `"analyzed"` when a module POM is present and
+  parsed for the relevant direct POM observations.
 - Resource, config, and Spring Boot subsection `analysis_status` values are `"analyzed"`
   when the relevant analyzer runs for supported module roots, even when the resulting
   item list is empty. They are `"not_detected"` only when no supported input root exists.
-- In the current staged v0.3 metadata and dependency slice, `resources`, `config_files`,
-  and `spring_boot_applications` use `"not_analyzed"` with empty `items` arrays until
-  their bounded analyzers are implemented.
+- In the current staged v0.3 metadata, dependency, and plugin slice, `resources`,
+  `config_files`, and `spring_boot_applications` use `"not_analyzed"` with empty `items`
+  arrays until their bounded analyzers are implemented.
 
 Maven value rules:
 
@@ -1175,24 +1175,28 @@ Spring Boot application signal rules:
   auto-configuration, bean graph, component scanning result, deployment behavior, or
   actual process entrypoint behavior.
 
-Planned v0.3 warning rules:
+v0.3 warning rules:
 
 - Generated-source and generator warnings are emitted in `warnings.items`.
-- Planned generated-source warning items use `category: "generated_source"`.
-- Generated-source warning IDs begin with `warning:generated_source:<signal>:` and use
-  only normalized repository-relative module paths, source paths, or zero-padded
-  `decl:<ordinal>` declaration/signal ordinals as discriminators.
+- Generated-source warning items use `category: "generated_source"`.
+- Plugin-derived generated-source warning IDs use the shape
+  `warning:generated_source:<signal>:module:<module_path>:<declaration_kind>:decl:<ordinal>`.
+  `<declaration_kind>` is the emitted plugin `declaration_kind` value and distinguishes
+  direct plugin declarations from `pluginManagement` declarations when their declaration
+  ordinals would otherwise collide.
 - POM-derived plugin, annotation-processor, and generated-source configuration warnings
-  should include the module path plus a bounded declaration or signal ordinal in the
-  warning ID. Repository-path generated-source root warnings should include the detected
-  normalized generated-source root path.
+  include the module path, declaration kind, and bounded declaration ordinal in the
+  warning ID.
+  Repository-path generated-source root warnings are future work and should include the
+  detected normalized generated-source root path when implemented.
 - Warnings include direct `module_id` when the signal belongs to a valid module.
-- Planned generated-source warning signals include:
+- Current plugin-derived generated-source warning signals include:
   - `"maven_generator_plugin"`;
   - `"maven_openapi_swagger_codegen_plugin"`;
   - `"maven_annotation_processor"`;
   - `"maven_generated_source_config"`;
-  - `"maven_build_helper_add_source"`;
+  - `"maven_build_helper_add_source"`.
+- Future generated-source path warnings may add:
   - `"generated_source_root_path_detected"`.
 - OpenAPI/Swagger plugin declarations may also continue to emit the existing
   `hidden_http_surface` warning signal where appropriate. The warning remains a warning
@@ -1311,6 +1315,16 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   supports only direct POM text. It does not prove resolved versions, inherited or
   managed values, transitive dependencies, active profiles, repository availability, or
   effective dependency graphs.
+- The current staged v0.3 plugin analyzer reuses `build_file` evidence for direct
+  source-visible plugin declarations, plugin-management declarations, directly declared
+  plugin coordinates, direct execution IDs/phases/goals, bounded configuration signal
+  elements, and plugin-derived generator signals. Plugin declaration and execution
+  evidence excerpts identify the bounded declaration only; bounded configuration signal
+  evidence excerpts identify the signal element name and must not include arbitrary
+  plugin configuration values. Plugin evidence does not prove resolved plugin versions,
+  Maven lifecycle execution, inherited executions, generated source contents, OpenAPI
+  operations, endpoint facts, active profiles, repository availability, or effective POM
+  behavior.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -1468,12 +1482,19 @@ Current staged v0.3 build/config behavior:
   under `project.modules.items[].build_config.maven.dependencies` and separate
   management declarations under
   `project.modules.items[].build_config.maven.dependency_management`.
+- `project-map.json` includes module-owned source-visible Maven plugin declarations
+  under `project.modules.items[].build_config.maven.plugins` and separate
+  plugin-management declarations under
+  `project.modules.items[].build_config.maven.plugin_management`.
+- Plugin-derived generated-source warnings are rendered in the known-limits section as
+  warning facts and must not be rendered as endpoint, API-operation, or generated-source
+  facts.
 - `agent-guide.md` keeps the current v0.2 guide sections until the bounded v0.3 guide
   rendering goal adds a dedicated build/configuration orientation section.
-- The current guide does not render dependency inventory yet; dependency facts remain
-  machine-readable in `project-map.json` until the bounded v0.3 guide rendering goal.
-  The current guide must not render `not_analyzed` plugin, resource, config, or Spring
-  Boot application subsection shells as detected facts.
+- The current guide does not render dependency or plugin inventory yet; dependency and
+  plugin facts remain machine-readable in `project-map.json` until the bounded v0.3 guide
+  rendering goal. The current guide must not render `not_analyzed` resource, config, or
+  Spring Boot application subsection shells as detected facts.
 
 Planned v0.3 `agent-guide.md` behavior:
 

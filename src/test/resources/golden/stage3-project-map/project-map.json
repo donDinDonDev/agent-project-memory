@@ -99,11 +99,11 @@
                 "items": []
               },
               "plugins": {
-                "analysis_status": "not_analyzed",
+                "analysis_status": "analyzed",
                 "items": []
               },
               "plugin_management": {
-                "analysis_status": "not_analyzed",
+                "analysis_status": "analyzed",
                 "items": []
               }
             },

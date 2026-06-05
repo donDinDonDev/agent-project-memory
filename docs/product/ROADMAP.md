@@ -109,9 +109,10 @@ Expected direction:
 - Resource root and application config discovery.
 - Build warnings for generated-source and OpenAPI/Swagger plugin signals.
 
-Current staged implementation includes source-visible per-module Maven metadata and
-direct dependency/dependency-management inventory. Plugin, resource, config-file, and
-Spring Boot application subsections remain future bounded v0.3 goals.
+Current staged implementation includes source-visible per-module Maven metadata, direct
+dependency/dependency-management inventory, direct plugin/plugin-management inventory,
+and conservative generated-source plugin warnings. Resource, config-file, and Spring Boot
+application subsections remain future bounded v0.3 goals.
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.

@@ -23,6 +23,13 @@ import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataAna
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataParent;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataValue;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModulePlugins;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginDeclaration;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginExecution;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginSignal;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
@@ -70,6 +77,22 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String HIGH_CONFIDENCE = "high";
+  private static final String WARNING_CATEGORY_GENERATED_SOURCE = "generated_source";
+  private static final String WARNING_SIGNAL_MAVEN_GENERATOR_PLUGIN = "maven_generator_plugin";
+  private static final String WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN =
+      "maven_openapi_swagger_codegen_plugin";
+  private static final String WARNING_SIGNAL_MAVEN_ANNOTATION_PROCESSOR =
+      "maven_annotation_processor";
+  private static final String WARNING_SIGNAL_MAVEN_GENERATED_SOURCE_CONFIG =
+      "maven_generated_source_config";
+  private static final String WARNING_SIGNAL_MAVEN_BUILD_HELPER_ADD_SOURCE =
+      "maven_build_helper_add_source";
+  private static final String PLUGIN_SIGNAL_OPENAPI_SWAGGER_CODEGEN = "openapi_swagger_codegen";
+  private static final String PLUGIN_SIGNAL_SOURCE_GENERATOR_PLUGIN = "source_generator_plugin";
+  private static final String PLUGIN_SIGNAL_ANNOTATION_PROCESSOR = "annotation_processor";
+  private static final String CONFIG_SIGNAL_GENERATED_SOURCES_CONFIG_PRESENT =
+      "generated_sources_config_present";
+  private static final String CONFIG_SIGNAL_ADD_SOURCE_GOAL_PRESENT = "add_source_goal_present";
   private static final Comparator<EvidenceRecord> EVIDENCE_ORDER = Comparator
       .comparing(EvidenceRecord::path)
       .thenComparing(record -> record.lineStart() == null ? Integer.MAX_VALUE : record.lineStart())
@@ -128,6 +151,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private final MavenModuleDiscoveryAnalyzer moduleDiscoveryAnalyzer;
   private final MavenMetadataAnalyzer mavenMetadataAnalyzer;
   private final MavenDependencyAnalyzer mavenDependencyAnalyzer;
+  private final MavenPluginAnalyzer mavenPluginAnalyzer = new MavenPluginAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -251,7 +275,15 @@ public final class SpringMvcEndpointOutputGenerator {
     MavenDependencyAnalysis dependencyAnalysis = mavenDependencyAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
-    if (!shouldGenerate(layout, moduleDiscoveryAnalysis, metadataAnalysis, dependencyAnalysis)) {
+    MavenPluginAnalysis pluginAnalysis = mavenPluginAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        layout.modules().items());
+    if (!shouldGenerate(
+        layout,
+        moduleDiscoveryAnalysis,
+        metadataAnalysis,
+        dependencyAnalysis,
+        pluginAnalysis)) {
       return new Result(false, 0, 0, 0, 0, 0);
     }
 
@@ -259,12 +291,14 @@ public final class SpringMvcEndpointOutputGenerator {
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         layout.modules(),
-        moduleDiscoveryAnalysis.warnings());
+        moduleDiscoveryAnalysis.warnings(),
+        pluginAnalysis);
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         moduleDiscoveryAnalysis.evidence(),
         metadataAnalysis.evidence(),
         dependencyAnalysis.evidence(),
+        pluginAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.entityEvidence(),
@@ -275,7 +309,8 @@ public final class SpringMvcEndpointOutputGenerator {
         layout,
         scan,
         metadataAnalysis,
-        dependencyAnalysis);
+        dependencyAnalysis,
+        pluginAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -307,14 +342,17 @@ public final class SpringMvcEndpointOutputGenerator {
       ProjectLayout layout,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
       MavenMetadataAnalysis metadataAnalysis,
-      MavenDependencyAnalysis dependencyAnalysis) {
+      MavenDependencyAnalysis dependencyAnalysis,
+      MavenPluginAnalysis pluginAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
         || metadataAnalysis.modules().stream()
             .anyMatch(metadata -> ANALYSIS_ANALYZED.equals(metadata.analysisStatus()))
         || dependencyAnalysis.modules().stream()
-            .anyMatch(dependencies -> ANALYSIS_ANALYZED.equals(dependencies.analysisStatus()));
+            .anyMatch(dependencies -> ANALYSIS_ANALYZED.equals(dependencies.analysisStatus()))
+        || pluginAnalysis.modules().stream()
+            .anyMatch(plugins -> ANALYSIS_ANALYZED.equals(plugins.analysisStatus()));
   }
 
   private ProjectLayout detectLayout(
@@ -383,7 +421,8 @@ public final class SpringMvcEndpointOutputGenerator {
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       ProjectModules modules,
-      List<MavenModuleWarning> moduleWarnings) throws IOException {
+      List<MavenModuleWarning> moduleWarnings,
+      MavenPluginAnalysis pluginAnalysis) throws IOException {
     List<ModuleScopedEndpointFact> endpoints = new ArrayList<>();
     List<ModuleScopedComponentFact> components = new ArrayList<>();
     List<ModuleScopedEntityFact> entities = new ArrayList<>();
@@ -395,7 +434,6 @@ public final class SpringMvcEndpointOutputGenerator {
     List<TestInventoryEvidence> testEvidence = new ArrayList<>();
     List<AnalysisWarningEvidence> warningEvidence = new ArrayList<>();
     Map<String, Integer> moduleOrder = moduleOrder(modules.items());
-    boolean warningAnalyzerRan = !moduleWarnings.isEmpty();
     boolean componentAnalyzerRan = false;
     boolean entityAnalyzerRan = false;
     boolean testAnalyzerRan = false;
@@ -411,6 +449,12 @@ public final class SpringMvcEndpointOutputGenerator {
           warning.sourcePath(),
           warning.evidenceIds()));
     }
+    List<ModuleScopedWarningFact> pluginWarnings = generatedSourceWarnings(
+        pluginAnalysis,
+        moduleOrder,
+        modules.items());
+    warnings.addAll(pluginWarnings);
+    boolean warningAnalyzerRan = !moduleWarnings.isEmpty() || !pluginWarnings.isEmpty();
 
     List<String> childModulePaths = modules.items().stream()
         .map(MavenModuleItem::modulePath)
@@ -511,6 +555,133 @@ public final class SpringMvcEndpointOutputGenerator {
       order.put(modules.get(index).moduleId(), index);
     }
     return order;
+  }
+
+  private List<ModuleScopedWarningFact> generatedSourceWarnings(
+      MavenPluginAnalysis pluginAnalysis,
+      Map<String, Integer> moduleOrder,
+      List<MavenModuleItem> modules) {
+    Map<String, MavenModuleItem> moduleById = moduleById(modules);
+    List<ModuleScopedWarningFact> warnings = new ArrayList<>();
+    for (MavenModulePlugins modulePlugins : pluginAnalysis.modules()) {
+      MavenModuleItem module = moduleById.get(modulePlugins.moduleId());
+      String modulePath = module == null ? modulePlugins.moduleId() : module.modulePath();
+      String sourcePath = module == null ? "" : module.pomPath();
+      int order = moduleOrder.getOrDefault(modulePlugins.moduleId(), Integer.MAX_VALUE);
+      modulePlugins.plugins().forEach(plugin ->
+          addGeneratedSourceWarnings(warnings, plugin, modulePlugins.moduleId(), modulePath, sourcePath, order));
+      modulePlugins.pluginManagement().forEach(plugin ->
+          addGeneratedSourceWarnings(warnings, plugin, modulePlugins.moduleId(), modulePath, sourcePath, order));
+    }
+    return warnings;
+  }
+
+  private void addGeneratedSourceWarnings(
+      List<ModuleScopedWarningFact> warnings,
+      MavenPluginDeclaration plugin,
+      String moduleId,
+      String modulePath,
+      String sourcePath,
+      int moduleOrder) {
+    for (MavenPluginSignal signal : plugin.generatorSignals()) {
+      if (PLUGIN_SIGNAL_OPENAPI_SWAGGER_CODEGEN.equals(signal.signal())) {
+        warnings.add(generatedSourceWarning(
+            WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN,
+            moduleId,
+            modulePath,
+            sourcePath,
+            moduleOrder,
+            plugin,
+            signal.evidenceIds(),
+            "Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer "
+                + "does not run code generation, parse specs, scan generated sources by default, "
+                + "or create endpoint/API facts from this signal."));
+      } else if (PLUGIN_SIGNAL_SOURCE_GENERATOR_PLUGIN.equals(signal.signal())) {
+        warnings.add(generatedSourceWarning(
+            WARNING_SIGNAL_MAVEN_GENERATOR_PLUGIN,
+            moduleId,
+            modulePath,
+            sourcePath,
+            moduleOrder,
+            plugin,
+            signal.evidenceIds(),
+            "Maven source generator plugin declaration detected; the analyzer records the "
+                + "source-visible build signal only and does not scan generated sources by default."));
+      } else if (PLUGIN_SIGNAL_ANNOTATION_PROCESSOR.equals(signal.signal())) {
+        warnings.add(generatedSourceWarning(
+            WARNING_SIGNAL_MAVEN_ANNOTATION_PROCESSOR,
+            moduleId,
+            modulePath,
+            sourcePath,
+            moduleOrder,
+            plugin,
+            signal.evidenceIds(),
+            "Maven annotation processor signal detected; the analyzer does not inspect "
+                + "generated sources or infer generated APIs from processors."));
+      }
+    }
+
+    for (MavenPluginSignal signal : plugin.configurationSignals()) {
+      if (CONFIG_SIGNAL_GENERATED_SOURCES_CONFIG_PRESENT.equals(signal.signal())) {
+        warnings.add(generatedSourceWarning(
+            WARNING_SIGNAL_MAVEN_GENERATED_SOURCE_CONFIG,
+            moduleId,
+            modulePath,
+            sourcePath,
+            moduleOrder,
+            plugin,
+            signal.evidenceIds(),
+            "Maven generated-source configuration signal detected; the analyzer records the "
+                + "bounded build signal only and does not inspect configured generated output."));
+      } else if (CONFIG_SIGNAL_ADD_SOURCE_GOAL_PRESENT.equals(signal.signal())) {
+        warnings.add(generatedSourceWarning(
+            WARNING_SIGNAL_MAVEN_BUILD_HELPER_ADD_SOURCE,
+            moduleId,
+            modulePath,
+            sourcePath,
+            moduleOrder,
+            plugin,
+            signal.evidenceIds(),
+            "Maven build-helper add-source goal detected; the analyzer does not scan added "
+                + "or generated sources by default."));
+      }
+    }
+  }
+
+  private ModuleScopedWarningFact generatedSourceWarning(
+      String signal,
+      String moduleId,
+      String modulePath,
+      String sourcePath,
+      int moduleOrder,
+      MavenPluginDeclaration plugin,
+      List<String> evidenceIds,
+      String message) {
+    return new ModuleScopedWarningFact(
+        generatedSourceWarningId(signal, modulePath, plugin),
+        WARNING_CATEGORY_GENERATED_SOURCE,
+        signal,
+        moduleId,
+        moduleOrder,
+        message,
+        sourcePath == null ? "" : sourcePath,
+        evidenceIds);
+  }
+
+  private String generatedSourceWarningId(
+      String signal,
+      String modulePath,
+      MavenPluginDeclaration plugin) {
+    return "warning:"
+        + WARNING_CATEGORY_GENERATED_SOURCE
+        + ":"
+        + signal
+        + ":module:"
+        + modulePath
+        + ":"
+        + plugin.declarationKind()
+        + ":decl:"
+        + ordinalText(plugin.declarationOrdinal());
   }
 
   private Optional<EvidenceRecord> buildFileEvidence(
@@ -632,7 +803,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ProjectLayout layout,
       ModuleAwareScan scan,
       MavenMetadataAnalysis metadataAnalysis,
-      MavenDependencyAnalysis dependencyAnalysis) {
+      MavenDependencyAnalysis dependencyAnalysis,
+      MavenPluginAnalysis pluginAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -654,7 +826,8 @@ public final class SpringMvcEndpointOutputGenerator {
         json,
         layout.modules(),
         metadataByModuleId(metadataAnalysis),
-        dependenciesByModuleId(dependencyAnalysis));
+        dependenciesByModuleId(dependencyAnalysis),
+        pluginsByModuleId(pluginAnalysis));
     json.append("  },\n");
     json.append("  \"endpoints\": [");
     if (scan.endpoints().isEmpty()) {
@@ -703,11 +876,21 @@ public final class SpringMvcEndpointOutputGenerator {
     return dependenciesByModuleId;
   }
 
+  private Map<String, MavenModulePlugins> pluginsByModuleId(
+      MavenPluginAnalysis pluginAnalysis) {
+    Map<String, MavenModulePlugins> pluginsByModuleId = new LinkedHashMap<>();
+    for (MavenModulePlugins plugins : pluginAnalysis.modules()) {
+      pluginsByModuleId.put(plugins.moduleId(), plugins);
+    }
+    return pluginsByModuleId;
+  }
+
   private void appendModules(
       StringBuilder json,
       ProjectModules modules,
       Map<String, MavenModuleMetadata> metadataByModuleId,
-      Map<String, MavenModuleDependencies> dependenciesByModuleId) {
+      Map<String, MavenModuleDependencies> dependenciesByModuleId,
+      Map<String, MavenModulePlugins> pluginsByModuleId) {
     json.append("    \"modules\": {\n");
     appendIndentedStringField(json, 3, "analysis_status", modules.analysisStatus(), true);
     json.append("      \"items\": [");
@@ -740,6 +923,7 @@ public final class SpringMvcEndpointOutputGenerator {
           json,
           metadataForModule(module, metadataByModuleId),
           dependenciesForModule(module, dependenciesByModuleId),
+          pluginsForModule(module, pluginsByModuleId),
           false);
       json.append("        }");
       if (index < modules.items().size() - 1) {
@@ -796,15 +980,34 @@ public final class SpringMvcEndpointOutputGenerator {
         List.of());
   }
 
+  private MavenModulePlugins pluginsForModule(
+      MavenModuleItem module,
+      Map<String, MavenModulePlugins> pluginsByModuleId) {
+    MavenModulePlugins plugins = pluginsByModuleId.get(module.moduleId());
+    if (plugins != null) {
+      return plugins;
+    }
+    return notDetectedPlugins(module.moduleId());
+  }
+
+  private MavenModulePlugins notDetectedPlugins(String moduleId) {
+    return new MavenModulePlugins(
+        moduleId,
+        ANALYSIS_NOT_DETECTED,
+        List.of(),
+        List.of());
+  }
+
   private void appendBuildConfig(
       StringBuilder json,
       MavenModuleMetadata metadata,
       MavenModuleDependencies dependencies,
+      MavenModulePlugins plugins,
       boolean trailingComma) {
     indent(json, 5);
     json.append("\"build_config\": {\n");
     appendIndentedStringField(json, 6, "analysis_status", metadata.analysisStatus(), true);
-    appendMavenBuildConfig(json, metadata, dependencies);
+    appendMavenBuildConfig(json, metadata, dependencies, plugins);
     appendEmptyItemsSection(json, 6, "resources", ANALYSIS_NOT_ANALYZED, true);
     appendEmptyItemsSection(json, 6, "config_files", ANALYSIS_NOT_ANALYZED, true);
     appendEmptyItemsSection(json, 6, "spring_boot_applications", ANALYSIS_NOT_ANALYZED, false);
@@ -816,7 +1019,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendMavenBuildConfig(
       StringBuilder json,
       MavenModuleMetadata metadata,
-      MavenModuleDependencies dependencies) {
+      MavenModuleDependencies dependencies,
+      MavenModulePlugins plugins) {
     indent(json, 6);
     json.append("\"maven\": {\n");
     appendMavenMetadata(json, metadata);
@@ -834,8 +1038,20 @@ public final class SpringMvcEndpointOutputGenerator {
         dependencies.analysisStatus(),
         dependencies.dependencyManagement(),
         true);
-    appendEmptyItemsSection(json, 7, "plugins", ANALYSIS_NOT_ANALYZED, true);
-    appendEmptyItemsSection(json, 7, "plugin_management", ANALYSIS_NOT_ANALYZED, false);
+    appendMavenPluginSection(
+        json,
+        7,
+        "plugins",
+        plugins.analysisStatus(),
+        plugins.plugins(),
+        true);
+    appendMavenPluginSection(
+        json,
+        7,
+        "plugin_management",
+        plugins.analysisStatus(),
+        plugins.pluginManagement(),
+        false);
     indent(json, 6);
     json.append("},\n");
   }
@@ -955,6 +1171,192 @@ public final class SpringMvcEndpointOutputGenerator {
         false);
     indent(json, indentLevel);
     json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenPluginSection(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      String analysisStatus,
+      List<MavenPluginDeclaration> plugins,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": {\n");
+    appendIndentedStringField(json, indentLevel + 1, "analysis_status", analysisStatus, true);
+    indent(json, indentLevel + 1);
+    json.append("\"items\": [");
+    if (plugins.isEmpty()) {
+      json.append("]\n");
+      indent(json, indentLevel);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < plugins.size(); index++) {
+      appendMavenPlugin(
+          json,
+          indentLevel + 2,
+          plugins.get(index),
+          index < plugins.size() - 1);
+    }
+    indent(json, indentLevel + 1);
+    json.append("]\n");
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenPlugin(
+      StringBuilder json,
+      int indentLevel,
+      MavenPluginDeclaration plugin,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("{\n");
+    appendIndentedStringField(json, indentLevel + 1, "id", plugin.id(), true);
+    appendIndentedStringField(
+        json,
+        indentLevel + 1,
+        "declaration_kind",
+        plugin.declarationKind(),
+        true);
+    appendIndentedIntegerField(
+        json,
+        indentLevel + 1,
+        "declaration_ordinal",
+        plugin.declarationOrdinal(),
+        true);
+    appendMavenValue(json, indentLevel + 1, "group_id", plugin.groupId(), true);
+    appendMavenValue(json, indentLevel + 1, "artifact_id", plugin.artifactId(), true);
+    appendMavenValue(json, indentLevel + 1, "version", plugin.version(), true);
+    appendMavenPluginExecutions(json, indentLevel + 1, plugin.executions());
+    appendMavenPluginSignals(json, indentLevel + 1, "configuration_signals", plugin.configurationSignals(), true);
+    appendMavenPluginSignals(json, indentLevel + 1, "generator_signals", plugin.generatorSignals(), true);
+    appendIndentedStringArrayField(
+        json,
+        indentLevel + 1,
+        "evidence_ids",
+        plugin.evidenceIds(),
+        false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenPluginExecutions(
+      StringBuilder json,
+      int indentLevel,
+      List<MavenPluginExecution> executions) {
+    indent(json, indentLevel);
+    json.append("\"executions\": [");
+    if (executions.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < executions.size(); index++) {
+      appendMavenPluginExecution(
+          json,
+          indentLevel + 1,
+          executions.get(index),
+          index < executions.size() - 1);
+    }
+    indent(json, indentLevel);
+    json.append("],\n");
+  }
+
+  private void appendMavenPluginExecution(
+      StringBuilder json,
+      int indentLevel,
+      MavenPluginExecution execution,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("{\n");
+    appendIndentedNullableStringField(json, indentLevel + 1, "execution_id", execution.executionId(), true);
+    appendMavenValue(json, indentLevel + 1, "phase", execution.phase(), true);
+    appendMavenValueArray(json, indentLevel + 1, "goals", execution.goals(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", execution.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenValueArray(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      List<MavenMetadataValue> values,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": [");
+    if (values.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < values.size(); index++) {
+      appendMavenValueObject(
+          json,
+          indentLevel + 1,
+          values.get(index),
+          index < values.size() - 1);
+    }
+    indent(json, indentLevel);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenValueObject(
+      StringBuilder json,
+      int indentLevel,
+      MavenMetadataValue value,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("{\n");
+    appendIndentedNullableStringField(json, indentLevel + 1, "value", value.value(), true);
+    appendIndentedStringField(json, indentLevel + 1, "value_kind", value.valueKind(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", value.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenPluginSignals(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      List<MavenPluginSignal> signals,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": [");
+    if (signals.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < signals.size(); index++) {
+      MavenPluginSignal signal = signals.get(index);
+      indent(json, indentLevel + 1);
+      json.append("{\n");
+      appendIndentedStringField(json, indentLevel + 2, "signal", signal.signal(), true);
+      appendIndentedStringArrayField(json, indentLevel + 2, "evidence_ids", signal.evidenceIds(), false);
+      indent(json, indentLevel + 1);
+      json.append("}");
+      if (index < signals.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, indentLevel);
+    json.append("]");
     appendLineEnding(json, trailingComma);
   }
 
@@ -1412,6 +1814,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<MavenModuleDiscoveryEvidence> moduleEvidenceRecords,
       List<MavenMetadataEvidence> metadataEvidenceRecords,
       List<MavenDependencyEvidence> dependencyEvidenceRecords,
+      List<MavenPluginEvidence> pluginEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
@@ -1426,6 +1829,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     dependencyEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    pluginEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -1492,6 +1898,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(MavenDependencyEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(MavenPluginEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),
@@ -1747,6 +2167,10 @@ public final class SpringMvcEndpointOutputGenerator {
       return "";
     }
     return value;
+  }
+
+  private static String ordinalText(int ordinal) {
+    return String.format("%06d", ordinal);
   }
 
   private void writeGeneratedFiles(
