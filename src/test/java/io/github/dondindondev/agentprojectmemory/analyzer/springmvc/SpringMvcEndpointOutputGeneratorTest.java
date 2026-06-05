@@ -607,13 +607,113 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("expression", zetaMetadata.path("version").path("value_kind").asText()),
         () -> assertEquals("jar", zetaMetadata.path("packaging").path("value").asText()),
         () -> assertEquals(
-            "not_analyzed",
+            "analyzed",
             alphaBuildConfig.path("maven").path("dependencies").path("analysis_status").asText()),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:project:artifactId\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:parent:version\"")),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Maven metadata evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
+  void mavenDependenciesAreAttachedToCorrectModulesAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("maven-dependencies-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+            <module>services/billing</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/orders/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <artifactId>orders-service</artifactId>
+          <dependencyManagement>
+            <dependencies>
+              <dependency>
+                <groupId>com.example</groupId>
+                <artifactId>managed-orders-api</artifactId>
+                <version>${managed.orders.version}</version>
+              </dependency>
+            </dependencies>
+          </dependencyManagement>
+          <dependencies>
+            <dependency>
+              <groupId>org.springframework.boot</groupId>
+              <artifactId>spring-boot-starter-web</artifactId>
+              <version>${spring.boot.version}</version>
+            </dependency>
+            <dependency>
+              <groupId>com.example</groupId>
+              <artifactId>orders-client</artifactId>
+              <scope>test</scope>
+              <optional>true</optional>
+            </dependency>
+          </dependencies>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/billing/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <artifactId>billing-service</artifactId>
+        </project>
+        """);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    JsonNode ordersMaven = moduleNode(projectMap, "module:services/orders")
+        .path("build_config")
+        .path("maven");
+    JsonNode billingMaven = moduleNode(projectMap, "module:services/billing")
+        .path("build_config")
+        .path("maven");
+    JsonNode firstOrdersDependency = ordersMaven.path("dependencies").path("items").get(0);
+    JsonNode secondOrdersDependency = ordersMaven.path("dependencies").path("items").get(1);
+    JsonNode managedOrdersDependency = ordersMaven.path("dependency_management").path("items").get(0);
+
+    assertAll(
+        () -> assertEquals("analyzed", ordersMaven.path("dependencies").path("analysis_status").asText()),
+        () -> assertEquals(2, ordersMaven.path("dependencies").path("items").size()),
+        () -> assertEquals(1, ordersMaven.path("dependency_management").path("items").size()),
+        () -> assertEquals("orders-client", firstOrdersDependency.path("artifact_id").path("value").asText()),
+        () -> assertEquals("direct_dependency", firstOrdersDependency.path("declaration_kind").asText()),
+        () -> assertEquals(2, firstOrdersDependency.path("declaration_ordinal").asInt()),
+        () -> assertEquals("test", firstOrdersDependency.path("scope").path("value").asText()),
+        () -> assertEquals("true", firstOrdersDependency.path("optional").path("value").asText()),
+        () -> assertEquals(
+            "spring-boot-starter-web",
+            secondOrdersDependency.path("artifact_id").path("value").asText()),
+        () -> assertEquals(
+            "${spring.boot.version}",
+            secondOrdersDependency.path("version").path("value").asText()),
+        () -> assertEquals(
+            "property_reference",
+            secondOrdersDependency.path("version").path("value_kind").asText()),
+        () -> assertEquals(
+            "managed-orders-api",
+            managedOrdersDependency.path("artifact_id").path("value").asText()),
+        () -> assertEquals(
+            "dependency_management",
+            managedOrdersDependency.path("declaration_kind").asText()),
+        () -> assertEquals(0, billingMaven.path("dependencies").path("items").size()),
+        () -> assertEquals(
+            "analyzed",
+            billingMaven.path("dependencies").path("analysis_status").asText()),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:dependency:000001:groupId\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"symbol_name\":\"maven:dependency_management:000001:version\"")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Maven dependency evidence_ids must resolve in evidence-index.jsonl"));
   }
 
   @Test

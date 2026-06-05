@@ -241,10 +241,13 @@ Maven metadata evidence:
   Maven metadata. This proves only the direct POM text. It does not prove Maven defaults,
   parent inheritance, profile activation, property resolution, effective POM values, or
   runtime build behavior.
-- The current staged v0.3 Maven metadata implementation emits this metadata evidence
-  where a module POM is present. Future v0.3 subsections that are represented with
-  `analysis_status: "not_analyzed"` emit no dependency, plugin, resource, config-file, or
-  Spring Boot application evidence and make no absence claim.
+- The current staged v0.3 Maven metadata and dependency implementation emits this
+  metadata evidence where a module POM is present, plus dependency evidence for direct
+  `<dependencies><dependency>` declarations and separate
+  `<dependencyManagement><dependencies><dependency>` management declarations. Future
+  v0.3 subsections that are represented with `analysis_status: "not_analyzed"` emit no
+  plugin, resource, config-file, or Spring Boot application evidence and make no absence
+  claim.
 
 Dependency evidence:
 
@@ -254,6 +257,9 @@ Dependency evidence:
 - Direct `<dependencyManagement><dependencies><dependency>` declarations should also use
   `build_file` evidence, but the emitted facts must remain management declarations, not
   active resolved dependencies.
+- Dependency value evidence `symbol_name` values include the one-based declaration
+  ordinal, such as `maven:dependency:000001:artifactId` or
+  `maven:dependency_management:000001:version`.
 - Evidence for dependency values supports only direct source-visible XML text. It does
   not prove resolved versions, inherited values, transitive dependencies, conflict
   mediation, active profiles, repository availability, or effective dependency graphs.

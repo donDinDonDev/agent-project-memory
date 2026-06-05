@@ -91,11 +91,11 @@
                 }
               },
               "dependencies": {
-                "analysis_status": "not_analyzed",
+                "analysis_status": "analyzed",
                 "items": []
               },
               "dependency_management": {
-                "analysis_status": "not_analyzed",
+                "analysis_status": "analyzed",
                 "items": []
               },
               "plugins": {

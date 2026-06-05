@@ -88,7 +88,8 @@ Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spri
 stereotype components on classes and interfaces, deterministic hidden HTTP surface
 warnings, direct JPA entity annotations with conservative source-visible
 mapped-superclass identifier fields, standard Maven test-root classes with conservative
-helper filtering, and direct source-visible Maven metadata from module POMs, then writes:
+helper filtering, direct source-visible Maven metadata from module POMs, and direct
+source-visible Maven dependency declarations from module POMs, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -100,13 +101,15 @@ helper filtering, and direct source-visible Maven metadata from module POMs, the
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
 `schema_version: "0.3"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
-`project.modules.items[].build_config.maven.metadata`, compatibility source and test
-root summaries, direct `module_id` fields on module-owned facts, Spring MVC endpoint
-facts, hidden HTTP surface and Maven module warnings that are not expanded into endpoint
-facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
-and evidence ID references. v0.3 build/config subsections whose analyzers are not
-implemented yet are emitted with `analysis_status: "not_analyzed"` and do not claim an
-empty dependency, plugin, resource, config-file, or Spring Boot application inventory.
+`project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
+dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
+`dependency_management`, compatibility source and test root summaries, direct
+`module_id` fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface
+and Maven module warnings that are not expanded into endpoint facts, direct component
+inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
+references. v0.3 build/config subsections whose analyzers are not implemented yet are
+emitted with `analysis_status: "not_analyzed"` and do not claim an empty plugin,
+resource, config-file, or Spring Boot application inventory.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -185,10 +188,10 @@ The current implementation includes a Java 21 Maven CLI, root-declared Maven mod
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
 mapping support when uniquely bindable, stable `project-map.json` and
 `evidence-index.jsonl` outputs, deterministic module-owned source-visible Maven
-metadata extraction, deterministic direct Spring component and JPA entity inventories,
-deterministic hidden HTTP surface and Maven module warnings, a minimal deterministic
-tests inventory, deterministic `endpoints.md`, and deterministic `agent-guide.md`
-generation from the structured facts and evidence index.
+metadata and dependency extraction, deterministic direct Spring component and JPA entity
+inventories, deterministic hidden HTTP surface and Maven module warnings, a minimal
+deterministic tests inventory, deterministic `endpoints.md`, and deterministic
+`agent-guide.md` generation from the structured facts and evidence index.
 
 Current limitations:
 
@@ -200,9 +203,16 @@ Current limitations:
   `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates. It preserves
   property references and expressions as source-visible values and does not fill missing
   coordinates from Maven defaults, parent inheritance, profiles, or effective POM data.
-- Dependency, dependency-management, plugin, plugin-management, resource, config-file,
-  and Spring Boot application build/config subsections are not implemented yet and are
-  represented as `analysis_status: "not_analyzed"` in the staged v0.3 output.
+- Maven dependency inventory is limited to direct source-visible module POM
+  `<dependencies><dependency>` declarations and separate direct
+  `<dependencyManagement><dependencies><dependency>` management declarations. It
+  preserves direct `groupId`, `artifactId`, `version`, `scope`, `optional`, `type`, and
+  `classifier` text when present, preserves property references and expressions as
+  source-visible values, and does not resolve parent, managed, profile, effective, or
+  transitive dependency behavior.
+- Plugin, plugin-management, resource, config-file, and Spring Boot application
+  build/config subsections are not implemented yet and are represented as
+  `analysis_status: "not_analyzed"` in the staged v0.3 output.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from

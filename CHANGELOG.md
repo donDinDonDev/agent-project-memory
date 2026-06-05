@@ -14,6 +14,8 @@ architecture documents.
 - Added public v0.3 build/configuration planning documentation.
 - Added staged v0.3 module-owned source-visible Maven metadata extraction for direct
   module `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates.
+- Added staged v0.3 module-owned source-visible Maven dependency inventory for direct
+  dependencies and separate dependency-management declarations.
 
 ### Changed
 
@@ -23,6 +25,8 @@ architecture documents.
 - Updated public output to `schema_version: "0.3"` with a complete `build_config` shell;
   future v0.3 build/config subsections that are not implemented yet use
   `analysis_status: "not_analyzed"` without claiming empty inventories.
+- Changed Maven `dependencies` and `dependency_management` build/config subsections from
+  staged placeholders to analyzed source-visible inventories.
 
 ## [0.2.0] - 2026-06-05
 

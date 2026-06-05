@@ -30,9 +30,9 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.3 module-aware Maven metadata slice. The v0.1 single-module
-shape below is kept as historical compatibility context for fields that later contracts
-preserve.
+contract is the staged v0.3 module-aware Maven metadata and dependency inventory slice.
+The v0.1 single-module shape below is kept as historical compatibility context for
+fields that later contracts preserve.
 
 The v0.1 baseline wrote this top-level object:
 
@@ -748,10 +748,11 @@ Deterministic sorting rules:
 ### Planned v0.3 Build And Configuration Contract
 
 This section defines the v0.3 build/configuration JSON contract. The current staged
-implementation emits source-visible Maven metadata and the complete `build_config`
-section shell. Future v0.3 subsections that are not implemented yet use
-`analysis_status: "not_analyzed"` and empty `items` arrays so they do not claim absence
-of dependencies, plugins, resources, config files, or Spring Boot application signals.
+implementation emits source-visible Maven metadata, source-visible Maven dependency
+inventory, and the complete `build_config` section shell. Future v0.3 subsections that
+are not implemented yet use `analysis_status: "not_analyzed"` and empty `items` arrays
+so they do not claim absence of plugins, resources, config files, or Spring Boot
+application signals.
 
 The planned v0.3 contract uses:
 
@@ -1064,18 +1065,18 @@ Build/config analysis status rules:
 - Maven subsection `analysis_status` values are `"analyzed"` when a module POM is
   present and parsed for the relevant subsection. They are `"not_detected"` when the
   module has no POM available to that analyzer.
-- In the current staged v0.3 metadata slice, `maven.metadata.analysis_status` is
-  `"analyzed"` when a module POM is present and parsed for direct metadata, while
-  `dependencies`, `dependency_management`, `plugins`, and `plugin_management` use
-  `"not_analyzed"` with empty `items` arrays until their bounded analyzers are
-  implemented. Those empty arrays must not be read as a dependency or plugin inventory
-  result.
+- In the current staged v0.3 metadata and dependency slice,
+  `maven.metadata.analysis_status`, `dependencies.analysis_status`, and
+  `dependency_management.analysis_status` are `"analyzed"` when a module POM is present
+  and parsed for the relevant direct POM observations. `plugins` and `plugin_management`
+  use `"not_analyzed"` with empty `items` arrays until their bounded analyzers are
+  implemented. Those plugin empty arrays must not be read as plugin inventory results.
 - Resource, config, and Spring Boot subsection `analysis_status` values are `"analyzed"`
   when the relevant analyzer runs for supported module roots, even when the resulting
   item list is empty. They are `"not_detected"` only when no supported input root exists.
-- In the current staged v0.3 metadata slice, `resources`, `config_files`, and
-  `spring_boot_applications` use `"not_analyzed"` with empty `items` arrays until their
-  bounded analyzers are implemented.
+- In the current staged v0.3 metadata and dependency slice, `resources`, `config_files`,
+  and `spring_boot_applications` use `"not_analyzed"` with empty `items` arrays until
+  their bounded analyzers are implemented.
 
 Maven value rules:
 
@@ -1301,6 +1302,15 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   `maven:parent:version`, points to the module POM path, and supports only the direct POM
   text. It does not prove Maven defaults, inherited coordinates, profile activation, or
   effective POM values.
+- The current staged v0.3 dependency analyzer reuses `build_file` evidence for direct
+  source-visible dependency declarations, dependency-management declarations, and their
+  directly declared coordinate, `scope`, `optional`, `type`, and `classifier` elements.
+  Dependency evidence uses `symbol_name` values such as
+  `maven:dependency:000001:artifactId` or
+  `maven:dependency_management:000001:version`, points to the module POM path, and
+  supports only direct POM text. It does not prove resolved versions, inherited or
+  managed values, transitive dependencies, active profiles, repository availability, or
+  effective dependency graphs.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -1450,14 +1460,20 @@ Current v0.2 `agent-guide.md` behavior:
   contents, or cross-module architecture unless future deterministic facts explicitly
   support those claims.
 
-Current staged v0.3 metadata behavior:
+Current staged v0.3 build/config behavior:
 
 - `project-map.json` includes module-owned Maven metadata under
   `project.modules.items[].build_config.maven.metadata`.
+- `project-map.json` includes module-owned source-visible Maven dependency declarations
+  under `project.modules.items[].build_config.maven.dependencies` and separate
+  management declarations under
+  `project.modules.items[].build_config.maven.dependency_management`.
 - `agent-guide.md` keeps the current v0.2 guide sections until the bounded v0.3 guide
   rendering goal adds a dedicated build/configuration orientation section.
-- The current guide must not render `not_analyzed` dependency, plugin, resource, config,
-  or Spring Boot application subsection shells as detected facts.
+- The current guide does not render dependency inventory yet; dependency facts remain
+  machine-readable in `project-map.json` until the bounded v0.3 guide rendering goal.
+  The current guide must not render `not_analyzed` plugin, resource, config, or Spring
+  Boot application subsection shells as detected facts.
 
 Planned v0.3 `agent-guide.md` behavior:
 

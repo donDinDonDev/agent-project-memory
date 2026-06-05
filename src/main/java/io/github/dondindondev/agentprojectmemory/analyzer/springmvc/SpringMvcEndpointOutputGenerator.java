@@ -7,17 +7,22 @@ import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyDeclaration;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDiscoveryEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleDependencies;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleMetadata;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleWarning;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataParent;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenMetadataValue;
-import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleMetadata;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
@@ -122,6 +127,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private final AnalysisWarningAnalyzer warningAnalyzer;
   private final MavenModuleDiscoveryAnalyzer moduleDiscoveryAnalyzer;
   private final MavenMetadataAnalyzer mavenMetadataAnalyzer;
+  private final MavenDependencyAnalyzer mavenDependencyAnalyzer;
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -133,6 +139,7 @@ public final class SpringMvcEndpointOutputGenerator {
         new AnalysisWarningAnalyzer(),
         new MavenModuleDiscoveryAnalyzer(),
         new MavenMetadataAnalyzer(),
+        new MavenDependencyAnalyzer(),
         new AgentGuideGenerator());
   }
 
@@ -145,6 +152,7 @@ public final class SpringMvcEndpointOutputGenerator {
         new AnalysisWarningAnalyzer(),
         new MavenModuleDiscoveryAnalyzer(),
         new MavenMetadataAnalyzer(),
+        new MavenDependencyAnalyzer(),
         new AgentGuideGenerator());
   }
 
@@ -159,6 +167,7 @@ public final class SpringMvcEndpointOutputGenerator {
         new AnalysisWarningAnalyzer(),
         new MavenModuleDiscoveryAnalyzer(),
         new MavenMetadataAnalyzer(),
+        new MavenDependencyAnalyzer(),
         new AgentGuideGenerator());
   }
 
@@ -174,6 +183,7 @@ public final class SpringMvcEndpointOutputGenerator {
         new AnalysisWarningAnalyzer(),
         new MavenModuleDiscoveryAnalyzer(),
         new MavenMetadataAnalyzer(),
+        new MavenDependencyAnalyzer(),
         new AgentGuideGenerator());
   }
 
@@ -190,6 +200,7 @@ public final class SpringMvcEndpointOutputGenerator {
         new AnalysisWarningAnalyzer(),
         new MavenModuleDiscoveryAnalyzer(),
         new MavenMetadataAnalyzer(),
+        new MavenDependencyAnalyzer(),
         new AgentGuideGenerator());
   }
 
@@ -201,6 +212,7 @@ public final class SpringMvcEndpointOutputGenerator {
       AnalysisWarningAnalyzer warningAnalyzer,
       MavenModuleDiscoveryAnalyzer moduleDiscoveryAnalyzer,
       MavenMetadataAnalyzer mavenMetadataAnalyzer,
+      MavenDependencyAnalyzer mavenDependencyAnalyzer,
       AgentGuideGenerator agentGuideGenerator) {
     this.analyzer = Objects.requireNonNull(analyzer, "analyzer");
     this.componentAnalyzer = Objects.requireNonNull(componentAnalyzer, "componentAnalyzer");
@@ -215,6 +227,9 @@ public final class SpringMvcEndpointOutputGenerator {
     this.mavenMetadataAnalyzer = Objects.requireNonNull(
         mavenMetadataAnalyzer,
         "mavenMetadataAnalyzer");
+    this.mavenDependencyAnalyzer = Objects.requireNonNull(
+        mavenDependencyAnalyzer,
+        "mavenDependencyAnalyzer");
     this.agentGuideGenerator = Objects.requireNonNull(agentGuideGenerator, "agentGuideGenerator");
   }
 
@@ -233,7 +248,10 @@ public final class SpringMvcEndpointOutputGenerator {
     MavenMetadataAnalysis metadataAnalysis = mavenMetadataAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
-    if (!shouldGenerate(layout, moduleDiscoveryAnalysis, metadataAnalysis)) {
+    MavenDependencyAnalysis dependencyAnalysis = mavenDependencyAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        layout.modules().items());
+    if (!shouldGenerate(layout, moduleDiscoveryAnalysis, metadataAnalysis, dependencyAnalysis)) {
       return new Result(false, 0, 0, 0, 0, 0);
     }
 
@@ -246,6 +264,7 @@ public final class SpringMvcEndpointOutputGenerator {
         layout,
         moduleDiscoveryAnalysis.evidence(),
         metadataAnalysis.evidence(),
+        dependencyAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.entityEvidence(),
@@ -255,7 +274,8 @@ public final class SpringMvcEndpointOutputGenerator {
     String projectMapJson = projectMapJson(
         layout,
         scan,
-        metadataAnalysis);
+        metadataAnalysis,
+        dependencyAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -286,12 +306,15 @@ public final class SpringMvcEndpointOutputGenerator {
   private boolean shouldGenerate(
       ProjectLayout layout,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
-      MavenMetadataAnalysis metadataAnalysis) {
+      MavenMetadataAnalysis metadataAnalysis,
+      MavenDependencyAnalysis dependencyAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
         || metadataAnalysis.modules().stream()
-            .anyMatch(metadata -> ANALYSIS_ANALYZED.equals(metadata.analysisStatus()));
+            .anyMatch(metadata -> ANALYSIS_ANALYZED.equals(metadata.analysisStatus()))
+        || dependencyAnalysis.modules().stream()
+            .anyMatch(dependencies -> ANALYSIS_ANALYZED.equals(dependencies.analysisStatus()));
   }
 
   private ProjectLayout detectLayout(
@@ -608,7 +631,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private String projectMapJson(
       ProjectLayout layout,
       ModuleAwareScan scan,
-      MavenMetadataAnalysis metadataAnalysis) {
+      MavenMetadataAnalysis metadataAnalysis,
+      MavenDependencyAnalysis dependencyAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -626,7 +650,11 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("    },\n");
     appendIndentedStringArrayField(json, 2, "source_roots", layout.sourceRoots(), true);
     appendIndentedStringArrayField(json, 2, "test_roots", layout.testRoots(), true);
-    appendModules(json, layout.modules(), metadataByModuleId(metadataAnalysis));
+    appendModules(
+        json,
+        layout.modules(),
+        metadataByModuleId(metadataAnalysis),
+        dependenciesByModuleId(dependencyAnalysis));
     json.append("  },\n");
     json.append("  \"endpoints\": [");
     if (scan.endpoints().isEmpty()) {
@@ -666,10 +694,20 @@ public final class SpringMvcEndpointOutputGenerator {
     return metadataByModuleId;
   }
 
+  private Map<String, MavenModuleDependencies> dependenciesByModuleId(
+      MavenDependencyAnalysis dependencyAnalysis) {
+    Map<String, MavenModuleDependencies> dependenciesByModuleId = new LinkedHashMap<>();
+    for (MavenModuleDependencies dependencies : dependencyAnalysis.modules()) {
+      dependenciesByModuleId.put(dependencies.moduleId(), dependencies);
+    }
+    return dependenciesByModuleId;
+  }
+
   private void appendModules(
       StringBuilder json,
       ProjectModules modules,
-      Map<String, MavenModuleMetadata> metadataByModuleId) {
+      Map<String, MavenModuleMetadata> metadataByModuleId,
+      Map<String, MavenModuleDependencies> dependenciesByModuleId) {
     json.append("    \"modules\": {\n");
     appendIndentedStringField(json, 3, "analysis_status", modules.analysisStatus(), true);
     json.append("      \"items\": [");
@@ -698,7 +736,11 @@ public final class SpringMvcEndpointOutputGenerator {
           module.declarationEvidenceIds(),
           true);
       appendIndentedStringArrayField(json, 5, "pom_evidence_ids", module.pomEvidenceIds(), true);
-      appendBuildConfig(json, metadataForModule(module, metadataByModuleId), false);
+      appendBuildConfig(
+          json,
+          metadataForModule(module, metadataByModuleId),
+          dependenciesForModule(module, dependenciesByModuleId),
+          false);
       json.append("        }");
       if (index < modules.items().size() - 1) {
         json.append(",");
@@ -736,14 +778,33 @@ public final class SpringMvcEndpointOutputGenerator {
         parent);
   }
 
+  private MavenModuleDependencies dependenciesForModule(
+      MavenModuleItem module,
+      Map<String, MavenModuleDependencies> dependenciesByModuleId) {
+    MavenModuleDependencies dependencies = dependenciesByModuleId.get(module.moduleId());
+    if (dependencies != null) {
+      return dependencies;
+    }
+    return notDetectedDependencies(module.moduleId());
+  }
+
+  private MavenModuleDependencies notDetectedDependencies(String moduleId) {
+    return new MavenModuleDependencies(
+        moduleId,
+        ANALYSIS_NOT_DETECTED,
+        List.of(),
+        List.of());
+  }
+
   private void appendBuildConfig(
       StringBuilder json,
       MavenModuleMetadata metadata,
+      MavenModuleDependencies dependencies,
       boolean trailingComma) {
     indent(json, 5);
     json.append("\"build_config\": {\n");
     appendIndentedStringField(json, 6, "analysis_status", metadata.analysisStatus(), true);
-    appendMavenBuildConfig(json, metadata);
+    appendMavenBuildConfig(json, metadata, dependencies);
     appendEmptyItemsSection(json, 6, "resources", ANALYSIS_NOT_ANALYZED, true);
     appendEmptyItemsSection(json, 6, "config_files", ANALYSIS_NOT_ANALYZED, true);
     appendEmptyItemsSection(json, 6, "spring_boot_applications", ANALYSIS_NOT_ANALYZED, false);
@@ -752,12 +813,27 @@ public final class SpringMvcEndpointOutputGenerator {
     appendLineEnding(json, trailingComma);
   }
 
-  private void appendMavenBuildConfig(StringBuilder json, MavenModuleMetadata metadata) {
+  private void appendMavenBuildConfig(
+      StringBuilder json,
+      MavenModuleMetadata metadata,
+      MavenModuleDependencies dependencies) {
     indent(json, 6);
     json.append("\"maven\": {\n");
     appendMavenMetadata(json, metadata);
-    appendEmptyItemsSection(json, 7, "dependencies", ANALYSIS_NOT_ANALYZED, true);
-    appendEmptyItemsSection(json, 7, "dependency_management", ANALYSIS_NOT_ANALYZED, true);
+    appendMavenDependencySection(
+        json,
+        7,
+        "dependencies",
+        dependencies.analysisStatus(),
+        dependencies.dependencies(),
+        true);
+    appendMavenDependencySection(
+        json,
+        7,
+        "dependency_management",
+        dependencies.analysisStatus(),
+        dependencies.dependencyManagement(),
+        true);
     appendEmptyItemsSection(json, 7, "plugins", ANALYSIS_NOT_ANALYZED, true);
     appendEmptyItemsSection(json, 7, "plugin_management", ANALYSIS_NOT_ANALYZED, false);
     indent(json, 6);
@@ -804,6 +880,79 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedNullableStringField(json, indentLevel + 1, "value", value.value(), true);
     appendIndentedStringField(json, indentLevel + 1, "value_kind", value.valueKind(), true);
     appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", value.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenDependencySection(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      String analysisStatus,
+      List<MavenDependencyDeclaration> dependencies,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": {\n");
+    appendIndentedStringField(json, indentLevel + 1, "analysis_status", analysisStatus, true);
+    indent(json, indentLevel + 1);
+    json.append("\"items\": [");
+    if (dependencies.isEmpty()) {
+      json.append("]\n");
+      indent(json, indentLevel);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < dependencies.size(); index++) {
+      appendMavenDependency(
+          json,
+          indentLevel + 2,
+          dependencies.get(index),
+          index < dependencies.size() - 1);
+    }
+    indent(json, indentLevel + 1);
+    json.append("]\n");
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendMavenDependency(
+      StringBuilder json,
+      int indentLevel,
+      MavenDependencyDeclaration dependency,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("{\n");
+    appendIndentedStringField(json, indentLevel + 1, "id", dependency.id(), true);
+    appendIndentedStringField(
+        json,
+        indentLevel + 1,
+        "declaration_kind",
+        dependency.declarationKind(),
+        true);
+    appendIndentedIntegerField(
+        json,
+        indentLevel + 1,
+        "declaration_ordinal",
+        dependency.declarationOrdinal(),
+        true);
+    appendMavenValue(json, indentLevel + 1, "group_id", dependency.groupId(), true);
+    appendMavenValue(json, indentLevel + 1, "artifact_id", dependency.artifactId(), true);
+    appendMavenValue(json, indentLevel + 1, "version", dependency.version(), true);
+    appendMavenValue(json, indentLevel + 1, "scope", dependency.scope(), true);
+    appendMavenValue(json, indentLevel + 1, "optional", dependency.optional(), true);
+    appendMavenValue(json, indentLevel + 1, "type", dependency.type(), true);
+    appendMavenValue(json, indentLevel + 1, "classifier", dependency.classifier(), true);
+    appendIndentedStringArrayField(
+        json,
+        indentLevel + 1,
+        "evidence_ids",
+        dependency.evidenceIds(),
+        false);
     indent(json, indentLevel);
     json.append("}");
     appendLineEnding(json, trailingComma);
@@ -1262,6 +1411,7 @@ public final class SpringMvcEndpointOutputGenerator {
       ProjectLayout layout,
       List<MavenModuleDiscoveryEvidence> moduleEvidenceRecords,
       List<MavenMetadataEvidence> metadataEvidenceRecords,
+      List<MavenDependencyEvidence> dependencyEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
@@ -1273,6 +1423,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     metadataEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    dependencyEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -1325,6 +1478,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(MavenMetadataEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(MavenDependencyEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),
@@ -1437,6 +1604,17 @@ public final class SpringMvcEndpointOutputGenerator {
     } else {
       json.append(jsonString(value));
     }
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendIndentedIntegerField(
+      StringBuilder json,
+      int indentLevel,
+      String name,
+      int value,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(name)).append(": ").append(value);
     appendLineEnding(json, trailingComma);
   }
 

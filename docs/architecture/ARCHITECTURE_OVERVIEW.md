@@ -27,7 +27,8 @@ implementation detects a root `pom.xml` when present, root-declared Maven child 
 from the root `<modules>` section, child `pom.xml` files for supported modules, and
 standard Maven source and test roots such as `src/main/java` and `src/test/java`. It
 also extracts direct source-visible Maven metadata from module POMs for `groupId`,
-`artifactId`, `version`, `packaging`, and parent coordinates.
+`artifactId`, `version`, `packaging`, and parent coordinates, plus direct
+source-visible dependency and dependency-management declarations.
 
 The current implementation does not resolve Maven profiles, recursively discover nested
 modules, reconstruct effective POMs, fill missing metadata from Maven defaults or parent
@@ -37,8 +38,9 @@ discover Gradle projects.
 ### Build And Configuration Analyzer
 
 The v0.3 build and configuration analyzer is being implemented in bounded slices. The
-current slice emits source-visible module-owned Maven metadata and a complete
-`build_config` shell. Future subsections that are not implemented yet use
+current slice emits source-visible module-owned Maven metadata, direct Maven dependency
+inventory, separate dependency-management declarations, and a complete `build_config`
+shell. Future subsections that are not implemented yet use
 `analysis_status: "not_analyzed"` and do not claim empty inventories. The full planned
 scope is direct local POM, resource, config-file, and source annotation observations:
 
