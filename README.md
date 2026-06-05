@@ -28,13 +28,13 @@ services by default.
 
 Release artifacts are expected on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
-after the `v0.1.0` tag and release are created.
+after the `v0.2.0` tag and release are created.
 
-Download `agent-project-memory-0.1.0.jar`. If `SHA256SUMS` is published with the
+Download `agent-project-memory-0.2.0.jar`. If `SHA256SUMS` is published with the
 release, you can optionally verify the jar checksum before running it.
 
 ```sh
-java -jar agent-project-memory-0.1.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.2.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -54,7 +54,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.1.0.jar
+target/agent-project-memory-0.2.0.jar
 ```
 
 ## Quick Start
@@ -62,7 +62,7 @@ target/agent-project-memory-0.1.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.1.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.2.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -171,9 +171,11 @@ references.
 
 ## Project Status
 
-The v0.1 public release slice after Stage 8 evaluation is complete. Current development
-is on the v0.2 module-aware Maven release track. Future connector/import work is
-post-v0.1 and is not started.
+The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
+module-aware Maven release track is in final release-readiness state with no remaining
+security blockers from its final discovery baseline. Creating the release tag,
+publishing GitHub release assets, and uploading artifacts still require explicit
+maintainer approval. Future connector/import work is post-v0.1 and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

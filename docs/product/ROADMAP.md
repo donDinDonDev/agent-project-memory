@@ -9,7 +9,7 @@ Future work is organized by release tracks instead of extending the original v0.
 list. Connector/import work remains post-v0.1 future work and is not started.
 
 For strategic context, see
-[POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the next planned release track, see
+[POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release track, see
 the public v0.2 roadmap and release notes.
 
 ## Roadmap Principles
@@ -49,7 +49,7 @@ The v0.1 implementation includes:
 The detailed v0.1 scope and limitations are documented in
 [V0_1_RELEASE_NOTES.md](V0_1_RELEASE_NOTES.md) and [MVP_SPEC.md](MVP_SPEC.md).
 
-## v0.2.0: Module-Aware Maven Support (Next)
+## v0.2.0: Module-Aware Maven Support (Release Readiness)
 
 Product outcome: make project memory module-aware for real Maven Java/Spring
 repositories while preserving deterministic analysis and evidence discipline.
@@ -70,8 +70,10 @@ Expected scope:
 
 The v0.2 module-aware JSON output and evidence contract is documented in
 `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`.
-Markdown module grouping and real-project evaluation are complete; release readiness
-materials and the repository-wide security gate are active release-track work.
+Markdown module grouping, real-project evaluation, release-readiness materials, and
+final-baseline security finding fixes are complete. No security blockers remain from the
+final v0.2 discovery baseline. Creating the release tag, publishing GitHub release
+assets, and uploading artifacts still require explicit maintainer approval.
 
 Non-goals:
 
@@ -93,7 +95,7 @@ Planned goal sequence:
 4. Update Markdown generators. (implemented for module-aware Markdown output)
 5. Add multi-module fixtures and golden checks. (implemented for Markdown output)
 6. Evaluate on pinned real Maven multi-module projects. (completed)
-7. Prepare v0.2 release materials. (active)
+7. Prepare v0.2 release materials. (final release-readiness pass)
 
 ## v0.3.0: Build And Configuration Model
 

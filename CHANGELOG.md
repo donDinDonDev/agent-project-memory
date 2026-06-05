@@ -9,18 +9,9 @@ architecture documents.
 
 ## [Unreleased]
 
-### Security
+No unreleased changes.
 
-- Fixed malformed root `pom.xml` handling so Maven module discovery fails with a
-  bounded scan error instead of treating parse failure as an empty module inventory.
-- Hardened annotation-origin checks so source-declared fake framework annotations and
-  bare/static-imported `RequestMethod` constants do not create trusted Spring MVC,
-  component, JPA, hidden HTTP surface, or Spring Test inventory facts.
-- Escaped Unicode line and paragraph separators in generated JSON/JSONL strings, and
-  stopped `agent-guide.md` evidence classification from inferring evidence type from
-  unresolved evidence ID substrings.
-
-## [0.2.0] - 2026-06-04
+## [0.2.0] - 2026-06-05
 
 ### Added
 
@@ -51,6 +42,8 @@ architecture documents.
 - Clarified release authority and changelog expectations in contributor documentation.
 - Clarified public agent boundaries, issue/PR scope wording, development versioning, and
   checkpoint-vs-release commit expectations.
+- Aligned the Maven project version and README artifact references with the intended
+  `0.2.0` release artifact.
 
 ### Security
 
@@ -60,6 +53,21 @@ architecture documents.
   generated output file targets must stay under the canonical scan root.
 - Fixed hardlinked generated output targets so scans cannot overwrite outside aliases
   through pre-existing multi-link `.project-memory` files.
+- Checkpointed the final v0.2 Codex Security discovery baseline fixes:
+  `CS-APM-RC-006` in `53a4fab`, `CS-APM-RC-007` through `CS-APM-RC-009` plus
+  `CS-APM-RC-011` in `3156238`, and `CS-APM-RC-010` plus `CS-APM-RC-012` in
+  `6b49306`.
+- Fixed malformed root `pom.xml` handling so Maven module discovery fails with a
+  bounded scan error instead of treating parse failure as an empty module inventory.
+- Hardened annotation-origin checks so source-declared fake framework annotations and
+  bare/static-imported `RequestMethod` constants do not create trusted Spring MVC,
+  component, JPA, hidden HTTP surface, or Spring Test inventory facts.
+- Escaped Unicode line and paragraph separators in generated JSON/JSONL strings, and
+  stopped `agent-guide.md` evidence classification from inferring evidence type from
+  unresolved evidence ID substrings.
+- Recorded that no security blockers remain from the final v0.2 discovery baseline and
+  that no additional open-ended repository-wide security scan is required before
+  `v0.2.0`.
 
 ### Not Included
 

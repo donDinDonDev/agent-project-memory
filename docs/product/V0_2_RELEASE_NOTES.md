@@ -9,10 +9,15 @@ These notes summarize the planned v0.2 public release surface for
 v0.2 is the module-aware Maven release track for the local-first Java/Spring CLI.
 
 These notes are prepared as release-readiness material. The release is not tagged,
-published, or uploaded by these notes. Final release readiness still depends on the
-maintainer-approved release version/artifact alignment, local validation, and a clean
-repository-wide Codex Security release-candidate gate. Release readiness is not declared
-while a local security gate blocker remains open.
+published, or uploaded by these notes. The release version and README artifact
+references are aligned to `0.2.0`, but creating the release tag, publishing GitHub
+release assets, and uploading artifacts still require explicit maintainer approval.
+The required repository-wide Codex Security release-candidate gate has completed for
+the current v0.2 chain: the second scan at HEAD `451a75a` is the final discovery
+baseline, `CS-APM-RC-006` through `CS-APM-RC-012` are fixed and checkpointed in
+`53a4fab`, `3156238`, and `6b49306`, and no security blockers remain from that final
+baseline. Do not run another open-ended repository-wide security scan before `v0.2.0`;
+use targeted verification only for known findings or release-readiness checks.
 
 ## Scope
 
@@ -133,9 +138,11 @@ mvn package
 git diff --stat
 ```
 
-The active release track also requires a repository-wide Codex Security `risk-based security assessment`
-on the release-candidate checkout before declaring release readiness, tagging, or
-publishing `v0.2.0`.
+The active release track's repository-wide Codex Security release-candidate scan
+requirement has completed. The second scan at HEAD `451a75a` is the final v0.2
+discovery baseline, its `CS-APM-RC-006` through `CS-APM-RC-012` findings are fixed and
+checkpointed, and no additional open-ended repository-wide security scan is required
+before `v0.2.0`.
 
 Binary release artifact names should match the maintainer-approved release version in
 `pom.xml` before final tagging or publishing.

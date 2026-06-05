@@ -128,6 +128,10 @@ Before preparing a release candidate:
   expansion.
 - Run any Codex Security gate defined by the active release track before tagging or
   publishing.
+- If the active release track identifies a final security discovery baseline, do not run
+  another open-ended repository-wide scan for the same release unless the maintainer
+  explicitly reopens that gate. Verify that every baseline finding is fixed, explicitly
+  deferred, or maintainer-accepted using targeted verification.
 - Confirm no connector, network, AI, SaaS, web UI, repo chat, generic RAG, or automatic
   code-modification scope entered the release accidentally.
 
