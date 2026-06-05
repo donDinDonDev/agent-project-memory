@@ -103,7 +103,7 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanRootPomOnlyDoesNotCreateContractOutputFiles() throws Exception {
+  void scanRootPomOnlyGeneratesMetadataOnlyContractOutputFiles() throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
           <modelVersion>4.0.0</modelVersion>
@@ -112,15 +112,26 @@ final class AgentProjectMemoryCliTest {
 
     CliResult result = runCli("scan", tempDir.toString());
     Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(Files.isDirectory(outputDirectory)),
-        () -> assertFalse(result.stdout().contains("Generated project-map.json")),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+        () -> assertTrue(result.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
+        () -> assertTrue(projectMap.contains("\"build_config\": {")),
+        () -> assertTrue(projectMap.contains("\"metadata\": {\n"
+            + "                \"analysis_status\": \"analyzed\"")),
+        () -> assertTrue(projectMap.contains("\"artifact_id\": {\n"
+            + "                  \"value\": null,\n"
+            + "                  \"value_kind\": \"not_declared\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"pom.xml\"")));
   }
 
   @Test
@@ -142,7 +153,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": [")),
@@ -189,7 +200,7 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
-        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.3\"")),
         () -> assertFalse(rewrittenProjectMap.contains("stale generated content")));
   }
 

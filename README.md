@@ -72,8 +72,9 @@ java -jar target/agent-project-memory-0.2.0.jar scan /path/to/java-spring-projec
 ```
 
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
-rewritten deterministically when supported Maven module roots, supported root source or
-test roots, or Maven module warnings are detected.
+rewritten deterministically when supported Maven module roots, source-visible Maven
+metadata from module POMs, supported root source or test roots, or Maven module warnings
+are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
@@ -86,8 +87,8 @@ The analyzer extracts Spring MVC controllers and source-visible interface-declar
 Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spring
 stereotype components on classes and interfaces, deterministic hidden HTTP surface
 warnings, direct JPA entity annotations with conservative source-visible
-mapped-superclass identifier fields, and standard Maven test-root classes with
-conservative helper filtering, then writes:
+mapped-superclass identifier fields, standard Maven test-root classes with conservative
+helper filtering, and direct source-visible Maven metadata from module POMs, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -97,12 +98,15 @@ conservative helper filtering, then writes:
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.2"` and includes detected root `pom.xml` build metadata when
-present, Maven module inventory, compatibility source and test root summaries, direct
-`module_id` fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface
-and Maven module warnings that are not expanded into endpoint facts, direct component
-inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
-references.
+`schema_version: "0.3"` and includes detected root `pom.xml` build metadata when
+present, Maven module inventory, module-owned source-visible Maven metadata under
+`project.modules.items[].build_config.maven.metadata`, compatibility source and test
+root summaries, direct `module_id` fields on module-owned facts, Spring MVC endpoint
+facts, hidden HTTP surface and Maven module warnings that are not expanded into endpoint
+facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
+and evidence ID references. v0.3 build/config subsections whose analyzers are not
+implemented yet are emitted with `analysis_status: "not_analyzed"` and do not claim an
+empty dependency, plugin, resource, config-file, or Spring Boot application inventory.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -180,10 +184,11 @@ final discovery baseline. Future connector/import work is post-v0.2 and is not s
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
 mapping support when uniquely bindable, stable `project-map.json` and
-`evidence-index.jsonl` outputs, deterministic direct Spring component and JPA entity
-inventories, deterministic hidden HTTP surface and Maven module warnings, a minimal
-deterministic tests inventory, deterministic `endpoints.md`, and deterministic
-`agent-guide.md` generation from the structured facts and evidence index.
+`evidence-index.jsonl` outputs, deterministic module-owned source-visible Maven
+metadata extraction, deterministic direct Spring component and JPA entity inventories,
+deterministic hidden HTTP surface and Maven module warnings, a minimal deterministic
+tests inventory, deterministic `endpoints.md`, and deterministic `agent-guide.md`
+generation from the structured facts and evidence index.
 
 Current limitations:
 
@@ -191,6 +196,13 @@ Current limitations:
   the root `pom.xml` `<modules>` section. It does not resolve Maven profiles, recursively
   discover nested modules, reconstruct effective POMs, build dependency graphs, or run
   Maven.
+- Maven metadata extraction is limited to direct source-visible module POM text for
+  `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates. It preserves
+  property references and expressions as source-visible values and does not fill missing
+  coordinates from Maven defaults, parent inheritance, profiles, or effective POM data.
+- Dependency, dependency-management, plugin, plugin-management, resource, config-file,
+  and Spring Boot application build/config subsections are not implemented yet and are
+  represented as `analysis_status: "not_analyzed"` in the staged v0.3 output.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from
@@ -229,8 +241,9 @@ Current limitations:
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.
 - Local Markdown/document ingestion is not implemented.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
-  evidence when present plus Spring MVC endpoint, warning, component stereotype, JPA
-  annotation, and tests inventory evidence.
+  evidence when present, source-visible Maven metadata `build_file` evidence, plus
+  Spring MVC endpoint, warning, component stereotype, JPA annotation, and tests
+  inventory evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

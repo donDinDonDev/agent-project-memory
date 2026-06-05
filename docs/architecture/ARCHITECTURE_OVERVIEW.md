@@ -25,18 +25,22 @@ Walks the local repository, applies ignore rules, identifies candidate project f
 Detects Maven project structure and build metadata needed by analyzers. The current
 implementation detects a root `pom.xml` when present, root-declared Maven child modules
 from the root `<modules>` section, child `pom.xml` files for supported modules, and
-standard Maven source and test roots such as `src/main/java` and `src/test/java`.
+standard Maven source and test roots such as `src/main/java` and `src/test/java`. It
+also extracts direct source-visible Maven metadata from module POMs for `groupId`,
+`artifactId`, `version`, `packaging`, and parent coordinates.
 
 The current implementation does not resolve Maven profiles, recursively discover nested
-modules, reconstruct effective POMs, resolve dependencies, run Maven, scan generated
-source roots by default, or discover Gradle projects.
+modules, reconstruct effective POMs, fill missing metadata from Maven defaults or parent
+inheritance, resolve dependencies, run Maven, scan generated source roots by default, or
+discover Gradle projects.
 
-### Planned Build And Configuration Analyzer
+### Build And Configuration Analyzer
 
-The planned v0.3 build and configuration analyzer should add source-visible
-module-owned build/config facts after the contract in
-`docs/architecture/OUTPUT_CONTRACT.md` is implemented. Its scope is direct local POM,
-resource, config-file, and source annotation observations:
+The v0.3 build and configuration analyzer is being implemented in bounded slices. The
+current slice emits source-visible module-owned Maven metadata and a complete
+`build_config` shell. Future subsections that are not implemented yet use
+`analysis_status: "not_analyzed"` and do not claim empty inventories. The full planned
+scope is direct local POM, resource, config-file, and source annotation observations:
 
 - direct Maven metadata, dependency declarations, dependency-management declarations,
   plugin declarations, plugin-management declarations, and bounded generator signals;

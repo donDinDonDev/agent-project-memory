@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class SpringMvcEndpointOutputGeneratorTest {
+  private static final ObjectMapper JSON = new ObjectMapper();
   private static final Pattern EVIDENCE_ID_ARRAY = Pattern.compile(
       "\"evidence_ids\": \\[(.*?)]",
       Pattern.DOTALL);
@@ -71,7 +74,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(27, projectMapEvidenceIds.size()),
+        () -> assertEquals(30, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -445,7 +448,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/billing\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/orders\"")),
@@ -515,7 +518,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.2\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -531,6 +534,126 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains("build_file:module:services/missing")),
         () -> assertTrue(endpoints.contains("No Spring MVC endpoints detected")),
         () -> assertTrue(agentGuide.contains("Warning: `maven_module` signal `missing_child_pom`")));
+  }
+
+  @Test
+  void mavenMetadataIsAttachedToCorrectModulesAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("maven-metadata-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/zeta</module>
+            <module>services/alpha</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/zeta/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>zeta-service</artifactId>
+          <version>1.0-${revision}</version>
+          <packaging>jar</packaging>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/alpha/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <parent>
+            <groupId>com.example.parent</groupId>
+            <artifactId>example-parent</artifactId>
+            <version>${revision}</version>
+          </parent>
+          <artifactId>alpha-service</artifactId>
+        </project>
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    JsonNode alphaMetadata = moduleNode(projectMap, "module:services/alpha")
+        .path("build_config")
+        .path("maven")
+        .path("metadata");
+    JsonNode zetaMetadata = moduleNode(projectMap, "module:services/zeta")
+        .path("build_config")
+        .path("maven")
+        .path("metadata");
+    JsonNode alphaBuildConfig = moduleNode(projectMap, "module:services/alpha").path("build_config");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
+            < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
+        () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
+        () -> assertEquals("alpha-service", alphaMetadata.path("artifact_id").path("value").asText()),
+        () -> assertTrue(alphaMetadata.path("group_id").path("value").isNull()),
+        () -> assertEquals("not_declared", alphaMetadata.path("group_id").path("value_kind").asText()),
+        () -> assertEquals("analyzed", alphaMetadata.path("parent").path("analysis_status").asText()),
+        () -> assertEquals(
+            "${revision}",
+            alphaMetadata.path("parent").path("version").path("value").asText()),
+        () -> assertEquals(
+            "property_reference",
+            alphaMetadata.path("parent").path("version").path("value_kind").asText()),
+        () -> assertEquals("zeta-service", zetaMetadata.path("artifact_id").path("value").asText()),
+        () -> assertEquals("1.0-${revision}", zetaMetadata.path("version").path("value").asText()),
+        () -> assertEquals("expression", zetaMetadata.path("version").path("value_kind").asText()),
+        () -> assertEquals("jar", zetaMetadata.path("packaging").path("value").asText()),
+        () -> assertEquals(
+            "not_analyzed",
+            alphaBuildConfig.path("maven").path("dependencies").path("analysis_status").asText()),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:project:artifactId\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:parent:version\"")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Maven metadata evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
+  void pomOnlyAggregatorProjectGeneratesSourceVisibleMetadataOutput() throws Exception {
+    Path projectPath = tempDir.resolve("pom-only-aggregator-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>platform</artifactId>
+          <version>1.0.0</version>
+          <packaging>pom</packaging>
+        </project>
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode metadata = moduleNode(projectMap, "module:.")
+        .path("build_config")
+        .path("maven")
+        .path("metadata");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertEquals(0, result.componentCount()),
+        () -> assertEquals(0, result.entityCount()),
+        () -> assertEquals(0, result.testCount()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
+        () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
+        () -> assertTrue(projectMap.contains("\"build_config\": {")),
+        () -> assertEquals("platform", metadata.path("artifact_id").path("value").asText()),
+        () -> assertEquals("pom", metadata.path("packaging").path("value").asText()),
+        () -> assertTrue(projectMap.contains("\"endpoints\": [],")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:project:packaging\"")));
   }
 
   @Test
@@ -603,6 +726,16 @@ final class SpringMvcEndpointOutputGeneratorTest {
       }
     }
     return ids;
+  }
+
+  private JsonNode moduleNode(String projectMap, String moduleId) throws Exception {
+    JsonNode modules = JSON.readTree(projectMap).path("project").path("modules").path("items");
+    for (JsonNode module : modules) {
+      if (moduleId.equals(module.path("module_id").asText())) {
+        return module;
+      }
+    }
+    throw new AssertionError("Missing module block for " + moduleId);
   }
 
   private String expected(String fileName) throws Exception {

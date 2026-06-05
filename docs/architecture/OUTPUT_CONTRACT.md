@@ -30,8 +30,9 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the v0.2 module-aware Maven slice. The v0.1 single-module shape below is
-kept as historical compatibility context for fields that v0.2 preserves.
+contract is the staged v0.3 module-aware Maven metadata slice. The v0.1 single-module
+shape below is kept as historical compatibility context for fields that later contracts
+preserve.
 
 The v0.1 baseline wrote this top-level object:
 
@@ -746,9 +747,11 @@ Deterministic sorting rules:
 
 ### Planned v0.3 Build And Configuration Contract
 
-This section defines the planned v0.3 build/configuration JSON contract. It is design
-guidance for the v0.3 release track and does not describe current v0.2 implementation
-behavior.
+This section defines the v0.3 build/configuration JSON contract. The current staged
+implementation emits source-visible Maven metadata and the complete `build_config`
+section shell. Future v0.3 subsections that are not implemented yet use
+`analysis_status: "not_analyzed"` and empty `items` arrays so they do not claim absence
+of dependencies, plugins, resources, config files, or Spring Boot application signals.
 
 The planned v0.3 contract uses:
 
@@ -774,6 +777,10 @@ Schema and compatibility rules:
 - Implementation checkpoints before the complete public v0.3 boundary should either keep
   unfinished data internal/test-scoped or emit the complete designed section shape with
   explicit `analysis_status` values.
+- `analysis_status: "not_analyzed"` is valid only for staged v0.3 subsection shells whose
+  analyzers have not been implemented yet. It means the subsection made no absence claim.
+  Once a subsection analyzer exists, it must use that subsection's normal
+  `"analyzed"`/`"not_detected"` rules instead.
 - v0.3 single-module scans keep the existing output files and preserve v0.2
   single-module compatibility for root-module fact IDs, top-level `project.source_roots`,
   and top-level `project.test_roots`.
@@ -1057,9 +1064,18 @@ Build/config analysis status rules:
 - Maven subsection `analysis_status` values are `"analyzed"` when a module POM is
   present and parsed for the relevant subsection. They are `"not_detected"` when the
   module has no POM available to that analyzer.
+- In the current staged v0.3 metadata slice, `maven.metadata.analysis_status` is
+  `"analyzed"` when a module POM is present and parsed for direct metadata, while
+  `dependencies`, `dependency_management`, `plugins`, and `plugin_management` use
+  `"not_analyzed"` with empty `items` arrays until their bounded analyzers are
+  implemented. Those empty arrays must not be read as a dependency or plugin inventory
+  result.
 - Resource, config, and Spring Boot subsection `analysis_status` values are `"analyzed"`
   when the relevant analyzer runs for supported module roots, even when the resulting
   item list is empty. They are `"not_detected"` only when no supported input root exists.
+- In the current staged v0.3 metadata slice, `resources`, `config_files`, and
+  `spring_boot_applications` use `"not_analyzed"` with empty `items` arrays until their
+  bounded analyzers are implemented.
 
 Maven value rules:
 
@@ -1279,6 +1295,12 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   sources, or runtime Spring behavior.
 - Module discovery evidence paths must remain normalized repository-relative paths and
   must not be absolute, start with `./`, or escape the scanned repository root.
+- The current staged v0.3 Maven metadata analyzer also reuses `build_file` evidence for
+  direct source-visible module metadata and parent coordinate elements. Metadata evidence
+  uses `symbol_name` values such as `maven:project:artifactId` or
+  `maven:parent:version`, points to the module POM path, and supports only the direct POM
+  text. It does not prove Maven defaults, inherited coordinates, profile activation, or
+  effective POM values.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -1427,6 +1449,15 @@ Current v0.2 `agent-guide.md` behavior:
   not infer dependency direction, runtime Spring boundaries, ownership, generated API
   contents, or cross-module architecture unless future deterministic facts explicitly
   support those claims.
+
+Current staged v0.3 metadata behavior:
+
+- `project-map.json` includes module-owned Maven metadata under
+  `project.modules.items[].build_config.maven.metadata`.
+- `agent-guide.md` keeps the current v0.2 guide sections until the bounded v0.3 guide
+  rendering goal adds a dedicated build/configuration orientation section.
+- The current guide must not render `not_analyzed` dependency, plugin, resource, config,
+  or Spring Boot application subsection shells as detected facts.
 
 Planned v0.3 `agent-guide.md` behavior:
 

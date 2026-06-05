@@ -12,12 +12,17 @@ architecture documents.
 ### Added
 
 - Added public v0.3 build/configuration planning documentation.
+- Added staged v0.3 module-owned source-visible Maven metadata extraction for direct
+  module `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates.
 
 ### Changed
 
 - Documented planned `schema_version: "0.3"` build/configuration output and evidence
   contract decisions for source-visible Maven, resource, config-file, Spring Boot, and
   generated-source warning signals.
+- Updated public output to `schema_version: "0.3"` with a complete `build_config` shell;
+  future v0.3 build/config subsections that are not implemented yet use
+  `analysis_status: "not_analyzed"` without claiming empty inventories.
 
 ## [0.2.0] - 2026-06-05
 

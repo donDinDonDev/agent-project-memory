@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.2",
+  "schema_version": "0.3",
   "project": {
     "root": ".",
     "build": {
@@ -34,7 +34,92 @@
           "declaration_evidence_ids": [],
           "pom_evidence_ids": [
             "ev:pom.xml:1-1:build_file:pom.xml"
-          ]
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:7-7:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "stage3-project-map",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:8-8:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:9-9:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_analyzed",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_analyzed",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_analyzed",
+              "items": []
+            }
+          }
         }
       ]
     }

@@ -241,6 +241,10 @@ Maven metadata evidence:
   Maven metadata. This proves only the direct POM text. It does not prove Maven defaults,
   parent inheritance, profile activation, property resolution, effective POM values, or
   runtime build behavior.
+- The current staged v0.3 Maven metadata implementation emits this metadata evidence
+  where a module POM is present. Future v0.3 subsections that are represented with
+  `analysis_status: "not_analyzed"` emit no dependency, plugin, resource, config-file, or
+  Spring Boot application evidence and make no absence claim.
 
 Dependency evidence:
 
