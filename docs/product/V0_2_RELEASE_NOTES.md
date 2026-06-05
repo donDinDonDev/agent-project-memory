@@ -1,6 +1,6 @@
 # v0.2 Release Notes
 
-These notes summarize the planned v0.2 public release surface for
+These notes summarize the v0.2 public release surface for
 `agent-project-memory`. Detailed evaluation records remain in
 [docs/development/evaluations/](../development/evaluations/).
 
@@ -8,10 +8,9 @@ These notes summarize the planned v0.2 public release surface for
 
 v0.2 is the module-aware Maven release track for the local-first Java/Spring CLI.
 
-These notes are prepared as release-readiness material. The release is not tagged,
-published, or uploaded by these notes. The release version and README artifact
-references are aligned to `0.2.0`, but creating the release tag, publishing GitHub
-release assets, and uploading artifacts still require explicit maintainer approval.
+The `v0.2.0` tag and GitHub release are published with the packaged CLI jar and
+`SHA256SUMS` assets. The release version and README artifact references are aligned to
+`0.2.0`.
 The required repository-wide Codex Security release-candidate gate has completed for
 the current v0.2 chain: the second scan at HEAD `451a75a` is the final discovery
 baseline, `CS-APM-RC-006` through `CS-APM-RC-012` are fixed and checkpointed in

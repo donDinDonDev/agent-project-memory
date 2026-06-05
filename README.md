@@ -26,9 +26,9 @@ services by default.
 
 ## Download
 
-Release artifacts are expected on the
+Release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
-after the `v0.2.0` tag and release are created.
+for the `v0.2.0` tag.
 
 Download `agent-project-memory-0.2.0.jar`. If `SHA256SUMS` is published with the
 release, you can optionally verify the jar checksum before running it.
@@ -172,10 +172,8 @@ references.
 ## Project Status
 
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
-module-aware Maven release track is in final release-readiness state with no remaining
-security blockers from its final discovery baseline. Creating the release tag,
-publishing GitHub release assets, and uploading artifacts still require explicit
-maintainer approval. Future connector/import work is post-v0.1 and is not started.
+module-aware Maven release is published with no remaining security blockers from its
+final discovery baseline. Future connector/import work is post-v0.2 and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

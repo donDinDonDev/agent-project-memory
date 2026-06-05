@@ -72,8 +72,7 @@ The v0.2 module-aware JSON output and evidence contract is documented in
 `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`.
 Markdown module grouping, real-project evaluation, release-readiness materials, and
 final-baseline security finding fixes are complete. No security blockers remain from the
-final v0.2 discovery baseline. Creating the release tag, publishing GitHub release
-assets, and uploading artifacts still require explicit maintainer approval.
+final v0.2 discovery baseline. The `v0.2.0` tag and GitHub release are published.
 
 Non-goals:
 
