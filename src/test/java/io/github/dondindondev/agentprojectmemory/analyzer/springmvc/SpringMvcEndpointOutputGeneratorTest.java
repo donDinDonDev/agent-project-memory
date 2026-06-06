@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -139,6 +140,117 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(agentGuide.contains("Spring Boot application: Detected "
             + "`com.example.Stage3Application`")),
         () -> assertSensitiveConfigValuesDoNotAppear(projectMap, evidenceIndex, agentGuide));
+  }
+
+  @Test
+  void generatedEvidenceIndexBoundsOversizedEvidenceExcerpts() throws Exception {
+    Path projectPath = tempDir.resolve("bounded-excerpts");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    String payload = "A".repeat(1_200);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>bounded-excerpts</artifactId>
+          <version>1.0.0</version>
+          <modules>
+            <module>../%s</module>
+          </modules>
+          <build>
+            <plugins>
+              <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId><!--%s-->
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """.formatted(payload, payload));
+    writeFile(projectPath.resolve("src/main/java/com/example/OversizedController.java"), """
+        package com.example;
+
+        import org.springframework.web.bind.annotation.GetMapping;
+        import org.springframework.web.bind.annotation.RestController;
+
+        @RestController("%s")
+        class OversizedController {
+          @GetMapping("/bounded")
+          String bounded() {
+            return "ok";
+          }
+        }
+        """.formatted(payload));
+    writeFile(projectPath.resolve("src/main/java/com/example/OversizedRepository.java"), """
+        package com.example;
+
+        import org.springframework.data.rest.core.annotation.RepositoryRestResource;
+
+        @RepositoryRestResource(path = "%s")
+        interface OversizedRepository {
+        }
+        """.formatted(payload));
+    writeFile(projectPath.resolve("src/test/java/com/example/OversizedControllerTest.java"), """
+        package com.example;
+
+        import org.junit.jupiter.api.Test;
+
+        class OversizedControllerTest {
+          @Test(value = "%s")
+          void bounded() {
+          }
+        }
+        """.formatted(payload));
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    List<JsonNode> evidenceRecords = evidenceRecords(evidenceIndex);
+    int maxExcerptLength = EvidenceExcerpts.MAX_EXCERPT_LENGTH + 3;
+    int maxEvidenceLineLength = evidenceIndex.lines()
+        .mapToInt(String::length)
+        .max()
+        .orElse(0);
+    JsonNode restControllerEvidence = evidenceRecord(
+        evidenceRecords,
+        "src/main/java/com/example/OversizedController.java",
+        "@RestController");
+    JsonNode repositoryRestEvidence = evidenceRecord(
+        evidenceRecords,
+        "src/main/java/com/example/OversizedRepository.java",
+        "@RepositoryRestResource");
+    JsonNode testAnnotationEvidence = evidenceRecord(
+        evidenceRecords,
+        "src/test/java/com/example/OversizedControllerTest.java",
+        "@Test");
+    JsonNode mavenModuleEvidence = evidenceRecords.stream()
+        .filter(record -> "pom.xml".equals(record.path("path").asText()))
+        .filter(record -> record.path("symbol_name").asText().startsWith("module:<invalid>:decl:"))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing invalid Maven module declaration evidence"));
+    JsonNode mavenWarningEvidence = evidenceRecord(
+        evidenceRecords,
+        "pom.xml",
+        "openapi-generator-maven-plugin");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertFalse(evidenceIndex.contains(payload)),
+        () -> assertFalse(projectMap.contains(payload)),
+        () -> assertTrue(
+            evidenceRecords.stream()
+                .allMatch(record -> record.path("excerpt").asText().length() <= maxExcerptLength),
+            "Every generated evidence excerpt must stay bounded"),
+        () -> assertTrue(maxEvidenceLineLength < 1_000),
+        () -> assertBoundedExcerpt(restControllerEvidence, "@RestController(\""),
+        () -> assertBoundedExcerpt(repositoryRestEvidence, "@RepositoryRestResource(path = \""),
+        () -> assertBoundedExcerpt(testAnnotationEvidence, "@Test(value = \""),
+        () -> assertBoundedExcerpt(mavenModuleEvidence, "<module>../"),
+        () -> assertBoundedExcerpt(mavenWarningEvidence, "<artifactId>openapi-generator-maven-plugin</artifactId>"));
   }
 
   @Test
@@ -1126,6 +1238,36 @@ final class SpringMvcEndpointOutputGeneratorTest {
       }
     }
     return ids;
+  }
+
+  private List<JsonNode> evidenceRecords(String evidenceIndex) throws Exception {
+    java.util.ArrayList<JsonNode> records = new java.util.ArrayList<>();
+    for (String line : evidenceIndex.lines().toList()) {
+      if (!line.isBlank()) {
+        records.add(JSON.readTree(line));
+      }
+    }
+    return List.copyOf(records);
+  }
+
+  private JsonNode evidenceRecord(
+      List<JsonNode> evidenceRecords,
+      String sourcePath,
+      String symbolName) {
+    return evidenceRecords.stream()
+        .filter(record -> sourcePath.equals(record.path("path").asText()))
+        .filter(record -> symbolName.equals(record.path("symbol_name").asText()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError(
+            "Missing evidence record for " + sourcePath + " and " + symbolName));
+  }
+
+  private void assertBoundedExcerpt(JsonNode evidenceRecord, String expectedPrefix) {
+    String excerpt = evidenceRecord.path("excerpt").asText();
+    assertAll(
+        () -> assertTrue(excerpt.startsWith(expectedPrefix)),
+        () -> assertTrue(excerpt.endsWith("...")),
+        () -> assertTrue(excerpt.length() <= EvidenceExcerpts.MAX_EXCERPT_LENGTH + 3));
   }
 
   private List<String> jsonPathValues(JsonNode items) {

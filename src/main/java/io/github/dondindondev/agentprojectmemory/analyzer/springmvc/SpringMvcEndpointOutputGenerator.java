@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ConfigFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ModuleResourceConfig;
@@ -746,7 +747,7 @@ public final class SpringMvcEndpointOutputGenerator {
     List<String> lines = Files.readAllLines(buildFile, StandardCharsets.UTF_8);
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
-    String excerpt = lines.isEmpty() ? "" : lines.get(0).trim();
+    String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());
     return Optional.of(new EvidenceRecord(
         "ev:" + ROOT_BUILD_FILE + ":" + lineRange + ":build_file:" + ROOT_BUILD_FILE,
         BUILD_FILE_SOURCE_TYPE,
@@ -2720,5 +2721,8 @@ public final class SpringMvcEndpointOutputGenerator {
       Integer lineEnd,
       String excerpt,
       String confidence) {
+    private EvidenceRecord {
+      excerpt = EvidenceExcerpts.bounded(excerpt);
+    }
   }
 }

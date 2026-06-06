@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
@@ -291,7 +292,7 @@ public final class MavenModuleDiscoveryAnalyzer {
     List<String> lines = Files.readAllLines(pom, StandardCharsets.UTF_8);
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
-    String excerpt = lines.isEmpty() ? "" : lines.get(0).trim();
+    String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());
     return new MavenModuleDiscoveryEvidence(
         "ev:" + sourcePath + ":" + lineRange + ":build_file:" + ROOT_BUILD_FILE,
         BUILD_FILE_SOURCE_TYPE,
@@ -378,9 +379,9 @@ public final class MavenModuleDiscoveryAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      return String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      return EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     }
-    return "<module>" + declaration.rawText().trim() + "</module>";
+    return EvidenceExcerpts.bounded("<module>" + declaration.rawText().trim() + "</module>");
   }
 
   private List<ModuleDeclaration> moduleDeclarations(Path pom, String sourcePath) throws IOException {

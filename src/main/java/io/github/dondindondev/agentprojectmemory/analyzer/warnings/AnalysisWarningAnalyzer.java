@@ -1,9 +1,9 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.warnings;
 
-import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
@@ -252,9 +252,9 @@ public final class AnalysisWarningAnalyzer {
 
   private String sourceLineExcerpt(List<String> lines, Integer lineNumber, String artifactId) {
     if (lineNumber != null && lineNumber >= 1 && lineNumber <= lines.size()) {
-      return lines.get(lineNumber - 1).trim();
+      return EvidenceExcerpts.bounded(lines.get(lineNumber - 1).trim());
     }
-    return "<artifactId>" + artifactId + "</artifactId>";
+    return EvidenceExcerpts.bounded("<artifactId>" + artifactId + "</artifactId>");
   }
 
   private void analyzeRepositoryRestResources(
@@ -443,18 +443,7 @@ public final class AnalysisWarningAnalyzer {
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {
-    Optional<Range> range = annotation.getRange();
-    if (range.isEmpty()) {
-      return annotation.toString();
-    }
-
-    int start = range.orElseThrow().begin.line;
-    int end = range.orElseThrow().end.line;
-    if (start < 1 || end < start || end > sourceLines.size()) {
-      return annotation.toString();
-    }
-
-    return String.join("\n", sourceLines.subList(start - 1, end)).trim();
+    return EvidenceExcerpts.sourceRange(annotation, sourceLines);
   }
 
   private String repositoryRelativePath(Path repositoryRoot, Path javaFile) {

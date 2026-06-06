@@ -1,9 +1,9 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
-import com.github.javaparser.Range;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
@@ -198,18 +198,7 @@ final class SpringComponentAnalyzer {
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {
-    Optional<Range> range = annotation.getRange();
-    if (range.isEmpty()) {
-      return annotation.toString();
-    }
-
-    int start = range.orElseThrow().begin.line;
-    int end = range.orElseThrow().end.line;
-    if (start < 1 || end < start || end > sourceLines.size()) {
-      return annotation.toString();
-    }
-
-    return String.join("\n", sourceLines.subList(start - 1, end)).trim();
+    return EvidenceExcerpts.sourceRange(annotation, sourceLines);
   }
 
   private String repositoryRelativePath(Path repositoryRoot, Path javaFile) {

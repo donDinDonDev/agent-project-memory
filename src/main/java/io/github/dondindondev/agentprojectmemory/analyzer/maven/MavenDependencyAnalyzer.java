@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,6 @@ public final class MavenDependencyAnalyzer {
   private static final String HIGH_CONFIDENCE = "high";
   private static final String DIRECT_DEPENDENCY = "direct_dependency";
   private static final String DEPENDENCY_MANAGEMENT = "dependency_management";
-  private static final int MAX_EXCERPT_LENGTH = 240;
   private static final Pattern PROPERTY_REFERENCE = Pattern.compile("\\$\\{[^}]+}");
   private static final Comparator<MavenDependencyDeclaration> DEPENDENCY_ORDER = Comparator
       .comparing(
@@ -382,11 +382,11 @@ public final class MavenDependencyAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      excerpt = String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      excerpt = EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     } else {
       excerpt = "<dependency>";
     }
-    return boundedExcerpt(excerpt);
+    return EvidenceExcerpts.bounded(excerpt);
   }
 
   private String evidenceExcerpt(List<String> sourceLines, DependencyValueElement value) {
@@ -398,7 +398,7 @@ public final class MavenDependencyAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      excerpt = String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      excerpt = EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     } else {
       excerpt = "<" + value.field().elementName() + ">"
           + value.rawText().trim()
@@ -406,14 +406,7 @@ public final class MavenDependencyAnalyzer {
           + value.field().elementName()
           + ">";
     }
-    return boundedExcerpt(excerpt);
-  }
-
-  private String boundedExcerpt(String excerpt) {
-    if (excerpt.length() <= MAX_EXCERPT_LENGTH) {
-      return excerpt;
-    }
-    return excerpt.substring(0, MAX_EXCERPT_LENGTH) + "...";
+    return EvidenceExcerpts.bounded(excerpt);
   }
 
   private String lineRange(Integer lineStart, Integer lineEnd) {

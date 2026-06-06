@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
@@ -29,7 +30,6 @@ public final class MavenMetadataAnalyzer {
   private static final String ANALYSIS_STATUS_NOT_DETECTED = "not_detected";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String HIGH_CONFIDENCE = "high";
-  private static final int MAX_EXCERPT_LENGTH = 240;
   private static final Pattern PROPERTY_REFERENCE = Pattern.compile("\\$\\{[^}]+}");
   private static final Comparator<MavenMetadataEvidence> EVIDENCE_ORDER = Comparator
       .comparing(MavenMetadataEvidence::sourcePath)
@@ -250,7 +250,7 @@ public final class MavenMetadataAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      excerpt = String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      excerpt = EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     } else {
       excerpt = "<" + element.field().elementName() + ">"
           + element.rawText().trim()
@@ -258,14 +258,7 @@ public final class MavenMetadataAnalyzer {
           + element.field().elementName()
           + ">";
     }
-    return boundedExcerpt(excerpt);
-  }
-
-  private String boundedExcerpt(String excerpt) {
-    if (excerpt.length() <= MAX_EXCERPT_LENGTH) {
-      return excerpt;
-    }
-    return excerpt.substring(0, MAX_EXCERPT_LENGTH) + "...";
+    return EvidenceExcerpts.bounded(excerpt);
   }
 
   private String lineRange(Integer lineStart, Integer lineEnd) {

@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,7 +41,6 @@ public final class MavenPluginAnalyzer {
   private static final String GENERATED_SOURCES_CONFIG_PRESENT = "generated_sources_config_present";
   private static final String ANNOTATION_PROCESSOR_PATHS_PRESENT = "annotation_processor_paths_present";
   private static final String ADD_SOURCE_GOAL_PRESENT = "add_source_goal_present";
-  private static final int MAX_EXCERPT_LENGTH = 240;
   private static final Pattern PROPERTY_REFERENCE = Pattern.compile("\\$\\{[^}]+}");
   private static final Set<String> OPENAPI_SWAGGER_CODEGEN_ARTIFACT_IDS = Set.of(
       "openapi-generator-maven-plugin",
@@ -214,7 +214,7 @@ public final class MavenPluginAnalyzer {
           candidate.symbolName(),
           candidate.lineStart(),
           candidate.lineEnd(),
-          boundedExcerpt(candidate.excerpt()),
+          EvidenceExcerpts.bounded(candidate.excerpt()),
           HIGH_CONFIDENCE);
       evidence.add(evidenceRecord);
 
@@ -609,7 +609,7 @@ public final class MavenPluginAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      excerpt = String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      excerpt = EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     } else {
       excerpt = "<" + value.field().elementName() + ">"
           + value.rawText().trim()
@@ -617,7 +617,7 @@ public final class MavenPluginAnalyzer {
           + value.field().elementName()
           + ">";
     }
-    return boundedExcerpt(excerpt);
+    return EvidenceExcerpts.bounded(excerpt);
   }
 
   private String evidenceExcerpt(List<String> sourceLines, ExecutionValueElement value) {
@@ -630,7 +630,7 @@ public final class MavenPluginAnalyzer {
         && lineStart >= 1
         && lineEnd >= lineStart
         && lineEnd <= sourceLines.size()) {
-      excerpt = String.join("\n", sourceLines.subList(lineStart - 1, lineEnd)).trim();
+      excerpt = EvidenceExcerpts.sourceLines(sourceLines, lineStart, lineEnd);
     } else {
       excerpt = "<" + elementName + ">"
           + value.rawText().trim()
@@ -638,14 +638,7 @@ public final class MavenPluginAnalyzer {
           + elementName
           + ">";
     }
-    return boundedExcerpt(excerpt);
-  }
-
-  private String boundedExcerpt(String excerpt) {
-    if (excerpt.length() <= MAX_EXCERPT_LENGTH) {
-      return excerpt;
-    }
-    return excerpt.substring(0, MAX_EXCERPT_LENGTH) + "...";
+    return EvidenceExcerpts.bounded(excerpt);
   }
 
   private String lineRange(Integer lineStart, Integer lineEnd) {

@@ -48,6 +48,13 @@ architecture documents.
   plugins, plugin management, resource roots, config file paths, Spring Boot application
   signals, and module warnings.
 
+### Security
+
+- Bounded generated evidence excerpts across Java annotation/code-symbol evidence,
+  warning/test evidence, Maven module discovery evidence, and the evidence-index JSONL
+  sink so hostile repository source cannot inflate `.project-memory` outputs through
+  oversized source excerpts.
+
 ## [0.2.0] - 2026-06-05
 
 ### Added

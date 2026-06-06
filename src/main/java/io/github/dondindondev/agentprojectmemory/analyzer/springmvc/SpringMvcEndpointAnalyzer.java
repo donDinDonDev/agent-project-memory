@@ -1,6 +1,5 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
-import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -12,6 +11,7 @@ import com.github.javaparser.ast.expr.Expression;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
+import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -899,36 +899,11 @@ final class SpringMvcEndpointAnalyzer {
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {
-    Optional<Range> range = annotation.getRange();
-    if (range.isEmpty()) {
-      return annotation.toString();
-    }
-
-    int start = range.orElseThrow().begin.line;
-    int end = range.orElseThrow().end.line;
-    if (start < 1 || end < start || end > sourceLines.size()) {
-      return annotation.toString();
-    }
-
-    return String.join("\n", sourceLines.subList(start - 1, end)).trim();
+    return EvidenceExcerpts.sourceRange(annotation, sourceLines);
   }
 
   private String singleLineExcerpt(Node node, List<String> sourceLines, Integer preferredLine) {
-    if (preferredLine != null && preferredLine >= 1 && preferredLine <= sourceLines.size()) {
-      return sourceLines.get(preferredLine - 1).trim();
-    }
-
-    Optional<Range> range = node.getRange();
-    if (range.isEmpty()) {
-      return node.toString();
-    }
-
-    int line = range.orElseThrow().begin.line;
-    if (line < 1 || line > sourceLines.size()) {
-      return node.toString();
-    }
-
-    return sourceLines.get(line - 1).trim();
+    return EvidenceExcerpts.singleLine(node, sourceLines, preferredLine);
   }
 
   private Integer classDeclarationLine(ClassOrInterfaceDeclaration type) {
