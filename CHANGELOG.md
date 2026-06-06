@@ -9,6 +9,10 @@ architecture documents.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.3.0] - 2026-06-06
+
 ### Added
 
 - Added public v0.3 build/configuration planning documentation.
@@ -54,6 +58,26 @@ architecture documents.
   warning/test evidence, Maven module discovery evidence, and the evidence-index JSONL
   sink so hostile repository source cannot inflate `.project-memory` outputs through
   oversized source excerpts.
+- Completed the final v0.3 Codex Security release baseline after the bounded-excerpt
+  fix with no reportable findings.
+
+### Not Included
+
+- Gradle support.
+- Maven execution.
+- Effective POM reconstruction.
+- Parent inheritance resolution into effective coordinates.
+- Maven profile activation.
+- Remote dependency or plugin resolution.
+- Transitive dependency graph reconstruction.
+- Runtime Spring configuration resolution.
+- Config property key/value inventory or secret extraction.
+- Default generated-source scanning.
+- OpenAPI YAML/JSON parsing or generated API reconstruction.
+- Endpoint creation from build, config, OpenAPI, or generated-source warning signals.
+- Connectors for YouTrack, Jira, Confluence, GitHub, or GitLab.
+- LLM calls in the core analyzer.
+- SaaS, web UI, repository chat, generic RAG, or automatic code modification.
 
 ## [0.2.0] - 2026-06-05
 

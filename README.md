@@ -28,13 +28,13 @@ services by default.
 
 Release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
-for the `v0.2.0` tag.
+for the `v0.3.0` tag.
 
-Download `agent-project-memory-0.2.0.jar`. If `SHA256SUMS` is published with the
+Download `agent-project-memory-0.3.0.jar`. If `SHA256SUMS` is published with the
 release, you can optionally verify the jar checksum before running it.
 
 ```sh
-java -jar agent-project-memory-0.2.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.3.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -54,7 +54,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.2.0.jar
+target/agent-project-memory-0.3.0.jar
 ```
 
 ## Quick Start
@@ -62,7 +62,7 @@ target/agent-project-memory-0.2.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.2.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.3.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -145,6 +145,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
 - v0.2 release summary: [docs/product/V0_2_RELEASE_NOTES.md](docs/product/V0_2_RELEASE_NOTES.md).
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
@@ -152,7 +153,7 @@ Start here:
 - Post-v0.1 direction:
   [docs/product/POST_V0_1_STRATEGY.md](docs/product/POST_V0_1_STRATEGY.md) and
   the public v0.2 roadmap and release notes;
-  active v0.3 build/configuration planning:
+  v0.3 build/configuration planning:
   the public v0.3 roadmap and release notes.
 - Output and evidence contracts:
   [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
@@ -189,7 +190,9 @@ references.
 
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
-final discovery baseline. Future connector/import work is post-v0.2 and is not started.
+final discovery baseline. The v0.3 build/configuration release materials are prepared
+for maintainer review with a clean final Codex Security release baseline. Future
+connector/import work is post-v0.3 and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -278,9 +281,10 @@ Current limitations:
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.
 - Local Markdown/document ingestion is not implemented.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
-  evidence when present, source-visible Maven metadata `build_file` evidence, plus
-  Spring MVC endpoint, warning, component stereotype, JPA annotation, and tests
-  inventory evidence.
+  evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
+  module declaration `build_file` evidence, path-oriented `config_file` evidence,
+  bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
+  Boot application, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

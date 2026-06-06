@@ -96,12 +96,15 @@ Planned goal sequence:
 6. Evaluate on pinned real Maven multi-module projects. (completed)
 7. Prepare v0.2 release materials. (final release-readiness pass)
 
-## v0.3.0: Build And Configuration Model
+## v0.3.0: Build And Configuration Model (Release Readiness)
 
 Planning boundary and contract decisions:
 the public v0.3 roadmap and release notes.
 
-Expected direction:
+Product outcome: add a deterministic module-aware build and configuration orientation
+layer on top of the v0.2 Maven module inventory.
+
+Release-ready scope:
 
 - Per-module Maven metadata where source-visible.
 - Packaging, parent, dependency, and plugin summaries.
@@ -109,11 +112,20 @@ Expected direction:
 - Resource root and application config discovery.
 - Build warnings for generated-source and OpenAPI/Swagger plugin signals.
 
-Current staged implementation includes source-visible per-module Maven metadata, direct
+The v0.3 implementation includes source-visible per-module Maven metadata, direct
 dependency/dependency-management inventory, direct plugin/plugin-management inventory,
-conservative generated-source plugin warnings, standard resource-root discovery, and
-path-only supported application/logging config-file inventory, direct source-visible
-Spring Boot application signals, and build/config orientation in `agent-guide.md`.
+bounded direct plugin execution and configuration signals, conservative generated-source
+plugin warnings, standard resource-root discovery, path-only supported
+application/logging config-file inventory, direct source-visible Spring Boot application
+signals, and build/config orientation in `agent-guide.md`.
+
+Release readiness notes:
+
+- Real-project v0.3 evaluation is complete on pinned Maven Java/Spring projects.
+- Review/security diff audit is complete.
+- Final post-fix release-candidate risk-based security baseline is clean with no reportable findings.
+- v0.3.0 release materials are prepared for maintainer review; tag, push, publish, and
+  GitHub release creation remain separate maintainer-approved actions.
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.
