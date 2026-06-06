@@ -137,6 +137,34 @@ final class MavenModuleDiscoveryAnalyzerTest {
   }
 
   @Test
+  void resourceOnlyModuleIsSupportedForBuildConfigDiscovery() throws Exception {
+    Path repositoryRoot = repository("resource-only-module");
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/config</module>
+          </modules>
+        </project>
+        """);
+    writePom(repositoryRoot.resolve("services/config/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("services/config/src/main/resources"));
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem config = item(analysis, "module:services/config");
+
+    assertAll(
+        () -> assertEquals("supported", config.supportStatus()),
+        () -> assertEquals(List.of(), config.sourceRoots()),
+        () -> assertEquals(List.of(), config.testRoots()),
+        () -> assertEquals(List.of(), analysis.warnings()),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
   void missingChildPomCreatesModuleItemAndWarning() throws Exception {
     Path repositoryRoot = repository("missing-child-pom");
     writePom(repositoryRoot.resolve("pom.xml"), """
@@ -386,7 +414,7 @@ final class MavenModuleDiscoveryAnalyzerTest {
         () -> assertEquals(List.of(), shared.testRoots()),
         () -> assertEquals("libraries/shared/pom.xml", warning.sourcePath()),
         () -> assertEquals("module:libraries/shared", warning.moduleId()),
-        () -> assertTrue(warning.message().contains("no supported Java source or test roots")),
+        () -> assertTrue(warning.message().contains("no supported Java source, test, or resource roots")),
         () -> assertEquals(
             new ArrayList<>(List.of(shared.declarationEvidenceIds().get(0), shared.pomEvidenceIds().get(0))),
             warning.evidenceIds()),

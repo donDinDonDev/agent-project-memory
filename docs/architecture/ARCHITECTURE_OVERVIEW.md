@@ -25,7 +25,8 @@ Walks the local repository, applies ignore rules, identifies candidate project f
 Detects Maven project structure and build metadata needed by analyzers. The current
 implementation detects a root `pom.xml` when present, root-declared Maven child modules
 from the root `<modules>` section, child `pom.xml` files for supported modules, and
-standard Maven source and test roots such as `src/main/java` and `src/test/java`. It
+standard Maven source, test, and resource roots such as `src/main/java`,
+`src/test/java`, and `src/main/resources`. It
 also extracts direct source-visible Maven metadata from module POMs for `groupId`,
 `artifactId`, `version`, `packaging`, and parent coordinates, plus direct
 source-visible dependency/dependency-management declarations and
@@ -42,10 +43,11 @@ The v0.3 build and configuration analyzer is being implemented in bounded slices
 current slice emits source-visible module-owned Maven metadata, direct Maven dependency
 inventory, separate dependency-management declarations, direct Maven plugin inventory,
 separate plugin-management declarations, conservative plugin-derived generated-source
-warnings, and a complete `build_config` shell. Future subsections that are not
-implemented yet use `analysis_status: "not_analyzed"` and do not claim empty
-inventories. The full planned scope is direct local POM, resource, config-file, and
-source annotation observations:
+warnings, standard resource-root discovery, path-only supported application/logging
+config-file inventory, and a complete `build_config` shell. Future subsections that are
+not implemented yet, such as Spring Boot application signals, use
+`analysis_status: "not_analyzed"` and do not claim empty inventories. The full planned
+scope is direct local POM, resource, config-file, and source annotation observations:
 
 - direct Maven metadata, dependency declarations, dependency-management declarations,
   plugin declarations, plugin-management declarations, and bounded generator signals;

@@ -13,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -872,6 +873,108 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void resourceAndConfigDiscoveryIsModuleOwnedPathOnlyAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("resource-config-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/config</module>
+            <module>services/empty</module>
+          </modules>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/config/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(projectPath.resolve("services/config/src/main/resources/application.yaml"), """
+        datasource:
+          password: FAKE_CONFIG_DB_PASSWORD
+        api-token: ${FAKE_CONFIG_ENV_TOKEN}
+        """);
+    writeFile(projectPath.resolve("services/config/src/main/resources/application-prod.yml"), """
+        secret: FAKE_CONFIG_PROFILE_SECRET
+        """);
+    writeFile(projectPath.resolve("services/config/src/main/resources/logback.xml"), """
+        <configuration password="FAKE_CONFIG_LOGBACK_SECRET"/>
+        """);
+    writeFile(projectPath.resolve("services/config/src/test/resources/application-test.properties"), """
+        password=FAKE_CONFIG_TEST_SECRET
+        """);
+    writeFile(projectPath.resolve("services/config/src/test/resources/log4j2-spring.xml"), """
+        <configuration password="FAKE_CONFIG_LOG4J_SECRET"/>
+        """);
+    writeFile(projectPath.resolve("services/empty/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    JsonNode configModule = moduleNode(projectMap, "module:services/config");
+    JsonNode emptyModule = moduleNode(projectMap, "module:services/empty");
+    JsonNode resourceItems = configModule.path("build_config").path("resources").path("items");
+    JsonNode configItems = configModule.path("build_config").path("config_files").path("items");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals("supported", configModule.path("support_status").asText()),
+        () -> assertEquals("unsupported", emptyModule.path("support_status").asText()),
+        () -> assertEquals(
+            "analyzed",
+            configModule.path("build_config").path("resources").path("analysis_status").asText()),
+        () -> assertEquals(
+            "analyzed",
+            configModule.path("build_config").path("config_files").path("analysis_status").asText()),
+        () -> assertEquals(
+            "not_detected",
+            emptyModule.path("build_config").path("resources").path("analysis_status").asText()),
+        () -> assertEquals(
+            "not_detected",
+            emptyModule.path("build_config").path("config_files").path("analysis_status").asText()),
+        () -> assertEquals(2, resourceItems.size()),
+        () -> assertEquals("main", resourceItems.get(0).path("scope").asText()),
+        () -> assertEquals("services/config/src/main/resources", resourceItems.get(0).path("path").asText()),
+        () -> assertEquals("test", resourceItems.get(1).path("scope").asText()),
+        () -> assertEquals("services/config/src/test/resources", resourceItems.get(1).path("path").asText()),
+        () -> assertEquals(5, configItems.size()),
+        () -> assertEquals(
+            List.of(
+                "services/config/src/main/resources/logback.xml",
+                "services/config/src/main/resources/application-prod.yml",
+                "services/config/src/main/resources/application.yaml",
+                "services/config/src/test/resources/log4j2-spring.xml",
+                "services/config/src/test/resources/application-test.properties"),
+            jsonPathValues(configItems)),
+        () -> assertEquals("logging_config", configItems.get(0).path("config_kind").asText()),
+        () -> assertEquals("xml", configItems.get(0).path("format").asText()),
+        () -> assertEquals("spring_application", configItems.get(1).path("config_kind").asText()),
+        () -> assertEquals("yaml", configItems.get(1).path("format").asText()),
+        () -> assertEquals("prod", configItems.get(1).path("profile_name").asText()),
+        () -> assertEquals("filename_only", configItems.get(1).path("profile_source").asText()),
+        () -> assertEquals("properties", configItems.get(4).path("format").asText()),
+        () -> assertEquals("test", configItems.get(4).path("profile_name").asText()),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"id\":\"ev:services/config/src/main/resources/application-prod.yml:unknown:config_file:application-prod.yml\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"excerpt\":\"config file detected: application-prod.yml\"")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Config file evidence_ids must resolve in evidence-index.jsonl"),
+        () -> assertSensitiveConfigValuesDoNotAppear(projectMap, evidenceIndex, endpoints, agentGuide));
+  }
+
+  @Test
   void pomOnlyAggregatorProjectGeneratesSourceVisibleMetadataOutput() throws Exception {
     Path projectPath = tempDir.resolve("pom-only-aggregator-project");
     Path outputDirectory = projectPath.resolve(".project-memory");
@@ -981,6 +1084,23 @@ final class SpringMvcEndpointOutputGeneratorTest {
       }
     }
     return ids;
+  }
+
+  private List<String> jsonPathValues(JsonNode items) {
+    return items.findValues("path").stream()
+        .map(JsonNode::asText)
+        .toList();
+  }
+
+  private void assertSensitiveConfigValuesDoNotAppear(String... generatedOutputs) {
+    String joinedOutput = String.join("\n", generatedOutputs);
+    assertAll(
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_DB_PASSWORD")),
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_ENV_TOKEN")),
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_PROFILE_SECRET")),
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_LOGBACK_SECRET")),
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_TEST_SECRET")),
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_LOG4J_SECRET")));
   }
 
   private JsonNode moduleNode(String projectMap, String moduleId) throws Exception {

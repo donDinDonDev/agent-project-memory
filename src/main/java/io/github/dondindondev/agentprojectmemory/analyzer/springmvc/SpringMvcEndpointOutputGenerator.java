@@ -1,6 +1,12 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ConfigFileFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ModuleResourceConfig;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
@@ -62,6 +68,8 @@ import java.util.StringJoiner;
 public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_SOURCE_ROOT = "src/main/java";
   private static final String TEST_SOURCE_ROOT = "src/test/java";
+  private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
+  private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
   private static final String SCHEMA_VERSION = "0.3";
   private static final String ANALYSIS_ANALYZED = "analyzed";
@@ -142,6 +150,15 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparingInt(ModuleScopedWarningFact::moduleOrder)
       .thenComparing(ModuleScopedWarningFact::sourcePath)
       .thenComparing(ModuleScopedWarningFact::id);
+  private static final Comparator<ResourceRootFact> RESOURCE_ROOT_ORDER = Comparator
+      .comparing(ResourceRootFact::scope)
+      .thenComparing(ResourceRootFact::path)
+      .thenComparing(ResourceRootFact::id);
+  private static final Comparator<ConfigFileFact> CONFIG_FILE_ORDER = Comparator
+      .comparing(ConfigFileFact::resourceScope)
+      .thenComparing(ConfigFileFact::configKind)
+      .thenComparing(ConfigFileFact::path)
+      .thenComparing(ConfigFileFact::id);
 
   private final SpringMvcEndpointAnalyzer analyzer;
   private final SpringComponentAnalyzer componentAnalyzer;
@@ -152,6 +169,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private final MavenMetadataAnalyzer mavenMetadataAnalyzer;
   private final MavenDependencyAnalyzer mavenDependencyAnalyzer;
   private final MavenPluginAnalyzer mavenPluginAnalyzer = new MavenPluginAnalyzer();
+  private final ResourceConfigAnalyzer resourceConfigAnalyzer = new ResourceConfigAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -278,12 +296,16 @@ public final class SpringMvcEndpointOutputGenerator {
     MavenPluginAnalysis pluginAnalysis = mavenPluginAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
+    ResourceConfigAnalysis resourceConfigAnalysis = resourceConfigAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        layout.modules().items());
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
         metadataAnalysis,
         dependencyAnalysis,
-        pluginAnalysis)) {
+        pluginAnalysis,
+        resourceConfigAnalysis)) {
       return new Result(false, 0, 0, 0, 0, 0);
     }
 
@@ -299,6 +321,7 @@ public final class SpringMvcEndpointOutputGenerator {
         metadataAnalysis.evidence(),
         dependencyAnalysis.evidence(),
         pluginAnalysis.evidence(),
+        resourceConfigAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.entityEvidence(),
@@ -310,7 +333,8 @@ public final class SpringMvcEndpointOutputGenerator {
         scan,
         metadataAnalysis,
         dependencyAnalysis,
-        pluginAnalysis);
+        pluginAnalysis,
+        resourceConfigAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -343,7 +367,8 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
-      MavenPluginAnalysis pluginAnalysis) {
+      MavenPluginAnalysis pluginAnalysis,
+      ResourceConfigAnalysis resourceConfigAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
@@ -352,7 +377,10 @@ public final class SpringMvcEndpointOutputGenerator {
         || dependencyAnalysis.modules().stream()
             .anyMatch(dependencies -> ANALYSIS_ANALYZED.equals(dependencies.analysisStatus()))
         || pluginAnalysis.modules().stream()
-            .anyMatch(plugins -> ANALYSIS_ANALYZED.equals(plugins.analysisStatus()));
+            .anyMatch(plugins -> ANALYSIS_ANALYZED.equals(plugins.analysisStatus()))
+        || resourceConfigAnalysis.modules().stream()
+            .anyMatch(resources -> ANALYSIS_ANALYZED.equals(resources.resourceAnalysisStatus())
+                || ANALYSIS_ANALYZED.equals(resources.configFileAnalysisStatus()));
   }
 
   private ProjectLayout detectLayout(
@@ -398,7 +426,11 @@ public final class SpringMvcEndpointOutputGenerator {
         repositoryRoot,
         canonicalRepositoryRoot,
         List.of(TEST_SOURCE_ROOT));
-    if (sourceRoots.isEmpty() && testRoots.isEmpty()) {
+    List<String> resourceRoots = detectedRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        List.of(MAIN_RESOURCE_ROOT, TEST_RESOURCE_ROOT));
+    if (sourceRoots.isEmpty() && testRoots.isEmpty() && resourceRoots.isEmpty()) {
       return new ProjectModules(MODULE_ANALYSIS_NOT_DETECTED, List.of());
     }
 
@@ -804,7 +836,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ModuleAwareScan scan,
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
-      MavenPluginAnalysis pluginAnalysis) {
+      MavenPluginAnalysis pluginAnalysis,
+      ResourceConfigAnalysis resourceConfigAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -827,7 +860,8 @@ public final class SpringMvcEndpointOutputGenerator {
         layout.modules(),
         metadataByModuleId(metadataAnalysis),
         dependenciesByModuleId(dependencyAnalysis),
-        pluginsByModuleId(pluginAnalysis));
+        pluginsByModuleId(pluginAnalysis),
+        resourceConfigByModuleId(resourceConfigAnalysis));
     json.append("  },\n");
     json.append("  \"endpoints\": [");
     if (scan.endpoints().isEmpty()) {
@@ -885,12 +919,22 @@ public final class SpringMvcEndpointOutputGenerator {
     return pluginsByModuleId;
   }
 
+  private Map<String, ModuleResourceConfig> resourceConfigByModuleId(
+      ResourceConfigAnalysis resourceConfigAnalysis) {
+    Map<String, ModuleResourceConfig> resourceConfigByModuleId = new LinkedHashMap<>();
+    for (ModuleResourceConfig resourceConfig : resourceConfigAnalysis.modules()) {
+      resourceConfigByModuleId.put(resourceConfig.moduleId(), resourceConfig);
+    }
+    return resourceConfigByModuleId;
+  }
+
   private void appendModules(
       StringBuilder json,
       ProjectModules modules,
       Map<String, MavenModuleMetadata> metadataByModuleId,
       Map<String, MavenModuleDependencies> dependenciesByModuleId,
-      Map<String, MavenModulePlugins> pluginsByModuleId) {
+      Map<String, MavenModulePlugins> pluginsByModuleId,
+      Map<String, ModuleResourceConfig> resourceConfigByModuleId) {
     json.append("    \"modules\": {\n");
     appendIndentedStringField(json, 3, "analysis_status", modules.analysisStatus(), true);
     json.append("      \"items\": [");
@@ -924,6 +968,7 @@ public final class SpringMvcEndpointOutputGenerator {
           metadataForModule(module, metadataByModuleId),
           dependenciesForModule(module, dependenciesByModuleId),
           pluginsForModule(module, pluginsByModuleId),
+          resourceConfigForModule(module, resourceConfigByModuleId),
           false);
       json.append("        }");
       if (index < modules.items().size() - 1) {
@@ -998,22 +1043,62 @@ public final class SpringMvcEndpointOutputGenerator {
         List.of());
   }
 
+  private ModuleResourceConfig resourceConfigForModule(
+      MavenModuleItem module,
+      Map<String, ModuleResourceConfig> resourceConfigByModuleId) {
+    ModuleResourceConfig resourceConfig = resourceConfigByModuleId.get(module.moduleId());
+    if (resourceConfig != null) {
+      return resourceConfig;
+    }
+    return notDetectedResourceConfig(module.moduleId());
+  }
+
+  private ModuleResourceConfig notDetectedResourceConfig(String moduleId) {
+    return new ModuleResourceConfig(
+        moduleId,
+        ANALYSIS_NOT_DETECTED,
+        ANALYSIS_NOT_DETECTED,
+        List.of(),
+        List.of());
+  }
+
   private void appendBuildConfig(
       StringBuilder json,
       MavenModuleMetadata metadata,
       MavenModuleDependencies dependencies,
       MavenModulePlugins plugins,
+      ModuleResourceConfig resourceConfig,
       boolean trailingComma) {
     indent(json, 5);
     json.append("\"build_config\": {\n");
-    appendIndentedStringField(json, 6, "analysis_status", metadata.analysisStatus(), true);
+    appendIndentedStringField(
+        json,
+        6,
+        "analysis_status",
+        buildConfigAnalysisStatus(metadata, dependencies, plugins, resourceConfig),
+        true);
     appendMavenBuildConfig(json, metadata, dependencies, plugins);
-    appendEmptyItemsSection(json, 6, "resources", ANALYSIS_NOT_ANALYZED, true);
-    appendEmptyItemsSection(json, 6, "config_files", ANALYSIS_NOT_ANALYZED, true);
+    appendResourceRootSection(json, resourceConfig, true);
+    appendConfigFileSection(json, resourceConfig, true);
     appendEmptyItemsSection(json, 6, "spring_boot_applications", ANALYSIS_NOT_ANALYZED, false);
     indent(json, 5);
     json.append("}");
     appendLineEnding(json, trailingComma);
+  }
+
+  private String buildConfigAnalysisStatus(
+      MavenModuleMetadata metadata,
+      MavenModuleDependencies dependencies,
+      MavenModulePlugins plugins,
+      ModuleResourceConfig resourceConfig) {
+    if (ANALYSIS_ANALYZED.equals(metadata.analysisStatus())
+        || ANALYSIS_ANALYZED.equals(dependencies.analysisStatus())
+        || ANALYSIS_ANALYZED.equals(plugins.analysisStatus())
+        || ANALYSIS_ANALYZED.equals(resourceConfig.resourceAnalysisStatus())
+        || ANALYSIS_ANALYZED.equals(resourceConfig.configFileAnalysisStatus())) {
+      return ANALYSIS_ANALYZED;
+    }
+    return ANALYSIS_NOT_DETECTED;
   }
 
   private void appendMavenBuildConfig(
@@ -1357,6 +1442,96 @@ public final class SpringMvcEndpointOutputGenerator {
     }
     indent(json, indentLevel);
     json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendResourceRootSection(
+      StringBuilder json,
+      ModuleResourceConfig resourceConfig,
+      boolean trailingComma) {
+    indent(json, 6);
+    json.append("\"resources\": {\n");
+    appendIndentedStringField(json, 7, "analysis_status", resourceConfig.resourceAnalysisStatus(), true);
+    indent(json, 7);
+    json.append("\"items\": [");
+    List<ResourceRootFact> resourceRoots = resourceConfig.resourceRoots().stream()
+        .sorted(RESOURCE_ROOT_ORDER)
+        .toList();
+    if (resourceRoots.isEmpty()) {
+      json.append("]\n");
+      indent(json, 6);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < resourceRoots.size(); index++) {
+      ResourceRootFact resourceRoot = resourceRoots.get(index);
+      indent(json, 8);
+      json.append("{\n");
+      appendIndentedStringField(json, 9, "id", resourceRoot.id(), true);
+      appendIndentedStringField(json, 9, "scope", resourceRoot.scope(), true);
+      appendIndentedStringField(json, 9, "path", resourceRoot.path(), true);
+      appendIndentedStringArrayField(json, 9, "evidence_ids", resourceRoot.evidenceIds(), false);
+      indent(json, 8);
+      json.append("}");
+      if (index < resourceRoots.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 7);
+    json.append("]\n");
+    indent(json, 6);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendConfigFileSection(
+      StringBuilder json,
+      ModuleResourceConfig resourceConfig,
+      boolean trailingComma) {
+    indent(json, 6);
+    json.append("\"config_files\": {\n");
+    appendIndentedStringField(json, 7, "analysis_status", resourceConfig.configFileAnalysisStatus(), true);
+    indent(json, 7);
+    json.append("\"items\": [");
+    List<ConfigFileFact> configFiles = resourceConfig.configFiles().stream()
+        .sorted(CONFIG_FILE_ORDER)
+        .toList();
+    if (configFiles.isEmpty()) {
+      json.append("]\n");
+      indent(json, 6);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < configFiles.size(); index++) {
+      ConfigFileFact configFile = configFiles.get(index);
+      indent(json, 8);
+      json.append("{\n");
+      appendIndentedStringField(json, 9, "id", configFile.id(), true);
+      appendIndentedStringField(json, 9, "path", configFile.path(), true);
+      appendIndentedStringField(json, 9, "resource_scope", configFile.resourceScope(), true);
+      appendIndentedStringField(json, 9, "config_kind", configFile.configKind(), true);
+      appendIndentedStringField(json, 9, "format", configFile.format(), true);
+      appendIndentedNullableStringField(json, 9, "profile_name", configFile.profileName(), true);
+      appendIndentedNullableStringField(json, 9, "profile_source", configFile.profileSource(), true);
+      appendIndentedStringArrayField(json, 9, "evidence_ids", configFile.evidenceIds(), false);
+      indent(json, 8);
+      json.append("}");
+      if (index < configFiles.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 7);
+    json.append("]\n");
+    indent(json, 6);
+    json.append("}");
     appendLineEnding(json, trailingComma);
   }
 
@@ -1815,6 +1990,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<MavenMetadataEvidence> metadataEvidenceRecords,
       List<MavenDependencyEvidence> dependencyEvidenceRecords,
       List<MavenPluginEvidence> pluginEvidenceRecords,
+      List<ResourceConfigEvidence> resourceConfigEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
@@ -1832,6 +2008,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     pluginEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    resourceConfigEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -1912,6 +2091,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(MavenPluginEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(ResourceConfigEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),

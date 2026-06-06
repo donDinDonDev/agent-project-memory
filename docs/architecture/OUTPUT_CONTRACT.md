@@ -17,9 +17,9 @@ The current scan output uses the same four files introduced in v0.1:
 ```
 
 In the current implementation, `scan <path>` writes all four files when supported Maven
-module roots, supported root source or test roots, or Maven module warnings are
-detected. Unsupported directories still only get a prepared `.project-memory/`
-directory and do not get contract output files.
+module roots, supported root source, test, or resource roots, supported config files, or
+Maven module warnings are detected. Unsupported directories still only get a prepared
+`.project-memory/` directory and do not get contract output files.
 
 `EVAL-8-004` decision B keeps endpoint extraction limited to source-visible Java inputs
 under supported production source roots, while adding uniquely bound interface-declared
@@ -584,23 +584,23 @@ Module inventory rules:
 - `project.modules.analysis_status` is `"analyzed"` when module discovery runs. It may
   be `"not_detected"` only when no Maven build input is available for module discovery.
 - `project.modules.items` contains the scan root when the scan is single-module or when
-  the root has supported production or test roots, plus valid unique child module paths
-  declared by the root `<modules>` section.
+  the root has supported production, test, or resource roots, plus valid unique child
+  module paths declared by the root `<modules>` section.
 - For compatibility with pre-v0.2 local source-root scans, when no root `pom.xml` is
-  present but supported root source or test roots are detected, `project.modules` uses
-  `analysis_status: "not_detected"` and emits a scan-root module with `module_id:
-  "module:."`, `module_path: "."`, `pom_path: null`, empty POM evidence, and the
-  detected root source or test roots.
+  present but supported root source, test, or resource roots are detected,
+  `project.modules` uses `analysis_status: "not_detected"` and emits a scan-root module
+  with `module_id: "module:."`, `module_path: "."`, `pom_path: null`, empty POM
+  evidence, and the detected root source or test roots.
 - `source_roots` and `test_roots` inside a module item contain repository-relative roots
   under that module. They are empty arrays when no supported root of that kind is
   detected.
 - `support_status` is one of:
-  - `"supported"`: at least one supported production or test root is detected for the
-    module.
+  - `"supported"`: at least one supported production, test, or resource root is detected
+    for the module.
   - `"missing_child_pom"`: the root declaration normalized to a valid repository-relative
     module path, but `<module_path>/pom.xml` is missing.
   - `"unsupported"`: a valid child POM is present, but the module has no supported
-    Java production or test roots for the v0.2 analyzer slice.
+    Java production, test, or resource roots for the current analyzer slice.
 - `declaration_kind` is `"scan_root"` for the root module and `"root_modules_entry"` for
   modules declared in root `<modules>`.
 - `declared_path` preserves the deterministic normalized declaration used to derive
@@ -700,8 +700,8 @@ Module warning rules:
     nested modules. It emits at most one warning per supported child module path and uses
     an ID shaped as `warning:maven_module:nested_module_declaration:<module_path>`.
   - `"unsupported_module"`: a valid child POM is present, but no supported Java
-    production or test roots are detected for the v0.2 analyzer slice. It emits at most
-    one warning per normalized module path and uses an ID shaped as
+    production, test, or resource roots are detected for the current analyzer slice. It
+    emits at most one warning per normalized module path and uses an ID shaped as
     `warning:maven_module:unsupported_module:<module_path>`.
 - Invalid declarations do not create module inventory items. Duplicate declarations do
   not create duplicate module inventory items. Valid missing or unsupported modules may
@@ -750,10 +750,11 @@ Deterministic sorting rules:
 
 This section defines the v0.3 build/configuration JSON contract. The current staged
 implementation emits source-visible Maven metadata, source-visible Maven dependency
-inventory, source-visible Maven plugin inventory, and the complete `build_config`
-section shell. Future v0.3 subsections that are not implemented yet use
-`analysis_status: "not_analyzed"` and empty `items` arrays so they do not claim absence
-of resources, config files, or Spring Boot application signals.
+inventory, source-visible Maven plugin inventory, standard resource-root inventory,
+path-only supported application/logging config-file inventory, and the complete
+`build_config` section shell. Future v0.3 subsections that are not implemented yet, such
+as Spring Boot application signals, use `analysis_status: "not_analyzed"` and empty
+`items` arrays so they do not claim absence of those future facts.
 
 The planned v0.3 contract uses:
 
@@ -1071,12 +1072,12 @@ Build/config analysis status rules:
   `dependency_management.analysis_status`, plus `plugins.analysis_status` and
   `plugin_management.analysis_status` are `"analyzed"` when a module POM is present and
   parsed for the relevant direct POM observations.
-- Resource, config, and Spring Boot subsection `analysis_status` values are `"analyzed"`
-  when the relevant analyzer runs for supported module roots, even when the resulting
-  item list is empty. They are `"not_detected"` only when no supported input root exists.
-- In the current staged v0.3 metadata, dependency, and plugin slice, `resources`,
-  `config_files`, and `spring_boot_applications` use `"not_analyzed"` with empty `items`
-  arrays until their bounded analyzers are implemented.
+- Resource and config subsection `analysis_status` values are `"analyzed"` when standard
+  resource roots are present and the relevant analyzer runs, even when the resulting
+  config item list is empty. They are `"not_detected"` when no supported resource input
+  root exists.
+- In the current staged v0.3 resource/config slice, `spring_boot_applications` uses
+  `"not_analyzed"` with an empty `items` array until its bounded analyzer is implemented.
 
 Maven value rules:
 
@@ -1486,15 +1487,19 @@ Current staged v0.3 build/config behavior:
   under `project.modules.items[].build_config.maven.plugins` and separate
   plugin-management declarations under
   `project.modules.items[].build_config.maven.plugin_management`.
+- `project-map.json` includes module-owned standard resource roots under
+  `project.modules.items[].build_config.resources` and path-only supported
+  application/logging config-file inventory under
+  `project.modules.items[].build_config.config_files`.
 - Plugin-derived generated-source warnings are rendered in the known-limits section as
   warning facts and must not be rendered as endpoint, API-operation, or generated-source
   facts.
 - `agent-guide.md` keeps the current v0.2 guide sections until the bounded v0.3 guide
   rendering goal adds a dedicated build/configuration orientation section.
-- The current guide does not render dependency or plugin inventory yet; dependency and
-  plugin facts remain machine-readable in `project-map.json` until the bounded v0.3 guide
-  rendering goal. The current guide must not render `not_analyzed` resource, config, or
-  Spring Boot application subsection shells as detected facts.
+- The current guide does not render dependency, plugin, resource, or config inventory
+  yet; these facts remain machine-readable in `project-map.json` until the bounded v0.3
+  guide rendering goal. The current guide must not render `not_analyzed` Spring Boot
+  application subsection shells as detected facts.
 
 Planned v0.3 `agent-guide.md` behavior:
 

@@ -108,11 +108,11 @@
               }
             },
             "resources": {
-              "analysis_status": "not_analyzed",
+              "analysis_status": "not_detected",
               "items": []
             },
             "config_files": {
-              "analysis_status": "not_analyzed",
+              "analysis_status": "not_detected",
               "items": []
             },
             "spring_boot_applications": {

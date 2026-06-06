@@ -173,7 +173,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:22` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:22-22:com.example.shared.SharedRepository:@RepositoryRestResource`)
 - Warning: `maven_module` signal `missing_child_pom` for module `module:services/missing` (path: `services/missing`) at `pom.xml`. Maven module declared in root pom.xml does not have a child pom.xml; v0.2 does not analyze this module.
   - Evidence: `pom.xml:5` (`ev:pom.xml:5-5:build_file:module:services/missing`)
-- Warning: `maven_module` signal `unsupported_module` for module `module:libraries/shared` (path: `libraries/shared`) at `libraries/shared/pom.xml`. Maven module has a child pom.xml but no supported Java source or test roots; v0.2 does not analyze this module.
+- Warning: `maven_module` signal `unsupported_module` for module `module:libraries/shared` (path: `libraries/shared`) at `libraries/shared/pom.xml`. Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.
   - Evidence: `pom.xml:6` (`ev:pom.xml:6-6:build_file:module:libraries/shared`), `libraries/shared/pom.xml:1` (`ev:libraries/shared/pom.xml:1-1:build_file:pom.xml`)
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.

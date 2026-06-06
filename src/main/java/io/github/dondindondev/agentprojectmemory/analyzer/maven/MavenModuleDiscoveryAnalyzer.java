@@ -30,6 +30,8 @@ public final class MavenModuleDiscoveryAnalyzer {
   private static final String HIGH_CONFIDENCE = "high";
   private static final String MAIN_SOURCE_ROOT = "src/main/java";
   private static final String TEST_SOURCE_ROOT = "src/test/java";
+  private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
+  private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String CATEGORY_MAVEN_MODULE = "maven_module";
   private static final String SIGNAL_INVALID_MODULE_PATH = "invalid_module_path";
   private static final String SIGNAL_MISSING_CHILD_POM = "missing_child_pom";
@@ -80,6 +82,10 @@ public final class MavenModuleDiscoveryAnalyzer {
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         ".");
+    List<String> rootResourceRoots = detectedResourceRoots(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        ".");
     List<ObservedModuleDeclaration> declarations = observedModuleDeclarations(
         normalizedRepositoryRoot,
         normalizedRepositoryRoot,
@@ -102,7 +108,9 @@ public final class MavenModuleDiscoveryAnalyzer {
       uniqueDeclarations.put(modulePath, declaration);
     }
 
-    boolean rootHasSupportedRoots = !rootSourceRoots.isEmpty() || !rootTestRoots.isEmpty();
+    boolean rootHasSupportedRoots = !rootSourceRoots.isEmpty()
+        || !rootTestRoots.isEmpty()
+        || !rootResourceRoots.isEmpty();
     boolean singleModule = declarations.isEmpty();
     if (singleModule || rootHasSupportedRoots) {
       moduleItems.add(new MavenModuleItem(
@@ -161,7 +169,11 @@ public final class MavenModuleDiscoveryAnalyzer {
           normalizedRepositoryRoot,
           canonicalRepositoryRoot,
           modulePath);
-      boolean supported = !sourceRoots.isEmpty() || !testRoots.isEmpty();
+      List<String> resourceRoots = detectedResourceRoots(
+          normalizedRepositoryRoot,
+          canonicalRepositoryRoot,
+          modulePath);
+      boolean supported = !sourceRoots.isEmpty() || !testRoots.isEmpty() || !resourceRoots.isEmpty();
 
       moduleItems.add(new MavenModuleItem(
           moduleId(modulePath),
@@ -233,6 +245,24 @@ public final class MavenModuleDiscoveryAnalyzer {
         canonicalRepositoryRoot,
         modulePath,
         TEST_SOURCE_ROOT);
+  }
+
+  private List<String> detectedResourceRoots(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      String modulePath) {
+    List<String> roots = new ArrayList<>();
+    roots.addAll(detectedModuleRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        modulePath,
+        MAIN_RESOURCE_ROOT));
+    roots.addAll(detectedModuleRoots(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        modulePath,
+        TEST_RESOURCE_ROOT));
+    return roots.stream().sorted().toList();
   }
 
   private List<String> detectedModuleRoots(
@@ -518,7 +548,7 @@ public final class MavenModuleDiscoveryAnalyzer {
         CATEGORY_MAVEN_MODULE,
         SIGNAL_UNSUPPORTED_MODULE,
         moduleId(modulePath),
-        "Maven module has a child pom.xml but no supported Java source or test roots; v0.2 does not analyze this module.",
+        "Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.",
         childPomPath,
         List.of(declaration.evidence().id(), childPomEvidence.id()));
   }

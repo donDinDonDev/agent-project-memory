@@ -19,6 +19,9 @@ architecture documents.
 - Added staged v0.3 module-owned source-visible Maven plugin inventory for direct
   plugins, separate plugin-management declarations, bounded direct execution/configuration
   signals, and conservative generated-source warnings.
+- Added staged v0.3 module-owned standard resource-root discovery and path-only
+  application/logging config-file inventory with config-file evidence that does not
+  include config contents.
 
 ### Changed
 
@@ -26,12 +29,15 @@ architecture documents.
   contract decisions for source-visible Maven, resource, config-file, Spring Boot, and
   generated-source warning signals.
 - Updated public output to `schema_version: "0.3"` with a complete `build_config` shell;
-  future v0.3 build/config subsections that are not implemented yet use
-  `analysis_status: "not_analyzed"` without claiming empty inventories.
+  future v0.3 build/config subsections that are not implemented yet, such as Spring Boot
+  application signals, use `analysis_status: "not_analyzed"` without claiming empty
+  inventories.
 - Changed Maven `dependencies` and `dependency_management` build/config subsections from
   staged placeholders to analyzed source-visible inventories.
 - Changed Maven `plugins` and `plugin_management` build/config subsections from staged
   placeholders to analyzed source-visible inventories.
+- Changed `resources` and `config_files` build/config subsections from staged
+  placeholders to analyzed path inventories when standard resource roots are present.
 
 ## [0.2.0] - 2026-06-05
 

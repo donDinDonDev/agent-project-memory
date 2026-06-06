@@ -73,14 +73,14 @@ java -jar target/agent-project-memory-0.2.0.jar scan /path/to/java-spring-projec
 
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
 rewritten deterministically when supported Maven module roots, source-visible Maven
-metadata from module POMs, supported root source or test roots, or Maven module warnings
-are detected.
+metadata from module POMs, supported root source, test, or resource roots, supported
+config files, or Maven module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
 Spring component, JPA entity, hidden HTTP surface warning, and tests inventory analyzers
 per supported module. For compatibility with earlier local source-root scans, a
-repository without a root `pom.xml` but with supported root source or test roots is
+repository without a root `pom.xml` but with supported root source, test, or resource roots is
 represented as the scan-root module with module discovery marked `not_detected`.
 
 The analyzer extracts Spring MVC controllers and source-visible interface-declared
@@ -89,7 +89,9 @@ stereotype components on classes and interfaces, deterministic hidden HTTP surfa
 warnings, direct JPA entity annotations with conservative source-visible
 mapped-superclass identifier fields, standard Maven test-root classes with conservative
 helper filtering, direct source-visible Maven metadata from module POMs, and direct
-source-visible Maven dependency and plugin declarations from module POMs, then writes:
+source-visible Maven dependency and plugin declarations from module POMs, plus
+path-only standard resource-root and supported application/logging config-file
+inventory, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -105,13 +107,15 @@ present, Maven module inventory, module-owned source-visible Maven metadata unde
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
 `dependency_management`, module-owned source-visible Maven plugin inventory under
 `project.modules.items[].build_config.maven.plugins` and `plugin_management`, compatibility
-source and test root summaries, direct `module_id` fields on module-owned facts, Spring
-MVC endpoint facts, hidden HTTP surface, generated-source, and Maven module warnings that
-are not expanded into endpoint/API facts, direct component inventory, direct JPA entity
-facts, a minimal tests inventory, and evidence ID references. v0.3 build/config
-subsections whose analyzers are not implemented yet are emitted with
-`analysis_status: "not_analyzed"` and do not claim an empty resource, config-file, or
-Spring Boot application inventory.
+source and test root summaries, module-owned standard resource-root inventory under
+`project.modules.items[].build_config.resources`, module-owned path-only supported
+application/logging config-file inventory under
+`project.modules.items[].build_config.config_files`, direct `module_id` fields on
+module-owned facts, Spring MVC endpoint facts, hidden HTTP surface, generated-source, and
+Maven module warnings that are not expanded into endpoint/API facts, direct component
+inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
+references. v0.3 build/config subsections whose analyzers are not implemented yet, such
+as Spring Boot application signals, are emitted with `analysis_status: "not_analyzed"`.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -191,10 +195,10 @@ discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible inte
 mapping support when uniquely bindable, stable `project-map.json` and
 `evidence-index.jsonl` outputs, deterministic module-owned source-visible Maven
 metadata, dependency, and plugin extraction, deterministic direct Spring component and
-JPA entity inventories, deterministic hidden HTTP surface, generated-source, and Maven
-module warnings, a minimal deterministic tests inventory, deterministic `endpoints.md`,
-and deterministic `agent-guide.md` generation from the structured facts and evidence
-index.
+JPA entity inventories, deterministic path-only resource-root and supported config-file
+discovery, deterministic hidden HTTP surface, generated-source, and Maven module
+warnings, a minimal deterministic tests inventory, deterministic `endpoints.md`, and
+deterministic `agent-guide.md` generation from the structured facts and evidence index.
 
 Current limitations:
 
@@ -221,9 +225,15 @@ Current limitations:
   values. It does not resolve plugin versions, reconstruct lifecycle bindings, inherit
   executions, execute plugins, scan generated sources by default, parse OpenAPI specs, or
   create generated API/endpoint facts from plugin signals.
-- Resource, config-file, and Spring Boot application build/config subsections are not
-  implemented yet and are represented as `analysis_status: "not_analyzed"` in the staged
-  v0.3 output.
+- Resource-root discovery is limited to standard `src/main/resources` and
+  `src/test/resources` roots under supported modules. Config-file discovery is limited
+  to supported Spring `application.properties`, `application.yml`, `application.yaml`,
+  profile-specific `application-*` variants, and supported logging configuration
+  filenames. It records paths and filename-derived metadata only; it does not parse or
+  output config keys, values, YAML nodes, XML elements, environment placeholders,
+  decrypted values, profile activation, or runtime configuration precedence.
+- Spring Boot application build/config signals are not implemented yet and are
+  represented as `analysis_status: "not_analyzed"` in the staged v0.3 output.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from
