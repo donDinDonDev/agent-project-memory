@@ -1,0 +1,1404 @@
+{
+  "schema_version": "0.3",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "services/alpha/src/main/java",
+      "services/zeta/src/main/java"
+    ],
+    "test_roots": [
+      "services/alpha/src/test/java",
+      "services/zeta/src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:libraries/common",
+          "module_path": "libraries/common",
+          "pom_path": "libraries/common/pom.xml",
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "unsupported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "libraries/common",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:14-14:build_file:module:libraries/common"
+          ],
+          "pom_evidence_ids": [
+            "ev:libraries/common/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": "common-library",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:libraries/common/pom.xml:14-14:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": "jar",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:libraries/common/pom.xml:15-15:build_file:maven:project:packaging"
+                  ]
+                },
+                "parent": {
+                  "analysis_status": "analyzed",
+                  "group_id": {
+                    "value": "com.example.regression",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:libraries/common/pom.xml:8-8:build_file:maven:parent:groupId"
+                    ]
+                  },
+                  "artifact_id": {
+                    "value": "v03-build-config-parent",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:libraries/common/pom.xml:9-9:build_file:maven:parent:artifactId"
+                    ]
+                  },
+                  "version": {
+                    "value": "${revision}",
+                    "value_kind": "property_reference",
+                    "evidence_ids": [
+                      "ev:libraries/common/pom.xml:10-10:build_file:maven:parent:version"
+                    ]
+                  },
+                  "relative_path": {
+                    "value": "../../pom.xml",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:libraries/common/pom.xml:11-11:build_file:maven:parent:relativePath"
+                    ]
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:libraries/common:direct:com.example.common:common-api:decl:000001",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "com.example.common",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:libraries/common/pom.xml:19-19:build_file:maven:dependency:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "common-api",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:libraries/common/pom.xml:20-20:build_file:maven:dependency:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${common.api.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:libraries/common/pom.xml:21-21:build_file:maven:dependency:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:libraries/common/pom.xml:18-22:build_file:maven:dependency:000001"
+                    ]
+                  }
+                ]
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:services/alpha",
+          "module_path": "services/alpha",
+          "pom_path": "services/alpha/pom.xml",
+          "source_roots": [
+            "services/alpha/src/main/java"
+          ],
+          "test_roots": [
+            "services/alpha/src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "services/alpha",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:15-15:build_file:module:services/alpha"
+          ],
+          "pom_evidence_ids": [
+            "ev:services/alpha/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": "alpha-service",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:services/alpha/pom.xml:14-14:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "analyzed",
+                  "group_id": {
+                    "value": "com.example.regression",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:8-8:build_file:maven:parent:groupId"
+                    ]
+                  },
+                  "artifact_id": {
+                    "value": "v03-build-config-parent",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:9-9:build_file:maven:parent:artifactId"
+                    ]
+                  },
+                  "version": {
+                    "value": "${revision}",
+                    "value_kind": "property_reference",
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:10-10:build_file:maven:parent:version"
+                    ]
+                  },
+                  "relative_path": {
+                    "value": "../../pom.xml",
+                    "value_kind": "literal",
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:11-11:build_file:maven:parent:relativePath"
+                    ]
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:services/alpha:direct:com.alpha:alpha-core:decl:000003",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 3,
+                    "group_id": {
+                      "value": "com.alpha",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:41-41:build_file:maven:dependency:000003:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "alpha-core",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:42-42:build_file:maven:dependency:000003:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "1.2-${revision}",
+                      "value_kind": "expression",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:43-43:build_file:maven:dependency:000003:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": "test-jar",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:44-44:build_file:maven:dependency:000003:type"
+                      ]
+                    },
+                    "classifier": {
+                      "value": "tests",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:45-45:build_file:maven:dependency:000003:classifier"
+                      ]
+                    },
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:40-46:build_file:maven:dependency:000003"
+                    ]
+                  },
+                  {
+                    "id": "maven_dependency:module:services/alpha:direct:com.zeta:zeta-helper:decl:000001",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "com.zeta",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:30-30:build_file:maven:dependency:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "zeta-helper",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:31-31:build_file:maven:dependency:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "scope": {
+                      "value": "test",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:32-32:build_file:maven:dependency:000001:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": "false",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:33-33:build_file:maven:dependency:000001:optional"
+                      ]
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:29-34:build_file:maven:dependency:000001"
+                    ]
+                  },
+                  {
+                    "id": "maven_dependency:module:services/alpha:direct:org.springframework.boot:spring-boot-starter-web:decl:000002",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:36-36:build_file:maven:dependency:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-starter-web",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:37-37:build_file:maven:dependency:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:38-38:build_file:maven:dependency:000002:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:35-39:build_file:maven:dependency:000002"
+                    ]
+                  }
+                ]
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:services/alpha:dependency_management:com.example.alpha:alpha-managed-bom:decl:000001",
+                    "declaration_kind": "dependency_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "com.example.alpha",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:19-19:build_file:maven:dependency_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "alpha-managed-bom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:20-20:build_file:maven:dependency_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${alpha.managed.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:21-21:build_file:maven:dependency_management:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": "import",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:23-23:build_file:maven:dependency_management:000001:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": "pom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:22-22:build_file:maven:dependency_management:000001:type"
+                      ]
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:18-24:build_file:maven:dependency_management:000001"
+                    ]
+                  }
+                ]
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_plugin:module:services/alpha:direct:org.codehaus.mojo:build-helper-maven-plugin:decl:000001",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.codehaus.mojo",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:69-69:build_file:maven:plugin:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "build-helper-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:70-70:build_file:maven:plugin:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "executions": [
+                      {
+                        "execution_id": null,
+                        "phase": {
+                          "value": null,
+                          "value_kind": "not_declared",
+                          "evidence_ids": []
+                        },
+                        "goals": [
+                          {
+                            "value": "add-source",
+                            "value_kind": "literal",
+                            "evidence_ids": [
+                              "ev:services/alpha/pom.xml:74-74:build_file:maven:plugin:000001:execution:000001:goal:000001"
+                            ]
+                          }
+                        ],
+                        "evidence_ids": [
+                          "ev:services/alpha/pom.xml:72-76:build_file:maven:plugin:000001:execution:000001"
+                        ]
+                      }
+                    ],
+                    "configuration_signals": [
+                      {
+                        "signal": "add_source_goal_present",
+                        "evidence_ids": [
+                          "ev:services/alpha/pom.xml:74-74:build_file:maven:plugin:000001:execution:000001:goal:000001"
+                        ]
+                      }
+                    ],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:68-78:build_file:maven:plugin:000001"
+                    ]
+                  },
+                  {
+                    "id": "maven_plugin:module:services/alpha:direct:org.springframework.boot:spring-boot-maven-plugin:decl:000002",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:80-80:build_file:maven:plugin:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:81-81:build_file:maven:plugin:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:82-82:build_file:maven:plugin:000002:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:79-83:build_file:maven:plugin:000002"
+                    ]
+                  }
+                ]
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_plugin:module:services/alpha:plugin_management:org.apache.maven.plugins:maven-compiler-plugin:decl:000001",
+                    "declaration_kind": "plugin_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.apache.maven.plugins",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:53-53:build_file:maven:plugin_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "maven-compiler-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:54-54:build_file:maven:plugin_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "3.12.1",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/alpha/pom.xml:55-55:build_file:maven:plugin_management:000001:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [
+                      {
+                        "signal": "annotation_processor_paths_present",
+                        "evidence_ids": [
+                          "ev:services/alpha/pom.xml:57-62:build_file:maven:plugin_management:000001:configuration:annotationProcessorPaths"
+                        ]
+                      }
+                    ],
+                    "generator_signals": [
+                      {
+                        "signal": "annotation_processor",
+                        "evidence_ids": [
+                          "ev:services/alpha/pom.xml:57-62:build_file:maven:plugin_management:000001:configuration:annotationProcessorPaths"
+                        ]
+                      }
+                    ],
+                    "evidence_ids": [
+                      "ev:services/alpha/pom.xml:52-64:build_file:maven:plugin_management:000001"
+                    ]
+                  }
+                ]
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:services/alpha:main:services/alpha/src/main/resources",
+                  "scope": "main",
+                  "path": "services/alpha/src/main/resources",
+                  "evidence_ids": []
+                },
+                {
+                  "id": "resource_root:module:services/alpha:test:services/alpha/src/test/resources",
+                  "scope": "test",
+                  "path": "services/alpha/src/test/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "config_file:module:services/alpha:logging_config:services/alpha/src/main/resources/logback-spring.xml",
+                  "path": "services/alpha/src/main/resources/logback-spring.xml",
+                  "resource_scope": "main",
+                  "config_kind": "logging_config",
+                  "format": "xml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:services/alpha/src/main/resources/logback-spring.xml:unknown:config_file:logback-spring.xml"
+                  ]
+                },
+                {
+                  "id": "config_file:module:services/alpha:spring_application:services/alpha/src/main/resources/application-ci.properties",
+                  "path": "services/alpha/src/main/resources/application-ci.properties",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "properties",
+                  "profile_name": "ci",
+                  "profile_source": "filename_only",
+                  "evidence_ids": [
+                    "ev:services/alpha/src/main/resources/application-ci.properties:unknown:config_file:application-ci.properties"
+                  ]
+                },
+                {
+                  "id": "config_file:module:services/alpha:spring_application:services/alpha/src/main/resources/application.yml",
+                  "path": "services/alpha/src/main/resources/application.yml",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:services/alpha/src/main/resources/application.yml:unknown:config_file:application.yml"
+                  ]
+                },
+                {
+                  "id": "config_file:module:services/alpha:spring_application:services/alpha/src/test/resources/application-test.yaml",
+                  "path": "services/alpha/src/test/resources/application-test.yaml",
+                  "resource_scope": "test",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": "test",
+                  "profile_source": "filename_only",
+                  "evidence_ids": [
+                    "ev:services/alpha/src/test/resources/application-test.yaml:unknown:config_file:application-test.yaml"
+                  ]
+                }
+              ]
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_boot_application:module:services/alpha:com.example.alpha.AlphaApplication",
+                  "class_name": "com.example.alpha.AlphaApplication",
+                  "source_path": "services/alpha/src/main/java/com/example/alpha/AlphaApplication.java",
+                  "application_signal": "spring_boot_application_with_main_method",
+                  "main_method": {
+                    "present": true,
+                    "evidence_ids": [
+                      "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:5-5:com.example.alpha.AlphaApplication#main:code_symbol"
+                    ]
+                  },
+                  "evidence_ids": [
+                    "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:3-3:com.example.alpha.AlphaApplication:@SpringBootApplication",
+                    "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:5-5:com.example.alpha.AlphaApplication#main:code_symbol"
+                  ]
+                }
+              ]
+            }
+          }
+        },
+        {
+          "module_id": "module:services/zeta",
+          "module_path": "services/zeta",
+          "pom_path": "services/zeta/pom.xml",
+          "source_roots": [
+            "services/zeta/src/main/java"
+          ],
+          "test_roots": [
+            "services/zeta/src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "services/zeta",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:13-13:build_file:module:services/zeta"
+          ],
+          "pom_evidence_ids": [
+            "ev:services/zeta/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example.regression",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:services/zeta/pom.xml:7-7:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "zeta-service",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:services/zeta/pom.xml:8-8:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0-${revision}",
+                  "value_kind": "expression",
+                  "evidence_ids": [
+                    "ev:services/zeta/pom.xml:9-9:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": "war",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:services/zeta/pom.xml:10-10:build_file:maven:project:packaging"
+                  ]
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:services/zeta:direct:com.zeta:zeta-runtime:decl:000002",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "com.zeta",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:30-30:build_file:maven:dependency:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "zeta-runtime",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:31-31:build_file:maven:dependency:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${zeta.runtime.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:32-32:build_file:maven:dependency:000002:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": "native",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:33-33:build_file:maven:dependency:000002:classifier"
+                      ]
+                    },
+                    "evidence_ids": [
+                      "ev:services/zeta/pom.xml:29-34:build_file:maven:dependency:000002"
+                    ]
+                  },
+                  {
+                    "id": "maven_dependency:module:services/zeta:direct:org.springframework.boot:spring-boot-starter:decl:000001",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:26-26:build_file:maven:dependency:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-starter",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:27-27:build_file:maven:dependency:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:services/zeta/pom.xml:25-28:build_file:maven:dependency:000001"
+                    ]
+                  }
+                ]
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:services/zeta:dependency_management:com.example.zeta:zeta-managed-bom:decl:000001",
+                    "declaration_kind": "dependency_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "com.example.zeta",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:15-15:build_file:maven:dependency_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "zeta-managed-bom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:16-16:build_file:maven:dependency_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${zeta.managed.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:17-17:build_file:maven:dependency_management:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": "import",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:19-19:build_file:maven:dependency_management:000001:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": "pom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:18-18:build_file:maven:dependency_management:000001:type"
+                      ]
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:services/zeta/pom.xml:14-20:build_file:maven:dependency_management:000001"
+                    ]
+                  }
+                ]
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_plugin:module:services/zeta:direct:org.codehaus.mojo:jaxb2-maven-plugin:decl:000001",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.codehaus.mojo",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:40-40:build_file:maven:plugin:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "jaxb2-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:41-41:build_file:maven:plugin:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [
+                      {
+                        "signal": "source_generator_plugin",
+                        "evidence_ids": [
+                          "ev:services/zeta/pom.xml:41-41:build_file:maven:plugin:000001:artifactId"
+                        ]
+                      }
+                    ],
+                    "evidence_ids": [
+                      "ev:services/zeta/pom.xml:39-42:build_file:maven:plugin:000001"
+                    ]
+                  },
+                  {
+                    "id": "maven_plugin:module:services/zeta:direct:org.openapitools:openapi-generator-maven-plugin:decl:000002",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "org.openapitools",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:44-44:build_file:maven:plugin:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "openapi-generator-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:45-45:build_file:maven:plugin:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${openapi.generator.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:services/zeta/pom.xml:46-46:build_file:maven:plugin:000002:version"
+                      ]
+                    },
+                    "executions": [
+                      {
+                        "execution_id": "generate-zeta-api",
+                        "phase": {
+                          "value": "generate-sources",
+                          "value_kind": "literal",
+                          "evidence_ids": [
+                            "ev:services/zeta/pom.xml:50-50:build_file:maven:plugin:000002:execution:000001:phase:000001"
+                          ]
+                        },
+                        "goals": [
+                          {
+                            "value": "generate",
+                            "value_kind": "literal",
+                            "evidence_ids": [
+                              "ev:services/zeta/pom.xml:52-52:build_file:maven:plugin:000002:execution:000001:goal:000001"
+                            ]
+                          }
+                        ],
+                        "evidence_ids": [
+                          "ev:services/zeta/pom.xml:48-57:build_file:maven:plugin:000002:execution:000001",
+                          "ev:services/zeta/pom.xml:49-49:build_file:maven:plugin:000002:execution:000001:id:000001"
+                        ]
+                      }
+                    ],
+                    "configuration_signals": [
+                      {
+                        "signal": "generated_sources_config_present",
+                        "evidence_ids": [
+                          "ev:services/zeta/pom.xml:55-55:build_file:maven:plugin:000002:execution:000001:configuration:generatedSourcesDirectory"
+                        ]
+                      },
+                      {
+                        "signal": "input_spec_config_present",
+                        "evidence_ids": [
+                          "ev:services/zeta/pom.xml:60-60:build_file:maven:plugin:000002:configuration:inputSpec"
+                        ]
+                      }
+                    ],
+                    "generator_signals": [
+                      {
+                        "signal": "openapi_swagger_codegen",
+                        "evidence_ids": [
+                          "ev:services/zeta/pom.xml:45-45:build_file:maven:plugin:000002:artifactId"
+                        ]
+                      }
+                    ],
+                    "evidence_ids": [
+                      "ev:services/zeta/pom.xml:43-62:build_file:maven:plugin:000002"
+                    ]
+                  }
+                ]
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:services/zeta:main:services/zeta/src/main/resources",
+                  "scope": "main",
+                  "path": "services/zeta/src/main/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "config_file:module:services/zeta:logging_config:services/zeta/src/main/resources/log4j2.xml",
+                  "path": "services/zeta/src/main/resources/log4j2.xml",
+                  "resource_scope": "main",
+                  "config_kind": "logging_config",
+                  "format": "xml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:services/zeta/src/main/resources/log4j2.xml:unknown:config_file:log4j2.xml"
+                  ]
+                },
+                {
+                  "id": "config_file:module:services/zeta:spring_application:services/zeta/src/main/resources/application.yaml",
+                  "path": "services/zeta/src/main/resources/application.yaml",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:services/zeta/src/main/resources/application.yaml:unknown:config_file:application.yaml"
+                  ]
+                }
+              ]
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_boot_application:module:services/zeta:com.example.zeta.ZetaApplication",
+                  "class_name": "com.example.zeta.ZetaApplication",
+                  "source_path": "services/zeta/src/main/java/com/example/zeta/ZetaApplication.java",
+                  "application_signal": "spring_boot_application_annotation_only",
+                  "main_method": {
+                    "present": false,
+                    "evidence_ids": []
+                  },
+                  "evidence_ids": [
+                    "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:3-3:com.example.zeta.ZetaApplication:@SpringBootApplication"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "endpoint:module:services/alpha:com.example.alpha.AlphaController#status",
+      "module_id": "module:services/alpha",
+      "controller_class": "com.example.alpha.AlphaController",
+      "handler_method": "status",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/alpha/status"
+      ],
+      "request_parameters": [
+        {
+          "name": "detail",
+          "source": "request_param",
+          "java_type": "String",
+          "evidence_ids": [
+            "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:13-13:com.example.alpha.AlphaController#status:@RequestParam:parameter:0:detail"
+          ]
+        }
+      ],
+      "request_body_type": null,
+      "response_type": "AlphaStatus",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.alpha.AlphaController",
+        "declaring_method": "status",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:10-10:com.example.alpha.AlphaController:@RequestMapping",
+          "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:12-12:com.example.alpha.AlphaController#status:@GetMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:9-9:com.example.alpha.AlphaController:@RestController",
+        "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:10-10:com.example.alpha.AlphaController:@RequestMapping",
+        "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:12-12:com.example.alpha.AlphaController#status:@GetMapping",
+        "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:13-13:com.example.alpha.AlphaController#status:@RequestParam:parameter:0:detail"
+      ]
+    },
+    {
+      "id": "endpoint:module:services/zeta:com.example.zeta.ZetaController#create",
+      "module_id": "module:services/zeta",
+      "controller_class": "com.example.zeta.ZetaController",
+      "handler_method": "create",
+      "http_methods": [
+        "POST"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/zeta/items"
+      ],
+      "request_parameters": [],
+      "request_body_type": "ZetaItem",
+      "response_type": "ZetaItem",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.zeta.ZetaController",
+        "declaring_method": "create",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:8-8:com.example.zeta.ZetaController:@RequestMapping",
+          "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:10-10:com.example.zeta.ZetaController#create:@PostMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:7-7:com.example.zeta.ZetaController:@RestController",
+        "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:8-8:com.example.zeta.ZetaController:@RequestMapping",
+        "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:10-10:com.example.zeta.ZetaController#create:@PostMapping",
+        "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:11-11:com.example.zeta.ZetaController#create:@RequestBody:parameter:0:item"
+      ]
+    }
+  ],
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:generated_source:maven_annotation_processor:module:services/alpha:plugin_management:decl:000001",
+        "category": "generated_source",
+        "signal": "maven_annotation_processor",
+        "module_id": "module:services/alpha",
+        "message": "Maven annotation processor signal detected; the analyzer does not inspect generated sources or infer generated APIs from processors.",
+        "source_path": "services/alpha/pom.xml",
+        "evidence_ids": [
+          "ev:services/alpha/pom.xml:57-62:build_file:maven:plugin_management:000001:configuration:annotationProcessorPaths"
+        ]
+      },
+      {
+        "id": "warning:generated_source:maven_build_helper_add_source:module:services/alpha:direct_plugin:decl:000001",
+        "category": "generated_source",
+        "signal": "maven_build_helper_add_source",
+        "module_id": "module:services/alpha",
+        "message": "Maven build-helper add-source goal detected; the analyzer does not scan added or generated sources by default.",
+        "source_path": "services/alpha/pom.xml",
+        "evidence_ids": [
+          "ev:services/alpha/pom.xml:74-74:build_file:maven:plugin:000001:execution:000001:goal:000001"
+        ]
+      },
+      {
+        "id": "warning:generated_source:maven_generated_source_config:module:services/zeta:direct_plugin:decl:000002",
+        "category": "generated_source",
+        "signal": "maven_generated_source_config",
+        "module_id": "module:services/zeta",
+        "message": "Maven generated-source configuration signal detected; the analyzer records the bounded build signal only and does not inspect configured generated output.",
+        "source_path": "services/zeta/pom.xml",
+        "evidence_ids": [
+          "ev:services/zeta/pom.xml:55-55:build_file:maven:plugin:000002:execution:000001:configuration:generatedSourcesDirectory"
+        ]
+      },
+      {
+        "id": "warning:generated_source:maven_generator_plugin:module:services/zeta:direct_plugin:decl:000001",
+        "category": "generated_source",
+        "signal": "maven_generator_plugin",
+        "module_id": "module:services/zeta",
+        "message": "Maven source generator plugin declaration detected; the analyzer records the source-visible build signal only and does not scan generated sources by default.",
+        "source_path": "services/zeta/pom.xml",
+        "evidence_ids": [
+          "ev:services/zeta/pom.xml:41-41:build_file:maven:plugin:000001:artifactId"
+        ]
+      },
+      {
+        "id": "warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002",
+        "category": "generated_source",
+        "signal": "maven_openapi_swagger_codegen_plugin",
+        "module_id": "module:services/zeta",
+        "message": "Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, parse specs, scan generated sources by default, or create endpoint/API facts from this signal.",
+        "source_path": "services/zeta/pom.xml",
+        "evidence_ids": [
+          "ev:services/zeta/pom.xml:45-45:build_file:maven:plugin:000002:artifactId"
+        ]
+      },
+      {
+        "id": "warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin",
+        "category": "hidden_http_surface",
+        "signal": "maven_openapi_swagger_codegen_plugin",
+        "module_id": "module:services/zeta",
+        "message": "Maven OpenAPI/Swagger code generation plugin signal detected; the analyzer does not run generation or scan generated sources by default.",
+        "source_path": "services/zeta/pom.xml",
+        "evidence_ids": [
+          "ev:services/zeta/pom.xml:45-45:build_file:openapi-generator-maven-plugin"
+        ]
+      },
+      {
+        "id": "warning:hidden_http_surface:openapi_spec_file:module:services/zeta:services/zeta/src/main/resources/openapi.yml",
+        "category": "hidden_http_surface",
+        "signal": "openapi_spec_file",
+        "module_id": "module:services/zeta",
+        "message": "OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.",
+        "source_path": "services/zeta/src/main/resources/openapi.yml",
+        "evidence_ids": [
+          "ev:services/zeta/src/main/resources/openapi.yml:unknown:config_file:openapi.yml"
+        ]
+      },
+      {
+        "id": "warning:maven_module:unsupported_module:libraries/common",
+        "category": "maven_module",
+        "signal": "unsupported_module",
+        "module_id": "module:libraries/common",
+        "message": "Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.",
+        "source_path": "libraries/common/pom.xml",
+        "evidence_ids": [
+          "ev:pom.xml:14-14:build_file:module:libraries/common",
+          "ev:libraries/common/pom.xml:1-1:build_file:pom.xml"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:module:services/alpha:com.example.alpha.AlphaController",
+        "module_id": "module:services/alpha",
+        "class_name": "com.example.alpha.AlphaController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:9-9:com.example.alpha.AlphaController:@RestController"
+        ]
+      },
+      {
+        "id": "component:module:services/zeta:com.example.zeta.ZetaController",
+        "module_id": "module:services/zeta",
+        "class_name": "com.example.zeta.ZetaController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:7-7:com.example.zeta.ZetaController:@RestController"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "module_id": "module:services/alpha",
+        "class_name": "com.example.alpha.AlphaControllerTest",
+        "source_path": "services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "evidence_ids": [
+              "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:3-3:com.example.alpha.AlphaControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6-6:com.example.alpha.AlphaControllerTest#status:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "class_name": "com.example.alpha.AlphaController",
+            "target_module_id": "module:services/alpha",
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5-5:com.example.alpha.AlphaControllerTest:test_file",
+              "ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:11-11:com.example.alpha.AlphaController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5-5:com.example.alpha.AlphaControllerTest:test_file"
+        ]
+      },
+      {
+        "module_id": "module:services/zeta",
+        "class_name": "com.example.zeta.ZetaControllerTest",
+        "source_path": "services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "evidence_ids": [
+              "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:3-3:com.example.zeta.ZetaControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6-6:com.example.zeta.ZetaControllerTest#create:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "class_name": "com.example.zeta.ZetaController",
+            "target_module_id": "module:services/zeta",
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5-5:com.example.zeta.ZetaControllerTest:test_file",
+              "ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:9-9:com.example.zeta.ZetaController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5-5:com.example.zeta.ZetaControllerTest:test_file"
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,5 @@
+spring:
+  datasource:
+    password: FAKE_V03_ALPHA_DB_PASSWORD
+alpha:
+  token: ${FAKE_V03_ALPHA_ENV_TOKEN}
