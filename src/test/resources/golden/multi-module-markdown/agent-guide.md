@@ -53,6 +53,70 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Declaration evidence: `pom.xml:3` (`ev:pom.xml:3-3:build_file:module:services/orders`)
   - POM evidence: `services/orders/pom.xml:1` (`ev:services/orders/pom.xml:1-1:build_file:pom.xml`)
 
+## Build And Configuration Orientation
+
+### Module `module:libraries/shared` (path: `libraries/shared`)
+
+- Build/config analysis status: `analyzed`
+- Source-visible Maven metadata: group_id `value:not_declared` (value_kind: `not_declared`), artifact_id `value:not_declared` (value_kind: `not_declared`), version `value:not_declared` (value_kind: `not_declared`), packaging `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: none recorded.
+- Source-visible direct dependencies: Detected none.
+- Source-visible dependency-management declarations: Detected none.
+- Source-visible direct plugins: Detected none.
+- Source-visible plugin-management declarations: Detected none.
+- Resource roots: Not analyzed; status `not_detected`.
+- Config files: Not analyzed; status `not_detected`.
+- Spring Boot application signals: Not analyzed; status `not_detected`.
+- Module warnings: Detected 1 warning signal for this module: `maven_module:unsupported_module`. See `Known Uncertainty And Limits` for warning evidence and messages.
+
+### Module `module:services/billing` (path: `services/billing`)
+
+- Build/config analysis status: `analyzed`
+- Source-visible Maven metadata: group_id `value:not_declared` (value_kind: `not_declared`), artifact_id `value:not_declared` (value_kind: `not_declared`), version `value:not_declared` (value_kind: `not_declared`), packaging `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: none recorded.
+- Source-visible direct dependencies: Detected none.
+- Source-visible dependency-management declarations: Detected none.
+- Source-visible direct plugins: Detected none.
+- Source-visible plugin-management declarations: Detected none.
+- Resource roots: Not analyzed; status `not_detected`.
+- Config files: Not analyzed; status `not_detected`.
+- Spring Boot application signals: Detected none.
+- Module warnings: Detected 1 warning signal for this module: `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
+
+### Module `module:services/missing` (path: `services/missing`)
+
+- Build/config analysis status: `not_detected`
+- Source-visible Maven metadata: Not analyzed; status `not_detected`.
+- Source-visible direct dependencies: Not analyzed; status `not_detected`.
+- Source-visible dependency-management declarations: Not analyzed; status `not_detected`.
+- Source-visible direct plugins: Not analyzed; status `not_detected`.
+- Source-visible plugin-management declarations: Not analyzed; status `not_detected`.
+- Resource roots: Not analyzed; status `not_detected`.
+- Config files: Not analyzed; status `not_detected`.
+- Spring Boot application signals: Not analyzed; status `not_detected`.
+- Module warnings: Detected 1 warning signal for this module: `maven_module:missing_child_pom`. See `Known Uncertainty And Limits` for warning evidence and messages.
+
+### Module `module:services/orders` (path: `services/orders`)
+
+- Build/config analysis status: `analyzed`
+- Source-visible Maven metadata: group_id `value:not_declared` (value_kind: `not_declared`), artifact_id `value:not_declared` (value_kind: `not_declared`), version `value:not_declared` (value_kind: `not_declared`), packaging `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: none recorded.
+- Source-visible direct dependencies: Detected none.
+- Source-visible dependency-management declarations: Detected none.
+- Source-visible direct plugins: Detected 1 direct plugin declarations.
+  - Plugin: `group_id:not_declared:openapi-generator-maven-plugin` declaration_kind `direct_plugin`, version `value:not_declared` (value_kind: `not_declared`).
+    - Direct execution declarations: none recorded.
+    - Configuration signals: none recorded
+    - Generator signals: `openapi_swagger_codegen`
+  - Evidence: `services/orders/pom.xml:4-6` (`ev:services/orders/pom.xml:4-6:build_file:maven:plugin:000001`)
+- Source-visible plugin-management declarations: Detected none.
+- Resource roots: Detected 1 standard resource root.
+  - Resource root: `main` `services/orders/src/main/resources`
+    - Evidence: recorded in `project-map.json`; no separate resource-root evidence IDs are emitted.
+- Config files: Detected none.
+- Spring Boot application signals: Detected none.
+- Module warnings: Detected 4 warning signals for this module: `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`, `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
+
 ## Detected Spring MVC Endpoints
 
 ### `GET /billing/health`
@@ -181,6 +245,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
+- Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 
 ## Practical Inspection Order For Coding Agents
 

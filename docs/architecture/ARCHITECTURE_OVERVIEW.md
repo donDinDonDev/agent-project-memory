@@ -44,10 +44,9 @@ current slice emits source-visible module-owned Maven metadata, direct Maven dep
 inventory, separate dependency-management declarations, direct Maven plugin inventory,
 separate plugin-management declarations, conservative plugin-derived generated-source
 warnings, standard resource-root discovery, path-only supported application/logging
-config-file inventory, and a complete `build_config` shell. Future subsections that are
-not implemented yet, such as Spring Boot application signals, use
-`analysis_status: "not_analyzed"` and do not claim empty inventories. The full planned
-scope is direct local POM, resource, config-file, and source annotation observations:
+config-file inventory, direct source-visible Spring Boot application signals, and a
+complete `build_config` shell. The implemented scope is direct local POM, resource,
+config-file, and source annotation observations:
 
 - direct Maven metadata, dependency declarations, dependency-management declarations,
   plugin declarations, plugin-management declarations, and bounded generator signals;

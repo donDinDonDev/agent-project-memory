@@ -112,8 +112,8 @@ Expected direction:
 Current staged implementation includes source-visible per-module Maven metadata, direct
 dependency/dependency-management inventory, direct plugin/plugin-management inventory,
 conservative generated-source plugin warnings, standard resource-root discovery, and
-path-only supported application/logging config-file inventory. Spring Boot application
-subsections remain future bounded v0.3 goals.
+path-only supported application/logging config-file inventory, direct source-visible
+Spring Boot application signals, and build/config orientation in `agent-guide.md`.
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.

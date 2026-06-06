@@ -110,12 +110,13 @@ dependency inventory under `project.modules.items[].build_config.maven.dependenc
 source and test root summaries, module-owned standard resource-root inventory under
 `project.modules.items[].build_config.resources`, module-owned path-only supported
 application/logging config-file inventory under
-`project.modules.items[].build_config.config_files`, direct `module_id` fields on
-module-owned facts, Spring MVC endpoint facts, hidden HTTP surface, generated-source, and
-Maven module warnings that are not expanded into endpoint/API facts, direct component
-inventory, direct JPA entity facts, a minimal tests inventory, and evidence ID
-references. v0.3 build/config subsections whose analyzers are not implemented yet, such
-as Spring Boot application signals, are emitted with `analysis_status: "not_analyzed"`.
+`project.modules.items[].build_config.config_files`, module-owned direct source-visible
+Spring Boot application signals under
+`project.modules.items[].build_config.spring_boot_applications`, direct `module_id`
+fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
+generated-source, and Maven module warnings that are not expanded into endpoint/API
+facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
+and evidence ID references.
 `endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
 source-backed evidence records referenced by generated facts. `agent-guide.md` is a
 deterministic orientation guide generated only from the structured project-map facts and
@@ -232,8 +233,12 @@ Current limitations:
   filenames. It records paths and filename-derived metadata only; it does not parse or
   output config keys, values, YAML nodes, XML elements, environment placeholders,
   decrypted values, profile activation, or runtime configuration precedence.
-- Spring Boot application build/config signals are not implemented yet and are
-  represented as `analysis_status: "not_analyzed"` in the staged v0.3 output.
+- Spring Boot application build/config signals are limited to direct source-visible
+  `@SpringBootApplication` annotations under supported production source roots and a
+  bounded source-visible `static void main(String[] args)` or varargs `main` method
+  signal on the annotated class. They do not prove executable jar packaging, active
+  profiles, runtime auto-configuration, component scanning results, bean graphs,
+  deployment behavior, or actual process entrypoint behavior.
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from

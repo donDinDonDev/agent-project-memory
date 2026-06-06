@@ -92,32 +92,290 @@
               },
               "dependencies": {
                 "analysis_status": "analyzed",
-                "items": []
+                "items": [
+                  {
+                    "id": "maven_dependency:module:.:direct:com.example:inventory-client:decl:000002",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "com.example",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:30-30:build_file:maven:dependency:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "inventory-client",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:31-31:build_file:maven:dependency:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "scope": {
+                      "value": "test",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:32-32:build_file:maven:dependency:000002:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": "true",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:33-33:build_file:maven:dependency:000002:optional"
+                      ]
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:29-34:build_file:maven:dependency:000002"
+                    ]
+                  },
+                  {
+                    "id": "maven_dependency:module:.:direct:org.springframework.boot:spring-boot-starter-web:decl:000001",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:25-25:build_file:maven:dependency:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-starter-web",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:26-26:build_file:maven:dependency:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:27-27:build_file:maven:dependency:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:24-28:build_file:maven:dependency:000001"
+                    ]
+                  }
+                ]
               },
               "dependency_management": {
                 "analysis_status": "analyzed",
-                "items": []
+                "items": [
+                  {
+                    "id": "maven_dependency:module:.:dependency_management:org.springframework.boot:spring-boot-dependencies:decl:000001",
+                    "declaration_kind": "dependency_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:14-14:build_file:maven:dependency_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-dependencies",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:15-15:build_file:maven:dependency_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:16-16:build_file:maven:dependency_management:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": "import",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:18-18:build_file:maven:dependency_management:000001:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": "pom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:17-17:build_file:maven:dependency_management:000001:type"
+                      ]
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:13-19:build_file:maven:dependency_management:000001"
+                    ]
+                  }
+                ]
               },
               "plugins": {
                 "analysis_status": "analyzed",
-                "items": []
+                "items": [
+                  {
+                    "id": "maven_plugin:module:.:direct:org.springframework.boot:spring-boot-maven-plugin:decl:000001",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:49-49:build_file:maven:plugin:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:50-50:build_file:maven:plugin:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:51-51:build_file:maven:plugin:000001:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:pom.xml:48-52:build_file:maven:plugin:000001"
+                    ]
+                  }
+                ]
               },
               "plugin_management": {
                 "analysis_status": "analyzed",
-                "items": []
+                "items": [
+                  {
+                    "id": "maven_plugin:module:.:plugin_management:org.apache.maven.plugins:maven-surefire-plugin:decl:000001",
+                    "declaration_kind": "plugin_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.apache.maven.plugins",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:41-41:build_file:maven:plugin_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "maven-surefire-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:42-42:build_file:maven:plugin_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "3.2.5",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:43-43:build_file:maven:plugin_management:000001:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:pom.xml:40-44:build_file:maven:plugin_management:000001"
+                    ]
+                  }
+                ]
               }
             },
             "resources": {
-              "analysis_status": "not_detected",
-              "items": []
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:main:src/main/resources",
+                  "scope": "main",
+                  "path": "src/main/resources",
+                  "evidence_ids": []
+                }
+              ]
             },
             "config_files": {
-              "analysis_status": "not_detected",
-              "items": []
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "config_file:module:.:spring_application:src/main/resources/application.yml",
+                  "path": "src/main/resources/application.yml",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:src/main/resources/application.yml:unknown:config_file:application.yml"
+                  ]
+                }
+              ]
             },
             "spring_boot_applications": {
-              "analysis_status": "not_analyzed",
-              "items": []
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_boot_application:module:.:com.example.Stage3Application",
+                  "class_name": "com.example.Stage3Application",
+                  "source_path": "src/main/java/com/example/Stage3Application.java",
+                  "application_signal": "spring_boot_application_with_main_method",
+                  "main_method": {
+                    "present": true,
+                    "evidence_ids": [
+                      "ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol"
+                    ]
+                  },
+                  "evidence_ids": [
+                    "ev:src/main/java/com/example/Stage3Application.java:5-5:com.example.Stage3Application:@SpringBootApplication",
+                    "ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol"
+                  ]
+                }
+              ]
             }
           }
         }

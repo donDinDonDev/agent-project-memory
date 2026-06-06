@@ -16,6 +16,7 @@ public final class AgentGuideGenerator {
   private static final ObjectMapper JSON = new ObjectMapper();
   private static final int MAX_INLINE_EVIDENCE_REFERENCES = 5;
   private static final int MAX_INLINE_INSPECTION_PATHS = 5;
+  private static final int MAX_INLINE_BUILD_CONFIG_ITEMS = 5;
 
   public String generate(String projectMapJson, String evidenceIndexJsonl) throws IOException {
     Objects.requireNonNull(projectMapJson, "projectMapJson");
@@ -32,6 +33,7 @@ public final class AgentGuideGenerator {
         .append("`evidence-index.jsonl`. The guide generator does not re-analyze source files.\n\n");
 
     appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
+    appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
     appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
     appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
@@ -164,6 +166,410 @@ public final class AgentGuideGenerator {
     markdown.append("Detected ")
         .append(moduleLabel(moduleId, moduleById))
         .append("\n");
+  }
+
+  private void appendBuildAndConfiguration(
+      StringBuilder markdown,
+      JsonNode projectMap,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("## Build And Configuration Orientation\n\n");
+    JsonNode moduleItems = projectMap.path("project").path("modules").path("items");
+    if (!moduleItems.isArray() || moduleItems.isEmpty()) {
+      markdown.append("- Not analyzed: no module build/config facts were recorded.\n\n");
+      return;
+    }
+
+    for (JsonNode module : moduleItems) {
+      String moduleId = text(module, "module_id");
+      markdown.append("### Module ")
+          .append(moduleLabel(moduleId, moduleById))
+          .append("\n\n");
+      JsonNode buildConfig = module.path("build_config");
+      markdown.append("- Build/config analysis status: ")
+          .append(code(text(buildConfig, "analysis_status")))
+          .append("\n");
+      appendMavenOrientation(markdown, buildConfig.path("maven"), evidenceById);
+      appendResourceOrientation(markdown, buildConfig.path("resources"));
+      appendConfigFileOrientation(markdown, buildConfig.path("config_files"), evidenceById);
+      appendSpringBootApplicationOrientation(
+          markdown,
+          buildConfig.path("spring_boot_applications"),
+          evidenceById);
+      appendBuildConfigWarningSummary(markdown, projectMap.path("warnings"), moduleId);
+      markdown.append("\n");
+    }
+  }
+
+  private void appendMavenOrientation(
+      StringBuilder markdown,
+      JsonNode maven,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!maven.isObject()) {
+      markdown.append("- Maven build facts: Not analyzed; no Maven build_config section recorded.\n");
+      return;
+    }
+
+    appendMavenMetadataOrientation(markdown, maven.path("metadata"), evidenceById);
+    appendMavenDependencyOrientation(
+        markdown,
+        "Source-visible direct dependencies",
+        "direct dependency declarations",
+        maven.path("dependencies"),
+        false,
+        evidenceById);
+    appendMavenDependencyOrientation(
+        markdown,
+        "Source-visible dependency-management declarations",
+        "dependency-management declarations",
+        maven.path("dependency_management"),
+        true,
+        evidenceById);
+    appendMavenPluginOrientation(
+        markdown,
+        "Source-visible direct plugins",
+        "direct plugin declarations",
+        maven.path("plugins"),
+        false,
+        evidenceById);
+    appendMavenPluginOrientation(
+        markdown,
+        "Source-visible plugin-management declarations",
+        "plugin-management declarations",
+        maven.path("plugin_management"),
+        true,
+        evidenceById);
+  }
+
+  private void appendMavenMetadataOrientation(
+      StringBuilder markdown,
+      JsonNode metadata,
+      Map<String, EvidenceRecord> evidenceById) {
+    String analysisStatus = text(metadata, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- Source-visible Maven metadata: Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+
+    markdown.append("- Source-visible Maven metadata: group_id ")
+        .append(mavenValueLabel(metadata.path("group_id")))
+        .append(", artifact_id ")
+        .append(mavenValueLabel(metadata.path("artifact_id")))
+        .append(", version ")
+        .append(mavenValueLabel(metadata.path("version")))
+        .append(", packaging ")
+        .append(mavenValueLabel(metadata.path("packaging")))
+        .append(".\n");
+    appendEvidenceLine(markdown, evidenceIdsInSubtree(metadata), evidenceById);
+
+    JsonNode parent = metadata.path("parent");
+    if ("analyzed".equals(text(parent, "analysis_status"))) {
+      markdown.append("- Source-visible Maven parent: group_id ")
+          .append(mavenValueLabel(parent.path("group_id")))
+          .append(", artifact_id ")
+          .append(mavenValueLabel(parent.path("artifact_id")))
+          .append(", version ")
+          .append(mavenValueLabel(parent.path("version")))
+          .append(", relative_path ")
+          .append(mavenValueLabel(parent.path("relative_path")))
+          .append(".\n");
+      appendEvidenceLine(markdown, evidenceIdsInSubtree(parent), evidenceById);
+    }
+  }
+
+  private void appendMavenDependencyOrientation(
+      StringBuilder markdown,
+      String label,
+      String itemDescription,
+      JsonNode section,
+      boolean managementDeclarations,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = section.path("items");
+    String analysisStatus = text(section, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- ")
+          .append(label)
+          .append(": Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- ")
+          .append(label)
+          .append(": Detected none.\n");
+      return;
+    }
+
+    markdown.append("- ")
+        .append(label)
+        .append(": Detected ")
+        .append(items.size())
+        .append(" ")
+        .append(itemDescription);
+    if (managementDeclarations) {
+      markdown.append("; these are management declarations, not active resolved dependencies");
+    }
+    markdown.append(".\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode dependency = items.get(index);
+      markdown.append("  - Dependency: ")
+          .append(code(mavenCoordinateLabel(dependency)))
+          .append(" declaration_kind ")
+          .append(code(text(dependency, "declaration_kind")))
+          .append(", version ")
+          .append(mavenValueLabel(dependency.path("version")))
+          .append(", scope ")
+          .append(mavenValueLabel(dependency.path("scope")))
+          .append(", optional ")
+          .append(mavenValueLabel(dependency.path("optional")))
+          .append(".\n");
+      appendEvidenceLine(markdown, dependency.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, itemDescription);
+  }
+
+  private void appendMavenPluginOrientation(
+      StringBuilder markdown,
+      String label,
+      String itemDescription,
+      JsonNode section,
+      boolean managementDeclarations,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = section.path("items");
+    String analysisStatus = text(section, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- ")
+          .append(label)
+          .append(": Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- ")
+          .append(label)
+          .append(": Detected none.\n");
+      return;
+    }
+
+    markdown.append("- ")
+        .append(label)
+        .append(": Detected ")
+        .append(items.size())
+        .append(" ")
+        .append(itemDescription);
+    if (managementDeclarations) {
+      markdown.append("; these are management declarations, not active plugin executions");
+    }
+    markdown.append(".\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode plugin = items.get(index);
+      markdown.append("  - Plugin: ")
+          .append(code(mavenCoordinateLabel(plugin)))
+          .append(" declaration_kind ")
+          .append(code(text(plugin, "declaration_kind")))
+          .append(", version ")
+          .append(mavenValueLabel(plugin.path("version")))
+          .append(".\n");
+      appendMavenPluginExecutions(markdown, plugin.path("executions"));
+      appendMavenPluginSignals(markdown, "Configuration signals", plugin.path("configuration_signals"));
+      appendMavenPluginSignals(markdown, "Generator signals", plugin.path("generator_signals"));
+      appendEvidenceLine(markdown, plugin.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, itemDescription);
+  }
+
+  private void appendMavenPluginExecutions(StringBuilder markdown, JsonNode executions) {
+    if (!executions.isArray() || executions.isEmpty()) {
+      markdown.append("    - Direct execution declarations: none recorded.\n");
+      return;
+    }
+
+    List<String> labels = new ArrayList<>();
+    for (JsonNode execution : executions) {
+      labels.add("id="
+          + nullDisplay(nullableText(execution, "execution_id"))
+          + ", phase="
+          + mavenRawValueLabel(execution.path("phase"), "phase")
+          + ", goals="
+          + rawMavenValues(execution.path("goals")));
+    }
+    markdown.append("    - Direct execution declarations: ")
+        .append(cappedCodeList(labels, MAX_INLINE_BUILD_CONFIG_ITEMS, "execution declarations"))
+        .append("\n");
+  }
+
+  private void appendMavenPluginSignals(
+      StringBuilder markdown,
+      String label,
+      JsonNode signals) {
+    List<String> signalNames = new ArrayList<>();
+    if (signals.isArray()) {
+      for (JsonNode signal : signals) {
+        signalNames.add(text(signal, "signal"));
+      }
+    }
+    markdown.append("    - ")
+        .append(label)
+        .append(": ")
+        .append(signalNames.isEmpty()
+            ? "none recorded"
+            : cappedCodeList(signalNames, MAX_INLINE_BUILD_CONFIG_ITEMS, "signals"))
+        .append("\n");
+  }
+
+  private void appendResourceOrientation(StringBuilder markdown, JsonNode resources) {
+    JsonNode items = resources.path("items");
+    String analysisStatus = text(resources, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- Resource roots: Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Resource roots: Detected none.\n");
+      return;
+    }
+
+    markdown.append("- Resource roots: Detected ")
+        .append(items.size())
+        .append(" standard resource root")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode resource = items.get(index);
+      markdown.append("  - Resource root: ")
+          .append(code(text(resource, "scope")))
+          .append(" ")
+          .append(code(text(resource, "path")))
+          .append("\n");
+      markdown.append("    - Evidence: recorded in `project-map.json`; no separate resource-root evidence IDs are emitted.\n");
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "resource roots");
+  }
+
+  private void appendConfigFileOrientation(
+      StringBuilder markdown,
+      JsonNode configFiles,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = configFiles.path("items");
+    String analysisStatus = text(configFiles, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- Config files: Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Config files: Detected none.\n");
+      return;
+    }
+
+    markdown.append("- Config files: Detected ")
+        .append(items.size())
+        .append(" path-only supported config file")
+        .append(items.size() == 1 ? "" : "s")
+        .append("; config contents, keys, and values are not rendered.\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode configFile = items.get(index);
+      markdown.append("  - Config file: ")
+          .append(code(text(configFile, "path")))
+          .append(" kind ")
+          .append(code(text(configFile, "config_kind")))
+          .append(", format ")
+          .append(code(text(configFile, "format")));
+      String profileName = nullableText(configFile, "profile_name");
+      if (profileName != null && !profileName.isBlank()) {
+        markdown.append(", filename-derived profile ")
+            .append(code(profileName))
+            .append(" from ")
+            .append(code(text(configFile, "profile_source")));
+      }
+      markdown.append(".\n");
+      appendEvidenceLine(markdown, configFile.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "config files");
+  }
+
+  private void appendSpringBootApplicationOrientation(
+      StringBuilder markdown,
+      JsonNode springBootApplications,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = springBootApplications.path("items");
+    String analysisStatus = text(springBootApplications, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- Spring Boot application signals: Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Spring Boot application signals: Detected none.\n");
+      return;
+    }
+
+    markdown.append("- Spring Boot application signals: Detected ")
+        .append(items.size())
+        .append(" direct `@SpringBootApplication` class signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode application = items.get(index);
+      markdown.append("  - Spring Boot application: Detected ")
+          .append(code(text(application, "class_name")))
+          .append(" at ")
+          .append(code(text(application, "source_path")))
+          .append(" with signal ")
+          .append(code(text(application, "application_signal")))
+          .append(".\n");
+      JsonNode mainMethod = application.path("main_method");
+      markdown.append("    - Main method: ")
+          .append(mainMethod.path("present").asBoolean(false)
+              ? "Detected source-visible `main` method."
+              : "Detected none on the annotated class.")
+          .append("\n");
+      appendEvidenceLine(markdown, application.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "Spring Boot application signals");
+  }
+
+  private void appendBuildConfigWarningSummary(
+      StringBuilder markdown,
+      JsonNode warnings,
+      String moduleId) {
+    JsonNode items = warnings.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Module warnings: Detected none.\n");
+      return;
+    }
+
+    List<String> warningSignals = new ArrayList<>();
+    for (JsonNode warning : items) {
+      if (!moduleId.equals(nullableText(warning, "module_id"))) {
+        continue;
+      }
+      warningSignals.add(text(warning, "category") + ":" + text(warning, "signal"));
+    }
+    if (warningSignals.isEmpty()) {
+      markdown.append("- Module warnings: Detected none.\n");
+      return;
+    }
+    markdown.append("- Module warnings: Detected ")
+        .append(warningSignals.size())
+        .append(" warning signal")
+        .append(warningSignals.size() == 1 ? "" : "s")
+        .append(" for this module: ")
+        .append(cappedCodeList(warningSignals, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning signals"))
+        .append(". See `Known Uncertainty And Limits` for warning evidence and messages.\n");
   }
 
   private void appendEndpoints(
@@ -434,6 +840,13 @@ public final class AgentGuideGenerator {
     markdown.append("- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, ")
         .append("classpath-only interfaces, and ambiguous interface endpoint bindings are outside ")
         .append("the source-visible interface endpoint support.\n");
+    markdown.append("- Not analyzed: v0.3 build/config facts are direct local source observations ")
+        .append("only. Maven execution, effective POM reconstruction, profile activation, remote ")
+        .append("dependency resolution, config value interpretation, secret extraction, and default ")
+        .append("generated-source scanning are not performed.\n");
+    markdown.append("- Not analyzed: Spring Boot application signals do not prove executable packaging, ")
+        .append("active profiles, runtime auto-configuration, bean graphs, component scanning ")
+        .append("results, deployment behavior, or actual process entrypoint behavior.\n");
 
     if (projectMap.path("endpoints").isEmpty()) {
       markdown.append("- Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent ")
@@ -684,6 +1097,93 @@ public final class AgentGuideGenerator {
       return "no module identity";
     }
     return "module " + moduleLabel(moduleId, moduleById);
+  }
+
+  private String mavenValueLabel(JsonNode valueNode) {
+    return code(mavenRawValueLabel(valueNode, "value"))
+        + " (value_kind: "
+        + code(text(valueNode, "value_kind"))
+        + ")";
+  }
+
+  private String mavenCoordinateLabel(JsonNode declaration) {
+    return mavenRawValueLabel(declaration.path("group_id"), "group_id")
+        + ":"
+        + mavenRawValueLabel(declaration.path("artifact_id"), "artifact_id");
+  }
+
+  private String mavenRawValueLabel(JsonNode valueNode, String fieldName) {
+    String value = nullableText(valueNode, "value");
+    if (value != null && !value.isBlank()) {
+      return value;
+    }
+
+    String valueKind = text(valueNode, "value_kind");
+    if (valueKind.isBlank()) {
+      return fieldName + ":not_recorded";
+    }
+    return fieldName + ":" + valueKind;
+  }
+
+  private String rawMavenValues(JsonNode values) {
+    if (!values.isArray() || values.isEmpty()) {
+      return "none recorded";
+    }
+
+    List<String> labels = new ArrayList<>();
+    for (JsonNode value : values) {
+      labels.add(mavenRawValueLabel(value, "value"));
+    }
+    return String.join(",", labels);
+  }
+
+  private String nullDisplay(String value) {
+    if (value == null || value.isBlank()) {
+      return "not_declared";
+    }
+    return value;
+  }
+
+  private List<String> evidenceIdsInSubtree(JsonNode node) {
+    LinkedHashSet<String> ids = new LinkedHashSet<>();
+    collectEvidenceIds(node, ids);
+    return List.copyOf(ids);
+  }
+
+  private void collectEvidenceIds(JsonNode node, LinkedHashSet<String> ids) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return;
+    }
+    if (node.isObject()) {
+      node.fields().forEachRemaining(entry -> {
+        if (entry.getKey().endsWith("evidence_ids") && entry.getValue().isArray()) {
+          ids.addAll(stringValues(entry.getValue()));
+        }
+        collectEvidenceIds(entry.getValue(), ids);
+      });
+      return;
+    }
+    if (node.isArray()) {
+      for (JsonNode child : node) {
+        collectEvidenceIds(child, ids);
+      }
+    }
+  }
+
+  private void appendOmittedBuildConfigItems(
+      StringBuilder markdown,
+      int omittedCount,
+      String itemDescription) {
+    if (omittedCount <= 0) {
+      return;
+    }
+    markdown.append("  - ... and ")
+        .append(omittedCount)
+        .append(" more ")
+        .append(MarkdownRenderer.text(itemDescription))
+        .append(" in ")
+        .append(code("project-map.json"))
+        .append(".\n");
   }
 
   private Map<String, EvidenceRecord> evidenceById(String evidenceIndexJsonl) throws IOException {

@@ -22,6 +22,9 @@ architecture documents.
 - Added staged v0.3 module-owned standard resource-root discovery and path-only
   application/logging config-file inventory with config-file evidence that does not
   include config contents.
+- Added staged v0.3 module-owned direct source-visible Spring Boot application signal
+  extraction for `@SpringBootApplication` classes and bounded source-visible `main`
+  method signals.
 
 ### Changed
 
@@ -29,15 +32,21 @@ architecture documents.
   contract decisions for source-visible Maven, resource, config-file, Spring Boot, and
   generated-source warning signals.
 - Updated public output to `schema_version: "0.3"` with a complete `build_config` shell;
-  future v0.3 build/config subsections that are not implemented yet, such as Spring Boot
-  application signals, use `analysis_status: "not_analyzed"` without claiming empty
-  inventories.
+  v0.3 build/config subsections use explicit `analysis_status` values and do not claim
+  effective, resolved, runtime, or generated behavior.
 - Changed Maven `dependencies` and `dependency_management` build/config subsections from
   staged placeholders to analyzed source-visible inventories.
 - Changed Maven `plugins` and `plugin_management` build/config subsections from staged
   placeholders to analyzed source-visible inventories.
 - Changed `resources` and `config_files` build/config subsections from staged
   placeholders to analyzed path inventories when standard resource roots are present.
+- Changed `spring_boot_applications` from a staged placeholder to analyzed
+  source-visible application signal inventory when supported production source roots are
+  present.
+- Added build/configuration orientation to `agent-guide.md` from structured
+  `project-map.json` facts for Maven metadata, dependencies, dependency management,
+  plugins, plugin management, resource roots, config file paths, Spring Boot application
+  signals, and module warnings.
 
 ## [0.2.0] - 2026-06-05
 

@@ -24,6 +24,45 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Declaration evidence: none recorded.
   - POM evidence: `pom.xml:1` (`ev:pom.xml:1-1:build_file:pom.xml`)
 
+## Build And Configuration Orientation
+
+### Module `module:.` (path: `.`)
+
+- Build/config analysis status: `analyzed`
+- Source-visible Maven metadata: group_id `com.example` (value_kind: `literal`), artifact_id `stage3-project-map` (value_kind: `literal`), version `1.0.0` (value_kind: `literal`), packaging `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: `pom.xml:7` (`ev:pom.xml:7-7:build_file:maven:project:groupId`), `pom.xml:8` (`ev:pom.xml:8-8:build_file:maven:project:artifactId`), `pom.xml:9` (`ev:pom.xml:9-9:build_file:maven:project:version`)
+- Source-visible direct dependencies: Detected 2 direct dependency declarations.
+  - Dependency: `com.example:inventory-client` declaration_kind `direct_dependency`, version `value:not_declared` (value_kind: `not_declared`), scope `test` (value_kind: `literal`), optional `true` (value_kind: `literal`).
+  - Evidence: `pom.xml:29-34` (`ev:pom.xml:29-34:build_file:maven:dependency:000002`)
+  - Dependency: `org.springframework.boot:spring-boot-starter-web` declaration_kind `direct_dependency`, version `${spring.boot.version}` (value_kind: `property_reference`), scope `value:not_declared` (value_kind: `not_declared`), optional `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: `pom.xml:24-28` (`ev:pom.xml:24-28:build_file:maven:dependency:000001`)
+- Source-visible dependency-management declarations: Detected 1 dependency-management declarations; these are management declarations, not active resolved dependencies.
+  - Dependency: `org.springframework.boot:spring-boot-dependencies` declaration_kind `dependency_management`, version `${spring.boot.version}` (value_kind: `property_reference`), scope `import` (value_kind: `literal`), optional `value:not_declared` (value_kind: `not_declared`).
+  - Evidence: `pom.xml:13-19` (`ev:pom.xml:13-19:build_file:maven:dependency_management:000001`)
+- Source-visible direct plugins: Detected 1 direct plugin declarations.
+  - Plugin: `org.springframework.boot:spring-boot-maven-plugin` declaration_kind `direct_plugin`, version `${spring.boot.version}` (value_kind: `property_reference`).
+    - Direct execution declarations: none recorded.
+    - Configuration signals: none recorded
+    - Generator signals: none recorded
+  - Evidence: `pom.xml:48-52` (`ev:pom.xml:48-52:build_file:maven:plugin:000001`)
+- Source-visible plugin-management declarations: Detected 1 plugin-management declarations; these are management declarations, not active plugin executions.
+  - Plugin: `org.apache.maven.plugins:maven-surefire-plugin` declaration_kind `plugin_management`, version `3.2.5` (value_kind: `literal`).
+    - Direct execution declarations: none recorded.
+    - Configuration signals: none recorded
+    - Generator signals: none recorded
+  - Evidence: `pom.xml:40-44` (`ev:pom.xml:40-44:build_file:maven:plugin_management:000001`)
+- Resource roots: Detected 1 standard resource root.
+  - Resource root: `main` `src/main/resources`
+    - Evidence: recorded in `project-map.json`; no separate resource-root evidence IDs are emitted.
+- Config files: Detected 1 path-only supported config file; config contents, keys, and values are not rendered.
+  - Config file: `src/main/resources/application.yml` kind `spring_application`, format `yaml`.
+  - Evidence: `src/main/resources/application.yml` (`ev:src/main/resources/application.yml:unknown:config_file:application.yml`)
+- Spring Boot application signals: Detected 1 direct `@SpringBootApplication` class signal.
+  - Spring Boot application: Detected `com.example.Stage3Application` at `src/main/java/com/example/Stage3Application.java` with signal `spring_boot_application_with_main_method`.
+    - Main method: Detected source-visible `main` method.
+  - Evidence: `src/main/java/com/example/Stage3Application.java:5` (`ev:src/main/java/com/example/Stage3Application.java:5-5:com.example.Stage3Application:@SpringBootApplication`), `src/main/java/com/example/Stage3Application.java:7` (`ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol`)
+- Module warnings: Detected none.
+
 ## Detected Spring MVC Endpoints
 
 ### `POST /api/items`
@@ -159,10 +198,12 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
+- Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 
 ## Practical Inspection Order For Coding Agents
 
-1. Start with detected build, module, and layout facts in `pom.xml`.
+1. Start with detected build, module, and layout facts in `pom.xml`, `src/main/resources/application.yml`, `src/main/java/com/example/Stage3Application.java`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/ProjectMapController.java`.
 3. For Spring wiring changes, inspect detected component evidence in `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/web/ProjectMapController.java` and avoid assuming runtime injection graphs.
 4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat relationship targets as declared-type-only.

@@ -75,7 +75,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(30, projectMapEvidenceIds.size()),
+        () -> assertEquals(56, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -97,6 +97,48 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
         () -> assertTrue(Files.readString(outputDirectory.resolve("agent-guide.md"))
             .contains("# Agent Guide")));
+  }
+
+  @Test
+  void springBootApplicationsAreModuleOwnedAndEvidenceBacked() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+    JsonNode applications = moduleNode(projectMap, "module:.")
+        .path("build_config")
+        .path("spring_boot_applications");
+    JsonNode application = applications.path("items").get(0);
+
+    assertAll(
+        () -> assertEquals("analyzed", applications.path("analysis_status").asText()),
+        () -> assertEquals(1, applications.path("items").size()),
+        () -> assertEquals("com.example.Stage3Application", application.path("class_name").asText()),
+        () -> assertEquals(
+            "src/main/java/com/example/Stage3Application.java",
+            application.path("source_path").asText()),
+        () -> assertEquals(
+            "spring_boot_application_with_main_method",
+            application.path("application_signal").asText()),
+        () -> assertTrue(application.path("main_method").path("present").asBoolean()),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"annotation\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@SpringBootApplication\"")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"code_symbol\"")),
+        () -> assertTrue(evidenceIndex.contains("\"method_name\":\"main\"")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Spring Boot application evidence_ids must resolve in evidence-index.jsonl"),
+        () -> assertTrue(agentGuide.contains("Spring Boot application: Detected "
+            + "`com.example.Stage3Application`")),
+        () -> assertSensitiveConfigValuesDoNotAppear(projectMap, evidenceIndex, agentGuide));
   }
 
   @Test
@@ -1100,7 +1142,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_PROFILE_SECRET")),
         () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_LOGBACK_SECRET")),
         () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_TEST_SECRET")),
-        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_LOG4J_SECRET")));
+        () -> assertFalse(joinedOutput.contains("FAKE_CONFIG_LOG4J_SECRET")),
+        () -> assertFalse(joinedOutput.contains("FAKE_STAGE3_CONFIG_SECRET")));
   }
 
   private JsonNode moduleNode(String projectMap, String moduleId) throws Exception {

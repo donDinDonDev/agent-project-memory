@@ -751,10 +751,8 @@ Deterministic sorting rules:
 This section defines the v0.3 build/configuration JSON contract. The current staged
 implementation emits source-visible Maven metadata, source-visible Maven dependency
 inventory, source-visible Maven plugin inventory, standard resource-root inventory,
-path-only supported application/logging config-file inventory, and the complete
-`build_config` section shell. Future v0.3 subsections that are not implemented yet, such
-as Spring Boot application signals, use `analysis_status: "not_analyzed"` and empty
-`items` arrays so they do not claim absence of those future facts.
+path-only supported application/logging config-file inventory, direct source-visible
+Spring Boot application signals, and the complete `build_config` section shell.
 
 The planned v0.3 contract uses:
 
@@ -1076,8 +1074,10 @@ Build/config analysis status rules:
   resource roots are present and the relevant analyzer runs, even when the resulting
   config item list is empty. They are `"not_detected"` when no supported resource input
   root exists.
-- In the current staged v0.3 resource/config slice, `spring_boot_applications` uses
-  `"not_analyzed"` with an empty `items` array until its bounded analyzer is implemented.
+- Spring Boot application subsection `analysis_status` values are `"analyzed"` when
+  supported production source roots are present and the analyzer runs, even when no
+  direct `@SpringBootApplication` class signal is detected. They are `"not_detected"`
+  when no supported production source root exists for that module.
 
 Maven value rules:
 
@@ -1491,15 +1491,17 @@ Current staged v0.3 build/config behavior:
   `project.modules.items[].build_config.resources` and path-only supported
   application/logging config-file inventory under
   `project.modules.items[].build_config.config_files`.
+- `project-map.json` includes module-owned direct source-visible Spring Boot application
+  signals under `project.modules.items[].build_config.spring_boot_applications`.
 - Plugin-derived generated-source warnings are rendered in the known-limits section as
   warning facts and must not be rendered as endpoint, API-operation, or generated-source
   facts.
-- `agent-guide.md` keeps the current v0.2 guide sections until the bounded v0.3 guide
-  rendering goal adds a dedicated build/configuration orientation section.
-- The current guide does not render dependency, plugin, resource, or config inventory
-  yet; these facts remain machine-readable in `project-map.json` until the bounded v0.3
-  guide rendering goal. The current guide must not render `not_analyzed` Spring Boot
-  application subsection shells as detected facts.
+- `agent-guide.md` includes a dedicated `Build And Configuration Orientation` section
+  generated from structured build/config facts only. It renders Maven metadata,
+  dependencies, dependency-management declarations, plugins, plugin-management
+  declarations, resource roots, config file paths, Spring Boot application signals, and
+  concise module warning summaries without interpreting config values or claiming
+  effective/resolved/runtime/generated behavior.
 
 Planned v0.3 `agent-guide.md` behavior:
 
