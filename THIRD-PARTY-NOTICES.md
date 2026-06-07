@@ -4,7 +4,7 @@
 [`LICENSE`](LICENSE).
 
 The executable CLI jar is a shaded jar and includes runtime dependencies. This file is
-an informational summary of third-party components included in the v0.1.0 runtime
+an informational summary of third-party components included in the released runtime
 artifact. The jar also carries dependency-provided license and notice resources under
 `META-INF/`.
 
