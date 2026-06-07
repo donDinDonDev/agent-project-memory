@@ -151,7 +151,8 @@ Expected scope:
 - Define a stable API surface taxonomy.
 - Keep direct source-visible Spring MVC endpoints and source-visible interface-declared
   Spring MVC endpoints as code-backed endpoint facts with separate categories.
-- Discover local OpenAPI/Swagger files.
+- Discover local OpenAPI/Swagger files as declared API inputs. This starts in the OpenAPI/Swagger spec discovery slice
+  without operation parsing.
 - Parse minimal OpenAPI/Swagger operations as spec-backed declared API operation facts
   after parser and evidence design.
 - Keep OpenAPI operations separate from implemented endpoint facts unless separate code

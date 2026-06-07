@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -47,8 +48,10 @@ public final class AnalysisWarningAnalyzer {
   private static final Set<String> OPENAPI_SPEC_FILENAMES = Set.of(
       "openapi.yml",
       "openapi.yaml",
+      "openapi.json",
       "swagger.yml",
-      "swagger.yaml");
+      "swagger.yaml",
+      "swagger.json");
   private static final Set<String> MAVEN_CODEGEN_PLUGIN_ARTIFACT_IDS = Set.of(
       "openapi-generator-maven-plugin",
       "swagger-codegen-maven-plugin");
@@ -383,7 +386,8 @@ public final class AnalysisWarningAnalyzer {
 
     try (Stream<Path> paths = Files.walk(scanRoot)) {
       return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
+          .filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
+              && ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
               && !isExcluded(repositoryRoot, path)
               && !isExcludedModulePath(repositoryRoot, path, excludedModulePaths))
           .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))

@@ -409,14 +409,70 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(projectMap.contains("\"signal\": \"repository_rest_resource\"")),
         () -> assertTrue(projectMap.contains("\"signal\": \"maven_openapi_swagger_codegen_plugin\"")),
         () -> assertTrue(evidenceIndex.contains("\"source_type\":\"config_file\"")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"api_spec\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi.yml\"")),
+        () -> assertTrue(projectMap.contains("\"api_surface\": {")),
+        () -> assertTrue(projectMap.contains("\"spec_path\": \"src/main/resources/openapi.yml\"")),
+        () -> assertTrue(projectMap.contains("\"operations\": {\n        \"analysis_status\": \"not_analyzed\"")),
+        () -> assertFalse(projectMap.contains("\"openapi_operation:")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@RepositoryRestResource\"")),
         () -> assertTrue(agentGuide.contains("Warning: `hidden_http_surface` signal `openapi_spec_file`")),
+        () -> assertTrue(agentGuide.contains(
+            "OpenAPI/Swagger spec files: status `analyzed`; detected 1 local spec file")),
         () -> assertTrue(agentGuide.contains(
             "Warning: `hidden_http_surface` signal `repository_rest_resource`")),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Warning evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
+  void apiSurfaceSpecDiscoveryFactsAreSerializedWithoutOperations() throws Exception {
+    Path projectPath = tempDir.resolve("api-surface-spec-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(projectPath.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.3
+        paths:
+          /orders:
+            get:
+              operationId: listOrders
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode apiSurface = JSON.readTree(projectMap).path("api_surface");
+    JsonNode specFiles = apiSurface.path("openapi").path("spec_files");
+    JsonNode specFile = specFiles.path("items").get(0);
+    JsonNode operations = apiSurface.path("openapi").path("operations");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
+        () -> assertEquals("analyzed", specFiles.path("analysis_status").asText()),
+        () -> assertEquals(1, specFiles.path("items").size()),
+        () -> assertEquals("module:.", specFile.path("module_id").asText()),
+        () -> assertEquals("src/main/resources/openapi.yml", specFile.path("spec_path").asText()),
+        () -> assertEquals("yaml", specFile.path("format").asText()),
+        () -> assertEquals("openapi", specFile.path("spec_kind").asText()),
+        () -> assertEquals("3.0.3", specFile.path("version").asText()),
+        () -> assertEquals("not_analyzed", operations.path("analysis_status").asText()),
+        () -> assertEquals(0, operations.path("items").size()),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"api_spec\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi\"")),
+        () -> assertFalse(projectMap.contains("openapi_operation:")),
+        () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }
 
   @Test
@@ -603,7 +659,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"api_surface_category\": \"source_visible_spring_mvc_endpoint\"")),
+        () -> assertTrue(projectMap.contains("\"source_visible_spring_mvc_endpoints\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/billing\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:services/orders\"")),
@@ -673,7 +731,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -743,7 +801,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     assertAll(
         () -> assertTrue(result.generated()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
         () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
             < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
         () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
@@ -1151,6 +1209,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         .path("build_config")
         .path("maven")
         .path("metadata");
+    JsonNode apiSurface = JSON.readTree(projectMap).path("api_surface");
 
     assertAll(
         () -> assertTrue(result.generated()),
@@ -1158,12 +1217,15 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.3\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),
         () -> assertEquals("platform", metadata.path("artifact_id").path("value").asText()),
         () -> assertEquals("pom", metadata.path("packaging").path("value").asText()),
+        () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
+        () -> assertEquals("not_detected",
+            apiSurface.path("openapi").path("operations").path("analysis_status").asText()),
         () -> assertTrue(projectMap.contains("\"endpoints\": [],")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"maven:project:packaging\"")));
   }

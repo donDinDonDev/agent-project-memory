@@ -9,7 +9,32 @@ architecture documents.
 
 ## [Unreleased]
 
-No unreleased changes.
+### Added
+
+- Added the first v0.4 API surface implementation slice: deterministic local
+  OpenAPI/Swagger spec file discovery for common `openapi.*` and `swagger.*` filenames
+  as declared API inputs.
+- Added `api_surface.openapi.spec_files` facts with normalized repository-relative
+  paths, optional `module_id` ownership for specs under supported modules, format,
+  spec kind, bounded version observations, and `api_spec` evidence.
+- Added the `API Surface Interpretation` section to `agent-guide.md` from structured
+  `project-map.json` facts and resolving evidence.
+
+### Changed
+
+- Updated public output to `schema_version: "0.4"` with endpoint
+  `api_surface_category` values and a top-level `api_surface` section.
+- Kept OpenAPI operations explicitly represented as `not_analyzed` with empty `items`
+  until a dedicated operation parser is implemented.
+
+### Not Included
+
+- OpenAPI/Swagger operation parsing.
+- Full OpenAPI validation.
+- External `$ref` fetching or network access.
+- Maven generation, generated-source scanning, or generated API reconstruction.
+- Runtime API, Spring handler mapping, client SDK, or implementation-coverage claims
+  from spec files.
 
 ## [0.3.0] - 2026-06-06
 

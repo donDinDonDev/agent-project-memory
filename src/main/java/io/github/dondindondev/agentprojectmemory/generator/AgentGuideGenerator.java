@@ -34,6 +34,7 @@ public final class AgentGuideGenerator {
 
     appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
     appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
+    appendApiSurfaceInterpretation(markdown, projectMap.path("api_surface"), moduleById, evidenceById);
     appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
     appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
@@ -542,6 +543,128 @@ public final class AgentGuideGenerator {
     appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "Spring Boot application signals");
   }
 
+  private void appendApiSurfaceInterpretation(
+      StringBuilder markdown,
+      JsonNode apiSurface,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!apiSurface.isObject()) {
+      return;
+    }
+
+    markdown.append("## API Surface Interpretation\n\n");
+    markdown.append("- API surface analysis status: ")
+        .append(code(text(apiSurface, "analysis_status")))
+        .append("\n");
+    appendEndpointIdSummary(
+        markdown,
+        "Code-backed direct Spring MVC endpoint IDs",
+        apiSurface.path("source_visible_spring_mvc_endpoints"));
+    appendEndpointIdSummary(
+        markdown,
+        "Code-backed source-visible interface-declared endpoint IDs",
+        apiSurface.path("interface_declared_spring_mvc_endpoints"));
+    appendOpenApiSpecSummary(markdown, apiSurface.path("openapi"), moduleById, evidenceById);
+    appendApiSurfaceWarningSummary(
+        markdown,
+        "Generated-source API warning IDs",
+        apiSurface.path("generated_source_api_signals"));
+    appendApiSurfaceWarningSummary(
+        markdown,
+        "Repository-rest warning IDs",
+        apiSurface.path("repository_rest_warnings"));
+    appendApiSurfaceWarningSummary(
+        markdown,
+        "Hidden HTTP warning IDs",
+        apiSurface.path("hidden_http_warnings"));
+    markdown.append("\n");
+  }
+
+  private void appendEndpointIdSummary(
+      StringBuilder markdown,
+      String label,
+      JsonNode section) {
+    List<String> endpointIds = stringValues(section.path("endpoint_ids"));
+    markdown.append("- ")
+        .append(label)
+        .append(": status ")
+        .append(code(text(section, "analysis_status")));
+    if (endpointIds.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(endpointIds.size())
+        .append(" ID")
+        .append(endpointIds.size() == 1 ? "" : "s")
+        .append(" ")
+        .append(cappedCodeList(endpointIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "endpoint IDs"))
+        .append(".\n");
+  }
+
+  private void appendOpenApiSpecSummary(
+      StringBuilder markdown,
+      JsonNode openapi,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode specFiles = openapi.path("spec_files");
+    JsonNode specItems = specFiles.path("items");
+    markdown.append("- OpenAPI/Swagger spec files: status ")
+        .append(code(text(specFiles, "analysis_status")));
+    if (!specItems.isArray() || specItems.isEmpty()) {
+      markdown.append("; detected none.\n");
+    } else {
+      markdown.append("; detected ")
+          .append(specItems.size())
+          .append(" local spec file")
+          .append(specItems.size() == 1 ? "" : "s")
+          .append(" as declared API inputs.\n");
+      int visibleCount = Math.min(specItems.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+      for (int index = 0; index < visibleCount; index++) {
+        JsonNode spec = specItems.get(index);
+        markdown.append("  - Spec file: ")
+            .append(code(text(spec, "spec_path")))
+            .append(" kind ")
+            .append(code(text(spec, "spec_kind")))
+            .append(", format ")
+            .append(code(text(spec, "format")))
+            .append(", version ")
+            .append(code(nullDisplay(nullableText(spec, "version"))))
+            .append(".\n");
+        appendModuleLine(markdown, spec, moduleById);
+        appendEvidenceLine(markdown, spec.path("evidence_ids"), evidenceById);
+      }
+      appendOmittedBuildConfigItems(markdown, specItems.size() - visibleCount, "OpenAPI/Swagger spec files");
+    }
+
+    JsonNode operations = openapi.path("operations");
+    markdown.append("- OpenAPI/Swagger operations: status ")
+        .append(code(text(operations, "analysis_status")))
+        .append("; no operation facts are emitted until the dedicated operation parser runs.\n");
+  }
+
+  private void appendApiSurfaceWarningSummary(
+      StringBuilder markdown,
+      String label,
+      JsonNode section) {
+    List<String> warningIds = stringValues(section.path("warning_ids"));
+    markdown.append("- ")
+        .append(label)
+        .append(": status ")
+        .append(code(text(section, "analysis_status")));
+    if (warningIds.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; referenced ")
+        .append(warningIds.size())
+        .append(" warning ID")
+        .append(warningIds.size() == 1 ? "" : "s")
+        .append(" ")
+        .append(cappedCodeList(warningIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning IDs"))
+        .append(".\n");
+  }
+
   private void appendBuildConfigWarningSummary(
       StringBuilder markdown,
       JsonNode warnings,
@@ -837,7 +960,7 @@ public final class AgentGuideGenerator {
       markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
           .append("Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.\n");
     }
-    markdown.append("- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, ")
+    markdown.append("- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, ")
         .append("classpath-only interfaces, and ambiguous interface endpoint bindings are outside ")
         .append("the source-visible interface endpoint support.\n");
     markdown.append("- Not analyzed: v0.3 build/config facts are direct local source observations ")
@@ -882,6 +1005,7 @@ public final class AgentGuideGenerator {
     markdown.append("2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence");
     LinkedHashSet<String> httpPaths = new LinkedHashSet<>();
     httpPaths.addAll(evidencePaths(projectMap.path("endpoints"), evidenceById));
+    httpPaths.addAll(evidencePaths(projectMap.path("api_surface"), evidenceById));
     httpPaths.addAll(hiddenHttpWarningEvidencePaths(projectMap.path("warnings"), evidenceById));
     appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");

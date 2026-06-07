@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3",
+  "schema_version": "0.4",
   "project": {
     "root": ".",
     "build": {
@@ -1138,6 +1138,7 @@
     {
       "id": "endpoint:module:services/alpha:com.example.alpha.AlphaController#status",
       "module_id": "module:services/alpha",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
       "controller_class": "com.example.alpha.AlphaController",
       "handler_method": "status",
       "http_methods": [
@@ -1180,6 +1181,7 @@
     {
       "id": "endpoint:module:services/zeta:com.example.zeta.ZetaController#create",
       "module_id": "module:services/zeta",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
       "controller_class": "com.example.zeta.ZetaController",
       "handler_method": "create",
       "http_methods": [
@@ -1211,6 +1213,57 @@
       ]
     }
   ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:module:services/alpha:com.example.alpha.AlphaController#status",
+        "endpoint:module:services/zeta:com.example.zeta.ZetaController#create"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_spec:module:services/zeta:path:services/zeta/src/main/resources/openapi.yml",
+            "module_id": "module:services/zeta",
+            "spec_path": "services/zeta/src/main/resources/openapi.yml",
+            "format": "yaml",
+            "spec_kind": "openapi",
+            "version": "3.0.0",
+            "evidence_ids": [
+              "ev:services/zeta/src/main/resources/openapi.yml:1-1:api_spec:openapi"
+            ]
+          }
+        ]
+      },
+      "operations": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [
+        "warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002",
+        "warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin"
+      ]
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
   "warnings": {
     "analysis_status": "analyzed",
     "items": [

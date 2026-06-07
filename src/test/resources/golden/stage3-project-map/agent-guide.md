@@ -63,6 +63,17 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `src/main/java/com/example/Stage3Application.java:5` (`ev:src/main/java/com/example/Stage3Application.java:5-5:com.example.Stage3Application:@SpringBootApplication`), `src/main/java/com/example/Stage3Application.java:7` (`ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol`)
 - Module warnings: Detected none.
 
+## API Surface Interpretation
+
+- API surface analysis status: `analyzed`
+- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:com.example.web.ProjectMapController#createItem`, `endpoint:com.example.web.ProjectMapController#getItem`.
+- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- OpenAPI/Swagger spec files: status `analyzed`; detected none.
+- OpenAPI/Swagger operations: status `not_detected`; no operation facts are emitted until the dedicated operation parser runs.
+- Generated-source API warning IDs: status `analyzed`; detected none.
+- Repository-rest warning IDs: status `analyzed`; detected none.
+- Hidden HTTP warning IDs: status `analyzed`; detected none.
+
 ## Detected Spring MVC Endpoints
 
 ### `POST /api/items`
@@ -197,7 +208,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
-- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 

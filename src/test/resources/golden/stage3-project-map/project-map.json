@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.3",
+  "schema_version": "0.4",
   "project": {
     "root": ".",
     "build": {
@@ -386,6 +386,7 @@
     {
       "id": "endpoint:com.example.web.ProjectMapController#createItem",
       "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
       "controller_class": "com.example.web.ProjectMapController",
       "handler_method": "createItem",
       "http_methods": [
@@ -419,6 +420,7 @@
     {
       "id": "endpoint:com.example.web.ProjectMapController#getItem",
       "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
       "controller_class": "com.example.web.ProjectMapController",
       "handler_method": "getItem",
       "http_methods": [
@@ -468,6 +470,42 @@
       ]
     }
   ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:com.example.web.ProjectMapController#createItem",
+        "endpoint:com.example.web.ProjectMapController#getItem"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
   "warnings": {
     "analysis_status": "analyzed",
     "items": []

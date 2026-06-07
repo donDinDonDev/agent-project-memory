@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -34,6 +36,41 @@ final class AnalysisWarningAnalyzerTest {
         () -> assertEquals("src/main/resources/openapi.yml", evidence.sourcePath()),
         () -> assertEquals("openapi.yml", evidence.symbolName()),
         () -> assertTrue(evidence.id().contains(":config_file:openapi.yml")));
+  }
+
+  @Test
+  void jsonOpenApiSpecFilenamesCreateHiddenHttpSurfaceWarnings() throws Exception {
+    Path repositoryRoot = tempDir.resolve("json-spec-warnings");
+    writeFile(repositoryRoot.resolve("src/main/resources/openapi.json"), "{}");
+    writeFile(repositoryRoot.resolve("docs/swagger.json"), "{}");
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+
+    assertAll(
+        () -> assertEquals(
+            List.of("docs/swagger.json", "src/main/resources/openapi.json"),
+            analysis.warnings().stream().map(AnalysisWarningFact::sourcePath).toList()),
+        () -> assertEquals(
+            List.of("swagger.json", "openapi.json"),
+            analysis.evidence().stream().map(AnalysisWarningEvidence::symbolName).toList()),
+        () -> assertTrue(analysis.evidence().stream()
+            .allMatch(evidence -> "config_file".equals(evidence.sourceType()))));
+  }
+
+  @Test
+  void symlinkOpenApiSpecWarningPathEntryIsIgnored() throws Exception {
+    Path repositoryRoot = tempDir.resolve("symlink-spec-warning");
+    writeFile(repositoryRoot.resolve("shared/openapi.yml"), "openapi: 3.0.0");
+    Files.createDirectories(repositoryRoot.resolve("src/main/resources"));
+    createSymbolicLink(
+        repositoryRoot.resolve("src/main/resources/openapi.yml"),
+        repositoryRoot.resolve("shared/openapi.yml"));
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+
+    assertEquals(
+        List.of("shared/openapi.yml"),
+        analysis.warnings().stream().map(AnalysisWarningFact::sourcePath).toList());
   }
 
   @Test
@@ -217,6 +254,19 @@ final class AnalysisWarningAnalyzerTest {
     Files.createDirectories(repositoryRoot);
     Files.writeString(repositoryRoot.resolve("pom.xml"), pomXml);
     return analyzer.analyze(repositoryRoot, List.of(repositoryRoot.resolve("src/main/java")));
+  }
+
+  private void writeFile(Path path, String content) throws Exception {
+    Files.createDirectories(path.getParent());
+    Files.writeString(path, content);
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
   }
 
   private Path fixtureRoot() throws Exception {

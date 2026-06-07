@@ -117,6 +117,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected 4 warning signals for this module: `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`, `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## API Surface Interpretation
+
+- API surface analysis status: `analyzed`
+- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/billing:com.example.shared.SharedController#health`, `endpoint:module:services/orders:com.example.shared.SharedController#health`.
+- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- OpenAPI/Swagger spec files: status `analyzed`; detected 1 local spec file as declared API inputs.
+  - Spec file: `services/orders/src/main/resources/openapi.yml` kind `openapi`, format `yaml`, version `3.0.0`.
+- Module: Detected `module:services/orders` (path: `services/orders`)
+  - Evidence: `services/orders/src/main/resources/openapi.yml:1` (`ev:services/orders/src/main/resources/openapi.yml:1-1:api_spec:openapi`)
+- OpenAPI/Swagger operations: status `not_analyzed`; no operation facts are emitted until the dedicated operation parser runs.
+- Generated-source API warning IDs: status `analyzed`; referenced 2 warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/orders:services/orders/pom.xml:openapi-generator-maven-plugin`.
+- Repository-rest warning IDs: status `analyzed`; referenced 2 warning IDs `warning:hidden_http_surface:repository_rest_resource:module:services/billing:com.example.shared.SharedRepository`, `warning:hidden_http_surface:repository_rest_resource:module:services/orders:com.example.shared.SharedRepository`.
+- Hidden HTTP warning IDs: status `analyzed`; detected none.
+
 ## Detected Spring MVC Endpoints
 
 ### `GET /billing/health`
@@ -244,14 +258,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
-- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 
 ## Practical Inspection Order For Coding Agents
 
 1. Start with detected build, module, and layout facts in `pom.xml`, `libraries/shared/pom.xml`, `services/billing/pom.xml`, `services/orders/pom.xml`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`, `services/orders/pom.xml`, `services/orders/src/main/resources/openapi.yml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/resources/openapi.yml`, `services/orders/pom.xml`.
 3. For Spring wiring changes, inspect detected component evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and avoid assuming runtime injection graphs.
 4. For persistence changes, inspect detected entity evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat relationship targets as declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence in `services/billing/src/test/java/com/example/shared/SharedControllerTest.java`, `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/test/java/com/example/shared/SharedControllerTest.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`; do not treat inferred subjects as coverage proof.

@@ -4,9 +4,10 @@
 project memory for Java/Spring codebases.
 
 The goal is to help developers and AI coding agents understand a legacy Java/Spring
-project before changing it. The tool scans local Java source, standard Maven layout, and
-standard Maven test roots, extracts deterministic facts, attaches evidence references,
-and writes Markdown/JSON artifacts that can be reviewed, versioned, and reused.
+project before changing it. The tool scans local Java source, standard Maven layout,
+standard Maven test roots, and bounded local API-surface inputs, extracts deterministic
+facts, attaches evidence references, and writes Markdown/JSON artifacts that can be
+reviewed, versioned, and reused.
 
 The current product focus is intentionally narrow:
 
@@ -74,7 +75,7 @@ java -jar target/agent-project-memory-0.3.0.jar scan /path/to/java-spring-projec
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
 rewritten deterministically when supported Maven module roots, source-visible Maven
 metadata from module POMs, supported root source, test, or resource roots, supported
-config files, or Maven module warnings are detected.
+config files, local OpenAPI/Swagger spec files, or Maven module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
@@ -91,7 +92,8 @@ mapped-superclass identifier fields, standard Maven test-root classes with conse
 helper filtering, direct source-visible Maven metadata from module POMs, and direct
 source-visible Maven dependency and plugin declarations from module POMs, plus
 path-only standard resource-root and supported application/logging config-file
-inventory, then writes:
+inventory. It also discovers common local OpenAPI/Swagger spec filenames as declared API
+inputs without extracting operations, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -101,7 +103,7 @@ inventory, then writes:
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.3"` and includes detected root `pom.xml` build metadata when
+`schema_version: "0.4"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -112,7 +114,10 @@ source and test root summaries, module-owned standard resource-root inventory un
 application/logging config-file inventory under
 `project.modules.items[].build_config.config_files`, module-owned direct source-visible
 Spring Boot application signals under
-`project.modules.items[].build_config.spring_boot_applications`, direct `module_id`
+`project.modules.items[].build_config.spring_boot_applications`, API surface categories
+for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
+`api_surface.openapi.spec_files`, an explicit non-parsed operations section under
+`api_surface.openapi.operations`, direct `module_id`
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
@@ -192,9 +197,9 @@ references.
 
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
-final discovery baseline. The v0.3 build/configuration release materials are prepared
-for maintainer review with a clean final Codex Security release baseline. Future
-connector/import work is post-v0.3 and is not started.
+final discovery baseline. The v0.3 build/configuration release is published. The v0.4
+API surface implementation has started with deterministic local OpenAPI/Swagger spec
+file discovery. Future connector/import work is post-v0.3 and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -203,7 +208,8 @@ mapping support when uniquely bindable, stable `project-map.json` and
 metadata, dependency, and plugin extraction, deterministic direct Spring component and
 JPA entity inventories, deterministic path-only resource-root and supported config-file
 discovery, deterministic hidden HTTP surface, generated-source, and Maven module
-warnings, a minimal deterministic tests inventory, deterministic `endpoints.md`, and
+warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
+inputs, a minimal deterministic tests inventory, deterministic `endpoints.md`, and
 deterministic `agent-guide.md` generation from the structured facts and evidence index.
 
 Current limitations:
@@ -229,8 +235,8 @@ Current limitations:
   direct plugin coordinates, bounded direct execution IDs, phases, goals, and conservative
   configuration/generator signal names without storing arbitrary plugin configuration
   values. It does not resolve plugin versions, reconstruct lifecycle bindings, inherit
-  executions, execute plugins, scan generated sources by default, parse OpenAPI specs, or
-  create generated API/endpoint facts from plugin signals.
+  executions, execute plugins, scan generated sources by default, parse OpenAPI
+  operations, or create generated API/endpoint facts from plugin signals.
 - Resource-root discovery is limited to standard `src/main/resources` and
   `src/test/resources` roots under supported modules. Config-file discovery is limited
   to supported Spring `application.properties`, `application.yml`, `application.yaml`,
@@ -257,12 +263,19 @@ Current limitations:
 - Entity analysis does not implement getter/property-access mapping, embedded IDs,
   generated values, column or join-column details, repository analysis, schema
   generation, transactional semantics, symbol solving, or ORM runtime behavior.
+- API surface spec discovery is limited to common local filenames such as
+  `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
+  `swagger.json`. It records normalized repository-relative paths, format, spec kind,
+  bounded version signals when directly visible near the file header, module ownership
+  when the file is under a supported module, and `api_spec` evidence. It does not parse
+  operations, validate the full spec, follow `$ref`, fetch external schemas, claim
+  implementation, treat symlink entries as spec files, or scan generated-source roots.
 - Hidden HTTP surface and generated-source warnings are limited to OpenAPI/Swagger spec filename presence,
   supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
   `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,
   annotation-processor, generated-source configuration, and build-helper add-source
   signals, and direct `@RepositoryRestResource`. They do not create endpoint facts, parse
-  OpenAPI YAML, run Maven generation, scan `target/generated-sources` by default, or
+  OpenAPI operations, run Maven generation, scan `target/generated-sources` by default, or
   reconstruct generated APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
@@ -286,7 +299,7 @@ Current limitations:
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
-  Boot application, and tests inventory evidence.
+  Boot application, local OpenAPI/Swagger `api_spec`, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

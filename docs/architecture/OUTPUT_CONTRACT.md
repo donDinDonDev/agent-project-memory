@@ -24,14 +24,14 @@ Maven module warnings are detected. Unsupported directories still only get a pre
 `EVAL-8-004` decision B keeps endpoint extraction limited to source-visible Java inputs
 under supported production source roots, while adding uniquely bound interface-declared
 Spring MVC mappings to the v0.1 endpoint semantics. It does not add Maven generation
-during scans, default `target/generated-sources` scanning, OpenAPI YAML parsing,
+during scans, default `target/generated-sources` scanning, OpenAPI operation parsing,
 generated API reconstruction, or Spring runtime handler mapping reconstruction.
 
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.3 module-aware Maven metadata, dependency, and plugin
-inventory slice.
+contract is the staged v0.4 API surface spec-discovery slice layered on top of the v0.3
+module-aware Maven metadata, dependency, and plugin inventory contract.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -254,7 +254,7 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
   class-level mapping annotation evidence, and `code_symbol` evidence for the concrete
   handler/interface binding.
 - Interface mapping support does not claim complete Spring runtime behavior. It does not
-  run Maven generation, scan `target/generated-sources` by default, parse OpenAPI YAML,
+  run Maven generation, scan `target/generated-sources` by default, parse OpenAPI operations,
   reconstruct generated APIs, resolve classpath-only interfaces, infer runtime proxies,
   or interpret unsupported Spring mapping conditions.
 - Spring MVC endpoint annotations are trusted only when source-visible syntax supports a
@@ -291,8 +291,9 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
 - `warning.category` is `"hidden_http_surface"` for the current warning set.
 - `warning.signal` is one of:
   - `"openapi_spec_file"`: a repository file has a supported OpenAPI/Swagger filename
-    such as `openapi.yml`, `openapi.yaml`, `swagger.yml`, or `swagger.yaml`. Detection is
-    by filename only and does not parse the file content.
+    such as `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`,
+    `swagger.yaml`, or `swagger.json`. The legacy warning is by filename only and does
+    not parse the file content.
   - `"maven_openapi_swagger_codegen_plugin"`: the root `pom.xml` contains a deterministic
     OpenAPI/Swagger Maven plugin declaration under `<build><plugins><plugin>` or
     `<build><pluginManagement><plugins><plugin>` with exact artifact ID
@@ -310,7 +311,7 @@ Endpoint mapping-source rules for `EVAL-8-004` decision B:
 - `warning.evidence_ids` references the evidence that supports the warning and must
   resolve to records in `evidence-index.jsonl`.
 - Warning signals do not create entries in `endpoints`; the analyzer must not parse
-  OpenAPI YAML, run Maven generation, scan `target/generated-sources` by default, or
+  OpenAPI operations, run Maven generation, scan `target/generated-sources` by default, or
   reconstruct generated APIs from warning signals.
 
 Example direct mapping source:
@@ -1234,28 +1235,31 @@ Deterministic sorting rules:
 - Generated-source warnings follow the existing warning sort order by `category`,
   `signal`, module order, `source_path`, and `id`.
 
-### Planned v0.4 Declared And Generated API Surface Contract
+### v0.4 Declared And Generated API Surface Contract
 
-This section defines the planned v0.4 API surface contract direction. It does not
-describe current v0.3 implementation behavior.
+This section defines the current v0.4 API surface contract slice and the planned
+direction for later v0.4 work. The the OpenAPI/Swagger spec discovery slice implementation emits the API surface shell,
+endpoint categories, local OpenAPI/Swagger spec file facts, and an explicit non-parsed
+operations section. OpenAPI operation extraction and generated-source path-signal
+evidence remain planned.
 
-The planned v0.4 contract uses:
+The v0.4 contract uses:
 
-- `schema_version: "0.4"` only for an atomic public output state that preserves the v0.3
-  module-aware build/config contract and adds the complete API surface section shape.
+- `schema_version: "0.4"` for the public output state that preserves the v0.3
+  module-aware build/config contract and adds the API surface section shape.
 - The same four output files under `.project-memory/`.
 - Existing top-level `endpoints[]` as the canonical collection of code-backed
   source-visible Spring MVC endpoint facts.
-- A planned `api_surface_category` field on each endpoint fact, with values
+- An `api_surface_category` field on each endpoint fact, with values
   `"source_visible_spring_mvc_endpoint"` or
   `"interface_declared_spring_mvc_endpoint"`.
-- A new top-level `api_surface` object that categorizes source-visible endpoint IDs,
-  declared OpenAPI operations, generated-source API warning IDs, repository-rest warning
-  IDs, and hidden HTTP warning IDs without turning every API-adjacent signal into an
-  endpoint fact.
-- Planned `api_spec` evidence for local OpenAPI/Swagger spec files and operations, and
-  planned `path_signal` evidence for generated-source path signals when directory/path
-  presence needs evidence.
+- A top-level `api_surface` object that categorizes source-visible endpoint IDs, local
+  OpenAPI/Swagger spec file facts, declared OpenAPI operations, generated-source API
+  warning IDs, repository-rest warning IDs, and hidden HTTP warning IDs without turning
+  every API-adjacent signal into an endpoint fact.
+- Current `api_spec` evidence for local OpenAPI/Swagger spec file facts. `api_spec`
+  evidence for operations and `path_signal` evidence for generated-source path signals
+  remain planned.
 
 Taxonomy rules:
 
@@ -1324,23 +1328,8 @@ Planned high-level `project-map.json` shape:
         ]
       },
       "operations": {
-        "analysis_status": "analyzed",
-        "items": [
-          {
-            "id": "openapi_operation:module:services/orders:spec:services/orders/src/main/resources/openapi.yml:operation:get:/orders/{id}",
-            "module_id": "module:services/orders",
-            "api_surface_category": "openapi_declared_operation",
-            "spec_path": "services/orders/src/main/resources/openapi.yml",
-            "http_method": "GET",
-            "path": "/orders/{id}",
-            "operation_id": "getOrder",
-            "tags": ["Orders"],
-            "implementation_status": "not_analyzed",
-            "evidence_ids": [
-              "ev:services/orders/src/main/resources/openapi.yml:12-18:api_spec:operation%3Aget%3A/orders/{id}"
-            ]
-          }
-        ]
+        "analysis_status": "not_analyzed",
+        "items": []
       }
     },
     "generated_source_api_signals": {
@@ -1359,38 +1348,46 @@ Planned high-level `project-map.json` shape:
 }
 ```
 
-Planned API surface analysis status rules:
+API surface analysis status rules:
 
-- `api_surface.analysis_status` is `"analyzed"` when any planned v0.4 API surface
-  analyzer runs. It is `"not_detected"` only when no supported source, spec, build,
-  generated-source path, or warning input is available.
+- `api_surface.analysis_status` is `"analyzed"` when any v0.4 API surface analyzer runs.
+  It is `"not_detected"` only when no supported source, spec, build, generated-source
+  path, or warning input is available.
 - Endpoint category subsections use endpoint IDs that must resolve to existing
   `endpoints[]` facts. They must not duplicate endpoint payloads.
 - `api_surface.openapi.spec_files.analysis_status` is `"analyzed"` when spec discovery
   runs, even if no spec files are detected. It is `"not_detected"` only when no
   supported discovery input exists.
 - `api_surface.openapi.operations.analysis_status` is `"not_analyzed"` before the
-  operation parser is implemented, `"analyzed"` when parser extraction runs, and
-  `"not_detected"` when no supported local spec files are available to parse.
+  operation parser is implemented and local spec files are detected, `"analyzed"` when
+  parser extraction runs, and `"not_detected"` when no supported local spec files are
+  available to parse.
 - Warning-reference subsections use warning IDs that must resolve to `warnings.items`.
   They must not duplicate warning payloads or create operation/endpoint facts.
 
-Planned OpenAPI spec file rules:
+OpenAPI spec file rules:
 
-- Spec file fact IDs use the shape `openapi_spec:<module_id>:path:<spec_path_key>`.
+- Spec file fact IDs use the shape `openapi_spec:<module_id-or-unscoped>:path:<spec_path_key>`.
+- `module_id` is the owning supported module ID when the spec path is inside a
+  supported module, and `null` when the spec is outside supported modules. Fact IDs use
+  `unscoped` for `null` module ownership.
 - `spec_path_key` is derived from normalized `spec_path`. It preserves case and slash
   separators, and uses uppercase UTF-8 byte percent-encoding for `%`, `:`, whitespace,
   ASCII control characters, and any other character outside the bounded readable key set
   `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`, `~`, `/`, `{`, and `}`.
 - `spec_path` is a normalized repository-relative path. It must not be absolute, start
   with `./`, or escape the scanned repository root.
-- `format` is one of `"yaml"`, `"json"`, or `"unknown"`.
-- `spec_kind` is one of `"openapi"`, `"swagger"`, or `"unknown"` based on bounded local
-  spec content or filename/status when content is not parsed.
+- Spec discovery treats symlink path entries as unsupported for spec facts to avoid
+  content/path ownership mismatches. A regular target file inside the repository may be
+  discovered only through its own normalized repository-relative path.
+- `format` is one of `"yaml"` or `"json"` for currently supported filenames.
+- `spec_kind` is `"openapi"` or `"swagger"` based on bounded local spec header content
+  when directly visible, with a filename fallback when no bounded version signal is
+  detected.
 - `version` preserves the direct source-visible OpenAPI or Swagger version string when
   deterministically available and is `null` otherwise.
 - Spec file facts prove only local spec presence and bounded version/kind observations.
-  They do not prove runtime APIs or generated code.
+  They do not prove runtime APIs, OpenAPI operations, or generated code.
 
 Planned OpenAPI operation rules:
 
@@ -1491,6 +1488,11 @@ The current implementation emits:
 - `code_symbol` evidence for directly visible test framework imports attached to
   top-level emitted test classes.
 - `annotation` evidence for directly visible test framework annotations.
+- `api_spec` evidence for local OpenAPI/Swagger spec file facts. The evidence path is
+  the normalized repository-relative spec path, `symbol_name` is the bounded spec
+  observation such as `openapi` or `swagger`, line fields point to the directly visible
+  version signal when available and are `null` for filename fallback evidence, and the
+  excerpt is a bounded observation rather than full spec content.
 - Warning evidence for hidden HTTP surface signals:
   - `config_file` evidence for OpenAPI/Swagger spec filename presence, with the spec
     path as `path`, the filename as `symbol_name`, nullable line fields, and a bounded
@@ -1546,12 +1548,14 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   Maven lifecycle execution, inherited executions, generated source contents, OpenAPI
   operations, endpoint facts, active profiles, repository availability, or effective POM
   behavior.
-- Planned v0.4 API surface evidence adds `api_spec` evidence for local OpenAPI/Swagger
-  spec files and operations, plus `path_signal` evidence for generated-source path
-  signals when implemented. `api_spec` evidence supports spec-backed declared operation
-  facts only; it does not prove source-visible endpoint implementation. `path_signal`
-  evidence supports path-presence warnings only; it does not prove generated source
-  contents or generated API operations. Planned `api_spec` evidence IDs use
+- v0.4 API surface evidence adds `api_spec` evidence for local OpenAPI/Swagger spec
+  files. `api_spec` evidence for operations and `path_signal` evidence for
+  generated-source path signals remain planned. Current spec-file `api_spec` evidence
+  supports local declared API input facts only; it does not prove source-visible
+  endpoint implementation, parsed OpenAPI operations, generated source contents, or
+  runtime behavior. `path_signal` evidence will support path-presence warnings only; it
+  will not prove generated source contents or generated API operations. `api_spec`
+  evidence IDs use
   `ev:<spec_path_key>:<line_range_key>:api_spec:<api_spec_symbol_key>`, where
   `line_range_key` is `<line_start>-<line_end>` when stable and `unknown` otherwise, and
   `api_spec_symbol_key` uses the same percent-encoded ID-key rules as v0.4 spec and
@@ -1702,7 +1706,7 @@ Content rules:
   execution/coverage/assertion behavior, call graphs, complete subject mapping,
   connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven
   profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven
-  modules. It should also call out that generated sources, OpenAPI YAML, generated API
+  modules. It should also call out that generated sources, OpenAPI operations, generated API
   reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings
   are not analyzed for `EVAL-8-004` decision B, and that mapped-superclass identifier
   traversal skips unresolved, ambiguous, cyclic, and non-source-visible branches.
@@ -1780,16 +1784,25 @@ Planned v0.3 `agent-guide.md` behavior:
   interpretation, secret extraction, and default generated-source scanning are not
   performed.
 
-Planned v0.4 `agent-guide.md` behavior:
+Current v0.4 API surface `agent-guide.md` behavior:
 
 - The guide should add an `API Surface Interpretation` section generated from structured
   API surface facts and evidence only.
 - The section should distinguish code-backed source-visible Spring MVC endpoint facts,
-  code-backed source-visible interface-declared endpoint facts, spec-backed OpenAPI
-  operation facts, generated-source API warnings, repository-rest warnings, and hidden
-  HTTP warnings.
+  code-backed source-visible interface-declared endpoint facts, spec-file declared API
+  input facts, generated-source API warnings, repository-rest warnings, and hidden HTTP
+  warnings.
 - Source-visible Spring MVC entries may be described as detected endpoint facts only
   when they come from `endpoints[]`.
+- OpenAPI/Swagger spec-file entries must be described as declared API inputs, not as
+  parsed operations or implemented endpoints.
+- The guide must state that OpenAPI operations are not analyzed until a dedicated parser
+  is implemented.
+
+Planned v0.4 `agent-guide.md` behavior:
+
+- The section should distinguish spec-backed OpenAPI operation facts from spec-file
+  declared API input facts once operation parsing is implemented.
 - OpenAPI operation entries must be described as declared/spec-backed operations, not
   implemented endpoints.
 - Generated-source API signals must be described as warnings until explicit

@@ -157,6 +157,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:3` (`ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:3-3:com.example.zeta.ZetaApplication:@SpringBootApplication`)
 - Module warnings: Detected 5 warning signals for this module: `generated_source:maven_generated_source_config`, `generated_source:maven_generator_plugin`, `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## API Surface Interpretation
+
+- API surface analysis status: `analyzed`
+- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/alpha:com.example.alpha.AlphaController#status`, `endpoint:module:services/zeta:com.example.zeta.ZetaController#create`.
+- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- OpenAPI/Swagger spec files: status `analyzed`; detected 1 local spec file as declared API inputs.
+  - Spec file: `services/zeta/src/main/resources/openapi.yml` kind `openapi`, format `yaml`, version `3.0.0`.
+- Module: Detected `module:services/zeta` (path: `services/zeta`)
+  - Evidence: `services/zeta/src/main/resources/openapi.yml:1` (`ev:services/zeta/src/main/resources/openapi.yml:1-1:api_spec:openapi`)
+- OpenAPI/Swagger operations: status `not_analyzed`; no operation facts are emitted until the dedicated operation parser runs.
+- Generated-source API warning IDs: status `analyzed`; referenced 2 warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin`.
+- Repository-rest warning IDs: status `analyzed`; detected none.
+- Hidden HTTP warning IDs: status `analyzed`; detected none.
+
 ## Detected Spring MVC Endpoints
 
 ### `GET /alpha/status`
@@ -255,7 +269,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
-- Not analyzed: generated sources, OpenAPI YAML, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
@@ -263,7 +277,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Practical Inspection Order For Coding Agents
 
 1. Start with detected build, module, and layout facts in `pom.xml`, `libraries/common/pom.xml`, `services/alpha/pom.xml`, `services/alpha/src/main/resources/logback-spring.xml`, `services/alpha/src/main/resources/application-ci.properties`, ... and 7 more evidence paths in `evidence-index.jsonl`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`, `services/zeta/pom.xml`, `services/zeta/src/main/resources/openapi.yml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`, `services/zeta/src/main/resources/openapi.yml`, `services/zeta/pom.xml`.
 3. For Spring wiring changes, inspect detected component evidence in `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java` and avoid assuming runtime injection graphs.
 4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat relationship targets as declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence in `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java`, `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`; do not treat inferred subjects as coverage proof.

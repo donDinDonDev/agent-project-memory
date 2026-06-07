@@ -2,6 +2,10 @@ package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.ApiSpecEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiSpecDiscoveryAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiSpecDiscoveryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiSpecFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ConfigFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ModuleResourceConfig;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigAnalysis;
@@ -77,9 +81,10 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.3";
+  private static final String SCHEMA_VERSION = "0.4";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
+  private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String MODULE_ANALYSIS_NOT_DETECTED = "not_detected";
   private static final String MODULE_SUPPORTED = "supported";
   private static final String ROOT_MODULE_ID = "module:.";
@@ -106,6 +111,13 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String CONFIG_SIGNAL_GENERATED_SOURCES_CONFIG_PRESENT =
       "generated_sources_config_present";
   private static final String CONFIG_SIGNAL_ADD_SOURCE_GOAL_PRESENT = "add_source_goal_present";
+  private static final String API_SURFACE_CATEGORY_SOURCE_VISIBLE =
+      "source_visible_spring_mvc_endpoint";
+  private static final String API_SURFACE_CATEGORY_INTERFACE_DECLARED =
+      "interface_declared_spring_mvc_endpoint";
+  private static final String WARNING_CATEGORY_HIDDEN_HTTP_SURFACE = "hidden_http_surface";
+  private static final String WARNING_SIGNAL_OPENAPI_SPEC_FILE = "openapi_spec_file";
+  private static final String WARNING_SIGNAL_REPOSITORY_REST_RESOURCE = "repository_rest_resource";
   private static final Comparator<EvidenceRecord> EVIDENCE_ORDER = Comparator
       .comparing(EvidenceRecord::path)
       .thenComparing(record -> record.lineStart() == null ? Integer.MAX_VALUE : record.lineStart())
@@ -181,6 +193,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final ResourceConfigAnalyzer resourceConfigAnalyzer = new ResourceConfigAnalyzer();
   private final SpringBootApplicationAnalyzer springBootApplicationAnalyzer =
       new SpringBootApplicationAnalyzer();
+  private final OpenApiSpecDiscoveryAnalyzer openApiSpecDiscoveryAnalyzer =
+      new OpenApiSpecDiscoveryAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -313,6 +327,9 @@ public final class SpringMvcEndpointOutputGenerator {
     SpringBootApplicationAnalysis springBootApplicationAnalysis = springBootApplicationAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
+    OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis = openApiSpecDiscoveryAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        layout.modules().items());
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
@@ -320,7 +337,8 @@ public final class SpringMvcEndpointOutputGenerator {
         dependencyAnalysis,
         pluginAnalysis,
         resourceConfigAnalysis,
-        springBootApplicationAnalysis)) {
+        springBootApplicationAnalysis,
+        openApiSpecDiscoveryAnalysis)) {
       return new Result(false, 0, 0, 0, 0, 0);
     }
 
@@ -338,6 +356,7 @@ public final class SpringMvcEndpointOutputGenerator {
         pluginAnalysis.evidence(),
         resourceConfigAnalysis.evidence(),
         springBootApplicationAnalysis.evidence(),
+        openApiSpecDiscoveryAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.entityEvidence(),
@@ -351,7 +370,8 @@ public final class SpringMvcEndpointOutputGenerator {
         dependencyAnalysis,
         pluginAnalysis,
         resourceConfigAnalysis,
-        springBootApplicationAnalysis);
+        springBootApplicationAnalysis,
+        openApiSpecDiscoveryAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -386,7 +406,8 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
       ResourceConfigAnalysis resourceConfigAnalysis,
-      SpringBootApplicationAnalysis springBootApplicationAnalysis) {
+      SpringBootApplicationAnalysis springBootApplicationAnalysis,
+      OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
@@ -400,7 +421,8 @@ public final class SpringMvcEndpointOutputGenerator {
             .anyMatch(resources -> ANALYSIS_ANALYZED.equals(resources.resourceAnalysisStatus())
                 || ANALYSIS_ANALYZED.equals(resources.configFileAnalysisStatus()))
         || springBootApplicationAnalysis.modules().stream()
-            .anyMatch(applications -> ANALYSIS_ANALYZED.equals(applications.analysisStatus()));
+            .anyMatch(applications -> ANALYSIS_ANALYZED.equals(applications.analysisStatus()))
+        || !openApiSpecDiscoveryAnalysis.specFiles().isEmpty();
   }
 
   private ProjectLayout detectLayout(
@@ -858,7 +880,8 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
       ResourceConfigAnalysis resourceConfigAnalysis,
-      SpringBootApplicationAnalysis springBootApplicationAnalysis) {
+      SpringBootApplicationAnalysis springBootApplicationAnalysis,
+      OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -895,6 +918,7 @@ public final class SpringMvcEndpointOutputGenerator {
       }
       json.append("  ],\n");
     }
+    appendApiSurface(json, scan, openApiSpecDiscoveryAnalysis);
     json.append("  \"warnings\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", scan.warningAnalysisStatus(), true);
     appendWarnings(json, scan.warnings());
@@ -1652,6 +1676,182 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("\n");
   }
 
+  private void appendApiSurface(
+      StringBuilder json,
+      ModuleAwareScan scan,
+      OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis) {
+    json.append("  \"api_surface\": {\n");
+    appendIndentedStringField(
+        json,
+        2,
+        "analysis_status",
+        ANALYSIS_ANALYZED,
+        true);
+    appendEndpointCategorySection(
+        json,
+        "source_visible_spring_mvc_endpoints",
+        endpointIdsForCategory(scan.endpoints(), API_SURFACE_CATEGORY_SOURCE_VISIBLE),
+        true);
+    appendEndpointCategorySection(
+        json,
+        "interface_declared_spring_mvc_endpoints",
+        endpointIdsForCategory(scan.endpoints(), API_SURFACE_CATEGORY_INTERFACE_DECLARED),
+        true);
+    appendOpenApiSurface(json, openApiSpecDiscoveryAnalysis);
+    appendWarningReferenceSection(
+        json,
+        "generated_source_api_signals",
+        generatedSourceApiWarningIds(scan.warnings()),
+        true);
+    appendWarningReferenceSection(
+        json,
+        "repository_rest_warnings",
+        repositoryRestWarningIds(scan.warnings()),
+        true);
+    appendWarningReferenceSection(
+        json,
+        "hidden_http_warnings",
+        hiddenHttpWarningIds(scan.warnings()),
+        false);
+    json.append("  },\n");
+  }
+
+  private void appendEndpointCategorySection(
+      StringBuilder json,
+      String fieldName,
+      List<String> endpointIds,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append(jsonString(fieldName)).append(": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringArrayField(json, 3, "endpoint_ids", endpointIds, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private List<String> endpointIdsForCategory(
+      List<ModuleScopedEndpointFact> endpoints,
+      String apiSurfaceCategory) {
+    return endpoints.stream()
+        .filter(endpoint -> apiSurfaceCategory.equals(apiSurfaceCategory(endpoint.fact().mappingSource())))
+        .map(endpoint -> endpointId(endpoint.moduleId(), endpoint.fact()))
+        .toList();
+  }
+
+  private void appendOpenApiSurface(
+      StringBuilder json,
+      OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis) {
+    indent(json, 2);
+    json.append("\"openapi\": {\n");
+    appendOpenApiSpecFiles(json, openApiSpecDiscoveryAnalysis);
+    appendOpenApiOperationsPlaceholder(json, openApiSpecDiscoveryAnalysis.specFiles().isEmpty(), false);
+    indent(json, 2);
+    json.append("},\n");
+  }
+
+  private void appendOpenApiSpecFiles(
+      StringBuilder json,
+      OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis) {
+    indent(json, 3);
+    json.append("\"spec_files\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", openApiSpecDiscoveryAnalysis.analysisStatus(), true);
+    indent(json, 4);
+    json.append("\"items\": [");
+    if (openApiSpecDiscoveryAnalysis.specFiles().isEmpty()) {
+      json.append("]\n");
+      indent(json, 3);
+      json.append("},\n");
+      return;
+    }
+
+    json.append("\n");
+    List<OpenApiSpecFileFact> specFiles = openApiSpecDiscoveryAnalysis.specFiles();
+    for (int index = 0; index < specFiles.size(); index++) {
+      appendOpenApiSpecFile(json, specFiles.get(index), index < specFiles.size() - 1);
+    }
+    indent(json, 4);
+    json.append("]\n");
+    indent(json, 3);
+    json.append("},\n");
+  }
+
+  private void appendOpenApiSpecFile(
+      StringBuilder json,
+      OpenApiSpecFileFact specFile,
+      boolean trailingComma) {
+    indent(json, 5);
+    json.append("{\n");
+    appendIndentedStringField(json, 6, "id", specFile.id(), true);
+    appendIndentedNullableStringField(json, 6, "module_id", specFile.moduleId(), true);
+    appendIndentedStringField(json, 6, "spec_path", specFile.specPath(), true);
+    appendIndentedStringField(json, 6, "format", specFile.format(), true);
+    appendIndentedStringField(json, 6, "spec_kind", specFile.specKind(), true);
+    appendIndentedNullableStringField(json, 6, "version", specFile.version(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", specFile.evidenceIds(), false);
+    indent(json, 5);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendOpenApiOperationsPlaceholder(
+      StringBuilder json,
+      boolean noSpecFiles,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"operations\": {\n");
+    appendIndentedStringField(
+        json,
+        4,
+        "analysis_status",
+        noSpecFiles ? ANALYSIS_NOT_DETECTED : ANALYSIS_NOT_ANALYZED,
+        true);
+    indent(json, 4);
+    json.append("\"items\": []\n");
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendWarningReferenceSection(
+      StringBuilder json,
+      String fieldName,
+      List<String> warningIds,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append(jsonString(fieldName)).append(": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringArrayField(json, 3, "warning_ids", warningIds, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private List<String> generatedSourceApiWarningIds(List<ModuleScopedWarningFact> warnings) {
+    return warnings.stream()
+        .filter(warning -> WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN.equals(warning.signal()))
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+  }
+
+  private List<String> repositoryRestWarningIds(List<ModuleScopedWarningFact> warnings) {
+    return warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_HIDDEN_HTTP_SURFACE.equals(warning.category()))
+        .filter(warning -> WARNING_SIGNAL_REPOSITORY_REST_RESOURCE.equals(warning.signal()))
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+  }
+
+  private List<String> hiddenHttpWarningIds(List<ModuleScopedWarningFact> warnings) {
+    return warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_HIDDEN_HTTP_SURFACE.equals(warning.category()))
+        .filter(warning -> !WARNING_SIGNAL_OPENAPI_SPEC_FILE.equals(warning.signal()))
+        .filter(warning -> !WARNING_SIGNAL_REPOSITORY_REST_RESOURCE.equals(warning.signal()))
+        .filter(warning -> !WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN.equals(warning.signal()))
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+  }
+
   private void appendEndpoint(
       StringBuilder json,
       ModuleScopedEndpointFact scopedEndpoint,
@@ -1660,6 +1860,12 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("    {\n");
     appendIndentedStringField(json, 3, "id", endpointId(scopedEndpoint.moduleId(), endpoint), true);
     appendIndentedStringField(json, 3, "module_id", scopedEndpoint.moduleId(), true);
+    appendIndentedStringField(
+        json,
+        3,
+        "api_surface_category",
+        apiSurfaceCategory(endpoint.mappingSource()),
+        true);
     appendIndentedStringField(json, 3, "controller_class", endpoint.controllerClass(), true);
     appendIndentedStringField(json, 3, "handler_method", endpoint.handlerMethod(), true);
     appendIndentedStringArrayField(json, 3, "http_methods", endpoint.httpMethods(), true);
@@ -1690,6 +1896,13 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append(",");
     }
     json.append("\n");
+  }
+
+  private String apiSurfaceCategory(SpringMvcEndpointMappingSource mappingSource) {
+    if ("source_visible_interface_method".equals(mappingSource.kind())) {
+      return API_SURFACE_CATEGORY_INTERFACE_DECLARED;
+    }
+    return API_SURFACE_CATEGORY_SOURCE_VISIBLE;
   }
 
   private void appendRequestParameters(
@@ -2093,6 +2306,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<MavenPluginEvidence> pluginEvidenceRecords,
       List<ResourceConfigEvidence> resourceConfigEvidenceRecords,
       List<SpringBootApplicationEvidence> springBootApplicationEvidenceRecords,
+      List<ApiSpecEvidence> apiSpecEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
@@ -2116,6 +2330,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     springBootApplicationEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    apiSpecEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -2224,6 +2441,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(SpringBootApplicationEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(ApiSpecEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),
