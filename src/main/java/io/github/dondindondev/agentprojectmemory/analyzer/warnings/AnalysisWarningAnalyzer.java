@@ -33,13 +33,17 @@ import org.xml.sax.ext.DefaultHandler2;
 
 public final class AnalysisWarningAnalyzer {
   private static final String CATEGORY_HIDDEN_HTTP_SURFACE = "hidden_http_surface";
+  private static final String CATEGORY_GENERATED_SOURCE = "generated_source";
   private static final String SIGNAL_OPENAPI_SPEC_FILE = "openapi_spec_file";
   private static final String SIGNAL_MAVEN_CODEGEN_PLUGIN = "maven_openapi_swagger_codegen_plugin";
   private static final String SIGNAL_REPOSITORY_REST_RESOURCE = "repository_rest_resource";
+  private static final String SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED =
+      "generated_source_root_path_detected";
   private static final String HIGH_CONFIDENCE = "high";
   private static final String CONFIG_FILE_SOURCE_TYPE = "config_file";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
+  private static final String PATH_SIGNAL_SOURCE_TYPE = "path_signal";
   private static final String REPOSITORY_REST_RESOURCE = "RepositoryRestResource";
   private static final String ROOT_BUILD_FILE = "pom.xml";
   private static final Map<String, Set<String>> SUPPORTED_REPOSITORY_REST_RESOURCE_ORIGINS = Map.of(
@@ -55,6 +59,12 @@ public final class AnalysisWarningAnalyzer {
   private static final Set<String> MAVEN_CODEGEN_PLUGIN_ARTIFACT_IDS = Set.of(
       "openapi-generator-maven-plugin",
       "swagger-codegen-maven-plugin");
+  private static final List<String> GENERATED_SOURCE_ROOT_CANDIDATES = List.of(
+      "target/generated-sources",
+      "target/generated-sources/openapi",
+      "target/generated-sources/swagger",
+      "target/generated-sources/annotations",
+      "target/generated-test-sources");
   private static final Comparator<AnalysisWarningFact> WARNING_ORDER = Comparator
       .comparing(AnalysisWarningFact::category)
       .thenComparing(AnalysisWarningFact::signal)
@@ -126,6 +136,13 @@ public final class AnalysisWarningAnalyzer {
         repositoryRoot,
         canonicalRepositoryRoot,
         pomPath,
+        modulePathForIds,
+        warnings,
+        evidence);
+    analyzeGeneratedSourceRootPaths(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        scanRoot,
         modulePathForIds,
         warnings,
         evidence);
@@ -241,6 +258,74 @@ public final class AnalysisWarningAnalyzer {
     }
 
     return handler.signals();
+  }
+
+  private void analyzeGeneratedSourceRootPaths(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path scanRoot,
+      String modulePathForIds,
+      List<AnalysisWarningFact> warnings,
+      List<AnalysisWarningEvidence> evidence) {
+    for (String candidate : GENERATED_SOURCE_ROOT_CANDIDATES) {
+      Path generatedRoot = scanRoot.resolve(candidate).normalize();
+      if (!isGeneratedSourceRoot(repositoryRoot, canonicalRepositoryRoot, generatedRoot)) {
+        continue;
+      }
+
+      String sourcePath = repositoryRelativePath(repositoryRoot, generatedRoot);
+      AnalysisWarningEvidence pathEvidence = new AnalysisWarningEvidence(
+          "ev:" + idKey(sourcePath) + ":unknown:path_signal:"
+              + SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED,
+          PATH_SIGNAL_SOURCE_TYPE,
+          sourcePath,
+          null,
+          null,
+          SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED,
+          null,
+          null,
+          EvidenceExcerpts.bounded("generated source root detected: " + sourcePath),
+          HIGH_CONFIDENCE);
+      evidence.add(pathEvidence);
+      warnings.add(new AnalysisWarningFact(
+          generatedSourcePathWarningId(sourcePath, modulePathForIds),
+          CATEGORY_GENERATED_SOURCE,
+          SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED,
+          "Generated-source root path detected; the analyzer records the path signal only "
+              + "and does not read generated source contents or create endpoint/API facts.",
+          sourcePath,
+          List.of(pathEvidence.id())));
+    }
+  }
+
+  private boolean isGeneratedSourceRoot(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path path) {
+    if (hasSymbolicLinkSegment(repositoryRoot, path)
+        || !Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+      return false;
+    }
+    return ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, path)
+        .filter(Files::isDirectory)
+        .isPresent();
+  }
+
+  private boolean hasSymbolicLinkSegment(Path repositoryRoot, Path path) {
+    Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path normalizedPath = path.toAbsolutePath().normalize();
+    if (!normalizedPath.startsWith(normalizedRepositoryRoot)) {
+      return true;
+    }
+
+    Path current = normalizedRepositoryRoot;
+    for (Path segment : normalizedRepositoryRoot.relativize(normalizedPath)) {
+      current = current.resolve(segment);
+      if (Files.isSymbolicLink(current)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private SAXParserFactory secureSaxParserFactory() throws ParserConfigurationException, SAXException {
@@ -446,6 +531,48 @@ public final class AnalysisWarningAnalyzer {
     }
     return "warning:" + CATEGORY_HIDDEN_HTTP_SURFACE + ":" + signal
         + ":module:" + modulePathForIds + ":" + sourceKey;
+  }
+
+  private String generatedSourcePathWarningId(String sourcePath, String modulePathForIds) {
+    String pathKey = idKey(sourcePath);
+    if (modulePathForIds == null || ".".equals(modulePathForIds)) {
+      return "warning:" + CATEGORY_GENERATED_SOURCE + ":"
+          + SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED + ":path:" + pathKey;
+    }
+    return "warning:" + CATEGORY_GENERATED_SOURCE + ":"
+        + SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED + ":module:"
+        + modulePathForIds
+        + ":path:"
+        + pathKey;
+  }
+
+  private String idKey(String value) {
+    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+    StringBuilder key = new StringBuilder();
+    for (byte rawByte : bytes) {
+      int unsignedByte = rawByte & 0xFF;
+      char character = (char) unsignedByte;
+      if (isAllowedKeyCharacter(character)) {
+        key.append(character);
+      } else {
+        key.append('%')
+            .append(String.format(Locale.ROOT, "%02X", unsignedByte));
+      }
+    }
+    return key.toString();
+  }
+
+  private boolean isAllowedKeyCharacter(char character) {
+    return (character >= 'A' && character <= 'Z')
+        || (character >= 'a' && character <= 'z')
+        || (character >= '0' && character <= '9')
+        || character == '.'
+        || character == '_'
+        || character == '-'
+        || character == '~'
+        || character == '/'
+        || character == '{'
+        || character == '}';
   }
 
   private String excerpt(AnnotationExpr annotation, List<String> sourceLines) {

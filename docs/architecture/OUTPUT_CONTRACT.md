@@ -1189,8 +1189,8 @@ v0.3 warning rules:
 - POM-derived plugin, annotation-processor, and generated-source configuration warnings
   include the module path, declaration kind, and bounded declaration ordinal in the
   warning ID.
-  Repository-path generated-source root warnings are future work and should include the
-  detected normalized generated-source root path when implemented.
+  Repository-path generated-source root warnings include the detected normalized
+  generated-source root path.
 - Warnings include direct `module_id` when the signal belongs to a valid module.
 - Current plugin-derived generated-source warning signals include:
   - `"maven_generator_plugin"`;
@@ -1198,8 +1198,14 @@ v0.3 warning rules:
   - `"maven_annotation_processor"`;
   - `"maven_generated_source_config"`;
   - `"maven_build_helper_add_source"`.
-- Future generated-source path warnings may add:
+- Current generated-source path warnings include:
   - `"generated_source_root_path_detected"`.
+- Path-derived generated-source warning IDs use
+  `warning:generated_source:generated_source_root_path_detected:path:<generated_source_path_key>`
+  for the scan-root module and
+  `warning:generated_source:generated_source_root_path_detected:module:<module_path>:path:<generated_source_path_key>`
+  for child modules. `<generated_source_path_key>` uses the same percent-encoded
+  repository-relative path key rules as v0.4 spec paths.
 - OpenAPI/Swagger plugin declarations may also continue to emit the existing
   `hidden_http_surface` warning signal where appropriate. The warning remains a warning
   and must not create endpoint or API facts.
@@ -1240,8 +1246,9 @@ Deterministic sorting rules:
 This section defines the current v0.4 API surface contract slice and the planned
 direction for later v0.4 work. The the OpenAPI/Swagger spec discovery slice implementation emits the API surface shell,
 endpoint categories, and local OpenAPI/Swagger spec file facts. the minimal OpenAPI operation extraction slice emits minimal
-spec-backed OpenAPI/Swagger operation facts. Generated-source path-signal evidence
-remains planned.
+spec-backed OpenAPI/Swagger operation facts. the generated API signals and generated-source policy slice emits conservative
+generated-source path warnings with `path_signal` evidence and keeps generated-source
+content scanning non-default.
 
 The v0.4 contract uses:
 
@@ -1258,7 +1265,7 @@ The v0.4 contract uses:
   warning IDs, repository-rest warning IDs, and hidden HTTP warning IDs without turning
   every API-adjacent signal into an endpoint fact.
 - Current `api_spec` evidence for local OpenAPI/Swagger spec file and operation facts.
-  `path_signal` evidence for generated-source path signals remains planned.
+  Current `path_signal` evidence for generated-source path warning signals.
 
 Taxonomy rules:
 
@@ -1441,13 +1448,16 @@ OpenAPI operation rules:
   `openapi_spec_unsupported`, or `openapi_spec_duplicate_operation` with bounded
   `api_spec` parse/status evidence.
 
-Planned generated-source API signal rules:
+Generated-source API signal rules:
 
 - Generated-source API signals remain warnings. They may be referenced by
   `api_surface.generated_source_api_signals.warning_ids`.
 - Build/config-derived generator signals use `build_file` evidence and warning
-  categories. Path-derived generated-source root signals may use planned `path_signal`
-  evidence when implemented.
+  categories. Path-derived generated-source root signals use `path_signal` evidence.
+- API-surface generated-source warning references may include OpenAPI/Swagger generator
+  plugin warnings, matching OpenAPI generator output configuration warnings, and
+  generated-source root path warnings. They must not include generic annotation-processor
+  warnings unless a future contract defines them as API-related.
 - A generated-source path warning proves only normalized local path presence. It does
   not prove generated Java types, generated operations, generated endpoint handlers, or
   runtime behavior.
@@ -1574,12 +1584,12 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   operations, endpoint facts, active profiles, repository availability, or effective POM
   behavior.
 - v0.4 API surface evidence adds `api_spec` evidence for local OpenAPI/Swagger spec
-  files and extracted operation facts. `path_signal` evidence for generated-source path
-  signals remains planned. Current `api_spec` evidence supports local declared API input
-  and operation facts only; it does not prove source-visible endpoint implementation,
-  generated source contents, or runtime behavior. `path_signal` evidence will support
-  path-presence warnings only; it
-  will not prove generated source contents or generated API operations. `api_spec`
+  files and extracted operation facts, plus `path_signal` evidence for generated-source
+  path signals. Current `api_spec` evidence supports local declared API input and
+  operation facts only; it does not prove source-visible endpoint implementation,
+  generated source contents, or runtime behavior. `path_signal` evidence supports
+  path-presence warnings only; it will not prove generated source contents or generated
+  API operations. `api_spec`
   evidence IDs use
   `ev:<spec_path_key>:<line_range_key>:api_spec:<api_spec_symbol_key>`, where
   `line_range_key` is `<line_start>-<line_end>` when stable and `unknown` otherwise, and

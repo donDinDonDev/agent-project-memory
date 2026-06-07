@@ -1073,6 +1073,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
     JsonNode firstOrdersPlugin = ordersMaven.path("plugins").path("items").get(0);
     JsonNode secondOrdersPlugin = ordersMaven.path("plugins").path("items").get(1);
     JsonNode managedOrdersPlugin = ordersMaven.path("plugin_management").path("items").get(0);
+    JsonNode generatedApiWarningIds = JSON.readTree(projectMap)
+        .path("api_surface")
+        .path("generated_source_api_signals")
+        .path("warning_ids");
 
     assertAll(
         () -> assertTrue(result.generated()),
@@ -1125,6 +1129,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"id\": \"warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001\"")),
         () -> assertTrue(projectMap.contains(
             "\"id\": \"warning:generated_source:maven_annotation_processor:module:services/orders:plugin_management:decl:000001\"")),
+        () -> assertEquals(
+            List.of(
+            "warning:generated_source:maven_generated_source_config:module:services/orders:direct_plugin:decl:000001",
+                "warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001",
+                "warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/orders:services/orders/pom.xml:openapi-generator-maven-plugin"),
+            stringValues(generatedApiWarningIds)),
+        () -> assertFalse(stringValues(generatedApiWarningIds).stream()
+            .anyMatch(id -> id.contains("maven_annotation_processor"))),
         () -> assertFalse(projectMap.contains("private-api.yml")),
         () -> assertFalse(projectMap.contains("target/generated-sources/private")),
         () -> assertFalse(evidenceIndex.contains("private-api.yml")),
@@ -1135,6 +1147,67 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Maven plugin evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
+  void generatedSourceRootPathWarningsAreApiSurfaceSignalsWithoutContentReads()
+      throws Exception {
+    Path projectPath = tempDir.resolve("generated-source-path-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(projectPath.resolve("src/main/java"));
+    writeFile(
+        projectPath.resolve(
+            "target/generated-sources/openapi/src/main/java/com/example/GeneratedApiController.java"),
+        """
+            package com.example;
+            // FAKE_GENERATED_API_SECRET
+            @org.springframework.web.bind.annotation.RestController
+            class GeneratedApiController {}
+            """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode warnings = root.path("warnings").path("items");
+    JsonNode generatedApiWarningIds = root.path("api_surface")
+        .path("generated_source_api_signals")
+        .path("warning_ids");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertEquals(0, root.path("endpoints").size()),
+        () -> assertEquals(0, root.path("api_surface").path("openapi").path("operations").path("items").size()),
+        () -> assertEquals(
+            List.of(
+                "target/generated-sources",
+                "target/generated-sources/openapi"),
+            jsonTextValues(warnings, "source_path")),
+        () -> assertEquals(
+            List.of(
+                "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources",
+                "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi"),
+            stringValues(generatedApiWarningIds)),
+        () -> assertTrue(projectMap.contains("\"category\": \"generated_source\"")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"generated_source_root_path_detected\"")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"path_signal\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"symbol_name\":\"generated_source_root_path_detected\"")),
+        () -> assertFalse(projectMap.contains("GeneratedApiController")),
+        () -> assertFalse(evidenceIndex.contains("GeneratedApiController")),
+        () -> assertFalse(projectMap.contains("FAKE_GENERATED_API_SECRET")),
+        () -> assertFalse(evidenceIndex.contains("FAKE_GENERATED_API_SECRET")),
+        () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }
 
   @Test
@@ -1386,9 +1459,19 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   private List<String> jsonPathValues(JsonNode items) {
-    return items.findValues("path").stream()
+    return jsonTextValues(items, "path");
+  }
+
+  private List<String> jsonTextValues(JsonNode items, String fieldName) {
+    return items.findValues(fieldName).stream()
         .map(JsonNode::asText)
         .toList();
+  }
+
+  private List<String> stringValues(JsonNode items) {
+    java.util.ArrayList<String> values = new java.util.ArrayList<>();
+    items.forEach(item -> values.add(item.asText()));
+    return List.copyOf(values);
   }
 
   private void assertSensitiveConfigValuesDoNotAppear(String... generatedOutputs) {

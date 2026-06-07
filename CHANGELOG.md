@@ -23,6 +23,9 @@ architecture documents.
   `api_spec` evidence.
 - Added bounded warnings for invalid, oversized, unsupported, or duplicate local
   OpenAPI/Swagger operation parser inputs without creating endpoint facts.
+- Added generated-source root path warning signals for common local
+  `target/generated-*` roots with `path_signal` evidence, without reading generated
+  source contents or creating endpoint/API facts.
 - Added the `API Surface Interpretation` section to `agent-guide.md` from structured
   `project-map.json` facts and resolving evidence.
 
@@ -32,12 +35,15 @@ architecture documents.
   `api_surface_category` values and a top-level `api_surface` section.
 - Changed OpenAPI operations from an explicit parser placeholder to analyzed declared
   operation facts when supported local specs are present.
+- Changed `api_surface.generated_source_api_signals.warning_ids` to reference
+  generated-source path warnings and OpenAPI generator output configuration warnings
+  when they are backed by warning evidence.
 
 ### Not Included
 
 - Full OpenAPI validation.
 - External `$ref` fetching or network access.
-- Maven generation, generated-source scanning, or generated API reconstruction.
+- Maven generation, generated-source content scanning, or generated API reconstruction.
 - Runtime API, Spring handler mapping, client SDK, or implementation-coverage claims
   from spec files.
 

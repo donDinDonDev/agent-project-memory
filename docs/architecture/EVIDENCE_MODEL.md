@@ -36,9 +36,8 @@ Evidence types defined by the model:
   local spec file facts, operation facts, and invalid or unsupported spec parser
   warnings.
 - `path_signal`: a repository-relative file or directory path presence signal. This
-  evidence type is reserved for planned v0.4 generated-source path warnings and other
-  path-only signals that need evidence beyond a source file line, and is not emitted by
-  the current implementation.
+  evidence type is emitted for current v0.4 generated-source path warnings and is also
+  available for other path-only signals that need evidence beyond a source file line.
 - `document`: a local project document such as Markdown. This evidence type is reserved
   for future document ingestion and is not emitted by the current implementation.
 
@@ -112,7 +111,7 @@ Examples:
 - Current v0.4 local OpenAPI/Swagger spec file facts and operation facts, where
   operation facts are spec-backed declared API facts rather than code-backed endpoint
   facts.
-- Planned v0.4 generated-source path signals, where path presence supports warnings and
+- Current v0.4 generated-source path signals, where path presence supports warnings and
   does not imply generated source contents.
 
 Extracted facts should use strong evidence references and high confidence.
@@ -339,7 +338,8 @@ Spring Boot application evidence:
 
 v0.4 API surface analysis preserves the existing evidence field set while adding
 `api_spec` evidence for local spec-file discovery, extracted operations, and bounded
-operation parser warnings. `path_signal` generated-source path evidence remains planned.
+operation parser warnings, plus `path_signal` evidence for generated-source path
+warnings.
 
 Spec-backed evidence:
 
@@ -383,8 +383,12 @@ Spec-backed evidence:
 
 Generated-source path signal evidence:
 
-- Generated-source root path warnings may use `source_type: "path_signal"` when the
-  v0.4 generated-source signal contract is implemented.
+- Generated-source root path warnings use `source_type: "path_signal"` in the current
+  v0.4 generated-source signal contract.
+- `path_signal` evidence IDs for generated-source roots use
+  `ev:<generated_source_path_key>:unknown:path_signal:generated_source_root_path_detected`.
+  `<generated_source_path_key>` uses the same percent-encoded repository-relative path
+  key rules as v0.4 spec paths.
 - `path_signal.path` must be a normalized repository-relative path to the file or
   directory that produced the signal.
 - `symbol_name` should identify the path signal, such as

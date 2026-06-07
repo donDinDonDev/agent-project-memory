@@ -157,6 +157,8 @@ Expected scope:
   evidence supports an explicit relation.
 - Represent generated-source API signals as warnings unless an explicit future
   generated-source scan mode is designed and enabled.
+- Record common generated-source root path presence as path-only warnings without
+  reading generated source contents.
 - Keep repository-rest warnings separate from unknown hidden HTTP warnings.
 - Update `endpoints.md` and `agent-guide.md` to render API surface confidence without
   conflating source, spec, generated, and warning categories.

@@ -1251,6 +1251,7 @@
     "generated_source_api_signals": {
       "analysis_status": "analyzed",
       "warning_ids": [
+        "warning:generated_source:maven_generated_source_config:module:services/zeta:direct_plugin:decl:000002",
         "warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002",
         "warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin"
       ]

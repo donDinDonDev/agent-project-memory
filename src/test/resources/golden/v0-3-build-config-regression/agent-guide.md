@@ -167,7 +167,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Module: Detected `module:services/zeta` (path: `services/zeta`)
   - Evidence: `services/zeta/src/main/resources/openapi.yml:1` (`ev:services/zeta/src/main/resources/openapi.yml:1-1:api_spec:openapi`)
 - OpenAPI/Swagger operations: status `analyzed`; detected no declared operation facts.
-- Generated-source API warning IDs: status `analyzed`; referenced 2 warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin`.
+- Generated-source API warning IDs: status `analyzed`; referenced 3 warning IDs `warning:generated_source:maven_generated_source_config:module:services/zeta:direct_plugin:decl:000002`, `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/zeta:services/zeta/pom.xml:openapi-generator-maven-plugin`.
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 

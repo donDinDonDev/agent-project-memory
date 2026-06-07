@@ -74,6 +74,88 @@ final class AnalysisWarningAnalyzerTest {
   }
 
   @Test
+  void generatedSourceRootPathsCreatePathSignalWarningsWithoutReadingContents() throws Exception {
+    Path repositoryRoot = tempDir.resolve("generated-source-roots");
+    writeFile(
+        repositoryRoot.resolve(
+            "target/generated-sources/openapi/src/main/java/com/example/GeneratedController.java"),
+        """
+            package com.example;
+            // FAKE_GENERATED_SOURCE_SECRET
+            @org.springframework.web.bind.annotation.RestController
+            class GeneratedController {}
+            """);
+    Files.createDirectories(repositoryRoot.resolve("target/generated-test-sources"));
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+    List<AnalysisWarningFact> generatedWarnings = analysis.warnings().stream()
+        .filter(warning -> warning.signal().equals("generated_source_root_path_detected"))
+        .toList();
+
+    assertAll(
+        () -> assertEquals(
+            List.of(
+                "target/generated-sources",
+                "target/generated-sources/openapi",
+                "target/generated-test-sources"),
+            generatedWarnings.stream().map(AnalysisWarningFact::sourcePath).toList()),
+        () -> assertTrue(generatedWarnings.stream()
+            .allMatch(warning -> warning.category().equals("generated_source"))),
+        () -> assertTrue(generatedWarnings.stream()
+            .allMatch(warning -> warning.message().contains("does not read generated source contents"))),
+        () -> assertEquals(
+            List.of("path_signal", "path_signal", "path_signal"),
+            analysis.evidence().stream().map(AnalysisWarningEvidence::sourceType).toList()),
+        () -> assertTrue(analysis.evidence().stream()
+            .allMatch(evidence -> evidence.symbolName().equals("generated_source_root_path_detected"))),
+        () -> assertFalse(analysis.toString().contains("GeneratedController")),
+        () -> assertFalse(analysis.toString().contains("FAKE_GENERATED_SOURCE_SECRET")));
+  }
+
+  @Test
+  void generatedSourceRootPathWarningsUseStablePathEvidenceAndWarningIds()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("encoded-generated-source-root");
+    Files.createDirectories(repositoryRoot.resolve("target/generated-sources"));
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+    AnalysisWarningFact warning = warning(analysis, "generated_source_root_path_detected");
+    AnalysisWarningEvidence evidence = evidence(analysis, warning.evidenceIds().get(0));
+
+    assertAll(
+        () -> assertEquals("target/generated-sources", warning.sourcePath()),
+        () -> assertEquals(
+            "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources",
+            warning.id()),
+        () -> assertEquals(
+            "ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected",
+            evidence.id()),
+        () -> assertFalse(Path.of(evidence.sourcePath()).isAbsolute()),
+        () -> assertFalse(evidence.sourcePath().startsWith("./")),
+        () -> assertFalse(evidence.sourcePath().contains("..")));
+  }
+
+  @Test
+  void generatedSourceRootSymlinkSegmentsAreIgnored() throws Exception {
+    Path repositoryRoot = tempDir.resolve("generated-source-symlink");
+    Path outsideRoot = tempDir.resolve("outside-generated-source");
+    writeFile(outsideRoot.resolve("openapi/src/main/java/com/example/GeneratedController.java"), """
+        package com.example;
+        // FAKE_OUTSIDE_GENERATED_SOURCE_SECRET
+        class GeneratedController {}
+        """);
+    Files.createDirectories(repositoryRoot.resolve("target"));
+    createSymbolicLink(repositoryRoot.resolve("target/generated-sources"), outsideRoot);
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+
+    assertAll(
+        () -> assertFalse(analysis.warnings().stream()
+            .anyMatch(warning -> warning.signal().equals("generated_source_root_path_detected"))),
+        () -> assertFalse(analysis.toString().contains("FAKE_OUTSIDE_GENERATED_SOURCE_SECRET")));
+  }
+
+  @Test
   void repositoryRestResourceCreatesHiddenHttpSurfaceWarningWithAnnotationEvidence()
       throws Exception {
     AnalysisWarningAnalysis analysis = analyzeFixture();

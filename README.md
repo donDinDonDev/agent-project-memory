@@ -199,7 +199,8 @@ The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
 API surface implementation has started with deterministic local OpenAPI/Swagger spec
-file discovery. Future connector/import work is post-v0.3 and is not started.
+file discovery, minimal declared operation extraction, and conservative generated-source
+path warning signals. Future connector/import work is post-v0.3 and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -280,9 +281,11 @@ Current limitations:
   supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
   `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,
   annotation-processor, generated-source configuration, and build-helper add-source
-  signals, and direct `@RepositoryRestResource`. They do not create endpoint facts, parse
-  OpenAPI schemas, run Maven generation, scan `target/generated-sources` by default, or
-  reconstruct generated APIs.
+  signals, common local generated-source root path presence such as
+  `target/generated-sources`, and direct `@RepositoryRestResource`. Generated-source path
+  warnings record the normalized path only and do not read generated source contents.
+  These warnings do not create endpoint facts, parse OpenAPI schemas, run Maven
+  generation, scan `target/generated-sources` by default, or reconstruct generated APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.
 - Tests inventory is limited to test-like Java classes under supported standard Maven
@@ -305,7 +308,8 @@ Current limitations:
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
-  Boot application, local OpenAPI/Swagger `api_spec`, and tests inventory evidence.
+  Boot application, local OpenAPI/Swagger `api_spec`, generated-source path
+  `path_signal`, and tests inventory evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

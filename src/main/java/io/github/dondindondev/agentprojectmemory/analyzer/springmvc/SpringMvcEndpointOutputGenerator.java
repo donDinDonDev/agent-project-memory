@@ -72,6 +72,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -121,6 +122,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String WARNING_CATEGORY_HIDDEN_HTTP_SURFACE = "hidden_http_surface";
   private static final String WARNING_SIGNAL_OPENAPI_SPEC_FILE = "openapi_spec_file";
   private static final String WARNING_SIGNAL_REPOSITORY_REST_RESOURCE = "repository_rest_resource";
+  private static final String WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED =
+      "generated_source_root_path_detected";
   private static final Comparator<EvidenceRecord> EVIDENCE_ORDER = Comparator
       .comparing(EvidenceRecord::path)
       .thenComparing(record -> record.lineStart() == null ? Integer.MAX_VALUE : record.lineStart())
@@ -1908,10 +1911,50 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private List<String> generatedSourceApiWarningIds(List<ModuleScopedWarningFact> warnings) {
-    return warnings.stream()
+    LinkedHashSet<String> openApiGeneratorContexts = warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category()))
         .filter(warning -> WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN.equals(warning.signal()))
+        .map(this::generatedSourceDeclarationContext)
+        .flatMap(Optional::stream)
+        .collect(
+            LinkedHashSet::new,
+            LinkedHashSet::add,
+            LinkedHashSet::addAll);
+    return warnings.stream()
+        .filter(warning -> isGeneratedSourceApiWarning(warning, openApiGeneratorContexts))
         .map(ModuleScopedWarningFact::id)
         .toList();
+  }
+
+  private boolean isGeneratedSourceApiWarning(
+      ModuleScopedWarningFact warning,
+      LinkedHashSet<String> openApiGeneratorContexts) {
+    if (WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN.equals(warning.signal())) {
+      return true;
+    }
+    if (WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category())
+        && WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED.equals(warning.signal())) {
+      return true;
+    }
+    if (WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category())
+        && WARNING_SIGNAL_MAVEN_GENERATED_SOURCE_CONFIG.equals(warning.signal())) {
+      return generatedSourceDeclarationContext(warning)
+          .filter(openApiGeneratorContexts::contains)
+          .isPresent();
+    }
+    return false;
+  }
+
+  private Optional<String> generatedSourceDeclarationContext(ModuleScopedWarningFact warning) {
+    String prefix = "warning:"
+        + WARNING_CATEGORY_GENERATED_SOURCE
+        + ":"
+        + warning.signal()
+        + ":";
+    if (!warning.id().startsWith(prefix)) {
+      return Optional.empty();
+    }
+    return Optional.of(warning.id().substring(prefix.length()));
   }
 
   private List<String> repositoryRestWarningIds(List<ModuleScopedWarningFact> warnings) {
