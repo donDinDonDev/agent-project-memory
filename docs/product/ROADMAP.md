@@ -137,7 +137,7 @@ signals only. Config discovery is path-oriented and must not store configuration
 Generated-source and generator plugin signals remain warnings until future explicit scan
 modes are designed.
 
-## v0.4.0: Declared And Generated API Surface (Release Readiness)
+## v0.4.0: Declared And Generated API Surface (Published)
 
 Planning boundary and contract decisions:
 the public v0.4 roadmap and release notes.
@@ -180,9 +180,8 @@ Release readiness notes:
   local OpenAPI specs and generated API signals.
 - Review/security diff audit is complete with no release-blocking findings and no
   required CS-* fix goals.
-- v0.4.0 release materials are prepared for maintainer review; tag, push, publish,
-  GitHub release creation, artifact upload, and checksum publication remain separate
-  maintainer-approved actions.
+- The `v0.4.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 ## v0.5.0: Deeper Spring Application Surface
 

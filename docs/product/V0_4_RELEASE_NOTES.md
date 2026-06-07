@@ -129,19 +129,15 @@ release:
 - Consider a future explicit generated-source scan mode. It must be non-default and must
   have separate output/evidence contract design.
 
-## Maintainer Review Notes
+## Publication Status
 
-This document prepares release materials for maintainer review. Tag creation, pushing,
-publishing, GitHub release creation, artifact upload, and checksum publication remain
-manual maintainer actions.
+The `v0.4.0` tag and GitHub release are published:
 
-Recommended manual next steps:
+- Release: <https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.4.0>
+- Assets: `agent-project-memory-0.4.0.jar` and `SHA256SUMS`.
+- Jar SHA-256:
+  `5a7944704727a2e6b28eeffa04027a3dbc47c3da3ec8141890243716ee479992`.
 
-1. Review the release-prep diff for scope, version, README, roadmap, changelog, output
-   contract, and evidence contract alignment.
-2. Confirm local validation results from the release-prep summary.
-3. Create the `v0.4.0` tag only after approval.
-4. Draft the GitHub release from these notes only after the tag is approved.
-5. Attach `target/agent-project-memory-0.4.0.jar` and checksum files if publishing
-   binary assets.
-6. Verify published release notes and download instructions after publication.
+Post-publish verification confirmed that the remote tag points to the intended release
+commit, the release is not a draft or prerelease, the expected assets are attached, and
+the published checksum verifies the downloaded jar.

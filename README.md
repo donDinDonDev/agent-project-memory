@@ -31,8 +31,8 @@ Release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
 for the `v0.4.0` tag.
 
-Download `agent-project-memory-0.4.0.jar`. If `SHA256SUMS` is published with the
-release, you can optionally verify the jar checksum before running it.
+Download `agent-project-memory-0.4.0.jar`. `SHA256SUMS` is published with the release so
+you can optionally verify the jar checksum before running it.
 
 ```sh
 java -jar agent-project-memory-0.4.0.jar scan /path/to/java-spring-project
@@ -201,9 +201,8 @@ references.
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
-API surface release materials are prepared for maintainer review with evaluation and
-review/security audit complete. Future connector/import work remains a later optional
-adapter track and is not started.
+API surface release is published with packaged jar and checksum assets. Future
+connector/import work remains a later optional adapter track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
