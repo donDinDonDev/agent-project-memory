@@ -29,13 +29,13 @@ services by default.
 
 Release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
-for the `v0.3.0` tag.
+for the `v0.4.0` tag.
 
-Download `agent-project-memory-0.3.0.jar`. If `SHA256SUMS` is published with the
+Download `agent-project-memory-0.4.0.jar`. If `SHA256SUMS` is published with the
 release, you can optionally verify the jar checksum before running it.
 
 ```sh
-java -jar agent-project-memory-0.3.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.4.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -55,7 +55,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.3.0.jar
+target/agent-project-memory-0.4.0.jar
 ```
 
 ## Quick Start
@@ -63,7 +63,7 @@ target/agent-project-memory-0.3.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.3.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.4.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -152,6 +152,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.4 release summary: [docs/product/V0_4_RELEASE_NOTES.md](docs/product/V0_4_RELEASE_NOTES.md).
 - v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
 - v0.2 release summary: [docs/product/V0_2_RELEASE_NOTES.md](docs/product/V0_2_RELEASE_NOTES.md).
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
@@ -200,9 +201,9 @@ references.
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
-API surface implementation has started with deterministic local OpenAPI/Swagger spec
-file discovery, minimal declared operation extraction, and conservative generated-source
-path warning signals. Future connector/import work is post-v0.3 and is not started.
+API surface release materials are prepared for maintainer review with evaluation and
+review/security audit complete. Future connector/import work remains a later optional
+adapter track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

@@ -137,7 +137,7 @@ signals only. Config discovery is path-oriented and must not store configuration
 Generated-source and generator plugin signals remain warnings until future explicit scan
 modes are designed.
 
-## v0.4.0: Declared And Generated API Surface
+## v0.4.0: Declared And Generated API Surface (Release Readiness)
 
 Planning boundary and contract decisions:
 the public v0.4 roadmap and release notes.
@@ -146,7 +146,7 @@ Product outcome: represent API surfaces beyond source-visible Spring MVC control
 while keeping source-visible endpoints, spec-declared operations, generated API signals,
 repository-rest warnings, and hidden HTTP warnings separate.
 
-Expected scope:
+Release-ready scope:
 
 - Define a stable API surface taxonomy.
 - Keep direct source-visible Spring MVC endpoints and source-visible interface-declared
@@ -173,6 +173,16 @@ Implementation goals must treat OpenAPI/YAML/JSON parsing, file discovery,
 generated-source path handling, source-derived output rendering, and evidence changes
 as higher-risk security-relevant surfaces. A release-candidate release-candidate risk-based security assessment is expected if broad parser,
 filesystem, generated-source, or output changes accumulate.
+
+Release readiness notes:
+
+- Real-project v0.4 evaluation is complete on pinned Java/Spring Maven projects with
+  local OpenAPI specs and generated API signals.
+- Review/security diff audit is complete with no release-blocking findings and no
+  required CS-* fix goals.
+- v0.4.0 release materials are prepared for maintainer review; tag, push, publish,
+  GitHub release creation, artifact upload, and checksum publication remain separate
+  maintainer-approved actions.
 
 ## v0.5.0: Deeper Spring Application Surface
 

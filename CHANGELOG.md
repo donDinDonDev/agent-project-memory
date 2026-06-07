@@ -9,6 +9,10 @@ architecture documents.
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [0.4.0] - 2026-06-07
+
 ### Added
 
 - Added the first v0.4 API surface implementation slice: deterministic local
@@ -44,6 +48,14 @@ architecture documents.
 - Expanded `agent-guide.md` API surface guidance to explain source-visible,
   declared/spec-backed, generated signal, warning, and not-analyzed confidence
   categories without implementation-coverage claims.
+
+### Security
+
+- Completed the v0.4 review/security diff audit over the implementation range with no
+  reportable Codex Security findings and no required CS-* fix goals.
+- Kept OpenAPI/Swagger parsing bounded and local-only: no network fetching, no external
+  `$ref` resolution, invalid specs degrade to warnings, and generated-source paths
+  remain warning-only signals without reading generated source contents by default.
 
 ### Not Included
 

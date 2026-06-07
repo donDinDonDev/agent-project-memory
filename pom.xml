@@ -6,7 +6,7 @@
 
   <groupId>io.github.dondindondev</groupId>
   <artifactId>agent-project-memory</artifactId>
-  <version>0.3.0</version>
+  <version>0.4.0</version>
 
   <name>agent-project-memory</name>
   <description>Local-first CLI for evidence-backed project memory.</description>
