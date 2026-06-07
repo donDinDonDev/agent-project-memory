@@ -31,7 +31,7 @@ final class AnalysisWarningAnalyzerTest {
     assertAll(
         () -> assertEquals("hidden_http_surface", warning.category()),
         () -> assertEquals("src/main/resources/openapi.yml", warning.sourcePath()),
-        () -> assertTrue(warning.message().contains("does not parse specs")),
+        () -> assertTrue(warning.message().contains("api_surface.openapi.operations")),
         () -> assertEquals("config_file", evidence.sourceType()),
         () -> assertEquals("src/main/resources/openapi.yml", evidence.sourcePath()),
         () -> assertEquals("openapi.yml", evidence.symbolName()),

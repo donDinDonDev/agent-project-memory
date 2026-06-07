@@ -24,6 +24,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jackson.version>2.17.2</jackson.version>
     <javaparser.version>3.26.4</javaparser.version>
+    <snakeyaml.version>2.5</snakeyaml.version>
     <junit.jupiter.version>5.10.2</junit.jupiter.version>
   </properties>
 
@@ -37,6 +38,11 @@
       <groupId>com.github.javaparser</groupId>
       <artifactId>javaparser-core</artifactId>
       <version>${javaparser.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.yaml</groupId>
+      <artifactId>snakeyaml</artifactId>
+      <version>${snakeyaml.version}</version>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>

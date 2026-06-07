@@ -69,7 +69,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:com.example.web.ProjectMapController#createItem`, `endpoint:com.example.web.ProjectMapController#getItem`.
 - Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
 - OpenAPI/Swagger spec files: status `analyzed`; detected none.
-- OpenAPI/Swagger operations: status `not_detected`; no operation facts are emitted until the dedicated operation parser runs.
+- OpenAPI/Swagger operations: status `not_detected`; detected none.
 - Generated-source API warning IDs: status `analyzed`; detected none.
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
@@ -208,7 +208,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
-- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 

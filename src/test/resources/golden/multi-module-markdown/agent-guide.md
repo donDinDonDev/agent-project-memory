@@ -126,7 +126,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Spec file: `services/orders/src/main/resources/openapi.yml` kind `openapi`, format `yaml`, version `3.0.0`.
 - Module: Detected `module:services/orders` (path: `services/orders`)
   - Evidence: `services/orders/src/main/resources/openapi.yml:1` (`ev:services/orders/src/main/resources/openapi.yml:1-1:api_spec:openapi`)
-- OpenAPI/Swagger operations: status `not_analyzed`; no operation facts are emitted until the dedicated operation parser runs.
+- OpenAPI/Swagger operations: status `analyzed`; detected no declared operation facts.
 - Generated-source API warning IDs: status `analyzed`; referenced 2 warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/orders:services/orders/pom.xml:openapi-generator-maven-plugin`.
 - Repository-rest warning IDs: status `analyzed`; referenced 2 warning IDs `warning:hidden_http_surface:repository_rest_resource:module:services/billing:com.example.shared.SharedRepository`, `warning:hidden_http_surface:repository_rest_resource:module:services/orders:com.example.shared.SharedRepository`.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
@@ -239,11 +239,11 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ## Known Uncertainty And Limits
 
-- Warning: `generated_source` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, parse specs, scan generated sources by default, or create endpoint/API facts from this signal.
+- Warning: `generated_source` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, scan generated sources by default, or create endpoint/API facts from this build signal.
   - Evidence: `services/orders/pom.xml:5` (`ev:services/orders/pom.xml:5-5:build_file:maven:plugin:000001:artifactId`)
 - Warning: `hidden_http_surface` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin signal detected; the analyzer does not run generation or scan generated sources by default.
   - Evidence: `services/orders/pom.xml:5` (`ev:services/orders/pom.xml:5-5:build_file:openapi-generator-maven-plugin`)
-- Warning: `hidden_http_surface` signal `openapi_spec_file` for module `module:services/orders` (path: `services/orders`) at `services/orders/src/main/resources/openapi.yml`. OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.
+- Warning: `hidden_http_surface` signal `openapi_spec_file` for module `module:services/orders` (path: `services/orders`) at `services/orders/src/main/resources/openapi.yml`. OpenAPI/Swagger spec file detected by filename; declared operations, when supported, are reported separately under api\_surface.openapi.operations, and this warning does not reconstruct generated APIs.
   - Evidence: `services/orders/src/main/resources/openapi.yml` (`ev:services/orders/src/main/resources/openapi.yml:unknown:config_file:openapi.yml`)
 - Warning: `hidden_http_surface` signal `repository_rest_resource` for module `module:services/billing` (path: `services/billing`) at `services/billing/src/main/java/com/example/shared/SharedController.java`. Direct @RepositoryRestResource detected; the analyzer warns about possible Spring Data REST HTTP surface but does not expand endpoints.
   - Evidence: `services/billing/src/main/java/com/example/shared/SharedController.java:22` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:22-22:com.example.shared.SharedRepository:@RepositoryRestResource`)
@@ -258,7 +258,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
-- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
+- Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 

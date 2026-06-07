@@ -177,7 +177,9 @@ public final class AnalysisWarningAnalyzer {
           warningId(SIGNAL_OPENAPI_SPEC_FILE, sourcePath, modulePathForIds),
           CATEGORY_HIDDEN_HTTP_SURFACE,
           SIGNAL_OPENAPI_SPEC_FILE,
-          "OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.",
+          "OpenAPI/Swagger spec file detected by filename; declared operations, when supported, "
+              + "are reported separately under api_surface.openapi.operations, and this warning "
+              + "does not reconstruct generated APIs.",
           sourcePath,
           List.of(specEvidence.id())));
     }

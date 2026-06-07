@@ -93,7 +93,7 @@ helper filtering, direct source-visible Maven metadata from module POMs, and dir
 source-visible Maven dependency and plugin declarations from module POMs, plus
 path-only standard resource-root and supported application/logging config-file
 inventory. It also discovers common local OpenAPI/Swagger spec filenames as declared API
-inputs without extracting operations, then writes:
+inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -116,7 +116,7 @@ application/logging config-file inventory under
 Spring Boot application signals under
 `project.modules.items[].build_config.spring_boot_applications`, API surface categories
 for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
-`api_surface.openapi.spec_files`, an explicit non-parsed operations section under
+`api_surface.openapi.spec_files`, minimal declared operation facts under
 `api_surface.openapi.operations`, direct `module_id`
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
@@ -209,8 +209,10 @@ metadata, dependency, and plugin extraction, deterministic direct Spring compone
 JPA entity inventories, deterministic path-only resource-root and supported config-file
 discovery, deterministic hidden HTTP surface, generated-source, and Maven module
 warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
-inputs, a minimal deterministic tests inventory, deterministic `endpoints.md`, and
-deterministic `agent-guide.md` generation from the structured facts and evidence index.
+inputs, minimal deterministic OpenAPI/Swagger operation extraction as spec-backed
+declared operation facts, a minimal deterministic tests inventory, deterministic
+`endpoints.md`, and deterministic `agent-guide.md` generation from the structured facts
+and evidence index.
 
 Current limitations:
 
@@ -267,15 +269,19 @@ Current limitations:
   `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
   `swagger.json`. It records normalized repository-relative paths, format, spec kind,
   bounded version signals when directly visible near the file header, module ownership
-  when the file is under a supported module, and `api_spec` evidence. It does not parse
-  operations, validate the full spec, follow `$ref`, fetch external schemas, claim
-  implementation, treat symlink entries as spec files, or scan generated-source roots.
+  when the file is under a supported module, and `api_spec` evidence. Minimal operation
+  extraction reads bounded local YAML/JSON specs and records only declared path, HTTP
+  method, bounded `operationId`, bounded tags, `implementation_status: "not_analyzed"`,
+  and operation `api_spec` evidence. It does not validate the full spec, follow `$ref`,
+  fetch external schemas, claim implementation, treat symlink entries as spec files, or
+  scan generated-source roots. Invalid or unsupported specs degrade to warnings rather
+  than endpoint facts.
 - Hidden HTTP surface and generated-source warnings are limited to OpenAPI/Swagger spec filename presence,
   supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
   `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,
   annotation-processor, generated-source configuration, and build-helper add-source
   signals, and direct `@RepositoryRestResource`. They do not create endpoint facts, parse
-  OpenAPI operations, run Maven generation, scan `target/generated-sources` by default, or
+  OpenAPI schemas, run Maven generation, scan `target/generated-sources` by default, or
   reconstruct generated APIs.
 - Relationship facts preserve the declared field type only and explicitly mark target
   type resolution as uncertain.

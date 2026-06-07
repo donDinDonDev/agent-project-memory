@@ -413,7 +413,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi.yml\"")),
         () -> assertTrue(projectMap.contains("\"api_surface\": {")),
         () -> assertTrue(projectMap.contains("\"spec_path\": \"src/main/resources/openapi.yml\"")),
-        () -> assertTrue(projectMap.contains("\"operations\": {\n        \"analysis_status\": \"not_analyzed\"")),
+        () -> assertTrue(projectMap.contains("\"operations\": {\n        \"analysis_status\": \"analyzed\"")),
         () -> assertFalse(projectMap.contains("\"openapi_operation:")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"@RepositoryRestResource\"")),
         () -> assertTrue(agentGuide.contains("Warning: `hidden_http_surface` signal `openapi_spec_file`")),
@@ -427,7 +427,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
-  void apiSurfaceSpecDiscoveryFactsAreSerializedWithoutOperations() throws Exception {
+  void apiSurfaceSpecDiscoveryFactsAndOperationsAreSerializedSeparatelyFromEndpoints() throws Exception {
     Path projectPath = tempDir.resolve("api-surface-spec-project");
     Path outputDirectory = projectPath.resolve(".project-memory");
     writeFile(projectPath.resolve("pom.xml"), """
@@ -467,10 +467,63 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("yaml", specFile.path("format").asText()),
         () -> assertEquals("openapi", specFile.path("spec_kind").asText()),
         () -> assertEquals("3.0.3", specFile.path("version").asText()),
-        () -> assertEquals("not_analyzed", operations.path("analysis_status").asText()),
-        () -> assertEquals(0, operations.path("items").size()),
+        () -> assertEquals("analyzed", operations.path("analysis_status").asText()),
+        () -> assertEquals(1, operations.path("items").size()),
+        () -> assertEquals(0, JSON.readTree(projectMap).path("endpoints").size()),
+        () -> assertEquals("openapi_declared_operation",
+            operations.path("items").get(0).path("api_surface_category").asText()),
+        () -> assertEquals("GET", operations.path("items").get(0).path("http_method").asText()),
+        () -> assertEquals("/orders", operations.path("items").get(0).path("path").asText()),
+        () -> assertEquals("listOrders",
+            operations.path("items").get(0).path("operation_id").asText()),
+        () -> assertEquals("not_analyzed",
+            operations.path("items").get(0).path("implementation_status").asText()),
         () -> assertTrue(evidenceIndex.contains("\"source_type\":\"api_spec\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi\"")),
+        () -> assertTrue(projectMap.contains("openapi_operation:")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"operation:get:/orders\"")),
+        () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
+  }
+
+  @Test
+  void invalidOpenApiSpecProducesWarningWithoutEndpointOrOperationFacts() throws Exception {
+    Path projectPath = tempDir.resolve("invalid-openapi-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(projectPath.resolve("src/main/resources/openapi.yml"), """
+        openapi: [3.0.3
+        paths:
+          /orders:
+            get: {}
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode operations = root.path("api_surface").path("openapi").path("operations");
+    JsonNode warnings = root.path("warnings").path("items");
+    JsonNode hiddenHttpWarningIds = root.path("api_surface").path("hidden_http_warnings").path("warning_ids");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.endpointCount()),
+        () -> assertEquals(0, root.path("endpoints").size()),
+        () -> assertEquals("analyzed", operations.path("analysis_status").asText()),
+        () -> assertEquals(0, operations.path("items").size()),
+        () -> assertTrue(warnings.toString().contains("src/main/resources/openapi.yml")),
+        () -> assertTrue(projectMap.contains("\"signal\": \"openapi_spec_parse_error\"")),
+        () -> assertTrue(hiddenHttpWarningIds.toString().contains("openapi_spec_parse_error")),
+        () -> assertTrue(evidenceIndex.contains("\"source_type\":\"api_spec\"")),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"operation_parse_status:openapi_spec_parse_error\"")),
         () -> assertFalse(projectMap.contains("openapi_operation:")),
         () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }

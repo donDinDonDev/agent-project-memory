@@ -16,6 +16,7 @@ artifact. The jar also carries dependency-provided license and notice resources 
 | `com.fasterxml.jackson.core:jackson-core` | `2.17.2` | Apache License, Version 2.0 |
 | `com.fasterxml.jackson.core:jackson-annotations` | `2.17.2` | Apache License, Version 2.0 |
 | `com.github.javaparser:javaparser-core` | `3.26.4` | Dual license declared by its Maven POM: GNU Lesser General Public License and Apache License, Version 2.0. This project uses the Apache License, Version 2.0 option. |
+| `org.yaml:snakeyaml` | `2.5` | Apache License, Version 2.0 |
 
 ## Dependency-Provided Notices In The Shaded Jar
 

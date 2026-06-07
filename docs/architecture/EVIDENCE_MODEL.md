@@ -31,8 +31,10 @@ Evidence types defined by the model:
 - `build_file`: a build file such as `pom.xml`.
 - `test_file`: a test source file or test resource.
 - `api_spec`: a local OpenAPI/Swagger specification file, bounded version/kind
-  observation, or planned operation evidence. The current v0.4 spec-discovery slice emits
-  this evidence type for local spec file facts; operation evidence remains planned.
+  observation, extracted operation evidence, or bounded operation parser status
+  evidence. The current v0.4 API surface implementation emits this evidence type for
+  local spec file facts, operation facts, and invalid or unsupported spec parser
+  warnings.
 - `path_signal`: a repository-relative file or directory path presence signal. This
   evidence type is reserved for planned v0.4 generated-source path warnings and other
   path-only signals that need evidence beyond a source file line, and is not emitted by
@@ -107,9 +109,9 @@ Examples:
 - Planned v0.3 resource-root and configuration-file presence facts, where configuration
   evidence is path-oriented and does not include configuration values.
 - Planned v0.3 direct source-visible `@SpringBootApplication` application signals.
-- Current v0.4 local OpenAPI/Swagger spec file facts, and planned v0.4 operation facts
-  where operation facts are spec-backed declared API facts rather than code-backed
-  endpoint facts.
+- Current v0.4 local OpenAPI/Swagger spec file facts and operation facts, where
+  operation facts are spec-backed declared API facts rather than code-backed endpoint
+  facts.
 - Planned v0.4 generated-source path signals, where path presence supports warnings and
   does not imply generated source contents.
 
@@ -336,12 +338,13 @@ Spring Boot application evidence:
 ### v0.4 API Surface Evidence
 
 v0.4 API surface analysis preserves the existing evidence field set while adding
-`api_spec` evidence for local spec-file discovery. `api_spec` operation evidence and
-`path_signal` generated-source path evidence remain planned.
+`api_spec` evidence for local spec-file discovery, extracted operations, and bounded
+operation parser warnings. `path_signal` generated-source path evidence remains planned.
 
 Spec-backed evidence:
 
-- Local OpenAPI/Swagger spec file facts use `source_type: "api_spec"`.
+- Local OpenAPI/Swagger spec file facts, extracted operation facts, and bounded
+  operation parser status warnings use `source_type: "api_spec"`.
 - `api_spec.path` must be the normalized repository-relative spec path. It must not be
   absolute, start with `./`, or escape the scanned repository root.
 - Symlink path entries are not emitted as `api_spec` facts. A regular target file inside
@@ -359,21 +362,22 @@ Spec-backed evidence:
   `decl:<zero-padded-ordinal>` suffix or degrade the duplicate condition to a warning.
 - For spec-file presence or version evidence, `symbol_name` identifies the bounded spec
   observation, currently `openapi` or `swagger`.
-- For planned operation evidence, `symbol_name` should identify the operation location,
-  such as `operation:get:/orders/{id}`.
+- For operation evidence, `symbol_name` identifies the operation location, such as
+  `operation:get:/orders/{id}`.
 - For current spec-file evidence, `line_start` and `line_end` point to the directly
   visible OpenAPI or Swagger version signal when it is found in the bounded header
   window; otherwise both fields are `null` and the evidence still identifies the spec
-  path and filename-derived spec kind. Planned operation evidence should use the most
-  precise parser location available.
+  path and filename-derived spec kind. Operation evidence should use the most precise
+  bounded parser line location available, and may use `null` line fields when stable line
+  mapping is unavailable.
 - `excerpt` must be bounded. For operation evidence, it should contain only a compact
   normalized operation observation, such as method, path, and bounded `operationId`.
   It must not serialize full schemas, examples, arbitrary descriptions, request/response
   payloads, or large YAML/JSON blocks.
-- Current spec-file `api_spec` evidence supports local declared API input facts only.
-  Planned operation `api_spec` evidence will support `openapi_declared_operation` facts.
-  Neither form proves Spring MVC implementation, generated source contents, runtime
-  routing, service ownership, or source/spec agreement.
+- Current `api_spec` evidence supports local declared API input facts and
+  `openapi_declared_operation` facts. Neither form proves Spring MVC implementation,
+  generated source contents, runtime routing, service ownership, or source/spec
+  agreement.
 - Invalid or unsupported spec warnings should keep bounded evidence for the local spec
   path and parse/status observation without copying large file contents.
 

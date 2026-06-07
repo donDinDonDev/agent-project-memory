@@ -638,9 +638,46 @@ public final class AgentGuideGenerator {
     }
 
     JsonNode operations = openapi.path("operations");
+    JsonNode operationItems = operations.path("items");
     markdown.append("- OpenAPI/Swagger operations: status ")
-        .append(code(text(operations, "analysis_status")))
-        .append("; no operation facts are emitted until the dedicated operation parser runs.\n");
+        .append(code(text(operations, "analysis_status")));
+    if (!operationItems.isArray() || operationItems.isEmpty()) {
+      if ("analyzed".equals(text(operations, "analysis_status"))) {
+        markdown.append("; detected no declared operation facts.\n");
+      } else if ("not_analyzed".equals(text(operations, "analysis_status"))) {
+        markdown.append("; no operation facts are emitted until the dedicated operation parser runs.\n");
+      } else {
+        markdown.append("; detected none.\n");
+      }
+      return;
+    }
+
+    markdown.append("; detected ")
+        .append(operationItems.size())
+        .append(" spec-backed declared operation")
+        .append(operationItems.size() == 1 ? "" : "s")
+        .append(".\n");
+    int visibleCount = Math.min(operationItems.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode operation = operationItems.get(index);
+      markdown.append("  - Declared operation: ")
+          .append(code(text(operation, "http_method") + " " + text(operation, "path")))
+          .append(" from ")
+          .append(code(text(operation, "spec_path")))
+          .append(", operationId ")
+          .append(code(nullDisplay(nullableText(operation, "operation_id"))))
+          .append(", tags ")
+          .append(codeList(stringValues(operation.path("tags"))))
+          .append(", implementation_status ")
+          .append(code(text(operation, "implementation_status")))
+          .append(".\n");
+      appendModuleLine(markdown, operation, moduleById);
+      appendEvidenceLine(markdown, operation.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        operationItems.size() - visibleCount,
+        "OpenAPI/Swagger operation facts");
   }
 
   private void appendApiSurfaceWarningSummary(
@@ -960,9 +997,12 @@ public final class AgentGuideGenerator {
       markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
           .append("Gradle/Kotlin support, and multi-module Maven parsing are outside this guide.\n");
     }
-    markdown.append("- Not analyzed: generated sources, OpenAPI operations, generated API reconstruction, ")
+    markdown.append("- Not analyzed: generated sources, generated API reconstruction, ")
         .append("classpath-only interfaces, and ambiguous interface endpoint bindings are outside ")
         .append("the source-visible interface endpoint support.\n");
+    markdown.append("- Not analyzed: OpenAPI operation facts are spec-backed declared operations only; ")
+        .append("runtime implementation matching, source/spec agreement, generated source contents, ")
+        .append("and client SDK reconstruction are not claimed.\n");
     markdown.append("- Not analyzed: v0.3 build/config facts are direct local source observations ")
         .append("only. Maven execution, effective POM reconstruction, profile activation, remote ")
         .append("dependency resolution, config value interpretation, secret extraction, and default ")

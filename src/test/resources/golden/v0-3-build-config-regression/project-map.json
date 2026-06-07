@@ -1244,7 +1244,7 @@
         ]
       },
       "operations": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },
@@ -1316,7 +1316,7 @@
         "category": "generated_source",
         "signal": "maven_openapi_swagger_codegen_plugin",
         "module_id": "module:services/zeta",
-        "message": "Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, parse specs, scan generated sources by default, or create endpoint/API facts from this signal.",
+        "message": "Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, scan generated sources by default, or create endpoint/API facts from this build signal.",
         "source_path": "services/zeta/pom.xml",
         "evidence_ids": [
           "ev:services/zeta/pom.xml:45-45:build_file:maven:plugin:000002:artifactId"
@@ -1338,7 +1338,7 @@
         "category": "hidden_http_surface",
         "signal": "openapi_spec_file",
         "module_id": "module:services/zeta",
-        "message": "OpenAPI/Swagger spec file detected by filename only; the analyzer does not parse specs or reconstruct generated APIs.",
+        "message": "OpenAPI/Swagger spec file detected by filename; declared operations, when supported, are reported separately under api_surface.openapi.operations, and this warning does not reconstruct generated APIs.",
         "source_path": "services/zeta/src/main/resources/openapi.yml",
         "evidence_ids": [
           "ev:services/zeta/src/main/resources/openapi.yml:unknown:config_file:openapi.yml"

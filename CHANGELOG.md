@@ -17,6 +17,12 @@ architecture documents.
 - Added `api_surface.openapi.spec_files` facts with normalized repository-relative
   paths, optional `module_id` ownership for specs under supported modules, format,
   spec kind, bounded version observations, and `api_spec` evidence.
+- Added minimal local OpenAPI/Swagger YAML/JSON operation extraction under
+  `api_surface.openapi.operations.items[]` for declared path, HTTP method, bounded
+  `operationId`, bounded tags, `implementation_status: "not_analyzed"`, and operation
+  `api_spec` evidence.
+- Added bounded warnings for invalid, oversized, unsupported, or duplicate local
+  OpenAPI/Swagger operation parser inputs without creating endpoint facts.
 - Added the `API Surface Interpretation` section to `agent-guide.md` from structured
   `project-map.json` facts and resolving evidence.
 
@@ -24,12 +30,11 @@ architecture documents.
 
 - Updated public output to `schema_version: "0.4"` with endpoint
   `api_surface_category` values and a top-level `api_surface` section.
-- Kept OpenAPI operations explicitly represented as `not_analyzed` with empty `items`
-  until a dedicated operation parser is implemented.
+- Changed OpenAPI operations from an explicit parser placeholder to analyzed declared
+  operation facts when supported local specs are present.
 
 ### Not Included
 
-- OpenAPI/Swagger operation parsing.
 - Full OpenAPI validation.
 - External `$ref` fetching or network access.
 - Maven generation, generated-source scanning, or generated API reconstruction.
