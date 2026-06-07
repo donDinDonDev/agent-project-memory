@@ -9,7 +9,9 @@ Future work is organized by release tracks instead of extending the original v0.
 list. Connector/import work remains post-v0.1 future work and is not started.
 
 For strategic context, see
-[POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release track, see
+[POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
+boundary, see the public v0.4 roadmap and release notes. The v0.3
+build/configuration planning record remains available in
 the public v0.3 roadmap and release notes.
 
 ## Roadmap Principles
@@ -96,7 +98,7 @@ Planned goal sequence:
 6. Evaluate on pinned real Maven multi-module projects. (completed)
 7. Prepare v0.2 release materials. (final release-readiness pass)
 
-## v0.3.0: Build And Configuration Model (Release Readiness)
+## v0.3.0: Build And Configuration Model (Published)
 
 Planning boundary and contract decisions:
 the public v0.3 roadmap and release notes.
@@ -124,8 +126,8 @@ Release readiness notes:
 - Real-project v0.3 evaluation is complete on pinned Maven Java/Spring projects.
 - Review/security diff audit is complete.
 - Final post-fix release-candidate risk-based security baseline is clean with no reportable findings.
-- v0.3.0 release materials are prepared for maintainer review; tag, push, publish, and
-  GitHub release creation remain separate maintainer-approved actions.
+- The `v0.3.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.
@@ -137,15 +139,39 @@ modes are designed.
 
 ## v0.4.0: Declared And Generated API Surface
 
-Expected direction:
+Planning boundary and contract decisions:
+the public v0.4 roadmap and release notes.
 
-- Separate source-visible Spring MVC endpoints from spec-declared or generated API
-  surfaces.
-- Discover OpenAPI/Swagger files.
-- Optionally parse minimal OpenAPI operations as contract facts after evidence design.
-- Keep OpenAPI operations separate from implemented endpoint facts unless code evidence
-  supports the relation.
-- Keep generated-source scanning explicit, not default.
+Product outcome: represent API surfaces beyond source-visible Spring MVC controllers
+while keeping source-visible endpoints, spec-declared operations, generated API signals,
+repository-rest warnings, and hidden HTTP warnings separate.
+
+Expected scope:
+
+- Define a stable API surface taxonomy.
+- Keep direct source-visible Spring MVC endpoints and source-visible interface-declared
+  Spring MVC endpoints as code-backed endpoint facts with separate categories.
+- Discover local OpenAPI/Swagger files.
+- Parse minimal OpenAPI/Swagger operations as spec-backed declared API operation facts
+  after parser and evidence design.
+- Keep OpenAPI operations separate from implemented endpoint facts unless separate code
+  evidence supports an explicit relation.
+- Represent generated-source API signals as warnings unless an explicit future
+  generated-source scan mode is designed and enabled.
+- Keep repository-rest warnings separate from unknown hidden HTTP warnings.
+- Update `endpoints.md` and `agent-guide.md` to render API surface confidence without
+  conflating source, spec, generated, and warning categories.
+
+Non-goals include runtime handler mapping reconstruction, full OpenAPI validation,
+external `$ref` fetching, Maven generation, default generated-source scanning,
+generated source analysis without an explicit mode, client SDK reconstruction, and any
+SaaS, connector, web UI, repository chat, generic RAG, LLM-core, or automatic
+code-modification scope.
+
+Implementation goals must treat OpenAPI/YAML/JSON parsing, file discovery,
+generated-source path handling, source-derived output rendering, and evidence changes
+as higher-risk security-relevant surfaces. A release-candidate release-candidate risk-based security assessment is expected if broad parser,
+filesystem, generated-source, or output changes accumulate.
 
 ## v0.5.0: Deeper Spring Application Surface
 

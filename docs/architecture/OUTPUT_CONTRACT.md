@@ -1234,6 +1234,226 @@ Deterministic sorting rules:
 - Generated-source warnings follow the existing warning sort order by `category`,
   `signal`, module order, `source_path`, and `id`.
 
+### Planned v0.4 Declared And Generated API Surface Contract
+
+This section defines the planned v0.4 API surface contract direction. It does not
+describe current v0.3 implementation behavior.
+
+The planned v0.4 contract uses:
+
+- `schema_version: "0.4"` only for an atomic public output state that preserves the v0.3
+  module-aware build/config contract and adds the complete API surface section shape.
+- The same four output files under `.project-memory/`.
+- Existing top-level `endpoints[]` as the canonical collection of code-backed
+  source-visible Spring MVC endpoint facts.
+- A planned `api_surface_category` field on each endpoint fact, with values
+  `"source_visible_spring_mvc_endpoint"` or
+  `"interface_declared_spring_mvc_endpoint"`.
+- A new top-level `api_surface` object that categorizes source-visible endpoint IDs,
+  declared OpenAPI operations, generated-source API warning IDs, repository-rest warning
+  IDs, and hidden HTTP warning IDs without turning every API-adjacent signal into an
+  endpoint fact.
+- Planned `api_spec` evidence for local OpenAPI/Swagger spec files and operations, and
+  planned `path_signal` evidence for generated-source path signals when directory/path
+  presence needs evidence.
+
+Taxonomy rules:
+
+- `source_visible_spring_mvc_endpoint` means a direct Spring MVC mapping on a concrete
+  source-visible controller handler. It is code-backed by supported Java source evidence
+  and remains in `endpoints[]`.
+- `interface_declared_spring_mvc_endpoint` means a source-visible interface-declared
+  Spring MVC mapping uniquely bound to a concrete source-visible controller handler. It
+  is code-backed by interface mapping evidence and concrete binding evidence, remains in
+  `endpoints[]`, and must stay separate from direct handler mappings.
+- `openapi_declared_operation` means a path/method operation declared in a local
+  OpenAPI/Swagger spec file. It is spec-backed, lives outside `endpoints[]`, and must not
+  imply implementation by Spring MVC or generated code.
+- `generated_source_api_signal` means a build/config/path signal that generated API
+  source may exist. It is a warning/signal only unless a later explicit generated-source
+  scan mode is designed and enabled.
+- `repository_rest_warning` means a direct source-visible `@RepositoryRestResource`
+  signal. It remains a warning and must not create repository REST endpoint facts until
+  a deterministic repository-rest model is designed.
+- `hidden_http_warning` means a bounded HTTP/API-adjacent signal that cannot be
+  represented as a source endpoint, spec operation, generated-source API signal, or
+  repository-rest warning. It remains a warning.
+
+Planned high-level `project-map.json` shape:
+
+```json
+{
+  "schema_version": "0.4",
+  "endpoints": [
+    {
+      "id": "endpoint:module:services/orders:com.example.orders.OrderController#getOrder",
+      "module_id": "module:services/orders",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "mapping_source": {
+        "kind": "direct_handler_method"
+      }
+    }
+  ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:module:services/orders:com.example.orders.OrderController#getOrder"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_spec:module:services/orders:path:services/orders/src/main/resources/openapi.yml",
+            "module_id": "module:services/orders",
+            "spec_path": "services/orders/src/main/resources/openapi.yml",
+            "format": "yaml",
+            "spec_kind": "openapi",
+            "version": "3.0.3",
+            "evidence_ids": [
+              "ev:services/orders/src/main/resources/openapi.yml:1-1:api_spec:openapi"
+            ]
+          }
+        ]
+      },
+      "operations": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_operation:module:services/orders:spec:services/orders/src/main/resources/openapi.yml:operation:get:/orders/{id}",
+            "module_id": "module:services/orders",
+            "api_surface_category": "openapi_declared_operation",
+            "spec_path": "services/orders/src/main/resources/openapi.yml",
+            "http_method": "GET",
+            "path": "/orders/{id}",
+            "operation_id": "getOrder",
+            "tags": ["Orders"],
+            "implementation_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:services/orders/src/main/resources/openapi.yml:12-18:api_spec:operation%3Aget%3A/orders/{id}"
+            ]
+          }
+        ]
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  }
+}
+```
+
+Planned API surface analysis status rules:
+
+- `api_surface.analysis_status` is `"analyzed"` when any planned v0.4 API surface
+  analyzer runs. It is `"not_detected"` only when no supported source, spec, build,
+  generated-source path, or warning input is available.
+- Endpoint category subsections use endpoint IDs that must resolve to existing
+  `endpoints[]` facts. They must not duplicate endpoint payloads.
+- `api_surface.openapi.spec_files.analysis_status` is `"analyzed"` when spec discovery
+  runs, even if no spec files are detected. It is `"not_detected"` only when no
+  supported discovery input exists.
+- `api_surface.openapi.operations.analysis_status` is `"not_analyzed"` before the
+  operation parser is implemented, `"analyzed"` when parser extraction runs, and
+  `"not_detected"` when no supported local spec files are available to parse.
+- Warning-reference subsections use warning IDs that must resolve to `warnings.items`.
+  They must not duplicate warning payloads or create operation/endpoint facts.
+
+Planned OpenAPI spec file rules:
+
+- Spec file fact IDs use the shape `openapi_spec:<module_id>:path:<spec_path_key>`.
+- `spec_path_key` is derived from normalized `spec_path`. It preserves case and slash
+  separators, and uses uppercase UTF-8 byte percent-encoding for `%`, `:`, whitespace,
+  ASCII control characters, and any other character outside the bounded readable key set
+  `A-Z`, `a-z`, `0-9`, `.`, `_`, `-`, `~`, `/`, `{`, and `}`.
+- `spec_path` is a normalized repository-relative path. It must not be absolute, start
+  with `./`, or escape the scanned repository root.
+- `format` is one of `"yaml"`, `"json"`, or `"unknown"`.
+- `spec_kind` is one of `"openapi"`, `"swagger"`, or `"unknown"` based on bounded local
+  spec content or filename/status when content is not parsed.
+- `version` preserves the direct source-visible OpenAPI or Swagger version string when
+  deterministically available and is `null` otherwise.
+- Spec file facts prove only local spec presence and bounded version/kind observations.
+  They do not prove runtime APIs or generated code.
+
+Planned OpenAPI operation rules:
+
+- Operation fact IDs use the shape
+  `openapi_operation:<module_id>:spec:<spec_path_key>:operation:<http_method_key>:<operation_path_key>`.
+- `operation_path_key` is derived from the declared OpenAPI/Swagger operation `path` with
+  the same ID-key escaping as `spec_path_key`.
+- `http_method_key` is the lowercase normalized HTTP method. It is used only for stable
+  ID construction; the public `http_method` field uses the normalized display value.
+- Valid OpenAPI/Swagger input must not produce more than one operation fact for the same
+  spec path, HTTP method, and operation path. If duplicate declarations cannot be
+  represented without an ID collision, the analyzer must degrade the duplicate condition
+  to a warning instead of emitting colliding operation facts.
+- Operation facts use `api_surface_category: "openapi_declared_operation"`.
+- `http_method` is the normalized HTTP method declared under a spec path item.
+- `path` is the declared OpenAPI/Swagger path template, not a Spring MVC path.
+- `operation_id` is the direct `operationId` value when present and bounded, otherwise
+  `null`.
+- `tags` contains bounded direct tag strings when present and is an empty array when no
+  tags are present or deterministically usable.
+- `implementation_status` is `"not_analyzed"` in the initial v0.4 operation extraction
+  contract. A spec operation must not be treated as implemented merely because a similar
+  Spring MVC endpoint exists.
+- Future endpoint/spec matching must use a separate relation that preserves both spec
+  evidence and code evidence and labels support type, confidence, and uncertainty.
+- Invalid or unsupported specs should degrade to warnings rather than crashing a scan or
+  producing partial operation claims.
+- Operation facts must not follow external `$ref` values, perform network access, fetch
+  remote schemas, run code generation, or reconstruct client SDKs.
+
+Planned generated-source API signal rules:
+
+- Generated-source API signals remain warnings. They may be referenced by
+  `api_surface.generated_source_api_signals.warning_ids`.
+- Build/config-derived generator signals use `build_file` evidence and warning
+  categories. Path-derived generated-source root signals may use planned `path_signal`
+  evidence when implemented.
+- A generated-source path warning proves only normalized local path presence. It does
+  not prove generated Java types, generated operations, generated endpoint handlers, or
+  runtime behavior.
+- The default scan must not read generated source roots such as `target/generated-sources`.
+  Any future generated-source scan mode must be explicit, documented, non-default, and
+  introduced with a separate output/evidence contract update.
+
+Planned warning separation rules:
+
+- `repository_rest_warning` must be separate from generic `hidden_http_warning` because
+  it is a direct Spring Data REST annotation signal.
+- `hidden_http_warning` is reserved for unknown, unsupported, invalid, or otherwise
+  non-modeled HTTP/API-adjacent signals.
+- Warning messages must use detected-signal wording and must not summarize generated
+  source contents, OpenAPI schemas, examples, arbitrary descriptions, runtime build
+  behavior, or effective Maven execution.
+
+Planned deterministic sorting rules:
+
+- Endpoint category ID lists follow existing endpoint sort order.
+- Spec files are sorted by module order, `spec_path`, `spec_kind`, `format`, and `id`.
+- OpenAPI operations are sorted by module order, `spec_path`, `path`, `http_method`,
+  `operation_id`, and `id`, with `null` values sorting after strings.
+- API surface warning ID lists follow the existing warning sort order for their
+  referenced warning items.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -1326,6 +1546,17 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   Maven lifecycle execution, inherited executions, generated source contents, OpenAPI
   operations, endpoint facts, active profiles, repository availability, or effective POM
   behavior.
+- Planned v0.4 API surface evidence adds `api_spec` evidence for local OpenAPI/Swagger
+  spec files and operations, plus `path_signal` evidence for generated-source path
+  signals when implemented. `api_spec` evidence supports spec-backed declared operation
+  facts only; it does not prove source-visible endpoint implementation. `path_signal`
+  evidence supports path-presence warnings only; it does not prove generated source
+  contents or generated API operations. Planned `api_spec` evidence IDs use
+  `ev:<spec_path_key>:<line_range_key>:api_spec:<api_spec_symbol_key>`, where
+  `line_range_key` is `<line_start>-<line_end>` when stable and `unknown` otherwise, and
+  `api_spec_symbol_key` uses the same percent-encoded ID-key rules as v0.4 spec and
+  operation fact IDs. Duplicate evidence ID collisions must be resolved with a
+  deterministic `decl:<zero-padded-ordinal>` suffix or degraded to warnings.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -1383,6 +1614,25 @@ Current v0.2 `endpoints.md` behavior:
 - Module grouping must not claim architectural layers, service ownership, bounded
   contexts, or runtime routing behavior beyond the module identity recorded in
   `project-map.json`.
+
+Planned v0.4 `endpoints.md` behavior:
+
+- The filename remains `endpoints.md`, but the content should render distinct API
+  surface sections.
+- Source-visible Spring MVC endpoint entries render from top-level `endpoints[]`.
+- Direct handler mappings and source-visible interface-declared mappings must be
+  visibly separated or labeled by `api_surface_category` and `mapping_source.kind`.
+- Declared OpenAPI operations render from `api_surface.openapi.operations.items[]` under
+  a separate `Declared OpenAPI Operations` section.
+- OpenAPI operation entries must use `Declared` or `Spec-backed` wording. They must not
+  use `Detected endpoint`, `Implemented`, or other wording that implies runtime handler
+  implementation.
+- Generated-source API signals, repository-rest warnings, and hidden HTTP warnings
+  render as warnings with category, signal, source path, and evidence references. They
+  must not be rendered as endpoint or operation facts.
+- A future endpoint/spec relation, if introduced, must be rendered as a separate
+  evidence-backed relation and must not merge source-visible endpoint rows with
+  spec-backed operation rows.
 
 ## `agent-guide.md`
 
@@ -1529,6 +1779,27 @@ Planned v0.3 `agent-guide.md` behavior:
   reconstruction, profile activation, remote dependency resolution, config value
   interpretation, secret extraction, and default generated-source scanning are not
   performed.
+
+Planned v0.4 `agent-guide.md` behavior:
+
+- The guide should add an `API Surface Interpretation` section generated from structured
+  API surface facts and evidence only.
+- The section should distinguish code-backed source-visible Spring MVC endpoint facts,
+  code-backed source-visible interface-declared endpoint facts, spec-backed OpenAPI
+  operation facts, generated-source API warnings, repository-rest warnings, and hidden
+  HTTP warnings.
+- Source-visible Spring MVC entries may be described as detected endpoint facts only
+  when they come from `endpoints[]`.
+- OpenAPI operation entries must be described as declared/spec-backed operations, not
+  implemented endpoints.
+- Generated-source API signals must be described as warnings until explicit
+  generated-source scanning is designed and enabled.
+- Repository-rest and hidden HTTP warnings must be described as inspection hints, not
+  detected endpoint facts.
+- The guide must not claim runtime handler mappings, implementation coverage,
+  source/spec agreement, service ownership, generated source contents, generated client
+  SDKs, or OpenAPI/runtime agreement unless future deterministic relations explicitly
+  support those claims.
 
 Markdown rendering safety:
 

@@ -30,8 +30,15 @@ Evidence types defined by the model:
   spec presence evidence.
 - `build_file`: a build file such as `pom.xml`.
 - `test_file`: a test source file or test resource.
+- `api_spec`: a local OpenAPI/Swagger specification file, version node, or operation.
+  This evidence type is reserved for planned v0.4 API surface extraction and is not
+  emitted by the current v0.3 implementation.
+- `path_signal`: a repository-relative file or directory path presence signal. This
+  evidence type is reserved for planned v0.4 generated-source path warnings and other
+  path-only signals that need evidence beyond a source file line, and is not emitted by
+  the current v0.3 implementation.
 - `document`: a local project document such as Markdown. This evidence type is reserved
-  for future document ingestion and is not emitted by the current v0.1 implementation.
+  for future document ingestion and is not emitted by the current v0.3 implementation.
 
 ## Evidence Fields
 
@@ -99,6 +106,10 @@ Examples:
 - Planned v0.3 resource-root and configuration-file presence facts, where configuration
   evidence is path-oriented and does not include configuration values.
 - Planned v0.3 direct source-visible `@SpringBootApplication` application signals.
+- Planned v0.4 local OpenAPI/Swagger spec file and operation facts, where operation
+  facts are spec-backed declared API facts rather than code-backed endpoint facts.
+- Planned v0.4 generated-source path signals, where path presence supports warnings and
+  does not imply generated source contents.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -319,6 +330,75 @@ Spring Boot application evidence:
 - This evidence supports only a direct source-visible application signal. It does not
   prove executable jar packaging, active profiles, auto-configuration behavior,
   component scanning result, deployment behavior, or actual process entrypoint behavior.
+
+### Planned v0.4 API Surface Evidence
+
+v0.4 API surface analysis should preserve the existing evidence field set while adding
+planned `api_spec` and `path_signal` evidence types.
+
+Spec-backed evidence:
+
+- Local OpenAPI/Swagger spec file presence should use `source_type: "api_spec"` once
+  the v0.4 spec discovery contract is implemented.
+- `api_spec.path` must be the normalized repository-relative spec path. It must not be
+  absolute, start with `./`, or escape the scanned repository root.
+- Planned `api_spec` evidence IDs should use
+  `ev:<spec_path_key>:<line_range_key>:api_spec:<api_spec_symbol_key>`.
+- `spec_path_key` and `api_spec_symbol_key` preserve case and slash separators, and
+  use uppercase UTF-8 byte percent-encoding for `%`, `:`, whitespace, ASCII control
+  characters, and any other character outside the bounded readable key set `A-Z`, `a-z`,
+  `0-9`, `.`, `_`, `-`, `~`, `/`, `{`, and `}`.
+- `line_range_key` should be `<line_start>-<line_end>` when both parser line values are
+  stable and `unknown` when stable line mapping is unavailable.
+- If parser output would otherwise create two `api_spec` evidence IDs with the same path,
+  line range, and symbol key, the implementation must add a deterministic
+  `decl:<zero-padded-ordinal>` suffix or degrade the duplicate condition to a warning.
+- For spec-file presence or version evidence, `symbol_name` should identify the bounded
+  spec observation, such as `openapi`, `swagger`, or `openapi:version`.
+- For operation evidence, `symbol_name` should identify the operation location, such as
+  `operation:get:/orders/{id}`.
+- `line_start` and `line_end` should point to the most precise parser location
+  available. If stable line mapping is unavailable, both fields must be `null` and the
+  evidence must still identify the spec path and operation symbol.
+- `excerpt` must be bounded. For operation evidence, it should contain only a compact
+  normalized operation observation, such as method, path, and bounded `operationId`.
+  It must not serialize full schemas, examples, arbitrary descriptions, request/response
+  payloads, or large YAML/JSON blocks.
+- `api_spec` evidence supports `openapi_declared_operation` facts. It does not prove
+  Spring MVC implementation, generated source contents, runtime routing, service
+  ownership, or source/spec agreement.
+- Invalid or unsupported spec warnings should keep bounded evidence for the local spec
+  path and parse/status observation without copying large file contents.
+
+Generated-source path signal evidence:
+
+- Generated-source root path warnings may use `source_type: "path_signal"` when the
+  v0.4 generated-source signal contract is implemented.
+- `path_signal.path` must be a normalized repository-relative path to the file or
+  directory that produced the signal.
+- `symbol_name` should identify the path signal, such as
+  `generated_source_root_path_detected`.
+- `line_start` and `line_end` should be `null` for directory/path presence evidence.
+- `excerpt` should be a bounded path observation such as
+  `generated source root detected: target/generated-sources/openapi`.
+- `path_signal` evidence supports warning facts only. It does not prove generated Java
+  types, generated OpenAPI operations, generated endpoints, or runtime behavior.
+- The default analyzer must not read generated source contents from generated-source
+  roots. Any future generated-source scan mode must be explicit, non-default, and
+  introduced with a separate output/evidence contract update.
+
+API surface relation evidence:
+
+- Source-visible Spring MVC endpoint facts remain code-backed by `annotation` and
+  `code_symbol` evidence.
+- OpenAPI operation facts are spec-backed by `api_spec` evidence.
+- If a future relation connects a spec operation to a source-visible endpoint, the
+  relation must preserve both spec evidence and code evidence and must label
+  `support_type`, `confidence`, and `uncertainty`.
+- Similar paths, operation names, controller names, or tags are not enough to convert a
+  spec operation into an endpoint fact.
+- LLM-generated text, generated Markdown guidance, release notes, and chat output are
+  never evidence for API surface facts or relations.
 
 ### Spring MVC Interface Mapping Evidence
 

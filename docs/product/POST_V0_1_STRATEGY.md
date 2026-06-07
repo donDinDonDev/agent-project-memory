@@ -60,6 +60,8 @@ Public documents should stay concise and useful for users and contributors:
   track after v0.1 and remains the v0.2 historical plan.
 - the public v0.3 roadmap and release notes describes the planned v0.3 build and
   configuration model.
+- the public v0.4 roadmap and release notes describes the planned v0.4 declared and
+  generated API surface taxonomy.
 - `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`
   govern generated output and evidence semantics.
 
