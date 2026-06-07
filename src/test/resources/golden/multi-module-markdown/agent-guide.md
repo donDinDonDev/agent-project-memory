@@ -120,13 +120,21 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
-- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/billing:com.example.shared.SharedController#health`, `endpoint:module:services/orders:com.example.shared.SharedController#health`.
-- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- Source-visible Spring MVC endpoint facts are code-backed local source observations from `endpoints[]`; they do not prove complete runtime handler mappings.
+- Source-visible interface-declared endpoint facts are code-backed only when the interface mapping and unique concrete binding are both source-visible.
+- Declared OpenAPI operations are spec-backed contract facts with `implementation_status: "not_analyzed"`; they are not implemented endpoint facts.
+- Generated-source API signals, repository-rest warnings, and hidden HTTP warnings are inspection hints, not endpoint or operation facts.
+- LLM output, generated Markdown, release notes, and chat text are never evidence for API surface facts or relations.
+- Source-visible direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/billing:com.example.shared.SharedController#health`, `endpoint:module:services/orders:com.example.shared.SharedController#health`.
+- Source-visible interface-declared Spring MVC endpoint IDs: status `analyzed`; detected none.
 - OpenAPI/Swagger spec files: status `analyzed`; detected 1 local spec file as declared API inputs.
   - Spec file: `services/orders/src/main/resources/openapi.yml` kind `openapi`, format `yaml`, version `3.0.0`.
 - Module: Detected `module:services/orders` (path: `services/orders`)
   - Evidence: `services/orders/src/main/resources/openapi.yml:1` (`ev:services/orders/src/main/resources/openapi.yml:1-1:api_spec:openapi`)
-- OpenAPI/Swagger operations: status `analyzed`; detected no declared operation facts.
+- OpenAPI/Swagger operations: status `analyzed`; detected 1 spec-backed declared operation.
+  - Declared operation: `GET /orders/health` from `services/orders/src/main/resources/openapi.yml`, operationId `declaredOrdersHealth`, tags `Orders`, implementation_status `not_analyzed`.
+- Module: Detected `module:services/orders` (path: `services/orders`)
+  - Evidence: `services/orders/src/main/resources/openapi.yml:4` (`ev:services/orders/src/main/resources/openapi.yml:4-4:api_spec:operation%3Aget%3A/orders/health`)
 - Generated-source API warning IDs: status `analyzed`; referenced 2 warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`, `warning:hidden_http_surface:maven_openapi_swagger_codegen_plugin:module:services/orders:services/orders/pom.xml:openapi-generator-maven-plugin`.
 - Repository-rest warning IDs: status `analyzed`; referenced 2 warning IDs `warning:hidden_http_surface:repository_rest_resource:module:services/billing:com.example.shared.SharedRepository`, `warning:hidden_http_surface:repository_rest_resource:module:services/orders:com.example.shared.SharedRepository`.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.

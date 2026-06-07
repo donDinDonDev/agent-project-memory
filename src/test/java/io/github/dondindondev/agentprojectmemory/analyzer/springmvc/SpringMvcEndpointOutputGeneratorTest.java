@@ -448,6 +448,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     JsonNode apiSurface = JSON.readTree(projectMap).path("api_surface");
     JsonNode specFiles = apiSurface.path("openapi").path("spec_files");
     JsonNode specFile = specFiles.path("items").get(0);
@@ -482,6 +483,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi\"")),
         () -> assertTrue(projectMap.contains("openapi_operation:")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"operation:get:/orders\"")),
+        () -> assertTrue(endpoints.contains("## Declared OpenAPI Operations")),
+        () -> assertTrue(endpoints.contains("#### Declared `GET /orders`")),
+        () -> assertTrue(endpoints.contains("- Implementation status: `not_analyzed`")),
+        () -> assertFalse(endpoints.contains("Implemented")),
         () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }
 
@@ -554,7 +559,15 @@ final class SpringMvcEndpointOutputGeneratorTest {
             """);
     writeFile(
         projectPath.resolve("src/main/resources/docs\n## Fake Guide/openapi.yml"),
-        "openapi: 3.0.0\n");
+        """
+            openapi: 3.0.0
+            paths:
+              "/safe\\n## Forged Operation\\n  - Evidence: `ev:operation`":
+                get:
+                  operationId: "operation\\n## Forged Operation ID"
+                  tags:
+                    - "tag\\n## Forged Tag"
+            """);
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
@@ -574,11 +587,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
             evidenceIndex.contains("path\\n## Forged Source"),
             "JSONL evidence output must preserve source-derived paths with JSON escaping"),
         () -> assertTrue(endpoints.contains("Forged Evidence")),
+        () -> assertTrue(endpoints.contains("Forged Operation")),
         () -> assertTrue(agentGuide.contains("Fake Guide")),
         () -> assertFalse(hasLineStartingWith(endpoints, "## Forged")),
         () -> assertFalse(hasLineStartingWith(endpoints, "- Evidence: `ev:forged`")),
+        () -> assertFalse(hasLineStartingWith(endpoints, "- Evidence: `ev:operation`")),
         () -> assertFalse(hasLineStartingWith(endpoints, "- Evidence: `ev:param`")),
         () -> assertFalse(hasLineStartingWith(endpoints, "  - Evidence: `ev:forged`")),
+        () -> assertFalse(hasLineStartingWith(endpoints, "  - Evidence: `ev:operation`")),
         () -> assertFalse(hasLineStartingWith(endpoints, "  - Evidence: `ev:param`")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "## Forged")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "## Fake Guide")),
@@ -689,7 +705,15 @@ final class SpringMvcEndpointOutputGeneratorTest {
     writeModuleSources(projectPath, "services/billing", "/billing");
     writeFile(
         projectPath.resolve("services/orders/src/main/resources/openapi.yml"),
-        "openapi: 3.0.0\n");
+        """
+            openapi: 3.0.0
+            paths:
+              /orders/health:
+                get:
+                  operationId: declaredOrdersHealth
+                  tags:
+                    - Orders
+            """);
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
@@ -742,6 +766,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(projectMap.contains(
             "\"source_path\": \"services/orders/src/main/resources/openapi.yml\"")),
         () -> assertTrue(projectMap.contains(
+            "\"id\": \"openapi_operation:module:services/orders:spec:services/orders/src/main/resources/openapi.yml:operation:get:/orders/health\"")),
+        () -> assertTrue(projectMap.contains("\"implementation_status\": \"not_analyzed\"")),
+        () -> assertTrue(projectMap.contains(
             "\"source_path\": \"services/orders/pom.xml\"")),
         () -> assertEquals(1, countOccurrences(projectMap, billingEndpointId)),
         () -> assertEquals(1, countOccurrences(projectMap, ordersEndpointId)),
@@ -753,6 +780,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("multi-module-markdown", "endpoints.md"),
             endpoints),
+        () -> assertTrue(endpoints.contains("## Declared OpenAPI Operations")),
+        () -> assertTrue(endpoints.contains("#### Declared `GET /orders/health`")),
+        () -> assertFalse(endpoints.contains("Implemented")),
         () -> assertEquals(
             expected("multi-module-markdown", "agent-guide.md"),
             agentGuide));

@@ -66,8 +66,13 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
-- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:com.example.web.ProjectMapController#createItem`, `endpoint:com.example.web.ProjectMapController#getItem`.
-- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- Source-visible Spring MVC endpoint facts are code-backed local source observations from `endpoints[]`; they do not prove complete runtime handler mappings.
+- Source-visible interface-declared endpoint facts are code-backed only when the interface mapping and unique concrete binding are both source-visible.
+- Declared OpenAPI operations are spec-backed contract facts with `implementation_status: "not_analyzed"`; they are not implemented endpoint facts.
+- Generated-source API signals, repository-rest warnings, and hidden HTTP warnings are inspection hints, not endpoint or operation facts.
+- LLM output, generated Markdown, release notes, and chat text are never evidence for API surface facts or relations.
+- Source-visible direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:com.example.web.ProjectMapController#createItem`, `endpoint:com.example.web.ProjectMapController#getItem`.
+- Source-visible interface-declared Spring MVC endpoint IDs: status `analyzed`; detected none.
 - OpenAPI/Swagger spec files: status `analyzed`; detected none.
 - OpenAPI/Swagger operations: status `not_detected`; detected none.
 - Generated-source API warning IDs: status `analyzed`; detected none.

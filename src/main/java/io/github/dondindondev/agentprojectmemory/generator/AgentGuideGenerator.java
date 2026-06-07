@@ -556,13 +556,18 @@ public final class AgentGuideGenerator {
     markdown.append("- API surface analysis status: ")
         .append(code(text(apiSurface, "analysis_status")))
         .append("\n");
+    markdown.append("- Source-visible Spring MVC endpoint facts are code-backed local source observations from `endpoints[]`; they do not prove complete runtime handler mappings.\n");
+    markdown.append("- Source-visible interface-declared endpoint facts are code-backed only when the interface mapping and unique concrete binding are both source-visible.\n");
+    markdown.append("- Declared OpenAPI operations are spec-backed contract facts with `implementation_status: \"not_analyzed\"`; they are not implemented endpoint facts.\n");
+    markdown.append("- Generated-source API signals, repository-rest warnings, and hidden HTTP warnings are inspection hints, not endpoint or operation facts.\n");
+    markdown.append("- LLM output, generated Markdown, release notes, and chat text are never evidence for API surface facts or relations.\n");
     appendEndpointIdSummary(
         markdown,
-        "Code-backed direct Spring MVC endpoint IDs",
+        "Source-visible direct Spring MVC endpoint IDs",
         apiSurface.path("source_visible_spring_mvc_endpoints"));
     appendEndpointIdSummary(
         markdown,
-        "Code-backed source-visible interface-declared endpoint IDs",
+        "Source-visible interface-declared Spring MVC endpoint IDs",
         apiSurface.path("interface_declared_spring_mvc_endpoints"));
     appendOpenApiSpecSummary(markdown, apiSurface.path("openapi"), moduleById, evidenceById);
     appendApiSurfaceWarningSummary(

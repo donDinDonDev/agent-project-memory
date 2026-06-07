@@ -122,10 +122,12 @@ fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
 and evidence ID references.
-`endpoints.md` is a deterministic endpoint inventory. `evidence-index.jsonl` contains
-source-backed evidence records referenced by generated facts. `agent-guide.md` is a
-deterministic orientation guide generated only from the structured project-map facts and
-evidence index.
+`endpoints.md` is a deterministic API surface Markdown inventory that keeps
+source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
+signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
+`evidence-index.jsonl` contains source-backed evidence records referenced by generated
+facts. `agent-guide.md` is a deterministic orientation guide generated only from the
+structured project-map facts and evidence index.
 
 ## Future Installed Usage
 

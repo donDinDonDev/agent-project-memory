@@ -160,8 +160,13 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
-- Code-backed direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/alpha:com.example.alpha.AlphaController#status`, `endpoint:module:services/zeta:com.example.zeta.ZetaController#create`.
-- Code-backed source-visible interface-declared endpoint IDs: status `analyzed`; detected none.
+- Source-visible Spring MVC endpoint facts are code-backed local source observations from `endpoints[]`; they do not prove complete runtime handler mappings.
+- Source-visible interface-declared endpoint facts are code-backed only when the interface mapping and unique concrete binding are both source-visible.
+- Declared OpenAPI operations are spec-backed contract facts with `implementation_status: "not_analyzed"`; they are not implemented endpoint facts.
+- Generated-source API signals, repository-rest warnings, and hidden HTTP warnings are inspection hints, not endpoint or operation facts.
+- LLM output, generated Markdown, release notes, and chat text are never evidence for API surface facts or relations.
+- Source-visible direct Spring MVC endpoint IDs: status `analyzed`; detected 2 IDs `endpoint:module:services/alpha:com.example.alpha.AlphaController#status`, `endpoint:module:services/zeta:com.example.zeta.ZetaController#create`.
+- Source-visible interface-declared Spring MVC endpoint IDs: status `analyzed`; detected none.
 - OpenAPI/Swagger spec files: status `analyzed`; detected 1 local spec file as declared API inputs.
   - Spec file: `services/zeta/src/main/resources/openapi.yml` kind `openapi`, format `yaml`, version `3.0.0`.
 - Module: Detected `module:services/zeta` (path: `services/zeta`)

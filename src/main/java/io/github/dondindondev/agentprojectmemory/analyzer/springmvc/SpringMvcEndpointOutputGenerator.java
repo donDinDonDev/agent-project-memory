@@ -394,7 +394,11 @@ public final class SpringMvcEndpointOutputGenerator {
         List.of(
             new GeneratedOutputFile(
                 ENDPOINTS_FILE_NAME,
-                endpointsMarkdown(layout.modules(), scan.endpoints())),
+                endpointsMarkdown(
+                    layout.modules(),
+                    scan.endpoints(),
+                    openApiOperationAnalysis.operations(),
+                    scan.warnings())),
             new GeneratedOutputFile(
                 EVIDENCE_INDEX_FILE_NAME,
                 evidenceIndexJsonl),
@@ -829,28 +833,69 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private String endpointsMarkdown(
       ProjectModules modules,
-      List<ModuleScopedEndpointFact> endpoints) {
+      List<ModuleScopedEndpointFact> endpoints,
+      List<OpenApiOperationFact> openApiOperations,
+      List<ModuleScopedWarningFact> warnings) {
     StringBuilder markdown = new StringBuilder();
     markdown.append("# Endpoints\n\n");
 
+    markdown.append("## Source-Visible Spring MVC Endpoints\n\n");
     if (endpoints.isEmpty()) {
-      markdown.append("No Spring MVC endpoints detected in supported module source roots.\n");
-      return markdown.toString();
+      markdown.append("No Spring MVC endpoints detected in supported module source roots.\n\n");
     }
 
     Map<String, MavenModuleItem> moduleById = moduleById(modules.items());
+    appendEndpointCategoryMarkdown(
+        markdown,
+        moduleById,
+        endpoints,
+        API_SURFACE_CATEGORY_SOURCE_VISIBLE,
+        "Direct Handler Mappings",
+        "No source-visible direct handler mappings detected.");
+    appendEndpointCategoryMarkdown(
+        markdown,
+        moduleById,
+        endpoints,
+        API_SURFACE_CATEGORY_INTERFACE_DECLARED,
+        "Source-Visible Interface-Declared Mappings",
+        "No source-visible interface-declared mappings detected.");
+    appendDeclaredOpenApiOperations(markdown, moduleById, openApiOperations);
+    appendApiWarningSections(markdown, moduleById, warnings);
+
+    return withoutTrailingBlankLine(markdown);
+  }
+
+  private void appendEndpointCategoryMarkdown(
+      StringBuilder markdown,
+      Map<String, MavenModuleItem> moduleById,
+      List<ModuleScopedEndpointFact> endpoints,
+      String apiSurfaceCategory,
+      String heading,
+      String emptyMessage) {
+    markdown.append("### ").append(heading).append("\n\n");
+    List<ModuleScopedEndpointFact> categoryEndpoints = endpoints.stream()
+        .filter(endpoint -> apiSurfaceCategory.equals(apiSurfaceCategory(endpoint.fact().mappingSource())))
+        .toList();
+    if (categoryEndpoints.isEmpty()) {
+      markdown.append(emptyMessage).append("\n\n");
+      return;
+    }
+
     String currentModuleId = null;
-    for (EndpointRow row : endpointRows(endpoints)) {
+    for (EndpointRow row : endpointRows(categoryEndpoints)) {
       if (!row.moduleId().equals(currentModuleId)) {
         currentModuleId = row.moduleId();
-        appendEndpointModuleHeading(markdown, currentModuleId, moduleById.get(currentModuleId));
+        appendEndpointModuleHeading(markdown, "####", currentModuleId, moduleById.get(currentModuleId));
       }
       SpringMvcEndpointFact endpoint = row.endpoint();
-      markdown.append("### ")
+      markdown.append("##### ")
           .append(MarkdownRenderer.text(row.methodLabel() + " " + row.path()))
           .append("\n\n");
       markdown.append("- Module: ")
           .append(moduleLabel(row.moduleId(), moduleById.get(row.moduleId())))
+          .append("\n");
+      markdown.append("- API surface category: ")
+          .append(code(apiSurfaceCategory(endpoint.mappingSource())))
           .append("\n");
       markdown.append("- Controller: ").append(code(endpoint.controllerClass())).append("\n");
       markdown.append("- Handler: ").append(code(endpoint.handlerMethod())).append("\n");
@@ -869,8 +914,138 @@ public final class SpringMvcEndpointOutputGenerator {
           .append("\n");
       markdown.append("- Evidence: ").append(codeList(endpoint.evidenceIds())).append("\n\n");
     }
+  }
 
-    return withoutTrailingBlankLine(markdown);
+  private void appendDeclaredOpenApiOperations(
+      StringBuilder markdown,
+      Map<String, MavenModuleItem> moduleById,
+      List<OpenApiOperationFact> openApiOperations) {
+    markdown.append("## Declared OpenAPI Operations\n\n");
+    if (openApiOperations.isEmpty()) {
+      markdown.append("No spec-backed declared OpenAPI operations recorded.\n\n");
+      return;
+    }
+
+    String currentModuleId = null;
+    for (OpenApiOperationFact operation : openApiOperations) {
+      String moduleId = operation.moduleId();
+      if (!Objects.equals(moduleId, currentModuleId)) {
+        currentModuleId = moduleId;
+        markdown.append("### Module ")
+            .append(moduleLabel(moduleId, moduleById.get(moduleId)))
+            .append("\n\n");
+      }
+      markdown.append("#### Declared ")
+          .append(code(operation.httpMethod() + " " + operation.path()))
+          .append("\n\n");
+      markdown.append("- API surface category: ")
+          .append(code(operation.apiSurfaceCategory()))
+          .append("\n");
+      markdown.append("- Module: ")
+          .append(moduleLabel(moduleId, moduleById.get(moduleId)))
+          .append("\n");
+      markdown.append("- Spec path: ")
+          .append(code(operation.specPath()))
+          .append("\n");
+      markdown.append("- HTTP method: ")
+          .append(code(operation.httpMethod()))
+          .append("\n");
+      markdown.append("- Declared path: ")
+          .append(code(operation.path()))
+          .append("\n");
+      markdown.append("- Operation ID: ")
+          .append(nullableCode(operation.operationId()))
+          .append("\n");
+      markdown.append("- Tags: ")
+          .append(codeList(operation.tags()))
+          .append("\n");
+      markdown.append("- Implementation status: ")
+          .append(code(operation.implementationStatus()))
+          .append("\n");
+      markdown.append("- Evidence: ")
+          .append(codeList(operation.evidenceIds()))
+          .append("\n\n");
+    }
+  }
+
+  private void appendApiWarningSections(
+      StringBuilder markdown,
+      Map<String, MavenModuleItem> moduleById,
+      List<ModuleScopedWarningFact> warnings) {
+    markdown.append("## Generated And Hidden API Warnings\n\n");
+    appendApiWarningSection(
+        markdown,
+        moduleById,
+        warningsForIds(warnings, generatedSourceApiWarningIds(warnings)),
+        "Generated-Source API Signals",
+        "No generated-source API warning signals recorded.");
+    appendApiWarningSection(
+        markdown,
+        moduleById,
+        warningsForIds(warnings, repositoryRestWarningIds(warnings)),
+        "Repository REST Warnings",
+        "No repository-rest warnings recorded.");
+    appendApiWarningSection(
+        markdown,
+        moduleById,
+        warningsForIds(warnings, hiddenHttpWarningIds(warnings)),
+        "Hidden HTTP Warnings",
+        "No hidden HTTP warnings recorded.");
+  }
+
+  private void appendApiWarningSection(
+      StringBuilder markdown,
+      Map<String, MavenModuleItem> moduleById,
+      List<ModuleScopedWarningFact> warnings,
+      String heading,
+      String emptyMessage) {
+    markdown.append("### ").append(heading).append("\n\n");
+    if (warnings.isEmpty()) {
+      markdown.append(emptyMessage).append("\n\n");
+      return;
+    }
+
+    for (ModuleScopedWarningFact warning : warnings) {
+      markdown.append("#### Warning ")
+          .append(code(warning.category() + ":" + warning.signal()))
+          .append("\n\n");
+      markdown.append("- Module: ")
+          .append(moduleLabel(warning.moduleId(), moduleById.get(warning.moduleId())))
+          .append("\n");
+      markdown.append("- Warning category: ")
+          .append(code(warning.category()))
+          .append("\n");
+      markdown.append("- Signal: ")
+          .append(code(warning.signal()))
+          .append("\n");
+      markdown.append("- Source path: ")
+          .append(nullableCode(warning.sourcePath()))
+          .append("\n");
+      markdown.append("- Message: ")
+          .append(MarkdownRenderer.text(warning.message()))
+          .append("\n");
+      markdown.append("- Evidence: ")
+          .append(codeList(warning.evidenceIds()))
+          .append("\n\n");
+    }
+  }
+
+  private List<ModuleScopedWarningFact> warningsForIds(
+      List<ModuleScopedWarningFact> warnings,
+      List<String> warningIds) {
+    Map<String, ModuleScopedWarningFact> warningById = new LinkedHashMap<>();
+    for (ModuleScopedWarningFact warning : warnings) {
+      warningById.put(warning.id(), warning);
+    }
+
+    List<ModuleScopedWarningFact> selected = new ArrayList<>();
+    for (String warningId : warningIds) {
+      ModuleScopedWarningFact warning = warningById.get(warningId);
+      if (warning != null) {
+        selected.add(warning);
+      }
+    }
+    return selected;
   }
 
   private String withoutTrailingBlankLine(StringBuilder markdown) {
@@ -892,9 +1067,11 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private void appendEndpointModuleHeading(
       StringBuilder markdown,
+      String headingPrefix,
       String moduleId,
       MavenModuleItem module) {
-    markdown.append("## Module ")
+    markdown.append(headingPrefix)
+        .append(" Module ")
         .append(moduleLabel(moduleId, module))
         .append("\n\n");
     if (module == null) {
@@ -2367,6 +2544,9 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private String moduleLabel(String moduleId, MavenModuleItem module) {
+    if (moduleId == null || moduleId.isBlank()) {
+      return code("unscoped") + " (module path not recorded)";
+    }
     if (module == null) {
       return code(moduleId) + " (module path not recorded)";
     }

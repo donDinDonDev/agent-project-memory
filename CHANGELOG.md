@@ -38,6 +38,12 @@ architecture documents.
 - Changed `api_surface.generated_source_api_signals.warning_ids` to reference
   generated-source path warnings and OpenAPI generator output configuration warnings
   when they are backed by warning evidence.
+- Changed `endpoints.md` to render source-visible Spring MVC endpoints, declared
+  OpenAPI operations, generated-source API signals, repository-rest warnings, and hidden
+  HTTP warnings in separate sections.
+- Expanded `agent-guide.md` API surface guidance to explain source-visible,
+  declared/spec-backed, generated signal, warning, and not-analyzed confidence
+  categories without implementation-coverage claims.
 
 ### Not Included
 

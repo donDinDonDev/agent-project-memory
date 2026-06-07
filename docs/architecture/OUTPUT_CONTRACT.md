@@ -1654,12 +1654,12 @@ Current v0.2 `endpoints.md` behavior:
   contexts, or runtime routing behavior beyond the module identity recorded in
   `project-map.json`.
 
-Planned v0.4 `endpoints.md` behavior:
+Current v0.4 `endpoints.md` behavior:
 
-- The filename remains `endpoints.md`, but the content should render distinct API
+- The filename remains `endpoints.md`, but the content renders distinct API
   surface sections.
 - Source-visible Spring MVC endpoint entries render from top-level `endpoints[]`.
-- Direct handler mappings and source-visible interface-declared mappings must be
+- Direct handler mappings and source-visible interface-declared mappings are
   visibly separated or labeled by `api_surface_category` and `mapping_source.kind`.
 - Declared OpenAPI operations render from `api_surface.openapi.operations.items[]` under
   a separate `Declared OpenAPI Operations` section.
@@ -1821,9 +1821,9 @@ Planned v0.3 `agent-guide.md` behavior:
 
 Current v0.4 API surface `agent-guide.md` behavior:
 
-- The guide should add an `API Surface Interpretation` section generated from structured
+- The guide includes an `API Surface Interpretation` section generated from structured
   API surface facts and evidence only.
-- The section should distinguish code-backed source-visible Spring MVC endpoint facts,
+- The section distinguishes code-backed source-visible Spring MVC endpoint facts,
   code-backed source-visible interface-declared endpoint facts, spec-file declared API
   input facts, spec-backed OpenAPI operation facts, generated-source API warnings,
   repository-rest warnings, and hidden HTTP warnings.
