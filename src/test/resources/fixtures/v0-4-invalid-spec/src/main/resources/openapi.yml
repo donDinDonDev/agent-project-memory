@@ -1,0 +1,5 @@
+openapi: [3.0.3
+paths:
+  /broken:
+    get:
+      operationId: brokenOperation

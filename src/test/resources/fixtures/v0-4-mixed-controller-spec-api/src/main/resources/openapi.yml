@@ -1,0 +1,12 @@
+openapi: 3.0.3
+paths:
+  /orders/{id}:
+    get:
+      operationId: getOrder
+      tags:
+        - Orders
+  /orders:
+    post:
+      operationId: createOrder
+      tags:
+        - Orders

@@ -1,0 +1,16 @@
+openapi: 3.0.3
+paths:
+  /zeta:
+    post:
+      operationId: postZeta
+      tags:
+        - Zeta
+  /alpha:
+    patch:
+      operationId: patchAlpha
+      tags:
+        - Alpha
+    get:
+      operationId: getAlpha
+      tags:
+        - Alpha

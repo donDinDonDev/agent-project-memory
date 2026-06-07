@@ -1,0 +1,249 @@
+{
+  "schema_version": "0.4",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v04-openapi-only-api",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:main:src/main/resources",
+                  "scope": "main",
+                  "path": "src/main/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_spec:module:.:path:src/main/resources/openapi.yml",
+            "module_id": "module:.",
+            "spec_path": "src/main/resources/openapi.yml",
+            "format": "yaml",
+            "spec_kind": "openapi",
+            "version": "3.0.3",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:1-1:api_spec:openapi"
+            ]
+          }
+        ]
+      },
+      "operations": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:get:/alpha",
+            "module_id": "module:.",
+            "api_surface_category": "openapi_declared_operation",
+            "spec_path": "src/main/resources/openapi.yml",
+            "http_method": "GET",
+            "path": "/alpha",
+            "operation_id": "getAlpha",
+            "tags": [
+              "Alpha"
+            ],
+            "implementation_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:13-13:api_spec:operation%3Aget%3A/alpha"
+            ]
+          },
+          {
+            "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:patch:/alpha",
+            "module_id": "module:.",
+            "api_surface_category": "openapi_declared_operation",
+            "spec_path": "src/main/resources/openapi.yml",
+            "http_method": "PATCH",
+            "path": "/alpha",
+            "operation_id": "patchAlpha",
+            "tags": [
+              "Alpha"
+            ],
+            "implementation_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:9-9:api_spec:operation%3Apatch%3A/alpha"
+            ]
+          },
+          {
+            "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:post:/zeta",
+            "module_id": "module:.",
+            "api_surface_category": "openapi_declared_operation",
+            "spec_path": "src/main/resources/openapi.yml",
+            "http_method": "POST",
+            "path": "/zeta",
+            "operation_id": "postZeta",
+            "tags": [
+              "Zeta"
+            ],
+            "implementation_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:4-4:api_spec:operation%3Apost%3A/zeta"
+            ]
+          }
+        ]
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:hidden_http_surface:openapi_spec_file:src/main/resources/openapi.yml",
+        "category": "hidden_http_surface",
+        "signal": "openapi_spec_file",
+        "module_id": "module:.",
+        "message": "OpenAPI/Swagger spec file detected by filename; declared operations, when supported, are reported separately under api_surface.openapi.operations, and this warning does not reconstruct generated APIs.",
+        "source_path": "src/main/resources/openapi.yml",
+        "evidence_ids": [
+          "ev:src/main/resources/openapi.yml:unknown:config_file:openapi.yml"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}

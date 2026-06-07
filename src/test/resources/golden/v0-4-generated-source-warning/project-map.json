@@ -1,0 +1,199 @@
+{
+  "schema_version": "0.4",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v04-generated-source-warning",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [
+        "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources",
+        "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi"
+      ]
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources",
+        "category": "generated_source",
+        "signal": "generated_source_root_path_detected",
+        "module_id": "module:.",
+        "message": "Generated-source root path detected; the analyzer records the path signal only and does not read generated source contents or create endpoint/API facts.",
+        "source_path": "target/generated-sources",
+        "evidence_ids": [
+          "ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected"
+        ]
+      },
+      {
+        "id": "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi",
+        "category": "generated_source",
+        "signal": "generated_source_root_path_detected",
+        "module_id": "module:.",
+        "message": "Generated-source root path detected; the analyzer records the path signal only and does not read generated source contents or create endpoint/API facts.",
+        "source_path": "target/generated-sources/openapi",
+        "evidence_ids": [
+          "ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}
