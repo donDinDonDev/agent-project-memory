@@ -35,6 +35,7 @@ public final class AgentGuideGenerator {
     appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
     appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
     appendApiSurfaceInterpretation(markdown, projectMap.path("api_surface"), moduleById, evidenceById);
+    appendSpringApplicationSurface(markdown, projectMap.path("spring_application_surface"), moduleById, evidenceById);
     appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
     appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
@@ -707,6 +708,179 @@ public final class AgentGuideGenerator {
         .append(".\n");
   }
 
+  private void appendSpringApplicationSurface(
+      StringBuilder markdown,
+      JsonNode springApplicationSurface,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!springApplicationSurface.isObject()) {
+      return;
+    }
+
+    markdown.append("## Spring Application Surface\n\n");
+    markdown.append("- Spring application surface analysis status: ")
+        .append(code(text(springApplicationSurface, "analysis_status")))
+        .append("\n");
+    markdown.append("- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.\n");
+    markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.\n");
+    appendSpringRepositories(
+        markdown,
+        springApplicationSurface.path("repositories"),
+        moduleById,
+        evidenceById);
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Configuration classes",
+        springApplicationSurface.path("configuration").path("configuration_classes"),
+        "configuration class analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Configuration properties",
+        springApplicationSurface.path("configuration").path("configuration_properties"),
+        "configuration-properties analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Bean methods",
+        springApplicationSurface.path("configuration").path("bean_methods"),
+        "bean method analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Transaction boundaries",
+        springApplicationSurface.path("behavior").path("transaction_boundaries"),
+        "transaction analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Scheduled methods",
+        springApplicationSurface.path("behavior").path("scheduled_methods"),
+        "scheduled method analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Event listeners",
+        springApplicationSurface.path("behavior").path("event_listeners"),
+        "event listener analyzer has not run");
+    appendSpringSurfaceStatusLine(
+        markdown,
+        "Messaging listener signals",
+        springApplicationSurface.path("messaging").path("listener_signals"),
+        "messaging listener analyzer has not run");
+    appendSpringSecurityWarningStatus(markdown, springApplicationSurface.path("security").path("configuration_warnings"));
+    markdown.append("\n");
+  }
+
+  private void appendSpringRepositories(
+      StringBuilder markdown,
+      JsonNode repositories,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = repositories.path("items");
+    String analysisStatus = text(repositories, "analysis_status");
+    markdown.append("- Repository signals: status ")
+        .append(code(analysisStatus));
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed for supported production source roots.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" repository observation")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode repository = items.get(index);
+      String surfaceCategory = text(repository, "surface_category");
+      String supportType = text(repository, "support_type");
+      markdown.append("  - Repository signal: ");
+      if ("spring_data_repository_interface_signal".equals(surfaceCategory)) {
+        markdown.append("Inferred source-visible Spring Data interface ")
+            .append(code(text(repository, "class_name")))
+            .append(" extending ")
+            .append(codeList(stringValues(repository.path("extends_types"))))
+            .append("; entity_relation_status ")
+            .append(code(text(repository, "entity_relation_status")));
+      } else {
+        markdown.append("Detected direct `@Repository` observation ")
+            .append(code(text(repository, "class_name")));
+      }
+      markdown.append(" (surface_category: ")
+          .append(code(surfaceCategory))
+          .append(", support_type: ")
+          .append(code(supportType))
+          .append(", repository_signal: ")
+          .append(code(text(repository, "repository_signal")))
+          .append(").\n");
+      markdown.append("    - Source: ")
+          .append(code(text(repository, "source_path")))
+          .append("\n");
+      String moduleId = nullableText(repository, "module_id");
+      markdown.append("    - Module: ");
+      if (moduleId == null || moduleId.isBlank()) {
+        markdown.append("Not analyzed; no module identity was recorded.\n");
+      } else {
+        markdown.append("Detected ")
+            .append(moduleLabel(moduleId, moduleById))
+            .append("\n");
+      }
+      appendNestedEvidenceLine(markdown, repository.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "repository observations");
+  }
+
+  private void appendSpringSurfaceStatusLine(
+      StringBuilder markdown,
+      String label,
+      JsonNode section,
+      String notAnalyzedReason) {
+    String analysisStatus = text(section, "analysis_status");
+    JsonNode items = section.path("items");
+    markdown.append("- ")
+        .append(label)
+        .append(": status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because ")
+          .append(MarkdownRenderer.text(notAnalyzedReason))
+          .append(".\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" item")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+  }
+
+  private void appendSpringSecurityWarningStatus(StringBuilder markdown, JsonNode section) {
+    String analysisStatus = text(section, "analysis_status");
+    List<String> warningIds = stringValues(section.path("warning_ids"));
+    markdown.append("- Spring Security configuration warnings: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because security configuration warning analysis has not run.\n");
+      return;
+    }
+    if (warningIds.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; referenced ")
+        .append(warningIds.size())
+        .append(" warning ID")
+        .append(warningIds.size() == 1 ? "" : "s")
+        .append(" ")
+        .append(cappedCodeList(warningIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning IDs"))
+        .append(".\n");
+  }
+
   private void appendBuildConfigWarningSummary(
       StringBuilder markdown,
       JsonNode warnings,
@@ -1015,6 +1189,16 @@ public final class AgentGuideGenerator {
     markdown.append("- Not analyzed: Spring Boot application signals do not prove executable packaging, ")
         .append("active profiles, runtime auto-configuration, bean graphs, component scanning ")
         .append("results, deployment behavior, or actual process entrypoint behavior.\n");
+    markdown.append("- Not analyzed: Spring Data repository interface signals do not prove runtime ")
+        .append("repository registration, query method behavior, database access, or ")
+        .append("repository-to-entity relations; `entity_relation_status: not_analyzed` is ")
+        .append("preserved for those inferred signals.\n");
+    if (projectMap.path("spring_application_surface").isObject()) {
+      markdown.append("- Not analyzed: v0.5 configuration, bean, transaction, scheduled, event, ")
+          .append("messaging, and security surface categories remain outside the current ")
+          .append("repository-signal implementation slice unless their subsection status says ")
+          .append("`analyzed`.\n");
+    }
 
     if (projectMap.path("endpoints").isEmpty()) {
       markdown.append("- Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent ")
@@ -1054,9 +1238,12 @@ public final class AgentGuideGenerator {
     httpPaths.addAll(hiddenHttpWarningEvidencePaths(projectMap.path("warnings"), evidenceById));
     appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");
-    markdown.append("3. For Spring wiring changes, inspect detected component evidence");
-    appendPathHint(markdown, evidencePaths(projectMap.path("components").path("items"), evidenceById));
-    markdown.append(" and avoid assuming runtime injection graphs.\n");
+    markdown.append("3. For Spring application surface changes, inspect repository surface and component evidence");
+    LinkedHashSet<String> springPaths = new LinkedHashSet<>();
+    springPaths.addAll(evidencePaths(projectMap.path("spring_application_surface"), evidenceById));
+    springPaths.addAll(evidencePaths(projectMap.path("components").path("items"), evidenceById));
+    appendPathHint(markdown, List.copyOf(springPaths));
+    markdown.append(" and avoid assuming runtime repository registration, entity ownership, or injection graphs.\n");
     markdown.append("4. For persistence changes, inspect detected entity evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("entities").path("items"), evidenceById));
     markdown.append(" and treat relationship targets as declared-type-only.\n");
@@ -1182,6 +1369,27 @@ public final class AgentGuideGenerator {
       Map<String, EvidenceRecord> evidenceById,
       String label) {
     markdown.append("  - ").append(label).append(": ");
+    if (ids.isEmpty()) {
+      markdown.append("none recorded.\n");
+      return;
+    }
+
+    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
+    StringJoiner joiner = new StringJoiner(", ");
+    for (int i = 0; i < visibleCount; i++) {
+      joiner.add(evidenceReference(ids.get(i), evidenceById));
+    }
+    markdown.append(joiner);
+    appendOmittedEvidenceSuffix(markdown, ids.size() - visibleCount);
+    markdown.append("\n");
+  }
+
+  private void appendNestedEvidenceLine(
+      StringBuilder markdown,
+      JsonNode evidenceIds,
+      Map<String, EvidenceRecord> evidenceById) {
+    List<String> ids = stringValues(evidenceIds);
+    markdown.append("    - Evidence: ");
     if (ids.isEmpty()) {
       markdown.append("none recorded.\n");
       return;

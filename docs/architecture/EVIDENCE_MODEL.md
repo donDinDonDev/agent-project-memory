@@ -32,12 +32,12 @@ Evidence types defined by the model:
 - `test_file`: a test source file or test resource.
 - `api_spec`: a local OpenAPI/Swagger specification file, bounded version/kind
   observation, extracted operation evidence, or bounded operation parser status
-  evidence. The current v0.4 API surface implementation emits this evidence type for
-  local spec file facts, operation facts, and invalid or unsupported spec parser
-  warnings.
+  evidence. This evidence type was introduced by the v0.4 API surface implementation
+  and is still emitted for local spec file facts, operation facts, and invalid or
+  unsupported spec parser warnings.
 - `path_signal`: a repository-relative file or directory path presence signal. This
-  evidence type is emitted for current v0.4 generated-source path warnings and is also
-  available for other path-only signals that need evidence beyond a source file line.
+  evidence type is emitted for v0.4 generated-source path warnings and is also available
+  for other path-only signals that need evidence beyond a source file line.
 - `document`: a local project document such as Markdown. This evidence type is reserved
   for future document ingestion and is not emitted by the current implementation.
 
@@ -113,11 +113,12 @@ Examples:
   facts.
 - Current v0.4 generated-source path signals, where path presence supports warnings and
   does not imply generated source contents.
-- Planned v0.5 direct source-visible Spring application surface annotations such as
-  `@Repository`, `@Configuration`, `@ConfigurationProperties`, `@Bean`,
-  `@Transactional`, `@Scheduled`, `@EventListener`, common messaging listener
-  annotations, and Spring Security configuration annotations, where these observations
-  support extracted facts or warning signals without runtime reconstruction.
+- Current v0.5 direct source-visible `@Repository` Spring application surface facts, and
+  planned future v0.5 direct source-visible Spring application surface annotations such
+  as `@Configuration`, `@ConfigurationProperties`, `@Bean`, `@Transactional`,
+  `@Scheduled`, `@EventListener`, common messaging listener annotations, and Spring
+  Security configuration annotations, where these observations support extracted facts
+  or warning signals without runtime reconstruction.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -163,6 +164,13 @@ The v0.1 implementation emits these evidence records:
   annotation excerpt, and `high` confidence. When the same `@Controller` or
   `@RestController` annotation supports both endpoint and component facts, both facts
   reference the same evidence ID and `evidence-index.jsonl` emits a single record.
+- `annotation` for direct v0.5 `@Repository` Spring application surface facts. When the
+  same source-visible `@Repository` annotation also supports a component fact, both
+  facts reference the same evidence ID and `evidence-index.jsonl` emits a single record.
+- `code_symbol` for current v0.5 inferred Spring Data repository interface extension
+  signals. The repository slice emits evidence for the source-visible interface
+  declaration and for each supported direct
+  `extends:<fully-qualified-spring-data-base-type>` observation that led to the signal.
 - `annotation` for direct JPA annotations under supported production source roots.
   The v0.1 implementation supports class-level `@Entity`, class-level `@Table`,
   field-level `@Id`, and field-level relationship annotations `@ManyToOne`,
@@ -420,21 +428,21 @@ API surface relation evidence:
 - LLM-generated text, generated Markdown guidance, release notes, and chat output are
   never evidence for API surface facts or relations.
 
-### Planned v0.5 Spring Application Surface Evidence
+### Current Staged v0.5 Spring Application Surface Evidence
 
-v0.5 Spring application surface analysis should preserve the existing evidence field set
-and reuse existing evidence types. No new global evidence fields are planned for the
-v0.5 design boundary.
+v0.5 Spring application surface analysis preserves the existing evidence field set and
+reuses existing evidence types. No new global evidence fields are added by the current
+repository signal slice.
 
 Annotation-backed Spring surface evidence:
 
 - Direct source-visible Spring annotations should use `source_type: "annotation"` when
   the annotation origin is visible as a supported external Spring framework type and
   that exact type is not declared by scanned source.
-- Planned annotation-backed facts include direct `@Repository`, `@Configuration`,
-  `@ConfigurationProperties`, `@Bean`, `@Transactional`, `@Scheduled`, `@EventListener`,
-  common Kafka/Rabbit listener annotations, and supported Spring Security configuration
-  annotations.
+- Current annotation-backed facts include direct `@Repository`. Planned future
+  annotation-backed facts include direct `@Configuration`, `@ConfigurationProperties`,
+  `@Bean`, `@Transactional`, `@Scheduled`, `@EventListener`, common Kafka/Rabbit listener
+  annotations, and supported Spring Security configuration annotations.
 - Annotation evidence supports source-visible facts or warnings only. It does not prove
   runtime bean registration, autowiring, conditional activation, profile state,
   auto-configuration, transaction proxying, scheduler registration, event delivery,
@@ -446,9 +454,15 @@ Spring Data repository interface signal evidence:
   annotation fact. If the same source-visible interface also has a direct supported
   `@Repository` annotation, the direct annotation fact and inferred extension signal
   remain separate observations backed by their own evidence.
-- The signal should preserve `code_symbol` evidence for the source-visible interface
+- The current signal preserves `code_symbol` evidence for the source-visible interface
   declaration and the source-visible extends/base-type observation that led to the
-  inference.
+  inference. Supported Spring Data base types are
+  `org.springframework.data.repository.Repository`,
+  `org.springframework.data.repository.CrudRepository`,
+  `org.springframework.data.repository.PagingAndSortingRepository`,
+  `org.springframework.data.jpa.repository.JpaRepository`, and
+  `org.springframework.data.mongodb.repository.MongoRepository` when visible through a
+  fully qualified name or explicit single-type import.
 - This evidence does not prove runtime repository registration, resolved generic entity
   type, query method behavior, database access, or repository-to-entity relation.
 

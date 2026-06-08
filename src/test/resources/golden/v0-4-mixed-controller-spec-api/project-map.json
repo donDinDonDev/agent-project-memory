@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.4",
+  "schema_version": "0.5",
   "project": {
     "root": ".",
     "build": {
@@ -238,6 +238,53 @@
     "hidden_http_warnings": {
       "analysis_status": "analyzed",
       "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "not_analyzed",
+        "warning_ids": []
+      }
     }
   },
   "warnings": {

@@ -50,6 +50,10 @@ import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootA
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
@@ -86,8 +90,9 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.4";
+  private static final String SCHEMA_VERSION = "0.5";
   private static final String ANALYSIS_ANALYZED = "analyzed";
+  private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
   private static final String MODULE_ANALYSIS_NOT_DETECTED = "not_detected";
   private static final String MODULE_SUPPORTED = "supported";
@@ -143,6 +148,12 @@ public final class SpringMvcEndpointOutputGenerator {
       .comparingInt(ModuleScopedComponentFact::moduleOrder)
       .thenComparing(component -> component.fact().className())
       .thenComparing(component -> componentId(component.moduleId(), component.fact()));
+  private static final Comparator<ModuleScopedSpringRepositoryFact> SPRING_REPOSITORY_ORDER = Comparator
+      .comparingInt(ModuleScopedSpringRepositoryFact::moduleOrder)
+      .thenComparing(repository -> repository.fact().sourcePath())
+      .thenComparing(repository -> repository.fact().className())
+      .thenComparing(repository -> repository.fact().surfaceCategory())
+      .thenComparing(repository -> springRepositoryId(repository.moduleId(), repository.fact()));
   private static final Comparator<ModuleScopedEntityFact> ENTITY_ORDER = Comparator
       .comparingInt(ModuleScopedEntityFact::moduleOrder)
       .thenComparing(entity -> entity.fact().className())
@@ -199,6 +210,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private final ResourceConfigAnalyzer resourceConfigAnalyzer = new ResourceConfigAnalyzer();
   private final SpringBootApplicationAnalyzer springBootApplicationAnalyzer =
       new SpringBootApplicationAnalyzer();
+  private final SpringRepositoryAnalyzer springRepositoryAnalyzer = new SpringRepositoryAnalyzer();
   private final OpenApiSpecDiscoveryAnalyzer openApiSpecDiscoveryAnalyzer =
       new OpenApiSpecDiscoveryAnalyzer();
   private final OpenApiOperationAnalyzer openApiOperationAnalyzer =
@@ -373,6 +385,7 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiOperationAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
+        scan.springRepositoryEvidence(),
         scan.entityEvidence(),
         scan.testEvidence(),
         scan.warningEvidence());
@@ -522,16 +535,19 @@ public final class SpringMvcEndpointOutputGenerator {
       OpenApiOperationAnalysis openApiOperationAnalysis) throws IOException {
     List<ModuleScopedEndpointFact> endpoints = new ArrayList<>();
     List<ModuleScopedComponentFact> components = new ArrayList<>();
+    List<ModuleScopedSpringRepositoryFact> springRepositories = new ArrayList<>();
     List<ModuleScopedEntityFact> entities = new ArrayList<>();
     List<ModuleScopedTestFact> tests = new ArrayList<>();
     List<ModuleScopedWarningFact> warnings = new ArrayList<>();
     List<SpringMvcEndpointEvidence> endpointEvidence = new ArrayList<>();
     List<SpringComponentEvidence> componentEvidence = new ArrayList<>();
+    List<SpringRepositoryEvidence> springRepositoryEvidence = new ArrayList<>();
     List<JpaEntityEvidence> entityEvidence = new ArrayList<>();
     List<TestInventoryEvidence> testEvidence = new ArrayList<>();
     List<AnalysisWarningEvidence> warningEvidence = new ArrayList<>();
     Map<String, Integer> moduleOrder = moduleOrder(modules.items());
     boolean componentAnalyzerRan = false;
+    boolean springRepositoryAnalyzerRan = false;
     boolean entityAnalyzerRan = false;
     boolean testAnalyzerRan = false;
 
@@ -602,6 +618,14 @@ public final class SpringMvcEndpointOutputGenerator {
         componentEvidence.addAll(componentAnalysis.evidence());
         componentAnalyzerRan = true;
 
+        SpringRepositoryAnalysis springRepositoryAnalysis = springRepositoryAnalyzer.analyze(
+            repositoryRoot,
+            sourceRoots);
+        springRepositoryAnalysis.repositories().forEach(repository ->
+            springRepositories.add(new ModuleScopedSpringRepositoryFact(module.moduleId(), order, repository)));
+        springRepositoryEvidence.addAll(springRepositoryAnalysis.evidence());
+        springRepositoryAnalyzerRan = true;
+
         JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(repositoryRoot, sourceRoots);
         entityAnalysis.entities().forEach(entity ->
             entities.add(new ModuleScopedEntityFact(module.moduleId(), order, entity)));
@@ -646,14 +670,17 @@ public final class SpringMvcEndpointOutputGenerator {
         endpoints.stream().sorted(ENDPOINT_ORDER).toList(),
         warnings.stream().sorted(WARNING_ORDER).toList(),
         components.stream().sorted(COMPONENT_ORDER).toList(),
+        springRepositories.stream().sorted(SPRING_REPOSITORY_ORDER).toList(),
         entities.stream().sorted(ENTITY_ORDER).toList(),
         tests.stream().sorted(TEST_CLASS_ORDER).toList(),
         warningAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         componentAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
+        springRepositoryAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         entityAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         testAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         endpointEvidence,
         componentEvidence,
+        springRepositoryEvidence,
         entityEvidence,
         testEvidence,
         warningEvidence);
@@ -1129,6 +1156,7 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("  ],\n");
     }
     appendApiSurface(json, scan, openApiSpecDiscoveryAnalysis, openApiOperationAnalysis);
+    appendSpringApplicationSurface(json, scan);
     json.append("  \"warnings\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", scan.warningAnalysisStatus(), true);
     appendWarnings(json, scan.warnings());
@@ -2087,6 +2115,157 @@ public final class SpringMvcEndpointOutputGenerator {
     appendLineEnding(json, trailingComma);
   }
 
+  private void appendSpringApplicationSurface(StringBuilder json, ModuleAwareScan scan) {
+    String analysisStatus = scan.springRepositoryAnalysisStatus();
+    String futureSectionStatus = ANALYSIS_ANALYZED.equals(analysisStatus)
+        ? ANALYSIS_NOT_ANALYZED
+        : ANALYSIS_NOT_DETECTED;
+    json.append("  \"spring_application_surface\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", analysisStatus, true);
+    appendSpringRepositorySection(json, scan.springRepositories(), analysisStatus, true);
+    appendSpringConfigurationShell(json, futureSectionStatus, true);
+    appendSpringBehaviorShell(json, futureSectionStatus, true);
+    appendSpringMessagingShell(json, futureSectionStatus, true);
+    appendSpringSecurityShell(json, futureSectionStatus, false);
+    json.append("  },\n");
+  }
+
+  private void appendSpringRepositorySection(
+      StringBuilder json,
+      List<ModuleScopedSpringRepositoryFact> repositories,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"repositories\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", analysisStatus, true);
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (repositories.isEmpty()) {
+      json.append("]\n");
+      indent(json, 2);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < repositories.size(); index++) {
+      appendSpringRepository(json, repositories.get(index), index < repositories.size() - 1);
+    }
+    indent(json, 3);
+    json.append("]\n");
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringRepository(
+      StringBuilder json,
+      ModuleScopedSpringRepositoryFact scopedRepository,
+      boolean trailingComma) {
+    SpringRepositoryFact repository = scopedRepository.fact();
+    indent(json, 4);
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        5,
+        "id",
+        springRepositoryId(scopedRepository.moduleId(), repository),
+        true);
+    appendIndentedStringField(json, 5, "module_id", scopedRepository.moduleId(), true);
+    appendIndentedStringField(json, 5, "surface_category", repository.surfaceCategory(), true);
+    appendIndentedStringField(json, 5, "support_type", repository.supportType(), true);
+    appendIndentedStringField(json, 5, "class_name", repository.className(), true);
+    appendIndentedStringField(json, 5, "source_path", repository.sourcePath(), true);
+    appendIndentedStringField(json, 5, "repository_signal", repository.repositorySignal(), true);
+    if (SpringRepositoryAnalyzer.SURFACE_CATEGORY_SPRING_DATA_INTERFACE.equals(
+        repository.surfaceCategory())) {
+      appendIndentedStringArrayField(json, 5, "extends_types", repository.extendsTypes(), true);
+      appendIndentedStringField(
+          json,
+          5,
+          "entity_relation_status",
+          repository.entityRelationStatus(),
+          true);
+    }
+    appendIndentedStringArrayField(json, 5, "evidence_ids", repository.evidenceIds(), false);
+    indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringConfigurationShell(
+      StringBuilder json,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"configuration\": {\n");
+    appendEmptySpringSurfaceItemsSection(json, 3, "configuration_classes", analysisStatus, true);
+    appendEmptySpringSurfaceItemsSection(json, 3, "configuration_properties", analysisStatus, true);
+    appendEmptySpringSurfaceItemsSection(json, 3, "bean_methods", analysisStatus, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringBehaviorShell(
+      StringBuilder json,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"behavior\": {\n");
+    appendEmptySpringSurfaceItemsSection(json, 3, "transaction_boundaries", analysisStatus, true);
+    appendEmptySpringSurfaceItemsSection(json, 3, "scheduled_methods", analysisStatus, true);
+    appendEmptySpringSurfaceItemsSection(json, 3, "event_listeners", analysisStatus, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringMessagingShell(
+      StringBuilder json,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"messaging\": {\n");
+    appendEmptySpringSurfaceItemsSection(json, 3, "listener_signals", analysisStatus, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringSecurityShell(
+      StringBuilder json,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"security\": {\n");
+    indent(json, 3);
+    json.append("\"configuration_warnings\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
+    appendIndentedStringArrayField(json, 4, "warning_ids", List.of(), false);
+    indent(json, 3);
+    json.append("}\n");
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendEmptySpringSurfaceItemsSection(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": {\n");
+    appendIndentedStringField(json, indentLevel + 1, "analysis_status", analysisStatus, true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "items", List.of(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
   private List<String> generatedSourceApiWarningIds(List<ModuleScopedWarningFact> warnings) {
     LinkedHashSet<String> openApiGeneratorContexts = warnings.stream()
         .filter(warning -> WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category()))
@@ -2510,6 +2689,10 @@ public final class SpringMvcEndpointOutputGenerator {
     return "component:" + moduleId + ":" + component.className();
   }
 
+  private static String springRepositoryId(String moduleId, SpringRepositoryFact repository) {
+    return repository.surfaceCategory() + ":" + moduleId + ":" + repository.className();
+  }
+
   private static String entityId(String moduleId, JpaEntityFact entity) {
     if (ROOT_MODULE_ID.equals(moduleId)) {
       return entity.id();
@@ -2613,6 +2796,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<ApiSpecEvidence> openApiOperationEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
+      List<SpringRepositoryEvidence> springRepositoryEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
       List<TestInventoryEvidence> testEvidenceRecords,
       List<AnalysisWarningEvidence> warningEvidenceRecords) {
@@ -2646,6 +2830,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     componentEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    springRepositoryEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     entityEvidenceRecords.stream()
@@ -2783,6 +2970,20 @@ public final class SpringMvcEndpointOutputGenerator {
         evidence.className(),
         evidence.methodName(),
         evidence.annotationSymbol(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(SpringRepositoryEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
         evidence.lineStart(),
         evidence.lineEnd(),
         evidence.excerpt(),
@@ -3185,14 +3386,17 @@ public final class SpringMvcEndpointOutputGenerator {
       List<ModuleScopedEndpointFact> endpoints,
       List<ModuleScopedWarningFact> warnings,
       List<ModuleScopedComponentFact> components,
+      List<ModuleScopedSpringRepositoryFact> springRepositories,
       List<ModuleScopedEntityFact> entities,
       List<ModuleScopedTestFact> tests,
       String warningAnalysisStatus,
       String componentAnalysisStatus,
+      String springRepositoryAnalysisStatus,
       String entityAnalysisStatus,
       String testAnalysisStatus,
       List<SpringMvcEndpointEvidence> endpointEvidence,
       List<SpringComponentEvidence> componentEvidence,
+      List<SpringRepositoryEvidence> springRepositoryEvidence,
       List<JpaEntityEvidence> entityEvidence,
       List<TestInventoryEvidence> testEvidence,
       List<AnalysisWarningEvidence> warningEvidence) {
@@ -3200,10 +3404,12 @@ public final class SpringMvcEndpointOutputGenerator {
       endpoints = List.copyOf(endpoints);
       warnings = List.copyOf(warnings);
       components = List.copyOf(components);
+      springRepositories = List.copyOf(springRepositories);
       entities = List.copyOf(entities);
       tests = List.copyOf(tests);
       endpointEvidence = List.copyOf(endpointEvidence);
       componentEvidence = List.copyOf(componentEvidence);
+      springRepositoryEvidence = List.copyOf(springRepositoryEvidence);
       entityEvidence = List.copyOf(entityEvidence);
       testEvidence = List.copyOf(testEvidence);
       warningEvidence = List.copyOf(warningEvidence);
@@ -3220,6 +3426,12 @@ public final class SpringMvcEndpointOutputGenerator {
       String moduleId,
       int moduleOrder,
       SpringComponentFact fact) {
+  }
+
+  private record ModuleScopedSpringRepositoryFact(
+      String moduleId,
+      int moduleOrder,
+      SpringRepositoryFact fact) {
   }
 
   private record ModuleScopedEntityFact(

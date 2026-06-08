@@ -7,6 +7,9 @@ through 8 are closed as the historical v0.1 baseline.
 
 Future work is organized by release tracks instead of extending the original v0.1 stage
 list. Connector/import work remains post-v0.1 future work and is not started.
+The v0.5 deeper Spring application surface track is active: the taxonomy/design goal is
+documented and the repository signal analyzer slice is implemented locally. Remaining
+v0.5 analyzers are still planned.
 
 For strategic context, see
 [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
@@ -196,7 +199,7 @@ semantics.
 
 Expected scope:
 
-- Repository interface signals.
+- Repository interface signals. (implemented for the current repository slice)
 - `@ConfigurationProperties`.
 - `@Bean` methods.
 - `@Transactional`, `@Scheduled`, and listener annotations.
@@ -218,8 +221,9 @@ topology reconstruction, security policy claims, and endpoint protection claims.
 
 Planned goal sequence:
 
-1. Design Spring application surface taxonomy and contract.
-2. Implement repository signals.
+1. Design Spring application surface taxonomy and contract. (documented)
+2. Implement repository signals. (implemented for direct `@Repository` and supported
+   Spring Data repository interface extension signals)
 3. Implement configuration, bean, and configuration-properties signals.
 4. Implement transaction, scheduled, event, and messaging signals.
 5. Implement Spring Security configuration warnings.

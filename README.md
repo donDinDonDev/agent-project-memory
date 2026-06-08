@@ -75,12 +75,13 @@ java -jar target/agent-project-memory-0.4.0.jar scan /path/to/java-spring-projec
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
 rewritten deterministically when supported Maven module roots, source-visible Maven
 metadata from module POMs, supported root source, test, or resource roots, supported
-config files, local OpenAPI/Swagger spec files, or Maven module warnings are detected.
+config files, local OpenAPI/Swagger spec files, Spring repository signals, or Maven
+module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
-Spring component, JPA entity, hidden HTTP surface warning, and tests inventory analyzers
-per supported module. For compatibility with earlier local source-root scans, a
+Spring component, Spring repository signal, JPA entity, hidden HTTP surface warning, and
+tests inventory analyzers per supported module. For compatibility with earlier local source-root scans, a
 repository without a root `pom.xml` but with supported root source, test, or resource roots is
 represented as the scan-root module with module discovery marked `not_detected`.
 
@@ -92,7 +93,10 @@ mapped-superclass identifier fields, standard Maven test-root classes with conse
 helper filtering, direct source-visible Maven metadata from module POMs, and direct
 source-visible Maven dependency and plugin declarations from module POMs, plus
 path-only standard resource-root and supported application/logging config-file
-inventory. It also discovers common local OpenAPI/Swagger spec filenames as declared API
+inventory. It also emits direct source-visible `@Repository` repository surface facts
+and inferred source-visible Spring Data repository interface extension signals in a
+separate Spring application surface section. It also discovers common local
+OpenAPI/Swagger spec filenames as declared API
 inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, then writes:
 
 ```text
@@ -103,7 +107,7 @@ inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, the
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.4"` and includes detected root `pom.xml` build metadata when
+`schema_version: "0.5"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -121,7 +125,10 @@ for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
-and evidence ID references.
+the staged `spring_application_surface.repositories` repository signal inventory, and
+evidence ID references. The current v0.5 Spring application surface implementation
+emits repository facts only; other v0.5 subsections are present with explicit
+`not_analyzed` or `not_detected` statuses.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -203,10 +210,10 @@ references.
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
-API surface release is published with packaged jar and checksum assets. Future
-connector/import work remains a later optional adapter track and is not started.
-The next public design boundary is v0.5 deeper Spring application surface planning; no
-v0.5 analyzer implementation has started in the current release state.
+API surface release is published with packaged jar and checksum assets. The v0.5
+deeper Spring application surface release track has started with the repository signal
+analyzer slice implemented locally. Future connector/import work remains a later
+optional adapter track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -218,8 +225,9 @@ discovery, deterministic hidden HTTP surface, generated-source, and Maven module
 warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
 inputs, minimal deterministic OpenAPI/Swagger operation extraction as spec-backed
 declared operation facts, a minimal deterministic tests inventory, deterministic
-`endpoints.md`, and deterministic `agent-guide.md` generation from the structured facts
-and evidence index.
+repository signal extraction for direct `@Repository` and supported Spring Data
+repository interface extensions, deterministic `endpoints.md`, and deterministic
+`agent-guide.md` generation from the structured facts and evidence index.
 
 Current limitations:
 
@@ -262,9 +270,28 @@ Current limitations:
 - Component inventory is limited to direct source-type-level `@Component`, `@Service`,
   `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
   Java classes or interfaces under `src/main/java`. It does not infer repositories from
-  `extends JpaRepository` without a direct supported stereotype.
+  `extends JpaRepository` without a direct supported stereotype. Inferred Spring Data
+  repository interface extension signals live separately under
+  `spring_application_surface.repositories`, not in `components.items`.
 - Component analysis does not model Spring component scanning semantics, bean lifecycle,
   bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
+- Spring application surface analysis is currently limited to repository signals:
+  direct source-visible `@Repository` observations and inferred source-visible Java
+  interfaces that directly extend a supported Spring Data repository base type visible
+  through a fully qualified name or explicit single-type import. Supported base types
+  are `org.springframework.data.repository.Repository`,
+  `org.springframework.data.repository.CrudRepository`,
+  `org.springframework.data.repository.PagingAndSortingRepository`,
+  `org.springframework.data.jpa.repository.JpaRepository`, and
+  `org.springframework.data.mongodb.repository.MongoRepository`. It does not perform
+  dependency type solving, wildcard-import fallback, runtime Spring Data
+  reconstruction, query method parsing, database access analysis, or repository-to-entity
+  relation claims; repository interface signals preserve
+  `entity_relation_status: "not_analyzed"`.
+- Other v0.5 Spring application surface categories, including configuration classes,
+  configuration properties, bean methods, transaction boundaries, scheduled methods,
+  event listeners, messaging listeners, and Spring Security configuration warnings, are
+  not analyzed by the current repository slice.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
   `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
   conservative source-visible `@MappedSuperclass` chain, and field-level `@ManyToOne`,
@@ -314,8 +341,9 @@ Current limitations:
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
-  Boot application, local OpenAPI/Swagger `api_spec`, generated-source path
-  `path_signal`, and tests inventory evidence.
+  Boot application, Spring repository stereotype and interface signal, local
+  OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, and tests inventory
+  evidence.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

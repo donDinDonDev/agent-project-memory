@@ -76,7 +76,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(56, projectMapEvidenceIds.size()),
+        () -> assertEquals(58, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -263,6 +263,12 @@ final class SpringMvcEndpointOutputGeneratorTest {
     generator.generate(projectPath, outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    JsonNode projectMapJson = JSON.readTree(projectMap);
+    JsonNode repositories = projectMapJson
+        .path("spring_application_surface")
+        .path("repositories");
+    JsonNode repositoryItems = repositories.path("items");
+    JsonNode componentItems = projectMapJson.path("components").path("items");
 
     assertAll(
         () -> assertTrue(projectMap.contains("\"analysis_status\": \"analyzed\"")),
@@ -276,18 +282,35 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"id\": \"component:com.example.components.InventoryService\"")),
         () -> assertTrue(projectMap.contains(
             "\"id\": \"component:com.example.web.ProjectMapController\"")),
-        () -> assertTrue(projectMap.indexOf(
-            "\"class_name\": \"com.example.components.AppConfiguration\"")
-            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryComponent\"")),
-        () -> assertTrue(projectMap.indexOf(
-            "\"class_name\": \"com.example.components.InventoryComponent\"")
-            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryRepository\"")),
-        () -> assertTrue(projectMap.indexOf(
-            "\"class_name\": \"com.example.components.InventoryRepository\"")
-            < projectMap.indexOf("\"class_name\": \"com.example.components.InventoryService\"")),
-        () -> assertTrue(projectMap.indexOf(
-            "\"class_name\": \"com.example.components.InventoryService\"")
-            < projectMap.indexOf("\"class_name\": \"com.example.web.ProjectMapController\"")),
+        () -> assertFalse(projectMap.contains(
+            "\"id\": \"component:com.example.repositories.ProjectOrderRepository\"")),
+        () -> assertEquals("analyzed", repositories.path("analysis_status").asText()),
+        () -> assertEquals(2, repositoryItems.size()),
+        () -> assertEquals(
+            "spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+            repositoryItems.get(0).path("id").asText()),
+        () -> assertEquals("spring_repository_stereotype",
+            repositoryItems.get(0).path("surface_category").asText()),
+        () -> assertEquals("extracted", repositoryItems.get(0).path("support_type").asText()),
+        () -> assertEquals(
+            "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+            repositoryItems.get(1).path("id").asText()),
+        () -> assertEquals("spring_data_repository_interface_signal",
+            repositoryItems.get(1).path("surface_category").asText()),
+        () -> assertEquals("inferred", repositoryItems.get(1).path("support_type").asText()),
+        () -> assertEquals("not_analyzed",
+            repositoryItems.get(1).path("entity_relation_status").asText()),
+        () -> assertEquals(
+            List.of("org.springframework.data.jpa.repository.JpaRepository"),
+            stringValues(repositoryItems.get(1).path("extends_types"))),
+        () -> assertEquals(
+            List.of(
+                "com.example.components.AppConfiguration",
+                "com.example.components.InventoryComponent",
+                "com.example.components.InventoryRepository",
+                "com.example.components.InventoryService",
+                "com.example.web.ProjectMapController"),
+            jsonTextValues(componentItems, "class_name")),
         () -> assertTrue(projectMap.contains(
             "\"id\": \"endpoint:com.example.web.ProjectMapController#getItem\"")),
         () -> assertTrue(projectMap.contains(
@@ -459,7 +482,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(0, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
         () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
         () -> assertEquals("analyzed", specFiles.path("analysis_status").asText()),
         () -> assertEquals(1, specFiles.path("items").size()),
@@ -736,7 +759,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
         () -> assertTrue(projectMap.contains("\"api_surface_category\": \"source_visible_spring_mvc_endpoint\"")),
         () -> assertTrue(projectMap.contains("\"source_visible_spring_mvc_endpoints\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
@@ -814,7 +837,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -884,7 +907,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     assertAll(
         () -> assertTrue(result.generated()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
         () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
             < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
         () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
@@ -1373,7 +1396,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.4\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),

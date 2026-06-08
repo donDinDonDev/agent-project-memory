@@ -30,8 +30,9 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.4 API surface slice layered on top of the v0.3 module-aware
-Maven metadata, dependency, and plugin inventory contract.
+contract is the staged v0.5 Spring application surface repository slice layered on top
+of the v0.4 API surface slice and the v0.3 module-aware Maven metadata, dependency, and
+plugin inventory contract.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -1484,14 +1485,15 @@ Deterministic sorting rules:
 - API surface warning ID lists follow the existing warning sort order for their
   referenced warning items.
 
-### Planned v0.5 Spring Application Surface Contract
+### Current Staged v0.5 Spring Application Surface Contract
 
-This section defines the planned v0.5 Spring application surface contract. The current
-v0.4.0 implementation does not emit this section. The detailed release-track design is
-documented in
+This section defines the staged v0.5 Spring application surface contract. The current
+implementation emits the the repository signal analyzer slice repository signal slice and the surrounding v0.5
+section shape. Later v0.5 analyzers must fill their subsections without changing the
+meaning of the repository slice. The detailed release-track design is documented in
 the public v0.5 roadmap and release notes.
 
-The planned v0.5 contract uses:
+The v0.5 contract uses:
 
 - `schema_version: "0.5"` for an atomic public output state that preserves the v0.4
   module-aware build/config and API surface contract and adds the Spring application
@@ -1508,8 +1510,12 @@ The planned v0.5 contract uses:
   component stereotype facts and as category-specific Spring application surface items.
   This is two contract views over the same source observation, not evidence of multiple
   runtime beans or component registrations.
+- In the current repository-signal slice, `repositories.analysis_status` is `"analyzed"`
+  when supported production source roots exist and the analyzer runs. Not-yet-implemented
+  v0.5 subsections emit `"not_analyzed"` with empty collections when supported
+  production source roots exist.
 
-Planned high-level `project-map.json` shape:
+Current staged high-level `project-map.json` shape:
 
 ```json
 {
@@ -1520,7 +1526,19 @@ Planned high-level `project-map.json` shape:
       "analysis_status": "analyzed",
       "items": [
         {
-          "id": "spring_repository:module:services/orders:com.example.orders.OrderRepository",
+          "id": "spring_repository_stereotype:module:services/orders:com.example.orders.DirectOrderRepository",
+          "module_id": "module:services/orders",
+          "surface_category": "spring_repository_stereotype",
+          "support_type": "extracted",
+          "class_name": "com.example.orders.DirectOrderRepository",
+          "source_path": "services/orders/src/main/java/com/example/orders/DirectOrderRepository.java",
+          "repository_signal": "direct_repository_stereotype",
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/DirectOrderRepository.java:8-8:com.example.orders.DirectOrderRepository:@Repository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:services/orders:com.example.orders.OrderRepository",
           "module_id": "module:services/orders",
           "surface_category": "spring_data_repository_interface_signal",
           "support_type": "inferred",
@@ -1532,7 +1550,7 @@ Planned high-level `project-map.json` shape:
           ],
           "entity_relation_status": "not_analyzed",
           "evidence_ids": [
-            "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:code_symbol",
+            "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:com.example.orders.OrderRepository",
             "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
           ]
         }
@@ -1540,41 +1558,41 @@ Planned high-level `project-map.json` shape:
     },
     "configuration": {
       "configuration_classes": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       },
       "configuration_properties": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       },
       "bean_methods": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       }
     },
     "behavior": {
       "transaction_boundaries": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       },
       "scheduled_methods": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       },
       "event_listeners": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       }
     },
     "messaging": {
       "listener_signals": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "items": []
       }
     },
     "security": {
       "configuration_warnings": {
-        "analysis_status": "analyzed",
+        "analysis_status": "not_analyzed",
         "warning_ids": []
       }
     }
@@ -1588,9 +1606,15 @@ Spring application surface taxonomy rules:
   on a Java class or interface. It is an extracted fact and must not imply Spring Data
   repository behavior, query semantics, runtime bean registration, or entity ownership.
 - `spring_data_repository_interface_signal` means a source-visible Java interface
-  appears to extend a supported Spring Data repository base type. It is an inferred
-  signal and must not imply runtime repository registration, resolved generic entity
-  type, query method behavior, database access, or repository-to-entity relation.
+  appears to extend a supported Spring Data repository base type. The current
+  implementation supports `org.springframework.data.repository.Repository`,
+  `org.springframework.data.repository.CrudRepository`,
+  `org.springframework.data.repository.PagingAndSortingRepository`,
+  `org.springframework.data.jpa.repository.JpaRepository`, and
+  `org.springframework.data.mongodb.repository.MongoRepository` when visible through a
+  fully qualified name or explicit single-type import. It is an inferred signal and
+  must not imply runtime repository registration, resolved generic entity type, query
+  method behavior, database access, or repository-to-entity relation.
 - `spring_configuration_class` means a direct source-visible `@Configuration`
   annotation. It must not imply conditional activation, bean graph, component scan
   result, or auto-configuration behavior.
@@ -1629,11 +1653,19 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- `surface_category` uses one of the planned taxonomy values. Warning-reference
+- In the current the repository signal analyzer slice repository slice, non-repository v0.5 subsections emit
+  `"not_analyzed"` with empty `items` or `warning_ids` when supported production source
+  roots exist but their analyzers have not been implemented yet.
+- `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
   containers do not duplicate warning payloads or use `surface_category`.
 - Item `support_type` is `"extracted"` for direct source-visible facts and `"inferred"`
   for source-visible signals derived from structure or conventions.
 - All module-owned Spring surface items include direct `module_id` fields.
+- Current repository item IDs are stable:
+  `spring_repository_stereotype:<module_id>:<class_name>` for direct `@Repository`
+  observations and
+  `spring_data_repository_interface_signal:<module_id>:<class_name>` for inferred
+  Spring Data repository interface extension signals.
 - Source paths are normalized repository-relative paths and must not be absolute, start
   with `./`, or escape the scanned repository root.
 - `extends_types` preserves bounded source-visible Spring Data base type observations
@@ -1686,6 +1718,14 @@ The current implementation emits:
   Java class or interface declarations. `@Controller` and `@RestController` evidence IDs
   use the same annotation ID convention as endpoint evidence so the same source
   annotation is not duplicated in `evidence-index.jsonl`.
+- `annotation` evidence for direct `@Repository` Spring application surface repository
+  stereotype facts. When the same source annotation also supports a component fact, the
+  evidence ID resolves to the same `evidence-index.jsonl` record.
+- `code_symbol` evidence for inferred Spring Data repository interface extension
+  signals. The current repository slice emits one evidence record for the source-visible
+  interface declaration and one `extends:<fully-qualified-spring-data-base-type>`
+  evidence record for each supported directly visible Spring Data base type that led to
+  the signal.
 - `annotation` evidence for direct JPA annotations that support entity facts, including
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
@@ -2019,24 +2059,27 @@ Current v0.4 API surface `agent-guide.md` behavior:
   SDKs, or OpenAPI/runtime agreement unless future deterministic relations explicitly
   support those claims.
 
-Planned v0.5 Spring application surface `agent-guide.md` behavior:
+Current staged v0.5 Spring application surface `agent-guide.md` behavior:
 
-- The guide should add a `Spring Application Surface` section generated from structured
+- The guide includes a `Spring Application Surface` section generated from structured
   `spring_application_surface` facts and resolving evidence only.
 - Repository stereotype entries should be described as direct annotation observations.
 - Spring Data repository interface signals should be described as inferred
   source-visible signals. They must not be described as runtime repositories, entity
   ownership, query method behavior, or database access facts.
-- Configuration classes, configuration properties, and bean methods should be described
-  as source-visible Spring configuration signals. They must not claim runtime bean graph,
-  conditional activation, active profiles, config binding success, config values, bean
-  scopes, lifecycle, proxy behavior, or dependency graphs.
-- Transaction, scheduled, event listener, and messaging listener annotations should be
-  described as operational change-surface signals. They must not claim runtime
+- Current not-yet-implemented v0.5 subsections are described as `not_analyzed`; empty
+  collections in those subsections must not be interpreted as absence of configuration,
+  bean, transaction, scheduling, event, messaging, or security signals.
+- Future configuration classes, configuration properties, and bean methods should be
+  described as source-visible Spring configuration signals. They must not claim runtime
+  bean graph, conditional activation, active profiles, config binding success, config
+  values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
+- Future transaction, scheduled, event listener, and messaging listener annotations
+  should be described as operational change-surface signals. They must not claim runtime
   scheduling, transaction behavior, event delivery, message topology, queue/topic
   existence, or broker behavior.
-- Spring Security configuration warnings should be described as inspection hints and
-  change-risk signals. They must not claim security policy, endpoint protection,
+- Future Spring Security configuration warnings should be described as inspection hints
+  and change-risk signals. They must not claim security policy, endpoint protection,
   authentication behavior, authorization behavior, vulnerability, or correctness.
 
 Markdown rendering safety:

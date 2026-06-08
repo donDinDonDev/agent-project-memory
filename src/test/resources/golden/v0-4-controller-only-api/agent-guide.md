@@ -54,6 +54,21 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 
+## Spring Application Surface
+
+- Spring application surface analysis status: `analyzed`
+- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.
+- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.
+- Repository signals: status `analyzed`; detected none.
+- Configuration classes: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because configuration class analyzer has not run.
+- Configuration properties: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because configuration-properties analyzer has not run.
+- Bean methods: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because bean method analyzer has not run.
+- Transaction boundaries: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because transaction analyzer has not run.
+- Scheduled methods: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because scheduled method analyzer has not run.
+- Event listeners: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because event listener analyzer has not run.
+- Messaging listener signals: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because messaging listener analyzer has not run.
+- Spring Security configuration warnings: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because security configuration warning analysis has not run.
+
 ## Detected Spring MVC Endpoints
 
 ### `POST /inventory`
@@ -113,6 +128,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
+- Not analyzed: Spring Data repository interface signals do not prove runtime repository registration, query method behavior, database access, or repository-to-entity relations; `entity_relation_status: not_analyzed` is preserved for those inferred signals.
+- Not analyzed: v0.5 configuration, bean, transaction, scheduled, event, messaging, and security surface categories remain outside the current repository-signal implementation slice unless their subsection status says `analyzed`.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
 - Not analyzed: supported Maven test roots were not detected.
 
@@ -120,6 +137,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 1. Start with detected build, module, and layout facts in `pom.xml`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/api/InventoryController.java`.
-3. For Spring wiring changes, inspect detected component evidence in `src/main/java/com/example/api/InventoryController.java` and avoid assuming runtime injection graphs.
+3. For Spring application surface changes, inspect repository surface and component evidence in `src/main/java/com/example/api/InventoryController.java` and avoid assuming runtime repository registration, entity ownership, or injection graphs.
 4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat relationship targets as declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence (no evidence paths recorded); do not treat inferred subjects as coverage proof.

@@ -89,6 +89,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
+- Not analyzed: Spring Data repository interface signals do not prove runtime repository registration, query method behavior, database access, or repository-to-entity relations; `entity_relation_status: not_analyzed` is preserved for those inferred signals.
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
 
@@ -96,6 +97,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 1. Start with detected build and layout facts in `pom.xml`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
-3. For Spring wiring changes, inspect detected component evidence in `src/main/java/com/example/components/ComponentOne.java`, `src/main/java/com/example/components/ComponentTwo.java`, `src/main/java/com/example/components/ComponentThree.java`, `src/main/java/com/example/components/ComponentFour.java`, `src/main/java/com/example/components/ComponentFive.java`, ... and 2 more evidence paths in `evidence-index.jsonl` and avoid assuming runtime injection graphs.
+3. For Spring application surface changes, inspect repository surface and component evidence in `src/main/java/com/example/components/ComponentOne.java`, `src/main/java/com/example/components/ComponentTwo.java`, `src/main/java/com/example/components/ComponentThree.java`, `src/main/java/com/example/components/ComponentFour.java`, `src/main/java/com/example/components/ComponentFive.java`, ... and 2 more evidence paths in `evidence-index.jsonl` and avoid assuming runtime repository registration, entity ownership, or injection graphs.
 4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat relationship targets as declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence in `src/test/java/com/example/web/LargeControllerTest.java`, `src/main/java/com/example/web/LargeController.java`; do not treat inferred subjects as coverage proof.

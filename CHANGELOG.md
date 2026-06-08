@@ -14,6 +14,19 @@ architecture documents.
 - Added the public v0.5 deeper Spring application surface design boundary, including
   planned taxonomy, output contract direction, evidence semantics, non-goals, follow-up
   goal sequence, and security gate expectations.
+- Added the staged v0.5 repository signal analyzer for the repository signal analyzer slice, including direct
+  source-visible `@Repository` repository stereotype facts and inferred source-visible
+  Spring Data repository interface extension signals.
+- Added `schema_version: "0.5"` output with top-level
+  `spring_application_surface.repositories` repository signal items and explicit
+  `not_analyzed` statuses for v0.5 Spring application surface categories that are not
+  implemented by the repository slice.
+- Added Spring Application Surface guidance in `agent-guide.md` that keeps direct
+  repository annotation observations, inferred Spring Data interface signals, and
+  repository-to-entity non-analysis distinct.
+- Added focused repository analyzer fixtures and golden coverage for direct
+  `@Repository`, supported Spring Data base interface extensions, spoofed framework
+  origins, and output/evidence resolution.
 
 ### Fixed
 
