@@ -165,15 +165,15 @@
     },
     "configuration": {
       "configuration_classes": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "configuration_properties": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "bean_methods": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },

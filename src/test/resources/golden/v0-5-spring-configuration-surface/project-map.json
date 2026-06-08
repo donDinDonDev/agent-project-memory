@@ -1,0 +1,315 @@
+{
+  "schema_version": "0.5",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v0-5-spring-configuration-surface",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:6-6:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:7-7:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:.:com.example.config.InventoryConfiguration",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.config.InventoryConfiguration",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:7-7:com.example.config.InventoryConfiguration:@Configuration"
+            ]
+          }
+        ]
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_properties_type:module:.:com.example.config.CatalogProperties",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_properties_type",
+            "support_type": "extracted",
+            "class_name": "com.example.config.CatalogProperties",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "configuration_properties_signal": "direct_configuration_properties_type",
+            "binding_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:37-37:com.example.config.CatalogProperties:@ConfigurationProperties"
+            ]
+          },
+          {
+            "id": "spring_configuration_properties_type:module:.:com.example.config.InventoryProperties",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_properties_type",
+            "support_type": "extracted",
+            "class_name": "com.example.config.InventoryProperties",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "configuration_properties_signal": "direct_configuration_properties_type",
+            "binding_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:20-20:com.example.config.InventoryProperties:@ConfigurationProperties"
+            ]
+          }
+        ]
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClient:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.config.InventoryConfiguration",
+            "method_name": "inventoryClient",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:9-9:com.example.config.InventoryConfiguration#inventoryClient:@Bean"
+            ]
+          },
+          {
+            "id": "spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClock:decl:000002",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.config.InventoryConfiguration",
+            "method_name": "inventoryClock",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:14-14:com.example.config.InventoryConfiguration#inventoryClock:@Bean"
+            ]
+          },
+          {
+            "id": "spring_bean_method:module:.:com.example.config.SecondaryBeanFactory#secondaryBean:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.config.SecondaryBeanFactory",
+            "method_name": "secondaryBean",
+            "source_path": "src/main/java/com/example/config/ConfigurationSurface.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/ConfigurationSurface.java:25-25:com.example.config.SecondaryBeanFactory#secondaryBean:@Bean"
+            ]
+          }
+        ]
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "not_analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "not_analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.config.InventoryConfiguration",
+        "module_id": "module:.",
+        "class_name": "com.example.config.InventoryConfiguration",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/config/ConfigurationSurface.java:7-7:com.example.config.InventoryConfiguration:@Configuration"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}

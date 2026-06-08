@@ -30,9 +30,9 @@ generated API reconstruction, or Spring runtime handler mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.5 Spring application surface repository slice layered on top
-of the v0.4 API surface slice and the v0.3 module-aware Maven metadata, dependency, and
-plugin inventory contract.
+contract is the staged v0.5 Spring application surface repository and configuration
+slices layered on top of the v0.4 API surface slice and the v0.3 module-aware Maven
+metadata, dependency, and plugin inventory contract.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -1488,9 +1488,10 @@ Deterministic sorting rules:
 ### Current Staged v0.5 Spring Application Surface Contract
 
 This section defines the staged v0.5 Spring application surface contract. The current
-implementation emits the the repository signal analyzer slice repository signal slice and the surrounding v0.5
-section shape. Later v0.5 analyzers must fill their subsections without changing the
-meaning of the repository slice. The detailed release-track design is documented in
+implementation emits the the repository signal analyzer slice repository signal slice, the the configuration, bean, and configuration-properties analyzer slice
+configuration/bean/configuration-properties slice, and the surrounding v0.5 section
+shape. Later v0.5 analyzers must fill their subsections without changing the meaning of
+the repository or configuration slices. The detailed release-track design is documented in
 the public v0.5 roadmap and release notes.
 
 The v0.5 contract uses:
@@ -1510,9 +1511,10 @@ The v0.5 contract uses:
   component stereotype facts and as category-specific Spring application surface items.
   This is two contract views over the same source observation, not evidence of multiple
   runtime beans or component registrations.
-- In the current repository-signal slice, `repositories.analysis_status` is `"analyzed"`
-  when supported production source roots exist and the analyzer runs. Not-yet-implemented
-  v0.5 subsections emit `"not_analyzed"` with empty collections when supported
+- In the current staged implementation, `repositories.analysis_status` and
+  `configuration.*.analysis_status` are `"analyzed"` when supported production source
+  roots exist and their analyzers run. Not-yet-implemented v0.5 behavior, messaging, and
+  security subsections emit `"not_analyzed"` with empty collections when supported
   production source roots exist.
 
 Current staged high-level `project-map.json` shape:
@@ -1558,16 +1560,58 @@ Current staged high-level `project-map.json` shape:
     },
     "configuration": {
       "configuration_classes": {
-        "analysis_status": "not_analyzed",
-        "items": []
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:services/orders:com.example.orders.OrderConfiguration",
+            "module_id": "module:services/orders",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.orders.OrderConfiguration",
+            "source_path": "services/orders/src/main/java/com/example/orders/OrderConfiguration.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/OrderConfiguration.java:8-8:com.example.orders.OrderConfiguration:@Configuration"
+            ]
+          }
+        ]
       },
       "configuration_properties": {
-        "analysis_status": "not_analyzed",
-        "items": []
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_properties_type:module:services/orders:com.example.orders.OrderProperties",
+            "module_id": "module:services/orders",
+            "surface_category": "spring_configuration_properties_type",
+            "support_type": "extracted",
+            "class_name": "com.example.orders.OrderProperties",
+            "source_path": "services/orders/src/main/java/com/example/orders/OrderProperties.java",
+            "configuration_properties_signal": "direct_configuration_properties_type",
+            "binding_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/OrderProperties.java:8-8:com.example.orders.OrderProperties:@ConfigurationProperties"
+            ]
+          }
+        ]
       },
       "bean_methods": {
-        "analysis_status": "not_analyzed",
-        "items": []
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_bean_method:module:services/orders:com.example.orders.OrderConfiguration#orderClock:decl:000001",
+            "module_id": "module:services/orders",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.orders.OrderConfiguration",
+            "method_name": "orderClock",
+            "source_path": "services/orders/src/main/java/com/example/orders/OrderConfiguration.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/OrderConfiguration.java:10-10:com.example.orders.OrderConfiguration#orderClock:@Bean"
+            ]
+          }
+        ]
       }
     },
     "behavior": {
@@ -1653,7 +1697,9 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- In the current the repository signal analyzer slice repository slice, non-repository v0.5 subsections emit
+- In the current the configuration, bean, and configuration-properties analyzer slice configuration slice, repository and configuration
+  subsections emit `"analyzed"` when supported production source roots exist and their
+  analyzers run. Behavior, messaging, and security v0.5 subsections still emit
   `"not_analyzed"` with empty `items` or `warning_ids` when supported production source
   roots exist but their analyzers have not been implemented yet.
 - `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
@@ -1666,6 +1712,15 @@ Spring application surface field rules:
   observations and
   `spring_data_repository_interface_signal:<module_id>:<class_name>` for inferred
   Spring Data repository interface extension signals.
+- Current configuration item IDs are stable:
+  `spring_configuration_class:<module_id>:<class_name>` for direct `@Configuration`
+  observations,
+  `spring_configuration_properties_type:<module_id>:<class_name>` for direct
+  `@ConfigurationProperties` observations, and
+  `spring_bean_method:<module_id>:<class_name>#<method_name>:decl:<ordinal>` for direct
+  `@Bean` method observations. The zero-padded declaration ordinal disambiguates
+  source-visible `@Bean` method facts and is not a bean name, dependency relation, or
+  runtime identity claim.
 - Source paths are normalized repository-relative paths and must not be absolute, start
   with `./`, or escape the scanned repository root.
 - `extends_types` preserves bounded source-visible Spring Data base type observations
@@ -1673,9 +1728,18 @@ Spring application surface field rules:
   creation.
 - `entity_relation_status: "not_analyzed"` is required for v0.5 Spring Data repository
   interface signals where a reader might otherwise assume repository-to-entity mapping.
-- `bean_name_status` remains `"not_analyzed"` unless a future implementation explicitly
-  designs bounded source-visible `@Bean` name extraction. Even then, emitted names remain
-  annotation literals, not runtime bean names.
+- `configuration_signal` is `"direct_configuration_class"` for current direct
+  `@Configuration` facts.
+- `configuration_properties_signal` is `"direct_configuration_properties_type"` for
+  current direct `@ConfigurationProperties` facts.
+- `binding_status: "not_analyzed"` is required for current configuration-properties
+  facts. The current implementation does not emit `prefix` or `value` fields and does
+  not extract configuration file values, active profiles, environment values, validation
+  state, or runtime binding success.
+- `bean_signal` is `"direct_bean_method"` for current direct `@Bean` method facts.
+- `bean_name_status` is `"not_analyzed"` for current bean method facts. Future bounded
+  source-visible `@Bean` name extraction would require a separate design; emitted names
+  would remain annotation literals, not runtime bean names.
 
 Planned security warning rules:
 
@@ -1726,6 +1790,13 @@ The current implementation emits:
   interface declaration and one `extends:<fully-qualified-spring-data-base-type>`
   evidence record for each supported directly visible Spring Data base type that led to
   the signal.
+- `annotation` evidence for direct `@Configuration`, `@ConfigurationProperties`, and
+  `@Bean` Spring application surface facts. When the same source-visible
+  `@Configuration` annotation also supports a component fact, both facts reference the
+  same evidence ID and `evidence-index.jsonl` emits a single record. Current
+  configuration-properties facts do not emit `prefix` or `value` fields, and current
+  bean method facts do not emit bean names, scopes, lifecycle, return type, parameter, or
+  dependency graph facts.
 - `annotation` evidence for direct JPA annotations that support entity facts, including
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
@@ -2067,13 +2138,14 @@ Current staged v0.5 Spring application surface `agent-guide.md` behavior:
 - Spring Data repository interface signals should be described as inferred
   source-visible signals. They must not be described as runtime repositories, entity
   ownership, query method behavior, or database access facts.
-- Current not-yet-implemented v0.5 subsections are described as `not_analyzed`; empty
-  collections in those subsections must not be interpreted as absence of configuration,
-  bean, transaction, scheduling, event, messaging, or security signals.
-- Future configuration classes, configuration properties, and bean methods should be
-  described as source-visible Spring configuration signals. They must not claim runtime
-  bean graph, conditional activation, active profiles, config binding success, config
-  values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
+- Configuration classes, configuration properties, and bean methods are described as
+  source-visible Spring configuration signals. They must not claim runtime bean graph,
+  conditional activation, active profiles, config binding success, config values, bean
+  scopes, lifecycle, proxy behavior, or dependency graphs.
+- Current not-yet-implemented behavior, messaging, and security v0.5 subsections are
+  described as `not_analyzed`; empty collections in those subsections must not be
+  interpreted as absence of transaction, scheduling, event, messaging, or security
+  signals.
 - Future transaction, scheduled, event listener, and messaging listener annotations
   should be described as operational change-surface signals. They must not claim runtime
   scheduling, transaction behavior, event delivery, message topology, queue/topic

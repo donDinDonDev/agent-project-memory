@@ -544,15 +544,28 @@
     },
     "configuration": {
       "configuration_classes": {
-        "analysis_status": "not_analyzed",
-        "items": []
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:.:com.example.components.AppConfiguration",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.components.AppConfiguration",
+            "source_path": "src/main/java/com/example/components/InventoryComponents.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+            ]
+          }
+        ]
       },
       "configuration_properties": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "bean_methods": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },

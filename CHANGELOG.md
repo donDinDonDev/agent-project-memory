@@ -17,16 +17,26 @@ architecture documents.
 - Added the staged v0.5 repository signal analyzer for the repository signal analyzer slice, including direct
   source-visible `@Repository` repository stereotype facts and inferred source-visible
   Spring Data repository interface extension signals.
+- Added the staged v0.5 configuration surface analyzer for the configuration, bean, and configuration-properties analyzer slice, including
+  direct source-visible `@Configuration` class facts, direct source-visible
+  `@ConfigurationProperties` type facts with `binding_status: "not_analyzed"`, and
+  direct source-visible `@Bean` method facts with `bean_name_status: "not_analyzed"`.
 - Added `schema_version: "0.5"` output with top-level
-  `spring_application_surface.repositories` repository signal items and explicit
-  `not_analyzed` statuses for v0.5 Spring application surface categories that are not
-  implemented by the repository slice.
+  `spring_application_surface.repositories` repository signal items,
+  `spring_application_surface.configuration` configuration class,
+  configuration-properties, and bean method items, plus explicit `not_analyzed` statuses
+  for v0.5 Spring application surface categories that are not implemented yet.
 - Added Spring Application Surface guidance in `agent-guide.md` that keeps direct
   repository annotation observations, inferred Spring Data interface signals, and
-  repository-to-entity non-analysis distinct.
+  repository-to-entity non-analysis distinct, while rendering configuration, bean, and
+  configuration-properties facts as source-visible signals rather than runtime bean
+  graph or binding claims.
 - Added focused repository analyzer fixtures and golden coverage for direct
   `@Repository`, supported Spring Data base interface extensions, spoofed framework
   origins, and output/evidence resolution.
+- Added focused configuration analyzer fixtures and golden coverage for direct
+  `@Configuration`, direct `@Bean`, direct `@ConfigurationProperties`, wildcard-only
+  imports, spoofed framework origins, and output/evidence resolution.
 
 ### Fixed
 

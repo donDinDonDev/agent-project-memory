@@ -432,17 +432,18 @@ API surface relation evidence:
 
 v0.5 Spring application surface analysis preserves the existing evidence field set and
 reuses existing evidence types. No new global evidence fields are added by the current
-repository signal slice.
+repository and configuration signal slices.
 
 Annotation-backed Spring surface evidence:
 
 - Direct source-visible Spring annotations should use `source_type: "annotation"` when
   the annotation origin is visible as a supported external Spring framework type and
   that exact type is not declared by scanned source.
-- Current annotation-backed facts include direct `@Repository`. Planned future
-  annotation-backed facts include direct `@Configuration`, `@ConfigurationProperties`,
-  `@Bean`, `@Transactional`, `@Scheduled`, `@EventListener`, common Kafka/Rabbit listener
-  annotations, and supported Spring Security configuration annotations.
+- Current annotation-backed facts include direct `@Repository`, direct
+  `@Configuration`, direct `@ConfigurationProperties`, and direct `@Bean`. Planned
+  future annotation-backed facts include direct `@Transactional`, `@Scheduled`,
+  `@EventListener`, common Kafka/Rabbit listener annotations, and supported Spring
+  Security configuration annotations.
 - Annotation evidence supports source-visible facts or warnings only. It does not prove
   runtime bean registration, autowiring, conditional activation, profile state,
   auto-configuration, transaction proxying, scheduler registration, event delivery,
@@ -468,16 +469,20 @@ Spring Data repository interface signal evidence:
 
 Configuration and bean evidence:
 
-- `@ConfigurationProperties` evidence may support a bounded source-visible annotation
-  `prefix` or `value` observation if an implementation explicitly designs and tests that
-  field.
+- Direct `@Configuration` class facts use `annotation` evidence. When the same
+  source-visible `@Configuration` annotation also supports a component fact, both facts
+  reference the same evidence ID and `evidence-index.jsonl` emits a single record.
+- Direct `@ConfigurationProperties` facts use `annotation` evidence. The current
+  implementation does not emit bounded source-visible `prefix` or `value` fields; any
+  future addition of those annotation literals must be explicitly designed and tested.
 - Configuration-properties evidence must not include configuration file contents,
   property keys, property values, YAML node content, XML element content, environment
-  values, decrypted values, or secret-looking values.
-- `@Bean` method evidence may use `annotation` evidence for the annotation and
-  `code_symbol` evidence for the method when source-visible method context is needed.
-  This evidence does not prove an instantiated runtime bean, effective bean name, scope,
-  lifecycle, proxy behavior, or dependency graph.
+  values, decrypted values, active profile state, runtime binding success, or
+  secret-looking values.
+- Direct `@Bean` method facts use `annotation` evidence for the annotation. This
+  evidence does not prove an instantiated runtime bean, effective bean name, scope,
+  lifecycle, proxy behavior, method return type as a runtime bean type, method
+  parameters as dependencies, or dependency graph.
 
 Behavior, messaging, and security evidence:
 

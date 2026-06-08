@@ -723,26 +723,27 @@ public final class AgentGuideGenerator {
         .append("\n");
     markdown.append("- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.\n");
     markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.\n");
+    markdown.append("- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.\n");
     appendSpringRepositories(
         markdown,
         springApplicationSurface.path("repositories"),
         moduleById,
         evidenceById);
-    appendSpringSurfaceStatusLine(
+    appendSpringConfigurationClasses(
         markdown,
-        "Configuration classes",
         springApplicationSurface.path("configuration").path("configuration_classes"),
-        "configuration class analyzer has not run");
-    appendSpringSurfaceStatusLine(
+        moduleById,
+        evidenceById);
+    appendSpringConfigurationProperties(
         markdown,
-        "Configuration properties",
         springApplicationSurface.path("configuration").path("configuration_properties"),
-        "configuration-properties analyzer has not run");
-    appendSpringSurfaceStatusLine(
+        moduleById,
+        evidenceById);
+    appendSpringBeanMethods(
         markdown,
-        "Bean methods",
         springApplicationSurface.path("configuration").path("bean_methods"),
-        "bean method analyzer has not run");
+        moduleById,
+        evidenceById);
     appendSpringSurfaceStatusLine(
         markdown,
         "Transaction boundaries",
@@ -829,6 +830,165 @@ public final class AgentGuideGenerator {
       appendNestedEvidenceLine(markdown, repository.path("evidence_ids"), evidenceById);
     }
     appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "repository observations");
+  }
+
+  private void appendSpringConfigurationClasses(
+      StringBuilder markdown,
+      JsonNode configurationClasses,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = configurationClasses.path("items");
+    String analysisStatus = text(configurationClasses, "analysis_status");
+    markdown.append("- Configuration classes: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because configuration class analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@Configuration` class signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode configuration = items.get(index);
+      markdown.append("  - Configuration class: Detected ")
+          .append(code(text(configuration, "class_name")))
+          .append(" (surface_category: ")
+          .append(code(text(configuration, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(configuration, "support_type")))
+          .append(", configuration_signal: ")
+          .append(code(text(configuration, "configuration_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(
+          markdown,
+          configuration,
+          moduleById,
+          evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "configuration class signals");
+  }
+
+  private void appendSpringConfigurationProperties(
+      StringBuilder markdown,
+      JsonNode configurationProperties,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = configurationProperties.path("items");
+    String analysisStatus = text(configurationProperties, "analysis_status");
+    markdown.append("- Configuration properties: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because configuration-properties analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@ConfigurationProperties` type signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode properties = items.get(index);
+      markdown.append("  - Configuration properties type: Detected ")
+          .append(code(text(properties, "class_name")))
+          .append(" with binding_status ")
+          .append(code(text(properties, "binding_status")))
+          .append(" (surface_category: ")
+          .append(code(text(properties, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(properties, "support_type")))
+          .append(", configuration_properties_signal: ")
+          .append(code(text(properties, "configuration_properties_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(
+          markdown,
+          properties,
+          moduleById,
+          evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        items.size() - visibleCount,
+        "configuration-properties type signals");
+  }
+
+  private void appendSpringBeanMethods(
+      StringBuilder markdown,
+      JsonNode beanMethods,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = beanMethods.path("items");
+    String analysisStatus = text(beanMethods, "analysis_status");
+    markdown.append("- Bean methods: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because bean method analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@Bean` method signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode beanMethod = items.get(index);
+      markdown.append("  - Bean method: Detected ")
+          .append(code(text(beanMethod, "class_name") + "#" + text(beanMethod, "method_name")))
+          .append(" with bean_name_status ")
+          .append(code(text(beanMethod, "bean_name_status")))
+          .append(" (surface_category: ")
+          .append(code(text(beanMethod, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(beanMethod, "support_type")))
+          .append(", bean_signal: ")
+          .append(code(text(beanMethod, "bean_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(
+          markdown,
+          beanMethod,
+          moduleById,
+          evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "bean method signals");
+  }
+
+  private void appendNestedSourceModuleEvidence(
+      StringBuilder markdown,
+      JsonNode fact,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("    - Source: ")
+        .append(code(text(fact, "source_path")))
+        .append("\n");
+    String moduleId = nullableText(fact, "module_id");
+    markdown.append("    - Module: ");
+    if (moduleId == null || moduleId.isBlank()) {
+      markdown.append("Not analyzed; no module identity was recorded.\n");
+    } else {
+      markdown.append("Detected ")
+          .append(moduleLabel(moduleId, moduleById))
+          .append("\n");
+    }
+    appendNestedEvidenceLine(markdown, fact.path("evidence_ids"), evidenceById);
   }
 
   private void appendSpringSurfaceStatusLine(
@@ -1194,9 +1354,9 @@ public final class AgentGuideGenerator {
         .append("repository-to-entity relations; `entity_relation_status: not_analyzed` is ")
         .append("preserved for those inferred signals.\n");
     if (projectMap.path("spring_application_surface").isObject()) {
-      markdown.append("- Not analyzed: v0.5 configuration, bean, transaction, scheduled, event, ")
-          .append("messaging, and security surface categories remain outside the current ")
-          .append("repository-signal implementation slice unless their subsection status says ")
+      markdown.append("- Not analyzed: v0.5 behavior, messaging, and security surface categories ")
+          .append("remain outside the current repository/configuration implementation slices ")
+          .append("unless their subsection status says ")
           .append("`analyzed`.\n");
     }
 
