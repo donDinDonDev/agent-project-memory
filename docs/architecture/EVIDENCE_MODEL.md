@@ -113,6 +113,11 @@ Examples:
   facts.
 - Current v0.4 generated-source path signals, where path presence supports warnings and
   does not imply generated source contents.
+- Planned v0.5 direct source-visible Spring application surface annotations such as
+  `@Repository`, `@Configuration`, `@ConfigurationProperties`, `@Bean`,
+  `@Transactional`, `@Scheduled`, `@EventListener`, common messaging listener
+  annotations, and Spring Security configuration annotations, where these observations
+  support extracted facts or warning signals without runtime reconstruction.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -415,6 +420,67 @@ API surface relation evidence:
 - LLM-generated text, generated Markdown guidance, release notes, and chat output are
   never evidence for API surface facts or relations.
 
+### Planned v0.5 Spring Application Surface Evidence
+
+v0.5 Spring application surface analysis should preserve the existing evidence field set
+and reuse existing evidence types. No new global evidence fields are planned for the
+v0.5 design boundary.
+
+Annotation-backed Spring surface evidence:
+
+- Direct source-visible Spring annotations should use `source_type: "annotation"` when
+  the annotation origin is visible as a supported external Spring framework type and
+  that exact type is not declared by scanned source.
+- Planned annotation-backed facts include direct `@Repository`, `@Configuration`,
+  `@ConfigurationProperties`, `@Bean`, `@Transactional`, `@Scheduled`, `@EventListener`,
+  common Kafka/Rabbit listener annotations, and supported Spring Security configuration
+  annotations.
+- Annotation evidence supports source-visible facts or warnings only. It does not prove
+  runtime bean registration, autowiring, conditional activation, profile state,
+  auto-configuration, transaction proxying, scheduler registration, event delivery,
+  messaging topology, or security policy.
+
+Spring Data repository interface signal evidence:
+
+- Spring Data repository interface extension is an inferred signal, not a direct
+  annotation fact. If the same source-visible interface also has a direct supported
+  `@Repository` annotation, the direct annotation fact and inferred extension signal
+  remain separate observations backed by their own evidence.
+- The signal should preserve `code_symbol` evidence for the source-visible interface
+  declaration and the source-visible extends/base-type observation that led to the
+  inference.
+- This evidence does not prove runtime repository registration, resolved generic entity
+  type, query method behavior, database access, or repository-to-entity relation.
+
+Configuration and bean evidence:
+
+- `@ConfigurationProperties` evidence may support a bounded source-visible annotation
+  `prefix` or `value` observation if an implementation explicitly designs and tests that
+  field.
+- Configuration-properties evidence must not include configuration file contents,
+  property keys, property values, YAML node content, XML element content, environment
+  values, decrypted values, or secret-looking values.
+- `@Bean` method evidence may use `annotation` evidence for the annotation and
+  `code_symbol` evidence for the method when source-visible method context is needed.
+  This evidence does not prove an instantiated runtime bean, effective bean name, scope,
+  lifecycle, proxy behavior, or dependency graph.
+
+Behavior, messaging, and security evidence:
+
+- `@Transactional`, `@Scheduled`, `@EventListener`, and messaging listener annotations
+  support operational change-surface signals only.
+- Messaging listener evidence may prove annotation presence but must not prove runtime
+  topic, queue, exchange, broker, binding, consumer group, delivery, or deployment
+  behavior.
+- Spring Security configuration evidence supports warnings only. It must not prove
+  endpoint protection state, authentication behavior, authorization behavior, filter
+  chain ordering, vulnerability, or security correctness.
+- Security warning evidence may combine `annotation` evidence with `code_symbol`
+  evidence, for example when a source-visible `@Bean` method returns
+  `SecurityFilterChain`.
+- LLM-generated text, generated Markdown guidance, release notes, and chat output are
+  never evidence for Spring application surface facts, warnings, or relations.
+
 ### Spring MVC Interface Mapping Evidence
 
 Source-visible interface-declared endpoint facts reuse the existing evidence types. No
@@ -492,6 +558,8 @@ Examples:
 
 - A test class named `OrderControllerTest` likely covers `OrderController`.
 - A service injected into a controller is likely involved in handling that controller's endpoints.
+- A source-visible interface extending a supported Spring Data repository base type is a
+  likely repository signal, not a direct runtime repository fact.
 
 Inferred relations must be marked as inferred and must preserve the evidence that led to the relation.
 The v0.1 tests inventory uses only naming-convention inferred relations for

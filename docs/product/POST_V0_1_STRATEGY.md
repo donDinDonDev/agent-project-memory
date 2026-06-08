@@ -62,6 +62,8 @@ Public documents should stay concise and useful for users and contributors:
   configuration model.
 - the public v0.4 roadmap and release notes describes the planned v0.4 declared and
   generated API surface taxonomy.
+- the public v0.5 roadmap and release notes describes the planned v0.5
+  deeper Spring application surface taxonomy.
 - `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`
   govern generated output and evidence semantics.
 

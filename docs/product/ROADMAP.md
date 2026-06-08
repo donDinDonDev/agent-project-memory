@@ -10,8 +10,10 @@ list. Connector/import work remains post-v0.1 future work and is not started.
 
 For strategic context, see
 [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
-boundary, see the public v0.4 roadmap and release notes. The v0.3
-build/configuration planning record remains available in
+boundary, see
+the public v0.5 roadmap and release notes.
+Historical planning records remain available in
+the public v0.4 roadmap and release notes and
 the public v0.3 roadmap and release notes.
 
 ## Roadmap Principles
@@ -185,7 +187,14 @@ Release readiness notes:
 
 ## v0.5.0: Deeper Spring Application Surface
 
-Expected direction:
+Planning boundary and contract decisions:
+the public v0.5 roadmap and release notes.
+
+Product outcome: make source-visible Spring application change surfaces visible beyond
+controllers/components while preserving extracted, inferred, uncertain, and warning
+semantics.
+
+Expected scope:
 
 - Repository interface signals.
 - `@ConfigurationProperties`.
@@ -193,8 +202,31 @@ Expected direction:
 - `@Transactional`, `@Scheduled`, and listener annotations.
 - Security and messaging entrypoint warnings where source-visible.
 
-The analyzer must avoid claiming a full runtime bean graph, autowiring graph, security
-policy, or messaging topology.
+Planned taxonomy:
+
+- direct `@Repository` repository stereotype facts;
+- inferred Spring Data repository interface extension signals;
+- direct `@Configuration`, `@ConfigurationProperties`, and `@Bean` facts;
+- direct transaction, scheduled, event listener, and messaging listener annotation
+  signals;
+- Spring Security configuration warnings.
+
+Non-goals include runtime bean graph reconstruction, autowiring graph reconstruction,
+runtime conditional evaluation, auto-configuration reconstruction, repository-to-entity
+relation claims, transaction runtime semantics, scheduling runtime behavior, messaging
+topology reconstruction, security policy claims, and endpoint protection claims.
+
+Planned goal sequence:
+
+1. Design Spring application surface taxonomy and contract.
+2. Implement repository signals.
+3. Implement configuration, bean, and configuration-properties signals.
+4. Implement transaction, scheduled, event, and messaging signals.
+5. Implement Spring Security configuration warnings.
+6. Render Spring application surface guidance.
+7. Evaluate on pinned real Spring projects.
+8. Review and security-audit the v0.5 implementation range.
+9. Prepare v0.5 release materials.
 
 ## v0.6.0: JPA And Domain Model Deepening
 

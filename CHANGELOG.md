@@ -9,6 +9,12 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added the public v0.5 deeper Spring application surface design boundary, including
+  planned taxonomy, output contract direction, evidence semantics, non-goals, follow-up
+  goal sequence, and security gate expectations.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.4.0` as published with release

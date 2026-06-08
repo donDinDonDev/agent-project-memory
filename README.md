@@ -164,7 +164,9 @@ Start here:
   v0.3 build/configuration planning:
   the public v0.3 roadmap and release notes;
   v0.4 API surface planning:
-  the public v0.4 roadmap and release notes.
+  the public v0.4 roadmap and release notes;
+  v0.5 Spring application surface planning:
+  the public v0.5 roadmap and release notes.
 - Output and evidence contracts:
   [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
   [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
@@ -203,6 +205,8 @@ module-aware Maven release is published with no remaining security blockers from
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
 API surface release is published with packaged jar and checksum assets. Future
 connector/import work remains a later optional adapter track and is not started.
+The next public design boundary is v0.5 deeper Spring application surface planning; no
+v0.5 analyzer implementation has started in the current release state.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

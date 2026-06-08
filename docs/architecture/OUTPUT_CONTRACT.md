@@ -1484,6 +1484,183 @@ Deterministic sorting rules:
 - API surface warning ID lists follow the existing warning sort order for their
   referenced warning items.
 
+### Planned v0.5 Spring Application Surface Contract
+
+This section defines the planned v0.5 Spring application surface contract. The current
+v0.4.0 implementation does not emit this section. The detailed release-track design is
+documented in
+the public v0.5 roadmap and release notes.
+
+The planned v0.5 contract uses:
+
+- `schema_version: "0.5"` for an atomic public output state that preserves the v0.4
+  module-aware build/config and API surface contract and adds the Spring application
+  surface section shape.
+- The same four output files under `.project-memory/`.
+- A top-level `spring_application_surface` object that groups deeper Spring surface
+  facts and warning references without changing the meaning of existing `components`,
+  `entities`, `tests`, `endpoints`, `warnings`, or `api_surface` sections.
+- Existing evidence fields and evidence types. Direct annotation-backed facts reuse
+  `annotation` evidence; source-visible Java structural observations reuse
+  `code_symbol` evidence; security warnings reuse `annotation` and `code_symbol`
+  evidence.
+- Direct `@Repository` and `@Configuration` observations may appear both as existing
+  component stereotype facts and as category-specific Spring application surface items.
+  This is two contract views over the same source observation, not evidence of multiple
+  runtime beans or component registrations.
+
+Planned high-level `project-map.json` shape:
+
+```json
+{
+  "schema_version": "0.5",
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_repository:module:services/orders:com.example.orders.OrderRepository",
+          "module_id": "module:services/orders",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.orders.OrderRepository",
+          "source_path": "services/orders/src/main/java/com/example/orders/OrderRepository.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "not_analyzed",
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:code_symbol",
+            "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": []
+      }
+    }
+  }
+}
+```
+
+Spring application surface taxonomy rules:
+
+- `spring_repository_stereotype` means a direct source-visible `@Repository` annotation
+  on a Java class or interface. It is an extracted fact and must not imply Spring Data
+  repository behavior, query semantics, runtime bean registration, or entity ownership.
+- `spring_data_repository_interface_signal` means a source-visible Java interface
+  appears to extend a supported Spring Data repository base type. It is an inferred
+  signal and must not imply runtime repository registration, resolved generic entity
+  type, query method behavior, database access, or repository-to-entity relation.
+- `spring_configuration_class` means a direct source-visible `@Configuration`
+  annotation. It must not imply conditional activation, bean graph, component scan
+  result, or auto-configuration behavior.
+- `spring_configuration_properties_type` means a direct source-visible
+  `@ConfigurationProperties` annotation. Optional bounded `prefix` or `value` fields, if
+  implemented, are annotation literals only and must not imply runtime binding,
+  environment values, active profiles, or config file values.
+- `spring_bean_method` means a direct source-visible `@Bean` method. It must not imply
+  an instantiated runtime bean, effective bean name, scope, lifecycle, proxy behavior, or
+  dependency graph.
+- `spring_transaction_boundary` means a direct source-visible `@Transactional`
+  annotation on a class or method. It must not imply runtime proxy application,
+  effective transaction manager, propagation semantics, isolation semantics, rollback
+  behavior, or call graph effects.
+- `spring_scheduled_method` means a direct source-visible `@Scheduled` method. It must
+  not imply scheduler enablement, runtime registration, cron correctness, execution
+  frequency, lock behavior, or cluster behavior.
+- `spring_event_listener` means a direct source-visible Spring event listener annotation
+  such as `@EventListener`. It must not imply event publication paths, listener ordering,
+  transaction phase behavior, runtime event delivery, or call graph behavior.
+- `messaging_listener_signal` means a direct source-visible messaging listener
+  annotation, initially planned for common Kafka and Rabbit listener annotations. It must
+  not imply runtime broker topology, queue/topic existence, exchange bindings, consumer
+  group membership, delivery semantics, or deployment configuration.
+- `spring_security_configuration_warning` means a bounded source-visible Spring Security
+  configuration signal. It lives in `warnings.items` and is referenced by
+  `spring_application_surface.security.configuration_warnings.warning_ids`; it must not
+  imply endpoint protection state, authentication provider behavior, authorization
+  rules, filter-chain ordering, vulnerability, or security correctness.
+
+Spring application surface field rules:
+
+- `spring_application_surface.analysis_status` is `"analyzed"` when any v0.5 Spring
+  surface analyzer runs. It is `"not_detected"` only when no supported production source
+  input is available.
+- Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
+  when their item or warning-reference collections are empty. They are `"not_detected"`
+  only when no supported input exists for that subsection.
+- `surface_category` uses one of the planned taxonomy values. Warning-reference
+  containers do not duplicate warning payloads or use `surface_category`.
+- Item `support_type` is `"extracted"` for direct source-visible facts and `"inferred"`
+  for source-visible signals derived from structure or conventions.
+- All module-owned Spring surface items include direct `module_id` fields.
+- Source paths are normalized repository-relative paths and must not be absolute, start
+  with `./`, or escape the scanned repository root.
+- `extends_types` preserves bounded source-visible Spring Data base type observations
+  only. It must not imply classpath resolution, entity relation, or runtime repository
+  creation.
+- `entity_relation_status: "not_analyzed"` is required for v0.5 Spring Data repository
+  interface signals where a reader might otherwise assume repository-to-entity mapping.
+- `bean_name_status` remains `"not_analyzed"` unless a future implementation explicitly
+  designs bounded source-visible `@Bean` name extraction. Even then, emitted names remain
+  annotation literals, not runtime bean names.
+
+Planned security warning rules:
+
+- Spring Security configuration warnings use `category: "spring_security"`.
+- Planned warning `signal` values include `"security_configuration_annotation"` and
+  `"security_filter_chain_bean"` when directly source-visible.
+- Warning messages must use detected-signal wording. They must not claim endpoint
+  protection, authentication behavior, authorization behavior, runtime filter order,
+  vulnerability, or policy correctness.
+
+Deterministic sorting rules:
+
+- Spring surface item lists sort by module order, source path, class name, method name
+  when present, `surface_category`, and `id`.
+- Security warning ID lists follow the existing warning sort order for their referenced
+  warning items.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -1841,6 +2018,26 @@ Current v0.4 API surface `agent-guide.md` behavior:
   source/spec agreement, service ownership, generated source contents, generated client
   SDKs, or OpenAPI/runtime agreement unless future deterministic relations explicitly
   support those claims.
+
+Planned v0.5 Spring application surface `agent-guide.md` behavior:
+
+- The guide should add a `Spring Application Surface` section generated from structured
+  `spring_application_surface` facts and resolving evidence only.
+- Repository stereotype entries should be described as direct annotation observations.
+- Spring Data repository interface signals should be described as inferred
+  source-visible signals. They must not be described as runtime repositories, entity
+  ownership, query method behavior, or database access facts.
+- Configuration classes, configuration properties, and bean methods should be described
+  as source-visible Spring configuration signals. They must not claim runtime bean graph,
+  conditional activation, active profiles, config binding success, config values, bean
+  scopes, lifecycle, proxy behavior, or dependency graphs.
+- Transaction, scheduled, event listener, and messaging listener annotations should be
+  described as operational change-surface signals. They must not claim runtime
+  scheduling, transaction behavior, event delivery, message topology, queue/topic
+  existence, or broker behavior.
+- Spring Security configuration warnings should be described as inspection hints and
+  change-risk signals. They must not claim security policy, endpoint protection,
+  authentication behavior, authorization behavior, vulnerability, or correctness.
 
 Markdown rendering safety:
 
