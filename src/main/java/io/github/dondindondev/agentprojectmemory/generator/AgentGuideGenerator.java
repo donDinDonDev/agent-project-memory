@@ -35,7 +35,12 @@ public final class AgentGuideGenerator {
     appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
     appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
     appendApiSurfaceInterpretation(markdown, projectMap.path("api_surface"), moduleById, evidenceById);
-    appendSpringApplicationSurface(markdown, projectMap.path("spring_application_surface"), moduleById, evidenceById);
+    appendSpringApplicationSurface(
+        markdown,
+        projectMap.path("spring_application_surface"),
+        projectMap.path("warnings"),
+        moduleById,
+        evidenceById);
     appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
     appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
@@ -711,6 +716,7 @@ public final class AgentGuideGenerator {
   private void appendSpringApplicationSurface(
       StringBuilder markdown,
       JsonNode springApplicationSurface,
+      JsonNode warnings,
       Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
     if (!springApplicationSurface.isObject()) {
@@ -725,6 +731,7 @@ public final class AgentGuideGenerator {
     markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.\n");
     markdown.append("- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.\n");
     markdown.append("- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.\n");
+    markdown.append("- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.\n");
     appendSpringRepositories(
         markdown,
         springApplicationSurface.path("repositories"),
@@ -765,7 +772,12 @@ public final class AgentGuideGenerator {
         springApplicationSurface.path("messaging").path("listener_signals"),
         moduleById,
         evidenceById);
-    appendSpringSecurityWarningStatus(markdown, springApplicationSurface.path("security").path("configuration_warnings"));
+    appendSpringSecurityWarningStatus(
+        markdown,
+        springApplicationSurface.path("security").path("configuration_warnings"),
+        warnings,
+        moduleById,
+        evidenceById);
     markdown.append("\n");
   }
 
@@ -1215,7 +1227,12 @@ public final class AgentGuideGenerator {
         .append(".\n");
   }
 
-  private void appendSpringSecurityWarningStatus(StringBuilder markdown, JsonNode section) {
+  private void appendSpringSecurityWarningStatus(
+      StringBuilder markdown,
+      JsonNode section,
+      JsonNode warnings,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
     String analysisStatus = text(section, "analysis_status");
     List<String> warningIds = stringValues(section.path("warning_ids"));
     markdown.append("- Spring Security configuration warnings: status ")
@@ -1230,11 +1247,50 @@ public final class AgentGuideGenerator {
     }
     markdown.append("; referenced ")
         .append(warningIds.size())
-        .append(" warning ID")
+        .append(" inspection hint/change-risk warning ID")
         .append(warningIds.size() == 1 ? "" : "s")
         .append(" ")
         .append(cappedCodeList(warningIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning IDs"))
         .append(".\n");
+
+    Map<String, JsonNode> warningById = warningById(warnings);
+    int visibleCount = Math.min(warningIds.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      String warningId = warningIds.get(index);
+      JsonNode warning = warningById.get(warningId);
+      if (warning == null) {
+        markdown.append("  - Spring Security warning: Referenced warning ID ")
+            .append(code(warningId))
+            .append(" was not found in `warnings.items`.\n");
+        continue;
+      }
+      markdown.append("  - Spring Security warning: Inspection hint ")
+          .append(code(text(warning, "signal")));
+      String moduleDescription = moduleWarningLabel(warning, moduleById);
+      if (!moduleDescription.isBlank()) {
+        markdown.append(" for ").append(moduleDescription);
+      }
+      markdown.append(" at ")
+          .append(code(text(warning, "source_path")))
+          .append(". ")
+          .append(MarkdownRenderer.text(text(warning, "message")))
+          .append("\n");
+      appendNestedEvidenceLine(markdown, warning.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, warningIds.size() - visibleCount, "Spring Security warnings");
+  }
+
+  private Map<String, JsonNode> warningById(JsonNode warnings) {
+    JsonNode items = warnings.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      return Map.of();
+    }
+
+    Map<String, JsonNode> warningById = new LinkedHashMap<>();
+    for (JsonNode warning : items) {
+      warningById.put(text(warning, "id"), warning);
+    }
+    return warningById;
   }
 
   private void appendBuildConfigWarningSummary(
@@ -1555,8 +1611,10 @@ public final class AgentGuideGenerator {
           .append("Transaction propagation, scheduler registration, event delivery, message ")
           .append("destinations, broker topology, consumer groups, and delivery semantics are ")
           .append("not claimed.\n");
-      markdown.append("- Not analyzed: v0.5 security surface categories remain outside the current ")
-          .append("implementation slices unless their subsection status says `analyzed`.\n");
+      markdown.append("- Not analyzed: Security policy, endpoint protection state, ")
+          .append("authentication behavior, authorization behavior, filter-chain ordering, ")
+          .append("vulnerabilities, and correctness are not claimed. v0.5 Spring Security ")
+          .append("configuration warnings are bounded source-visible inspection hints only.\n");
     }
 
     if (projectMap.path("endpoints").isEmpty()) {

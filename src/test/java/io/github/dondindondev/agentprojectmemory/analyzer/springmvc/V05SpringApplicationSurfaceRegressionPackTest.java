@@ -68,6 +68,26 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
   }
 
   @Test
+  void v05SecuritySurfaceGoldenOutputsRemainStable() throws Exception {
+    GeneratedOutput output = generateFromFixture("v0-5-spring-security-surface");
+
+    assertAll(
+        () -> assertEquals(
+            expected("v0-5-spring-security-surface", "project-map.json"),
+            output.projectMap()),
+        () -> assertEquals(
+            expected("v0-5-spring-security-surface", "evidence-index.jsonl"),
+            output.evidenceIndex()),
+        () -> assertEquals(
+            expected("v0-5-spring-security-surface", "endpoints.md"),
+            output.endpoints()),
+        () -> assertEquals(
+            expected("v0-5-spring-security-surface", "agent-guide.md"),
+            output.agentGuide()),
+        () -> assertEvidenceAndReferenceIdsResolve(output));
+  }
+
+  @Test
   void configurationSurfaceKeepsFactsSourceVisibleAndRuntimeStatusesNotAnalyzed()
       throws Exception {
     GeneratedOutput output = generateFromFixture("v0-5-spring-configuration-surface");
@@ -169,6 +189,43 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
         () -> assertTrue(output.agentGuide().contains("broker topology")));
   }
 
+  @Test
+  void securitySurfaceKeepsWarningsConservativeAndPolicyClaimsOutOfOutput()
+      throws Exception {
+    GeneratedOutput output = generateFromFixture("v0-5-spring-security-surface");
+    JsonNode root = JSON.readTree(output.projectMap());
+    JsonNode securityWarnings = root.path("spring_application_surface")
+        .path("security")
+        .path("configuration_warnings");
+    JsonNode warningItems = root.path("warnings").path("items");
+    List<String> warningIds = jsonArrayValues(securityWarnings.path("warning_ids"));
+
+    assertAll(
+        () -> assertEquals("analyzed", securityWarnings.path("analysis_status").asText()),
+        () -> assertEquals(4, warningIds.size()),
+        () -> assertTrue(warningIds.stream()
+            .allMatch(id -> id.startsWith("warning:spring_security:"))),
+        () -> assertEquals(
+            List.of(
+                "security_configuration_annotation",
+                "security_configuration_annotation",
+                "security_filter_chain_bean",
+                "security_filter_chain_bean"),
+            jsonTextValues(warningItems, "signal")),
+        () -> assertTrue(output.projectMap().contains("\"category\": \"spring_security\"")),
+        () -> assertTrue(output.projectMap().contains("applicationSecurity")),
+        () -> assertTrue(output.projectMap().contains("managementSecurity")),
+        () -> assertFalse(output.projectMap().contains("notSecurityFilterChain")),
+        () -> assertTrue(output.evidenceIndex().contains("\"source_type\":\"code_symbol\"")),
+        () -> assertTrue(output.evidenceIndex().contains("\"symbol_name\":\"SecurityFilterChain\"")),
+        () -> assertTrue(output.agentGuide().contains("inspection hints and change-risk signals")),
+        () -> assertTrue(output.agentGuide().contains("they do not prove security policy")),
+        () -> assertFalse(output.projectMap().contains("endpoint_protection")),
+        () -> assertFalse(output.projectMap().contains("authorization_rules")),
+        () -> assertTrue(output.agentGuide().contains("endpoint protection state")),
+        () -> assertTrue(output.agentGuide().contains("are not claimed")));
+  }
+
   private GeneratedOutput generateFromFixture(String fixtureName) throws Exception {
     Path fixtureRoot = Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/" + fixtureName)).toURI());
@@ -242,6 +299,12 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
   private List<String> jsonTextValues(JsonNode array, String fieldName) {
     return java.util.stream.StreamSupport.stream(array.spliterator(), false)
         .map(item -> item.path(fieldName).asText())
+        .toList();
+  }
+
+  private List<String> jsonArrayValues(JsonNode array) {
+    return java.util.stream.StreamSupport.stream(array.spliterator(), false)
+        .map(JsonNode::asText)
         .toList();
   }
 

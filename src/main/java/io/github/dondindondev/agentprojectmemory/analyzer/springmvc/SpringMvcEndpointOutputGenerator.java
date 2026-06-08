@@ -66,6 +66,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringReposi
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringScheduledMethodFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringSecurityConfigurationAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringTransactionBoundaryFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
@@ -140,6 +141,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String WARNING_CATEGORY_HIDDEN_HTTP_SURFACE = "hidden_http_surface";
   private static final String WARNING_SIGNAL_OPENAPI_SPEC_FILE = "openapi_spec_file";
   private static final String WARNING_SIGNAL_REPOSITORY_REST_RESOURCE = "repository_rest_resource";
+  private static final String WARNING_CATEGORY_SPRING_SECURITY = "spring_security";
   private static final String WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED =
       "generated_source_root_path_detected";
   private static final Comparator<EvidenceRecord> EVIDENCE_ORDER = Comparator
@@ -294,6 +296,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final SpringConfigurationAnalyzer springConfigurationAnalyzer =
       new SpringConfigurationAnalyzer();
   private final SpringBehaviorAnalyzer springBehaviorAnalyzer = new SpringBehaviorAnalyzer();
+  private final SpringSecurityConfigurationAnalyzer springSecurityConfigurationAnalyzer =
+      new SpringSecurityConfigurationAnalyzer();
   private final OpenApiSpecDiscoveryAnalyzer openApiSpecDiscoveryAnalyzer =
       new OpenApiSpecDiscoveryAnalyzer();
   private final OpenApiOperationAnalyzer openApiOperationAnalyzer =
@@ -644,6 +648,7 @@ public final class SpringMvcEndpointOutputGenerator {
     boolean springRepositoryAnalyzerRan = false;
     boolean springConfigurationAnalyzerRan = false;
     boolean springBehaviorAnalyzerRan = false;
+    boolean springSecurityAnalyzerRan = false;
     boolean entityAnalyzerRan = false;
     boolean testAnalyzerRan = false;
 
@@ -769,6 +774,23 @@ public final class SpringMvcEndpointOutputGenerator {
         springBehaviorEvidence.addAll(springBehaviorAnalysis.evidence());
         springBehaviorAnalyzerRan = true;
 
+        AnalysisWarningAnalysis securityWarningAnalysis = springSecurityConfigurationAnalyzer.analyze(
+            repositoryRoot,
+            sourceRoots,
+            module.modulePath());
+        securityWarningAnalysis.warnings().forEach(warning ->
+            warnings.add(new ModuleScopedWarningFact(
+                warning.id(),
+                warning.category(),
+                warning.signal(),
+                module.moduleId(),
+                order,
+                warning.message(),
+                warning.sourcePath(),
+                warning.evidenceIds())));
+        warningEvidence.addAll(securityWarningAnalysis.evidence());
+        springSecurityAnalyzerRan = true;
+
         JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(repositoryRoot, sourceRoots);
         entityAnalysis.entities().forEach(entity ->
             entities.add(new ModuleScopedEntityFact(module.moduleId(), order, entity)));
@@ -829,6 +851,7 @@ public final class SpringMvcEndpointOutputGenerator {
         springConfigurationAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         springBehaviorAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         springBehaviorAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
+        springSecurityAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         entityAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         testAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         endpointEvidence,
@@ -2272,9 +2295,6 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private void appendSpringApplicationSurface(StringBuilder json, ModuleAwareScan scan) {
     String analysisStatus = springApplicationSurfaceAnalysisStatus(scan);
-    String futureSectionStatus = ANALYSIS_ANALYZED.equals(analysisStatus)
-        ? ANALYSIS_NOT_ANALYZED
-        : ANALYSIS_NOT_DETECTED;
     json.append("  \"spring_application_surface\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", analysisStatus, true);
     appendSpringRepositorySection(
@@ -2285,7 +2305,11 @@ public final class SpringMvcEndpointOutputGenerator {
     appendSpringConfigurationSection(json, scan, scan.springConfigurationAnalysisStatus(), true);
     appendSpringBehaviorSection(json, scan, scan.springBehaviorAnalysisStatus(), true);
     appendSpringMessagingSection(json, scan, scan.springMessagingAnalysisStatus(), true);
-    appendSpringSecurityShell(json, futureSectionStatus, false);
+    appendSpringSecurityShell(
+        json,
+        scan.springSecurityAnalysisStatus(),
+        springSecurityWarningIds(scan.warnings()),
+        false);
     json.append("  },\n");
   }
 
@@ -2293,7 +2317,8 @@ public final class SpringMvcEndpointOutputGenerator {
     if (ANALYSIS_ANALYZED.equals(scan.springRepositoryAnalysisStatus())
         || ANALYSIS_ANALYZED.equals(scan.springConfigurationAnalysisStatus())
         || ANALYSIS_ANALYZED.equals(scan.springBehaviorAnalysisStatus())
-        || ANALYSIS_ANALYZED.equals(scan.springMessagingAnalysisStatus())) {
+        || ANALYSIS_ANALYZED.equals(scan.springMessagingAnalysisStatus())
+        || ANALYSIS_ANALYZED.equals(scan.springSecurityAnalysisStatus())) {
       return ANALYSIS_ANALYZED;
     }
     return ANALYSIS_NOT_DETECTED;
@@ -2855,13 +2880,14 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendSpringSecurityShell(
       StringBuilder json,
       String analysisStatus,
+      List<String> warningIds,
       boolean trailingComma) {
     indent(json, 2);
     json.append("\"security\": {\n");
     indent(json, 3);
     json.append("\"configuration_warnings\": {\n");
     appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
-    appendIndentedStringArrayField(json, 4, "warning_ids", List.of(), false);
+    appendIndentedStringArrayField(json, 4, "warning_ids", warningIds, false);
     indent(json, 3);
     json.append("}\n");
     indent(json, 2);
@@ -2930,6 +2956,13 @@ public final class SpringMvcEndpointOutputGenerator {
         .filter(warning -> !WARNING_SIGNAL_OPENAPI_SPEC_FILE.equals(warning.signal()))
         .filter(warning -> !WARNING_SIGNAL_REPOSITORY_REST_RESOURCE.equals(warning.signal()))
         .filter(warning -> !WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN.equals(warning.signal()))
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+  }
+
+  private List<String> springSecurityWarningIds(List<ModuleScopedWarningFact> warnings) {
+    return warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_SPRING_SECURITY.equals(warning.category()))
         .map(ModuleScopedWarningFact::id)
         .toList();
   }
@@ -4119,6 +4152,7 @@ public final class SpringMvcEndpointOutputGenerator {
       String springConfigurationAnalysisStatus,
       String springBehaviorAnalysisStatus,
       String springMessagingAnalysisStatus,
+      String springSecurityAnalysisStatus,
       String entityAnalysisStatus,
       String testAnalysisStatus,
       List<SpringMvcEndpointEvidence> endpointEvidence,

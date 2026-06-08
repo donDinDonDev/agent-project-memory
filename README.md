@@ -82,8 +82,8 @@ module warnings are detected.
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
 Spring component, Spring repository signal, Spring configuration surface, Spring
-behavior/messaging signal, JPA entity, hidden HTTP surface warning, and tests inventory
-analyzers per supported module. For
+behavior/messaging signal, Spring Security configuration warning, JPA entity, hidden
+HTTP surface warning, and tests inventory analyzers per supported module. For
 compatibility with earlier local source-root scans, a
 repository without a root `pom.xml` but with supported root source, test, or resource roots is
 represented as the scan-root module with module discovery marked `not_detected`.
@@ -103,7 +103,10 @@ class, `@ConfigurationProperties` type, and `@Bean` method signals without runti
 graph or binding claims, direct source-visible `@Transactional`, `@Scheduled`, and
 `@EventListener` signals, and common source-visible Kafka/Rabbit listener annotation
 signals without runtime transaction, scheduler, event delivery, message topology, or
-broker behavior claims. It also discovers common local
+broker behavior claims, plus source-visible Spring Security configuration warnings for
+supported security annotations and `SecurityFilterChain` `@Bean` methods without
+security policy, endpoint protection, authentication, authorization, filter-chain
+ordering, vulnerability, or correctness claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
 inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, then writes:
 
@@ -138,9 +141,10 @@ the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
 `spring_application_surface.behavior` transaction, scheduled, and event listener
 inventories, `spring_application_surface.messaging.listener_signals` inventories, and
+`spring_application_surface.security.configuration_warnings` warning-ID references, and
 evidence ID references. The current v0.5 Spring application surface implementation emits
-repository, configuration-surface, behavior, and messaging facts; the security subsection
-remains present with explicit `not_analyzed` or `not_detected` status.
+repository, configuration-surface, behavior, and messaging facts, plus Spring Security
+configuration warning references when bounded source-visible signals are detected.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -225,8 +229,9 @@ final discovery baseline. The v0.3 build/configuration release is published. The
 API surface release is published with packaged jar and checksum assets. The v0.5
 deeper Spring application surface release track has started with the repository signal
 configuration surface analyzer slices and the behavior/messaging signal slice
-implemented locally. Future connector/import work remains a later optional adapter
-track and is not started.
+implemented locally, plus Spring Security configuration warning signals implemented
+locally. Future connector/import work remains a later optional adapter track and is not
+started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -243,8 +248,10 @@ repository interface extensions, deterministic configuration surface extraction 
 direct `@Configuration`, direct `@Bean`, and direct `@ConfigurationProperties`
 observations, deterministic behavior and messaging signal extraction for direct
 `@Transactional`, `@Scheduled`, `@EventListener`, and common Kafka/Rabbit listener
-annotations, deterministic `endpoints.md`, and deterministic `agent-guide.md` generation
-from the structured facts and evidence index.
+annotations, deterministic Spring Security configuration warning extraction for
+supported security annotations and `SecurityFilterChain` `@Bean` methods, deterministic
+`endpoints.md`, and deterministic `agent-guide.md` generation from the structured facts
+and evidence index.
 
 Current limitations:
 
@@ -327,8 +334,13 @@ Current limitations:
   presence and framework family only; it does not serialize topic, queue, exchange,
   routing-key, or group-id annotation values, verify broker topology, infer consumer
   groups, bindings, delivery semantics, or deployment configuration.
-- The v0.5 Spring Security configuration warning category is not analyzed by the current
-  implementation slice.
+- Spring application surface security analysis is limited to source-visible Spring
+  Security configuration warnings for supported direct security annotations and
+  `SecurityFilterChain` `@Bean` methods visible through a fully qualified name or
+  explicit single-type import. It records warning/change-risk signals only; it does not
+  analyze security policy, endpoint protection state, authentication behavior,
+  authorization behavior, runtime filter-chain ordering, vulnerabilities, or security
+  correctness.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
   `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
   conservative source-visible `@MappedSuperclass` chain, and field-level `@ManyToOne`,

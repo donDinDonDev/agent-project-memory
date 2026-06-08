@@ -116,9 +116,8 @@ Examples:
 - Current v0.5 direct source-visible `@Repository`, `@Configuration`,
   `@ConfigurationProperties`, `@Bean`, `@Transactional`, `@Scheduled`,
   `@EventListener`, and common Kafka/Rabbit listener annotation Spring application
-  surface facts, plus planned future Spring Security configuration annotations, where
-  these observations support extracted facts or warning signals without runtime
-  reconstruction.
+  surface facts, plus Spring Security configuration warnings, where these observations
+  support extracted facts or warning signals without runtime reconstruction.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -442,8 +441,9 @@ Annotation-backed Spring surface evidence:
 - Current annotation-backed facts include direct `@Repository`, direct
   `@Configuration`, direct `@ConfigurationProperties`, direct `@Bean`, direct
   `@Transactional`, direct `@Scheduled`, direct `@EventListener`, and common
-  Kafka/Rabbit listener annotations. Planned future annotation-backed facts include
-  supported Spring Security configuration annotations.
+  Kafka/Rabbit listener annotations. Current annotation-backed warnings include
+  supported Spring Security configuration annotations and the `@Bean` annotation on
+  source-visible `SecurityFilterChain` bean methods.
 - Annotation evidence supports source-visible facts or warnings only. It does not prove
   runtime bean registration, autowiring, conditional activation, profile state,
   auto-configuration, transaction proxying, scheduler registration, event delivery,

@@ -61,6 +61,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.
 - Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
 - Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
+- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
 - Repository signals: status `analyzed`; detected none.
 - Configuration classes: status `analyzed`; detected none.
 - Configuration properties: status `analyzed`; detected none.
@@ -69,7 +70,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Scheduled methods: status `analyzed`; detected none.
 - Event listeners: status `analyzed`; detected none.
 - Messaging listener signals: status `analyzed`; detected none.
-- Spring Security configuration warnings: status `not_analyzed`; not analyzed in the current v0.5 implementation slice because security configuration warning analysis has not run.
+- Spring Security configuration warnings: status `analyzed`; detected none.
 
 ## Detected Spring MVC Endpoints
 
@@ -107,7 +108,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 - Not analyzed: Spring Data repository interface signals do not prove runtime repository registration, query method behavior, database access, or repository-to-entity relations; `entity_relation_status: not_analyzed` is preserved for those inferred signals.
 - Not analyzed: v0.5 transaction, scheduling, event listener, and messaging listener facts are annotation-presence change-surface signals only. Transaction propagation, scheduler registration, event delivery, message destinations, broker topology, consumer groups, and delivery semantics are not claimed.
-- Not analyzed: v0.5 security surface categories remain outside the current implementation slices unless their subsection status says `analyzed`.
+- Not analyzed: Security policy, endpoint protection state, authentication behavior, authorization behavior, filter-chain ordering, vulnerabilities, and correctness are not claimed. v0.5 Spring Security configuration warnings are bounded source-visible inspection hints only.
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
 - Not analyzed: supported Maven test roots were not detected.

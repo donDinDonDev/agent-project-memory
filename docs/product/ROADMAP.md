@@ -10,7 +10,8 @@ list. Connector/import work remains post-v0.1 future work and is not started.
 The v0.5 deeper Spring application surface track is active: the taxonomy/design goal is
 documented, the repository signal analyzer slice is implemented locally, and the
 configuration/bean/configuration-properties analyzer slice and behavior/messaging signal
-slice are implemented locally. Remaining v0.5 analyzers are still planned.
+slice and Spring Security configuration warning slice are implemented locally. Remaining
+v0.5 evaluation, audit, and release-prep work is still planned.
 
 For strategic context, see
 [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
@@ -206,7 +207,8 @@ Expected scope:
 - `@Bean` methods. (implemented for the current configuration slice)
 - `@Transactional`, `@Scheduled`, and listener annotations. (implemented for the current
   behavior/messaging slice)
-- Security and messaging entrypoint warnings where source-visible.
+- Security configuration warnings where source-visible. (implemented for the current
+  security-warning slice)
 
 Planned taxonomy:
 
@@ -233,7 +235,8 @@ Planned goal sequence:
 4. Implement transaction, scheduled, event, and messaging signals. (implemented for
    direct `@Transactional`, direct `@Scheduled`, direct `@EventListener`, and common
    Kafka/Rabbit listener annotation signals)
-5. Implement Spring Security configuration warnings.
+5. Implement Spring Security configuration warnings. (implemented for the current
+   security-warning slice)
 6. Render Spring application surface guidance.
 7. Evaluate on pinned real Spring projects.
 8. Review and security-audit the v0.5 implementation range.

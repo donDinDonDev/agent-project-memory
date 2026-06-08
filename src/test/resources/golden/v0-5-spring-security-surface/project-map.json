@@ -1,0 +1,301 @@
+{
+  "schema_version": "0.5",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v0-5-spring-security-surface",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_bean_method:module:.:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.security.SecuritySurface",
+            "method_name": "applicationSecurity",
+            "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean"
+            ]
+          },
+          {
+            "id": "spring_bean_method:module:.:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.security.SecuritySurface",
+            "method_name": "managementSecurity",
+            "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean"
+            ]
+          }
+        ]
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": [
+          "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002",
+          "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001",
+          "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002"
+        ]
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002",
+        "category": "spring_security",
+        "signal": "security_configuration_annotation",
+        "module_id": "module:.",
+        "message": "Spring Security configuration annotation detected as a source-visible inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecuritySurface.java:9-9:com.example.security.SecuritySurface:@EnableMethodSecurity"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001",
+        "category": "spring_security",
+        "signal": "security_configuration_annotation",
+        "module_id": "module:.",
+        "message": "Spring Security configuration annotation detected as a source-visible inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecuritySurface.java:8-8:com.example.security.SecuritySurface:@EnableWebSecurity"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+        "category": "spring_security",
+        "signal": "security_filter_chain_bean",
+        "module_id": "module:.",
+        "message": "SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean",
+          "ev:src/main/java/com/example/security/SecuritySurface.java:12-12:com.example.security.SecuritySurface#applicationSecurity:return:SecurityFilterChain"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+        "category": "spring_security",
+        "signal": "security_filter_chain_bean",
+        "module_id": "module:.",
+        "message": "SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecuritySurface.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean",
+          "ev:src/main/java/com/example/security/SecuritySurface.java:17-17:com.example.security.SecuritySurface#managementSecurity:return:SecurityFilterChain"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}

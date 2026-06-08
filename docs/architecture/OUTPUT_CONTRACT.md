@@ -1490,10 +1490,11 @@ Deterministic sorting rules:
 This section defines the staged v0.5 Spring application surface contract. The current
 implementation emits the the repository signal analyzer slice repository signal slice, the the configuration, bean, and configuration-properties analyzer slice
 configuration/bean/configuration-properties slice, the the transaction, scheduled, event, and messaging signal slice
-transaction/scheduled/event/messaging signal slice, and the surrounding v0.5 section
-shape. Later v0.5 analyzers must fill their subsections without changing the meaning of
-the repository, configuration, behavior, or messaging slices. The detailed release-track
-design is documented in the public v0.5 roadmap and release notes.
+transaction/scheduled/event/messaging signal slice, and the the Spring Security configuration warning slice Spring Security
+configuration warning slice. Later v0.5 work must not change the meaning of the
+repository, configuration, behavior, messaging, or security-warning slices. The detailed
+release-track design is documented in
+the public v0.5 roadmap and release notes.
 
 The v0.5 contract uses:
 
@@ -1515,9 +1516,9 @@ The v0.5 contract uses:
 - In the current staged implementation, `repositories.analysis_status`,
   `configuration.*.analysis_status`, `behavior.*.analysis_status`, and
   `messaging.listener_signals.analysis_status` are `"analyzed"` when supported
-  production source roots exist and their analyzers run. The not-yet-implemented v0.5
-  security subsection emits `"not_analyzed"` with an empty warning ID collection when
-  supported production source roots exist.
+  production source roots exist and their analyzers run. The
+  `security.configuration_warnings.analysis_status` value is also `"analyzed"` when
+  supported production source roots exist and the security warning analyzer runs.
 
 Current staged high-level `project-map.json` shape:
 
@@ -1638,7 +1639,7 @@ Current staged high-level `project-map.json` shape:
     },
     "security": {
       "configuration_warnings": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "warning_ids": []
       }
     }
@@ -1699,11 +1700,9 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- In the current the transaction, scheduled, event, and messaging signal slice implementation state, repository, configuration, behavior,
-  and messaging subsections emit `"analyzed"` when supported production source roots
-  exist and their analyzers run. The security v0.5 subsection still emits
-  `"not_analyzed"` with empty `warning_ids` when supported production source roots exist
-  but the security analyzer has not been implemented yet.
+- In the current the Spring Security configuration warning slice implementation state, repository, configuration, behavior,
+  messaging, and security configuration warning subsections emit `"analyzed"` when
+  supported production source roots exist and their analyzers run.
 - `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
   containers do not duplicate warning payloads or use `surface_category`.
 - Item `support_type` is `"extracted"` for direct source-visible facts and `"inferred"`
@@ -1775,11 +1774,30 @@ Spring application surface field rules:
   `"direct_rabbit_listener_annotation"`). They do not emit topic, queue, exchange,
   routing-key, group-id, broker, binding, consumer-group, delivery, or deployment fields.
 
-Planned security warning rules:
+Current security warning rules:
 
 - Spring Security configuration warnings use `category: "spring_security"`.
-- Planned warning `signal` values include `"security_configuration_annotation"` and
+- Warning `signal` values include `"security_configuration_annotation"` and
   `"security_filter_chain_bean"` when directly source-visible.
+- Current supported security configuration annotations are
+  `org.springframework.security.config.annotation.web.configuration.EnableWebSecurity`,
+  `org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity`,
+  `org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity`,
+  `org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity`,
+  and
+  `org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity`
+  when visible through a fully qualified name or explicit single-type import.
+- Current `SecurityFilterChain` `@Bean` warnings require both a trusted
+  `org.springframework.context.annotation.Bean` annotation and a return type visible as
+  `org.springframework.security.web.SecurityFilterChain` through a fully qualified name
+  or explicit single-type import.
+- Security warning IDs are stable. Scan-root warnings use
+  `warning:spring_security:<signal>:<target>`; child-module warnings use
+  `warning:spring_security:<signal>:module:<module_path>:<target>`. Current targets are
+  `<class_name>:annotation:<annotation_discriminator>:decl:<ordinal>` for supported
+  security annotations and `<class_name>#<method_name>:decl:<ordinal>` for
+  `SecurityFilterChain` `@Bean` methods. The zero-padded ordinal disambiguates
+  source-visible matching declarations and is not a runtime security-chain identity.
 - Warning messages must use detected-signal wording. They must not claim endpoint
   protection, authentication behavior, authorization behavior, runtime filter order,
   vulnerability, or policy correctness.
@@ -2186,12 +2204,13 @@ Current staged v0.5 Spring application surface `agent-guide.md` behavior:
   transaction behavior, transaction propagation, scheduler registration, scheduler
   frequency, event delivery, message destinations, message topology, queue/topic
   existence, consumer groups, delivery semantics, or broker behavior.
-- Current not-yet-implemented security v0.5 subsections are described as
-  `not_analyzed`; empty security warning collections must not be interpreted as absence
-  of security configuration signals.
-- Future Spring Security configuration warnings should be described as inspection hints
-  and change-risk signals. They must not claim security policy, endpoint protection,
-  authentication behavior, authorization behavior, vulnerability, or correctness.
+- Spring Security configuration warnings are described as inspection hints and
+  change-risk signals. Empty security warning collections under an `"analyzed"` security
+  subsection mean no bounded supported source-visible security configuration warning was
+  emitted; they do not prove the absence of security configuration outside the supported
+  analyzer scope. Security warning guidance must not claim security policy, endpoint
+  protection, authentication behavior, authorization behavior, vulnerability, or
+  correctness.
 
 Markdown rendering safety:
 

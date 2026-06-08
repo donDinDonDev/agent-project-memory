@@ -591,7 +591,7 @@
     },
     "security": {
       "configuration_warnings": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "warning_ids": []
       }
     }
