@@ -724,6 +724,7 @@ public final class AgentGuideGenerator {
     markdown.append("- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.\n");
     markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.\n");
     markdown.append("- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.\n");
+    markdown.append("- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.\n");
     appendSpringRepositories(
         markdown,
         springApplicationSurface.path("repositories"),
@@ -744,26 +745,26 @@ public final class AgentGuideGenerator {
         springApplicationSurface.path("configuration").path("bean_methods"),
         moduleById,
         evidenceById);
-    appendSpringSurfaceStatusLine(
+    appendSpringTransactionBoundaries(
         markdown,
-        "Transaction boundaries",
         springApplicationSurface.path("behavior").path("transaction_boundaries"),
-        "transaction analyzer has not run");
-    appendSpringSurfaceStatusLine(
+        moduleById,
+        evidenceById);
+    appendSpringScheduledMethods(
         markdown,
-        "Scheduled methods",
         springApplicationSurface.path("behavior").path("scheduled_methods"),
-        "scheduled method analyzer has not run");
-    appendSpringSurfaceStatusLine(
+        moduleById,
+        evidenceById);
+    appendSpringEventListeners(
         markdown,
-        "Event listeners",
         springApplicationSurface.path("behavior").path("event_listeners"),
-        "event listener analyzer has not run");
-    appendSpringSurfaceStatusLine(
+        moduleById,
+        evidenceById);
+    appendSpringMessagingListeners(
         markdown,
-        "Messaging listener signals",
         springApplicationSurface.path("messaging").path("listener_signals"),
-        "messaging listener analyzer has not run");
+        moduleById,
+        evidenceById);
     appendSpringSecurityWarningStatus(markdown, springApplicationSurface.path("security").path("configuration_warnings"));
     markdown.append("\n");
   }
@@ -969,6 +970,201 @@ public final class AgentGuideGenerator {
           evidenceById);
     }
     appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "bean method signals");
+  }
+
+  private void appendSpringTransactionBoundaries(
+      StringBuilder markdown,
+      JsonNode transactionBoundaries,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = transactionBoundaries.path("items");
+    String analysisStatus = text(transactionBoundaries, "analysis_status");
+    markdown.append("- Transaction boundaries: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because transaction analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@Transactional` signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode boundary = items.get(index);
+      markdown.append("  - Transaction boundary: Detected ")
+          .append(springTargetLabel(boundary))
+          .append(" (target_kind: ")
+          .append(code(text(boundary, "target_kind")))
+          .append(", surface_category: ")
+          .append(code(text(boundary, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(boundary, "support_type")))
+          .append(", annotation_symbol: ")
+          .append(code(text(boundary, "annotation_symbol")))
+          .append(", transaction_signal: ")
+          .append(code(text(boundary, "transaction_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(markdown, boundary, moduleById, evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        items.size() - visibleCount,
+        "transaction boundary signals");
+  }
+
+  private void appendSpringScheduledMethods(
+      StringBuilder markdown,
+      JsonNode scheduledMethods,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = scheduledMethods.path("items");
+    String analysisStatus = text(scheduledMethods, "analysis_status");
+    markdown.append("- Scheduled methods: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because scheduled method analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@Scheduled` method signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode scheduledMethod = items.get(index);
+      markdown.append("  - Scheduled method: Detected ")
+          .append(springTargetLabel(scheduledMethod))
+          .append(" (target_kind: ")
+          .append(code(text(scheduledMethod, "target_kind")))
+          .append(", surface_category: ")
+          .append(code(text(scheduledMethod, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(scheduledMethod, "support_type")))
+          .append(", annotation_symbol: ")
+          .append(code(text(scheduledMethod, "annotation_symbol")))
+          .append(", scheduled_signal: ")
+          .append(code(text(scheduledMethod, "scheduled_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(markdown, scheduledMethod, moduleById, evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        items.size() - visibleCount,
+        "scheduled method signals");
+  }
+
+  private void appendSpringEventListeners(
+      StringBuilder markdown,
+      JsonNode eventListeners,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = eventListeners.path("items");
+    String analysisStatus = text(eventListeners, "analysis_status");
+    markdown.append("- Event listeners: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because event listener analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible `@EventListener` method signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode eventListener = items.get(index);
+      markdown.append("  - Event listener: Detected ")
+          .append(springTargetLabel(eventListener))
+          .append(" (target_kind: ")
+          .append(code(text(eventListener, "target_kind")))
+          .append(", surface_category: ")
+          .append(code(text(eventListener, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(eventListener, "support_type")))
+          .append(", annotation_symbol: ")
+          .append(code(text(eventListener, "annotation_symbol")))
+          .append(", event_listener_signal: ")
+          .append(code(text(eventListener, "event_listener_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(markdown, eventListener, moduleById, evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "event listener signals");
+  }
+
+  private void appendSpringMessagingListeners(
+      StringBuilder markdown,
+      JsonNode messagingListeners,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    JsonNode items = messagingListeners.path("items");
+    String analysisStatus = text(messagingListeners, "analysis_status");
+    markdown.append("- Messaging listener signals: status ")
+        .append(code(analysisStatus));
+    if ("not_analyzed".equals(analysisStatus)) {
+      markdown.append("; not analyzed in the current v0.5 implementation slice because messaging listener analyzer has not run.\n");
+      return;
+    }
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" source-visible Kafka/Rabbit listener annotation signal")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode listener = items.get(index);
+      markdown.append("  - Messaging listener signal: Detected ")
+          .append(code(text(listener, "listener_framework")))
+          .append(" ")
+          .append(code(text(listener, "annotation_symbol")))
+          .append(" observation on ")
+          .append(springTargetLabel(listener))
+          .append(" (target_kind: ")
+          .append(code(text(listener, "target_kind")))
+          .append(", surface_category: ")
+          .append(code(text(listener, "surface_category")))
+          .append(", support_type: ")
+          .append(code(text(listener, "support_type")))
+          .append(", listener_signal: ")
+          .append(code(text(listener, "listener_signal")))
+          .append(").\n");
+      appendNestedSourceModuleEvidence(markdown, listener, moduleById, evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        items.size() - visibleCount,
+        "messaging listener signals");
+  }
+
+  private String springTargetLabel(JsonNode fact) {
+    String methodName = nullableText(fact, "method_name");
+    if (methodName == null || methodName.isBlank()) {
+      return code(text(fact, "class_name"));
+    }
+    return code(text(fact, "class_name") + "#" + methodName);
   }
 
   private void appendNestedSourceModuleEvidence(
@@ -1354,10 +1550,13 @@ public final class AgentGuideGenerator {
         .append("repository-to-entity relations; `entity_relation_status: not_analyzed` is ")
         .append("preserved for those inferred signals.\n");
     if (projectMap.path("spring_application_surface").isObject()) {
-      markdown.append("- Not analyzed: v0.5 behavior, messaging, and security surface categories ")
-          .append("remain outside the current repository/configuration implementation slices ")
-          .append("unless their subsection status says ")
-          .append("`analyzed`.\n");
+      markdown.append("- Not analyzed: v0.5 transaction, scheduling, event listener, and ")
+          .append("messaging listener facts are annotation-presence change-surface signals only. ")
+          .append("Transaction propagation, scheduler registration, event delivery, message ")
+          .append("destinations, broker topology, consumer groups, and delivery semantics are ")
+          .append("not claimed.\n");
+      markdown.append("- Not analyzed: v0.5 security surface categories remain outside the current ")
+          .append("implementation slices unless their subsection status says `analyzed`.\n");
     }
 
     if (projectMap.path("endpoints").isEmpty()) {
@@ -1398,12 +1597,12 @@ public final class AgentGuideGenerator {
     httpPaths.addAll(hiddenHttpWarningEvidencePaths(projectMap.path("warnings"), evidenceById));
     appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");
-    markdown.append("3. For Spring application surface changes, inspect repository surface and component evidence");
+    markdown.append("3. For Spring application surface changes, inspect Spring application surface and component evidence");
     LinkedHashSet<String> springPaths = new LinkedHashSet<>();
     springPaths.addAll(evidencePaths(projectMap.path("spring_application_surface"), evidenceById));
     springPaths.addAll(evidencePaths(projectMap.path("components").path("items"), evidenceById));
     appendPathHint(markdown, List.copyOf(springPaths));
-    markdown.append(" and avoid assuming runtime repository registration, entity ownership, or injection graphs.\n");
+    markdown.append(" and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.\n");
     markdown.append("4. For persistence changes, inspect detected entity evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("entities").path("items"), evidenceById));
     markdown.append(" and treat relationship targets as declared-type-only.\n");

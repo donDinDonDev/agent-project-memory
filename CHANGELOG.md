@@ -21,22 +21,36 @@ architecture documents.
   direct source-visible `@Configuration` class facts, direct source-visible
   `@ConfigurationProperties` type facts with `binding_status: "not_analyzed"`, and
   direct source-visible `@Bean` method facts with `bean_name_status: "not_analyzed"`.
+- Added the staged v0.5 behavior and messaging signal analyzer for the transaction, scheduled, event, and messaging signal slice,
+  including direct source-visible `@Transactional` type and method facts, direct
+  source-visible `@Scheduled` method facts, direct source-visible `@EventListener`
+  method facts, and direct source-visible Kafka/Rabbit listener annotation signals
+  without runtime transaction, scheduling, event delivery, or messaging topology claims.
 - Added `schema_version: "0.5"` output with top-level
   `spring_application_surface.repositories` repository signal items,
   `spring_application_surface.configuration` configuration class,
-  configuration-properties, and bean method items, plus explicit `not_analyzed` statuses
-  for v0.5 Spring application surface categories that are not implemented yet.
+  configuration-properties, and bean method items,
+  `spring_application_surface.behavior` transaction, scheduled, and event listener
+  items, `spring_application_surface.messaging.listener_signals` items, plus explicit
+  `not_analyzed` status for the v0.5 Spring Security category that is not implemented
+  yet.
 - Added Spring Application Surface guidance in `agent-guide.md` that keeps direct
   repository annotation observations, inferred Spring Data interface signals, and
   repository-to-entity non-analysis distinct, while rendering configuration, bean, and
   configuration-properties facts as source-visible signals rather than runtime bean
-  graph or binding claims.
+  graph or binding claims, and rendering transaction, scheduled, event listener, and
+  messaging listener facts as operational change-surface signals rather than runtime
+  behavior or topology claims.
 - Added focused repository analyzer fixtures and golden coverage for direct
   `@Repository`, supported Spring Data base interface extensions, spoofed framework
   origins, and output/evidence resolution.
 - Added focused configuration analyzer fixtures and golden coverage for direct
   `@Configuration`, direct `@Bean`, direct `@ConfigurationProperties`, wildcard-only
   imports, spoofed framework origins, and output/evidence resolution.
+- Added focused behavior/messaging analyzer fixtures and golden coverage for direct
+  `@Transactional`, `@Scheduled`, `@EventListener`, Kafka/Rabbit listener annotations,
+  wildcard-only imports, spoofed framework origins, output/evidence resolution, and
+  destination-like messaging annotation values staying out of generated outputs.
 
 ### Fixed
 

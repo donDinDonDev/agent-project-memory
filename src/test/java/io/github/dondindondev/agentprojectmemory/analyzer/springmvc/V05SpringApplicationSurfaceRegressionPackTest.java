@@ -32,10 +32,38 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
     GeneratedOutput output = generateFromFixture("v0-5-spring-configuration-surface");
 
     assertAll(
-        () -> assertEquals(expected("project-map.json"), output.projectMap()),
-        () -> assertEquals(expected("evidence-index.jsonl"), output.evidenceIndex()),
-        () -> assertEquals(expected("endpoints.md"), output.endpoints()),
-        () -> assertEquals(expected("agent-guide.md"), output.agentGuide()),
+        () -> assertEquals(
+            expected("v0-5-spring-configuration-surface", "project-map.json"),
+            output.projectMap()),
+        () -> assertEquals(
+            expected("v0-5-spring-configuration-surface", "evidence-index.jsonl"),
+            output.evidenceIndex()),
+        () -> assertEquals(
+            expected("v0-5-spring-configuration-surface", "endpoints.md"),
+            output.endpoints()),
+        () -> assertEquals(
+            expected("v0-5-spring-configuration-surface", "agent-guide.md"),
+            output.agentGuide()),
+        () -> assertEvidenceAndReferenceIdsResolve(output));
+  }
+
+  @Test
+  void v05BehaviorMessagingSurfaceGoldenOutputsRemainStable() throws Exception {
+    GeneratedOutput output = generateFromFixture("v0-5-spring-behavior-messaging-surface");
+
+    assertAll(
+        () -> assertEquals(
+            expected("v0-5-spring-behavior-messaging-surface", "project-map.json"),
+            output.projectMap()),
+        () -> assertEquals(
+            expected("v0-5-spring-behavior-messaging-surface", "evidence-index.jsonl"),
+            output.evidenceIndex()),
+        () -> assertEquals(
+            expected("v0-5-spring-behavior-messaging-surface", "endpoints.md"),
+            output.endpoints()),
+        () -> assertEquals(
+            expected("v0-5-spring-behavior-messaging-surface", "agent-guide.md"),
+            output.agentGuide()),
         () -> assertEvidenceAndReferenceIdsResolve(output));
   }
 
@@ -82,6 +110,63 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
         () -> assertFalse(output.projectMap().contains("unresolvedBean")),
         () -> assertFalse(output.projectMap().contains("\"prefix\"")),
         () -> assertTrue(output.agentGuide().contains("they do not prove runtime bean graphs")));
+  }
+
+  @Test
+  void behaviorMessagingSurfaceKeepsSignalsConservativeAndDestinationValuesOutOfOutput()
+      throws Exception {
+    GeneratedOutput output = generateFromFixture("v0-5-spring-behavior-messaging-surface");
+    JsonNode root = JSON.readTree(output.projectMap());
+    JsonNode surface = root.path("spring_application_surface");
+    JsonNode behavior = surface.path("behavior");
+    JsonNode messaging = surface.path("messaging");
+    JsonNode transactionBoundaries = behavior.path("transaction_boundaries").path("items");
+    JsonNode scheduledMethods = behavior.path("scheduled_methods").path("items");
+    JsonNode eventListeners = behavior.path("event_listeners").path("items");
+    JsonNode messagingListeners = messaging.path("listener_signals").path("items");
+
+    assertAll(
+        () -> assertEquals("analyzed", surface.path("analysis_status").asText()),
+        () -> assertEquals("analyzed", behavior.path("transaction_boundaries")
+            .path("analysis_status").asText()),
+        () -> assertEquals("analyzed", behavior.path("scheduled_methods")
+            .path("analysis_status").asText()),
+        () -> assertEquals("analyzed", behavior.path("event_listeners")
+            .path("analysis_status").asText()),
+        () -> assertEquals("analyzed", messaging.path("listener_signals")
+            .path("analysis_status").asText()),
+        () -> assertEquals(
+            List.of(
+                "com.example.behavior.BehaviorMessagingSurface#<type>",
+                "com.example.behavior.BehaviorMessagingSurface#settleInvoice"),
+            nullableMethodLabels(transactionBoundaries)),
+        () -> assertEquals(
+            List.of("com.example.behavior.BehaviorMessagingSurface#refreshInvoices"),
+            beanMethodLabels(scheduledMethods)),
+        () -> assertEquals(
+            List.of("com.example.behavior.BehaviorMessagingSurface#onInvoicePaid"),
+            beanMethodLabels(eventListeners)),
+        () -> assertEquals(
+            List.of(
+                "com.example.behavior.BehaviorMessagingSurface#<type>:@RabbitListener",
+                "com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:@KafkaListener",
+                "com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:@RabbitListener"),
+            messagingListenerLabels(messagingListeners)),
+        () -> assertTrue(allTextValuesEqual(transactionBoundaries, "support_type", "extracted")),
+        () -> assertTrue(allTextValuesEqual(scheduledMethods, "support_type", "extracted")),
+        () -> assertTrue(allTextValuesEqual(eventListeners, "support_type", "extracted")),
+        () -> assertTrue(allTextValuesEqual(messagingListeners, "support_type", "extracted")),
+        () -> assertFalse(output.projectMap().contains("billing-events")),
+        () -> assertFalse(output.projectMap().contains("billing.retry")),
+        () -> assertFalse(output.projectMap().contains("billing-workers")),
+        () -> assertFalse(output.evidenceIndex().contains("billing-events")),
+        () -> assertFalse(output.evidenceIndex().contains("billing.retry")),
+        () -> assertFalse(output.evidenceIndex().contains("billing-workers")),
+        () -> assertFalse(output.agentGuide().contains("billing-events")),
+        () -> assertFalse(output.agentGuide().contains("billing.retry")),
+        () -> assertFalse(output.agentGuide().contains("billing-workers")),
+        () -> assertTrue(output.agentGuide().contains("they do not prove runtime transaction behavior")),
+        () -> assertTrue(output.agentGuide().contains("broker topology")));
   }
 
   private GeneratedOutput generateFromFixture(String fixtureName) throws Exception {
@@ -166,18 +251,36 @@ final class V05SpringApplicationSurfaceRegressionPackTest {
         .toList();
   }
 
+  private List<String> nullableMethodLabels(JsonNode array) {
+    return java.util.stream.StreamSupport.stream(array.spliterator(), false)
+        .map(item -> item.path("class_name").asText()
+            + "#"
+            + (item.path("method_name").isNull() ? "<type>" : item.path("method_name").asText()))
+        .toList();
+  }
+
+  private List<String> messagingListenerLabels(JsonNode array) {
+    return java.util.stream.StreamSupport.stream(array.spliterator(), false)
+        .map(item -> item.path("class_name").asText()
+            + "#"
+            + (item.path("method_name").isNull() ? "<type>" : item.path("method_name").asText())
+            + ":"
+            + item.path("annotation_symbol").asText())
+        .toList();
+  }
+
   private boolean allTextValuesEqual(JsonNode array, String fieldName, String expected) {
     return java.util.stream.StreamSupport.stream(array.spliterator(), false)
         .allMatch(item -> expected.equals(item.path(fieldName).asText()));
   }
 
-  private String expected(String fileName) throws Exception {
-    return Files.readString(goldenRoot().resolve(fileName));
+  private String expected(String fixtureName, String fileName) throws Exception {
+    return Files.readString(goldenRoot(fixtureName).resolve(fileName));
   }
 
-  private Path goldenRoot() throws Exception {
+  private Path goldenRoot(String fixtureName) throws Exception {
     return Path.of(Objects.requireNonNull(
-        getClass().getResource("/golden/v0-5-spring-configuration-surface")).toURI());
+        getClass().getResource("/golden/" + fixtureName)).toURI());
   }
 
   private void copyDirectory(Path source, Path target) throws Exception {

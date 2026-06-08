@@ -76,12 +76,14 @@ Existing unrelated contents inside `.project-memory/` are preserved. Generated f
 rewritten deterministically when supported Maven module roots, source-visible Maven
 metadata from module POMs, supported root source, test, or resource roots, supported
 config files, local OpenAPI/Swagger spec files, Spring repository signals, Spring
-configuration surface signals, or Maven module warnings are detected.
+configuration surface signals, Spring behavior or messaging listener signals, or Maven
+module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
-Spring component, Spring repository signal, Spring configuration surface, JPA entity,
-hidden HTTP surface warning, and tests inventory analyzers per supported module. For
+Spring component, Spring repository signal, Spring configuration surface, Spring
+behavior/messaging signal, JPA entity, hidden HTTP surface warning, and tests inventory
+analyzers per supported module. For
 compatibility with earlier local source-root scans, a
 repository without a root `pom.xml` but with supported root source, test, or resource roots is
 represented as the scan-root module with module discovery marked `not_detected`.
@@ -98,7 +100,10 @@ inventory. It also emits direct source-visible `@Repository` repository surface 
 and inferred source-visible Spring Data repository interface extension signals in a
 separate Spring application surface section, plus direct source-visible `@Configuration`
 class, `@ConfigurationProperties` type, and `@Bean` method signals without runtime bean
-graph or binding claims. It also discovers common local
+graph or binding claims, direct source-visible `@Transactional`, `@Scheduled`, and
+`@EventListener` signals, and common source-visible Kafka/Rabbit listener annotation
+signals without runtime transaction, scheduler, event delivery, message topology, or
+broker behavior claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
 inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, then writes:
 
@@ -130,10 +135,12 @@ generated-source, and Maven module warnings that are not expanded into endpoint/
 facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
-configuration-properties, and bean method inventories, and evidence ID references. The
-current v0.5 Spring application surface implementation emits repository and
-configuration-surface facts; behavior, messaging, and security subsections are present
-with explicit `not_analyzed` or `not_detected` statuses.
+configuration-properties, and bean method inventories,
+`spring_application_surface.behavior` transaction, scheduled, and event listener
+inventories, `spring_application_surface.messaging.listener_signals` inventories, and
+evidence ID references. The current v0.5 Spring application surface implementation emits
+repository, configuration-surface, behavior, and messaging facts; the security subsection
+remains present with explicit `not_analyzed` or `not_detected` status.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -217,8 +224,9 @@ module-aware Maven release is published with no remaining security blockers from
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
 API surface release is published with packaged jar and checksum assets. The v0.5
 deeper Spring application surface release track has started with the repository signal
-and configuration surface analyzer slices implemented locally. Future connector/import
-work remains a later optional adapter track and is not started.
+configuration surface analyzer slices and the behavior/messaging signal slice
+implemented locally. Future connector/import work remains a later optional adapter
+track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -233,8 +241,10 @@ declared operation facts, a minimal deterministic tests inventory, deterministic
 repository signal extraction for direct `@Repository` and supported Spring Data
 repository interface extensions, deterministic configuration surface extraction for
 direct `@Configuration`, direct `@Bean`, and direct `@ConfigurationProperties`
-observations, deterministic `endpoints.md`, and deterministic `agent-guide.md`
-generation from the structured facts and evidence index.
+observations, deterministic behavior and messaging signal extraction for direct
+`@Transactional`, `@Scheduled`, `@EventListener`, and common Kafka/Rabbit listener
+annotations, deterministic `endpoints.md`, and deterministic `agent-guide.md` generation
+from the structured facts and evidence index.
 
 Current limitations:
 
@@ -302,9 +312,23 @@ Current limitations:
   `@ConfigurationProperties` `prefix` or `value` annotation values, prove binding
   success, infer active profiles, reconstruct runtime bean graphs, infer effective bean
   names, or model scopes, lifecycle, proxies, autowiring, or dependency graphs.
-- Other v0.5 Spring application surface categories, including transaction boundaries,
-  scheduled methods, event listeners, messaging listeners, and Spring Security
-  configuration warnings, are not analyzed by the current implementation slice.
+- Spring application surface behavior analysis is limited to direct source-visible
+  Spring `@Transactional` annotations on Java types and methods, direct source-visible
+  Spring `@Scheduled` methods, and direct source-visible Spring `@EventListener`
+  methods visible through a fully qualified name or explicit single-type import. It
+  does not interpret transaction propagation, effective transaction managers, rollback
+  behavior, scheduler enablement, runtime registration, frequency correctness, cluster
+  behavior, event publication paths, listener ordering, transaction phases, event
+  delivery, or call graph effects.
+- Spring application surface messaging analysis is limited to direct source-visible
+  Spring Kafka `@KafkaListener`/`@KafkaListeners` and Spring AMQP Rabbit
+  `@RabbitListener`/`@RabbitListeners` annotations on Java types and methods visible
+  through a fully qualified name or explicit single-type import. It records annotation
+  presence and framework family only; it does not serialize topic, queue, exchange,
+  routing-key, or group-id annotation values, verify broker topology, infer consumer
+  groups, bindings, delivery semantics, or deployment configuration.
+- The v0.5 Spring Security configuration warning category is not analyzed by the current
+  implementation slice.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
   `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
   conservative source-visible `@MappedSuperclass` chain, and field-level `@ManyToOne`,

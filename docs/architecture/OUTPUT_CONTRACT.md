@@ -1489,10 +1489,11 @@ Deterministic sorting rules:
 
 This section defines the staged v0.5 Spring application surface contract. The current
 implementation emits the the repository signal analyzer slice repository signal slice, the the configuration, bean, and configuration-properties analyzer slice
-configuration/bean/configuration-properties slice, and the surrounding v0.5 section
+configuration/bean/configuration-properties slice, the the transaction, scheduled, event, and messaging signal slice
+transaction/scheduled/event/messaging signal slice, and the surrounding v0.5 section
 shape. Later v0.5 analyzers must fill their subsections without changing the meaning of
-the repository or configuration slices. The detailed release-track design is documented in
-the public v0.5 roadmap and release notes.
+the repository, configuration, behavior, or messaging slices. The detailed release-track
+design is documented in the public v0.5 roadmap and release notes.
 
 The v0.5 contract uses:
 
@@ -1511,11 +1512,12 @@ The v0.5 contract uses:
   component stereotype facts and as category-specific Spring application surface items.
   This is two contract views over the same source observation, not evidence of multiple
   runtime beans or component registrations.
-- In the current staged implementation, `repositories.analysis_status` and
-  `configuration.*.analysis_status` are `"analyzed"` when supported production source
-  roots exist and their analyzers run. Not-yet-implemented v0.5 behavior, messaging, and
-  security subsections emit `"not_analyzed"` with empty collections when supported
-  production source roots exist.
+- In the current staged implementation, `repositories.analysis_status`,
+  `configuration.*.analysis_status`, `behavior.*.analysis_status`, and
+  `messaging.listener_signals.analysis_status` are `"analyzed"` when supported
+  production source roots exist and their analyzers run. The not-yet-implemented v0.5
+  security subsection emits `"not_analyzed"` with an empty warning ID collection when
+  supported production source roots exist.
 
 Current staged high-level `project-map.json` shape:
 
@@ -1616,21 +1618,21 @@ Current staged high-level `project-map.json` shape:
     },
     "behavior": {
       "transaction_boundaries": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "scheduled_methods": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "event_listeners": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },
     "messaging": {
       "listener_signals": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },
@@ -1697,11 +1699,11 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- In the current the configuration, bean, and configuration-properties analyzer slice configuration slice, repository and configuration
-  subsections emit `"analyzed"` when supported production source roots exist and their
-  analyzers run. Behavior, messaging, and security v0.5 subsections still emit
-  `"not_analyzed"` with empty `items` or `warning_ids` when supported production source
-  roots exist but their analyzers have not been implemented yet.
+- In the current the transaction, scheduled, event, and messaging signal slice implementation state, repository, configuration, behavior,
+  and messaging subsections emit `"analyzed"` when supported production source roots
+  exist and their analyzers run. The security v0.5 subsection still emits
+  `"not_analyzed"` with empty `warning_ids` when supported production source roots exist
+  but the security analyzer has not been implemented yet.
 - `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
   containers do not duplicate warning payloads or use `surface_category`.
 - Item `support_type` is `"extracted"` for direct source-visible facts and `"inferred"`
@@ -1721,6 +1723,19 @@ Spring application surface field rules:
   `@Bean` method observations. The zero-padded declaration ordinal disambiguates
   source-visible `@Bean` method facts and is not a bean name, dependency relation, or
   runtime identity claim.
+- Current behavior and messaging item IDs are stable:
+  `spring_transaction_boundary:<module_id>:<class_name>:type` for direct type-level
+  `@Transactional` observations,
+  `spring_transaction_boundary:<module_id>:<class_name>#<method_name>:decl:<ordinal>`
+  for direct method-level `@Transactional` observations,
+  `spring_scheduled_method:<module_id>:<class_name>#<method_name>:decl:<ordinal>` for
+  direct `@Scheduled` method observations,
+  `spring_event_listener:<module_id>:<class_name>#<method_name>:decl:<ordinal>` for
+  direct `@EventListener` method observations, and
+  `messaging_listener_signal:<module_id>:<class_name>[:#<method_name>]:annotation:<annotation_name>:decl:<ordinal>`
+  for direct Kafka/Rabbit listener annotation observations. The zero-padded declaration
+  ordinal disambiguates source-visible declarations and is not a runtime listener,
+  scheduler, transaction, destination, or broker identity claim.
 - Source paths are normalized repository-relative paths and must not be absolute, start
   with `./`, or escape the scanned repository root.
 - `extends_types` preserves bounded source-visible Spring Data base type observations
@@ -1740,6 +1755,25 @@ Spring application surface field rules:
 - `bean_name_status` is `"not_analyzed"` for current bean method facts. Future bounded
   source-visible `@Bean` name extraction would require a separate design; emitted names
   would remain annotation literals, not runtime bean names.
+- Transaction facts use `transaction_signal` values `"direct_transactional_type"` and
+  `"direct_transactional_method"`, include `target_kind` (`"type"` or `"method"`),
+  include `annotation_symbol: "@Transactional"`, and never emit propagation, isolation,
+  rollback, transaction-manager, proxy, or call-graph fields.
+- Scheduled method facts use `scheduled_signal: "direct_scheduled_method"`, include
+  `target_kind: "method"`, include `annotation_symbol: "@Scheduled"`, and never emit
+  cron, fixed-rate, fixed-delay, scheduler, lock, registration, frequency, cluster, or
+  runtime execution fields.
+- Event listener facts use `event_listener_signal: "direct_event_listener_method"`,
+  include `target_kind: "method"`, include `annotation_symbol: "@EventListener"`, and
+  never emit event publication paths, listener ordering, transaction phase, delivery, or
+  call-graph fields.
+- Messaging listener facts support direct source-visible Spring Kafka
+  `@KafkaListener`/`@KafkaListeners` and Spring AMQP Rabbit
+  `@RabbitListener`/`@RabbitListeners` annotations. They include `target_kind`,
+  `annotation_symbol`, `listener_framework` (`"kafka"` or `"rabbit"`), and
+  `listener_signal` (`"direct_kafka_listener_annotation"` or
+  `"direct_rabbit_listener_annotation"`). They do not emit topic, queue, exchange,
+  routing-key, group-id, broker, binding, consumer-group, delivery, or deployment fields.
 
 Planned security warning rules:
 
@@ -1797,6 +1831,11 @@ The current implementation emits:
   configuration-properties facts do not emit `prefix` or `value` fields, and current
   bean method facts do not emit bean names, scopes, lifecycle, return type, parameter, or
   dependency graph facts.
+- `annotation` evidence for direct `@Transactional`, `@Scheduled`, `@EventListener`,
+  and Kafka/Rabbit listener annotation Spring application surface facts. Current
+  behavior/messaging evidence excerpts record annotation symbols only for these facts
+  and do not serialize destination-like messaging annotation values such as topics,
+  queues, exchanges, routing keys, or group IDs.
 - `annotation` evidence for direct JPA annotations that support entity facts, including
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
   relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
@@ -2142,14 +2181,14 @@ Current staged v0.5 Spring application surface `agent-guide.md` behavior:
   source-visible Spring configuration signals. They must not claim runtime bean graph,
   conditional activation, active profiles, config binding success, config values, bean
   scopes, lifecycle, proxy behavior, or dependency graphs.
-- Current not-yet-implemented behavior, messaging, and security v0.5 subsections are
-  described as `not_analyzed`; empty collections in those subsections must not be
-  interpreted as absence of transaction, scheduling, event, messaging, or security
-  signals.
-- Future transaction, scheduled, event listener, and messaging listener annotations
-  should be described as operational change-surface signals. They must not claim runtime
-  scheduling, transaction behavior, event delivery, message topology, queue/topic
-  existence, or broker behavior.
+- Transaction, scheduled, event listener, and messaging listener annotations are
+  described as operational change-surface signals. They must not claim runtime
+  transaction behavior, transaction propagation, scheduler registration, scheduler
+  frequency, event delivery, message destinations, message topology, queue/topic
+  existence, consumer groups, delivery semantics, or broker behavior.
+- Current not-yet-implemented security v0.5 subsections are described as
+  `not_analyzed`; empty security warning collections must not be interpreted as absence
+  of security configuration signals.
 - Future Spring Security configuration warnings should be described as inspection hints
   and change-risk signals. They must not claim security policy, endpoint protection,
   authentication behavior, authorization behavior, vulnerability, or correctness.

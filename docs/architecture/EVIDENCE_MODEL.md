@@ -113,12 +113,12 @@ Examples:
   facts.
 - Current v0.4 generated-source path signals, where path presence supports warnings and
   does not imply generated source contents.
-- Current v0.5 direct source-visible `@Repository` Spring application surface facts, and
-  planned future v0.5 direct source-visible Spring application surface annotations such
-  as `@Configuration`, `@ConfigurationProperties`, `@Bean`, `@Transactional`,
-  `@Scheduled`, `@EventListener`, common messaging listener annotations, and Spring
-  Security configuration annotations, where these observations support extracted facts
-  or warning signals without runtime reconstruction.
+- Current v0.5 direct source-visible `@Repository`, `@Configuration`,
+  `@ConfigurationProperties`, `@Bean`, `@Transactional`, `@Scheduled`,
+  `@EventListener`, and common Kafka/Rabbit listener annotation Spring application
+  surface facts, plus planned future Spring Security configuration annotations, where
+  these observations support extracted facts or warning signals without runtime
+  reconstruction.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -432,7 +432,7 @@ API surface relation evidence:
 
 v0.5 Spring application surface analysis preserves the existing evidence field set and
 reuses existing evidence types. No new global evidence fields are added by the current
-repository and configuration signal slices.
+repository, configuration, behavior, and messaging signal slices.
 
 Annotation-backed Spring surface evidence:
 
@@ -440,10 +440,10 @@ Annotation-backed Spring surface evidence:
   the annotation origin is visible as a supported external Spring framework type and
   that exact type is not declared by scanned source.
 - Current annotation-backed facts include direct `@Repository`, direct
-  `@Configuration`, direct `@ConfigurationProperties`, and direct `@Bean`. Planned
-  future annotation-backed facts include direct `@Transactional`, `@Scheduled`,
-  `@EventListener`, common Kafka/Rabbit listener annotations, and supported Spring
-  Security configuration annotations.
+  `@Configuration`, direct `@ConfigurationProperties`, direct `@Bean`, direct
+  `@Transactional`, direct `@Scheduled`, direct `@EventListener`, and common
+  Kafka/Rabbit listener annotations. Planned future annotation-backed facts include
+  supported Spring Security configuration annotations.
 - Annotation evidence supports source-visible facts or warnings only. It does not prove
   runtime bean registration, autowiring, conditional activation, profile state,
   auto-configuration, transaction proxying, scheduler registration, event delivery,
@@ -488,9 +488,14 @@ Behavior, messaging, and security evidence:
 
 - `@Transactional`, `@Scheduled`, `@EventListener`, and messaging listener annotations
   support operational change-surface signals only.
+- Current behavior/messaging evidence excerpts for these facts record the annotation
+  symbol only, such as `@Transactional`, `@Scheduled`, `@EventListener`,
+  `@KafkaListener`, or `@RabbitListener`. They do not serialize annotation attributes.
 - Messaging listener evidence may prove annotation presence but must not prove runtime
   topic, queue, exchange, broker, binding, consumer group, delivery, or deployment
   behavior.
+- Messaging listener evidence must not serialize destination-like annotation values such
+  as topics, queues, exchanges, routing keys, or group IDs into generated outputs.
 - Spring Security configuration evidence supports warnings only. It must not prove
   endpoint protection state, authentication behavior, authorization behavior, filter
   chain ordering, vulnerability, or security correctness.

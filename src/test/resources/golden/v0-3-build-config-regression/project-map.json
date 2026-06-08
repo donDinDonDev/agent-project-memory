@@ -1287,21 +1287,21 @@
     },
     "behavior": {
       "transaction_boundaries": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "scheduled_methods": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       },
       "event_listeners": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },
     "messaging": {
       "listener_signals": {
-        "analysis_status": "not_analyzed",
+        "analysis_status": "analyzed",
         "items": []
       }
     },

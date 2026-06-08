@@ -51,15 +51,22 @@ import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootA
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringBeanMethodFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringBehaviorAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringBehaviorAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringBehaviorEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringConfigurationAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringConfigurationAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringConfigurationClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringConfigurationEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringConfigurationPropertiesFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringEventListenerFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringMessagingListenerFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringScheduledMethodFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringTransactionBoundaryFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSignalFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
@@ -183,6 +190,50 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparing(beanMethod -> beanMethod.fact().className())
       .thenComparing(beanMethod -> beanMethod.fact().methodName())
       .thenComparing(beanMethod -> springBeanMethodId(beanMethod.moduleId(), beanMethod.fact()));
+  private static final Comparator<ModuleScopedSpringTransactionBoundaryFact>
+      SPRING_TRANSACTION_BOUNDARY_ORDER =
+          Comparator
+              .comparingInt(ModuleScopedSpringTransactionBoundaryFact::moduleOrder)
+              .thenComparing(boundary -> boundary.fact().sourcePath())
+              .thenComparing(boundary -> boundary.fact().className())
+              .thenComparing(boundary -> nullSafe(boundary.fact().methodName()))
+              .thenComparing(boundary -> boundary.fact().targetKind())
+              .thenComparing(boundary -> springTransactionBoundaryId(
+                  boundary.moduleId(),
+                  boundary.fact()));
+  private static final Comparator<ModuleScopedSpringScheduledMethodFact>
+      SPRING_SCHEDULED_METHOD_ORDER =
+          Comparator
+              .comparingInt(ModuleScopedSpringScheduledMethodFact::moduleOrder)
+              .thenComparing(scheduledMethod -> scheduledMethod.fact().sourcePath())
+              .thenComparing(scheduledMethod -> scheduledMethod.fact().className())
+              .thenComparing(scheduledMethod -> scheduledMethod.fact().methodName())
+              .thenComparing(scheduledMethod -> springScheduledMethodId(
+                  scheduledMethod.moduleId(),
+                  scheduledMethod.fact()));
+  private static final Comparator<ModuleScopedSpringEventListenerFact>
+      SPRING_EVENT_LISTENER_ORDER =
+          Comparator
+              .comparingInt(ModuleScopedSpringEventListenerFact::moduleOrder)
+              .thenComparing(eventListener -> eventListener.fact().sourcePath())
+              .thenComparing(eventListener -> eventListener.fact().className())
+              .thenComparing(eventListener -> eventListener.fact().methodName())
+              .thenComparing(eventListener -> springEventListenerId(
+                  eventListener.moduleId(),
+                  eventListener.fact()));
+  private static final Comparator<ModuleScopedSpringMessagingListenerFact>
+      SPRING_MESSAGING_LISTENER_ORDER =
+          Comparator
+              .comparingInt(ModuleScopedSpringMessagingListenerFact::moduleOrder)
+              .thenComparing(listener -> listener.fact().sourcePath())
+              .thenComparing(listener -> listener.fact().className())
+              .thenComparing(listener -> nullSafe(listener.fact().methodName()))
+              .thenComparing(listener -> listener.fact().targetKind())
+              .thenComparing(listener -> listener.fact().listenerFramework())
+              .thenComparing(listener -> listener.fact().annotationSymbol())
+              .thenComparing(listener -> springMessagingListenerId(
+                  listener.moduleId(),
+                  listener.fact()));
   private static final Comparator<ModuleScopedEntityFact> ENTITY_ORDER = Comparator
       .comparingInt(ModuleScopedEntityFact::moduleOrder)
       .thenComparing(entity -> entity.fact().className())
@@ -242,6 +293,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private final SpringRepositoryAnalyzer springRepositoryAnalyzer = new SpringRepositoryAnalyzer();
   private final SpringConfigurationAnalyzer springConfigurationAnalyzer =
       new SpringConfigurationAnalyzer();
+  private final SpringBehaviorAnalyzer springBehaviorAnalyzer = new SpringBehaviorAnalyzer();
   private final OpenApiSpecDiscoveryAnalyzer openApiSpecDiscoveryAnalyzer =
       new OpenApiSpecDiscoveryAnalyzer();
   private final OpenApiOperationAnalyzer openApiOperationAnalyzer =
@@ -418,6 +470,7 @@ public final class SpringMvcEndpointOutputGenerator {
         scan.componentEvidence(),
         scan.springRepositoryEvidence(),
         scan.springConfigurationEvidence(),
+        scan.springBehaviorEvidence(),
         scan.entityEvidence(),
         scan.testEvidence(),
         scan.warningEvidence());
@@ -578,6 +631,11 @@ public final class SpringMvcEndpointOutputGenerator {
     List<ModuleScopedSpringConfigurationPropertiesFact> springConfigurationProperties = new ArrayList<>();
     List<ModuleScopedSpringBeanMethodFact> springBeanMethods = new ArrayList<>();
     List<SpringConfigurationEvidence> springConfigurationEvidence = new ArrayList<>();
+    List<ModuleScopedSpringTransactionBoundaryFact> springTransactionBoundaries = new ArrayList<>();
+    List<ModuleScopedSpringScheduledMethodFact> springScheduledMethods = new ArrayList<>();
+    List<ModuleScopedSpringEventListenerFact> springEventListeners = new ArrayList<>();
+    List<ModuleScopedSpringMessagingListenerFact> springMessagingListeners = new ArrayList<>();
+    List<SpringBehaviorEvidence> springBehaviorEvidence = new ArrayList<>();
     List<JpaEntityEvidence> entityEvidence = new ArrayList<>();
     List<TestInventoryEvidence> testEvidence = new ArrayList<>();
     List<AnalysisWarningEvidence> warningEvidence = new ArrayList<>();
@@ -585,6 +643,7 @@ public final class SpringMvcEndpointOutputGenerator {
     boolean componentAnalyzerRan = false;
     boolean springRepositoryAnalyzerRan = false;
     boolean springConfigurationAnalyzerRan = false;
+    boolean springBehaviorAnalyzerRan = false;
     boolean entityAnalyzerRan = false;
     boolean testAnalyzerRan = false;
 
@@ -684,6 +743,32 @@ public final class SpringMvcEndpointOutputGenerator {
         springConfigurationEvidence.addAll(springConfigurationAnalysis.evidence());
         springConfigurationAnalyzerRan = true;
 
+        SpringBehaviorAnalysis springBehaviorAnalysis = springBehaviorAnalyzer.analyze(
+            repositoryRoot,
+            sourceRoots);
+        springBehaviorAnalysis.transactionBoundaries().forEach(boundary ->
+            springTransactionBoundaries.add(new ModuleScopedSpringTransactionBoundaryFact(
+                module.moduleId(),
+                order,
+                boundary)));
+        springBehaviorAnalysis.scheduledMethods().forEach(scheduledMethod ->
+            springScheduledMethods.add(new ModuleScopedSpringScheduledMethodFact(
+                module.moduleId(),
+                order,
+                scheduledMethod)));
+        springBehaviorAnalysis.eventListeners().forEach(eventListener ->
+            springEventListeners.add(new ModuleScopedSpringEventListenerFact(
+                module.moduleId(),
+                order,
+                eventListener)));
+        springBehaviorAnalysis.messagingListenerSignals().forEach(listener ->
+            springMessagingListeners.add(new ModuleScopedSpringMessagingListenerFact(
+                module.moduleId(),
+                order,
+                listener)));
+        springBehaviorEvidence.addAll(springBehaviorAnalysis.evidence());
+        springBehaviorAnalyzerRan = true;
+
         JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(repositoryRoot, sourceRoots);
         entityAnalysis.entities().forEach(entity ->
             entities.add(new ModuleScopedEntityFact(module.moduleId(), order, entity)));
@@ -732,18 +817,25 @@ public final class SpringMvcEndpointOutputGenerator {
         springConfigurationClasses.stream().sorted(SPRING_CONFIGURATION_CLASS_ORDER).toList(),
         springConfigurationProperties.stream().sorted(SPRING_CONFIGURATION_PROPERTIES_ORDER).toList(),
         springBeanMethods.stream().sorted(SPRING_BEAN_METHOD_ORDER).toList(),
+        springTransactionBoundaries.stream().sorted(SPRING_TRANSACTION_BOUNDARY_ORDER).toList(),
+        springScheduledMethods.stream().sorted(SPRING_SCHEDULED_METHOD_ORDER).toList(),
+        springEventListeners.stream().sorted(SPRING_EVENT_LISTENER_ORDER).toList(),
+        springMessagingListeners.stream().sorted(SPRING_MESSAGING_LISTENER_ORDER).toList(),
         entities.stream().sorted(ENTITY_ORDER).toList(),
         tests.stream().sorted(TEST_CLASS_ORDER).toList(),
         warningAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         componentAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         springRepositoryAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         springConfigurationAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
+        springBehaviorAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
+        springBehaviorAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         entityAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         testAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         endpointEvidence,
         componentEvidence,
         springRepositoryEvidence,
         springConfigurationEvidence,
+        springBehaviorEvidence,
         entityEvidence,
         testEvidence,
         warningEvidence);
@@ -2191,15 +2283,17 @@ public final class SpringMvcEndpointOutputGenerator {
         scan.springRepositoryAnalysisStatus(),
         true);
     appendSpringConfigurationSection(json, scan, scan.springConfigurationAnalysisStatus(), true);
-    appendSpringBehaviorShell(json, futureSectionStatus, true);
-    appendSpringMessagingShell(json, futureSectionStatus, true);
+    appendSpringBehaviorSection(json, scan, scan.springBehaviorAnalysisStatus(), true);
+    appendSpringMessagingSection(json, scan, scan.springMessagingAnalysisStatus(), true);
     appendSpringSecurityShell(json, futureSectionStatus, false);
     json.append("  },\n");
   }
 
   private String springApplicationSurfaceAnalysisStatus(ModuleAwareScan scan) {
     if (ANALYSIS_ANALYZED.equals(scan.springRepositoryAnalysisStatus())
-        || ANALYSIS_ANALYZED.equals(scan.springConfigurationAnalysisStatus())) {
+        || ANALYSIS_ANALYZED.equals(scan.springConfigurationAnalysisStatus())
+        || ANALYSIS_ANALYZED.equals(scan.springBehaviorAnalysisStatus())
+        || ANALYSIS_ANALYZED.equals(scan.springMessagingAnalysisStatus())) {
       return ANALYSIS_ANALYZED;
     }
     return ANALYSIS_NOT_DETECTED;
@@ -2473,28 +2567,287 @@ public final class SpringMvcEndpointOutputGenerator {
     appendLineEnding(json, trailingComma);
   }
 
-  private void appendSpringBehaviorShell(
+  private void appendSpringBehaviorSection(
       StringBuilder json,
+      ModuleAwareScan scan,
       String analysisStatus,
       boolean trailingComma) {
     indent(json, 2);
     json.append("\"behavior\": {\n");
-    appendEmptySpringSurfaceItemsSection(json, 3, "transaction_boundaries", analysisStatus, true);
-    appendEmptySpringSurfaceItemsSection(json, 3, "scheduled_methods", analysisStatus, true);
-    appendEmptySpringSurfaceItemsSection(json, 3, "event_listeners", analysisStatus, false);
+    appendSpringTransactionBoundariesSection(
+        json,
+        scan.springTransactionBoundaries(),
+        analysisStatus,
+        true);
+    appendSpringScheduledMethodsSection(
+        json,
+        scan.springScheduledMethods(),
+        analysisStatus,
+        true);
+    appendSpringEventListenersSection(
+        json,
+        scan.springEventListeners(),
+        analysisStatus,
+        false);
     indent(json, 2);
     json.append("}");
     appendLineEnding(json, trailingComma);
   }
 
-  private void appendSpringMessagingShell(
+  private void appendSpringTransactionBoundariesSection(
       StringBuilder json,
+      List<ModuleScopedSpringTransactionBoundaryFact> transactionBoundaries,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"transaction_boundaries\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
+    indent(json, 4);
+    json.append("\"items\": [");
+    if (transactionBoundaries.isEmpty()) {
+      json.append("]\n");
+      indent(json, 3);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < transactionBoundaries.size(); index++) {
+      appendSpringTransactionBoundary(
+          json,
+          transactionBoundaries.get(index),
+          index < transactionBoundaries.size() - 1);
+    }
+    indent(json, 4);
+    json.append("]\n");
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringTransactionBoundary(
+      StringBuilder json,
+      ModuleScopedSpringTransactionBoundaryFact scopedBoundary,
+      boolean trailingComma) {
+    SpringTransactionBoundaryFact boundary = scopedBoundary.fact();
+    indent(json, 5);
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        6,
+        "id",
+        springTransactionBoundaryId(scopedBoundary.moduleId(), boundary),
+        true);
+    appendIndentedStringField(json, 6, "module_id", scopedBoundary.moduleId(), true);
+    appendIndentedStringField(json, 6, "surface_category", boundary.surfaceCategory(), true);
+    appendIndentedStringField(json, 6, "support_type", boundary.supportType(), true);
+    appendIndentedStringField(json, 6, "class_name", boundary.className(), true);
+    appendIndentedNullableStringField(json, 6, "method_name", boundary.methodName(), true);
+    appendIndentedStringField(json, 6, "source_path", boundary.sourcePath(), true);
+    appendIndentedStringField(json, 6, "target_kind", boundary.targetKind(), true);
+    appendIndentedStringField(json, 6, "annotation_symbol", boundary.annotationSymbol(), true);
+    appendIndentedStringField(json, 6, "transaction_signal", boundary.transactionSignal(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", boundary.evidenceIds(), false);
+    indent(json, 5);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringScheduledMethodsSection(
+      StringBuilder json,
+      List<ModuleScopedSpringScheduledMethodFact> scheduledMethods,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"scheduled_methods\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
+    indent(json, 4);
+    json.append("\"items\": [");
+    if (scheduledMethods.isEmpty()) {
+      json.append("]\n");
+      indent(json, 3);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < scheduledMethods.size(); index++) {
+      appendSpringScheduledMethod(
+          json,
+          scheduledMethods.get(index),
+          index < scheduledMethods.size() - 1);
+    }
+    indent(json, 4);
+    json.append("]\n");
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringScheduledMethod(
+      StringBuilder json,
+      ModuleScopedSpringScheduledMethodFact scopedScheduledMethod,
+      boolean trailingComma) {
+    SpringScheduledMethodFact scheduledMethod = scopedScheduledMethod.fact();
+    indent(json, 5);
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        6,
+        "id",
+        springScheduledMethodId(scopedScheduledMethod.moduleId(), scheduledMethod),
+        true);
+    appendIndentedStringField(json, 6, "module_id", scopedScheduledMethod.moduleId(), true);
+    appendIndentedStringField(json, 6, "surface_category", scheduledMethod.surfaceCategory(), true);
+    appendIndentedStringField(json, 6, "support_type", scheduledMethod.supportType(), true);
+    appendIndentedStringField(json, 6, "class_name", scheduledMethod.className(), true);
+    appendIndentedStringField(json, 6, "method_name", scheduledMethod.methodName(), true);
+    appendIndentedStringField(json, 6, "source_path", scheduledMethod.sourcePath(), true);
+    appendIndentedStringField(json, 6, "target_kind", scheduledMethod.targetKind(), true);
+    appendIndentedStringField(json, 6, "annotation_symbol", scheduledMethod.annotationSymbol(), true);
+    appendIndentedStringField(json, 6, "scheduled_signal", scheduledMethod.scheduledSignal(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", scheduledMethod.evidenceIds(), false);
+    indent(json, 5);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringEventListenersSection(
+      StringBuilder json,
+      List<ModuleScopedSpringEventListenerFact> eventListeners,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"event_listeners\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
+    indent(json, 4);
+    json.append("\"items\": [");
+    if (eventListeners.isEmpty()) {
+      json.append("]\n");
+      indent(json, 3);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < eventListeners.size(); index++) {
+      appendSpringEventListener(
+          json,
+          eventListeners.get(index),
+          index < eventListeners.size() - 1);
+    }
+    indent(json, 4);
+    json.append("]\n");
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringEventListener(
+      StringBuilder json,
+      ModuleScopedSpringEventListenerFact scopedEventListener,
+      boolean trailingComma) {
+    SpringEventListenerFact eventListener = scopedEventListener.fact();
+    indent(json, 5);
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        6,
+        "id",
+        springEventListenerId(scopedEventListener.moduleId(), eventListener),
+        true);
+    appendIndentedStringField(json, 6, "module_id", scopedEventListener.moduleId(), true);
+    appendIndentedStringField(json, 6, "surface_category", eventListener.surfaceCategory(), true);
+    appendIndentedStringField(json, 6, "support_type", eventListener.supportType(), true);
+    appendIndentedStringField(json, 6, "class_name", eventListener.className(), true);
+    appendIndentedStringField(json, 6, "method_name", eventListener.methodName(), true);
+    appendIndentedStringField(json, 6, "source_path", eventListener.sourcePath(), true);
+    appendIndentedStringField(json, 6, "target_kind", eventListener.targetKind(), true);
+    appendIndentedStringField(json, 6, "annotation_symbol", eventListener.annotationSymbol(), true);
+    appendIndentedStringField(json, 6, "event_listener_signal", eventListener.eventListenerSignal(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", eventListener.evidenceIds(), false);
+    indent(json, 5);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringMessagingSection(
+      StringBuilder json,
+      ModuleAwareScan scan,
       String analysisStatus,
       boolean trailingComma) {
     indent(json, 2);
     json.append("\"messaging\": {\n");
-    appendEmptySpringSurfaceItemsSection(json, 3, "listener_signals", analysisStatus, false);
+    appendSpringMessagingListenersSection(
+        json,
+        scan.springMessagingListeners(),
+        analysisStatus,
+        false);
     indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringMessagingListenersSection(
+      StringBuilder json,
+      List<ModuleScopedSpringMessagingListenerFact> messagingListeners,
+      String analysisStatus,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"listener_signals\": {\n");
+    appendIndentedStringField(json, 4, "analysis_status", analysisStatus, true);
+    indent(json, 4);
+    json.append("\"items\": [");
+    if (messagingListeners.isEmpty()) {
+      json.append("]\n");
+      indent(json, 3);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < messagingListeners.size(); index++) {
+      appendSpringMessagingListener(
+          json,
+          messagingListeners.get(index),
+          index < messagingListeners.size() - 1);
+    }
+    indent(json, 4);
+    json.append("]\n");
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringMessagingListener(
+      StringBuilder json,
+      ModuleScopedSpringMessagingListenerFact scopedMessagingListener,
+      boolean trailingComma) {
+    SpringMessagingListenerFact messagingListener = scopedMessagingListener.fact();
+    indent(json, 5);
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        6,
+        "id",
+        springMessagingListenerId(scopedMessagingListener.moduleId(), messagingListener),
+        true);
+    appendIndentedStringField(json, 6, "module_id", scopedMessagingListener.moduleId(), true);
+    appendIndentedStringField(json, 6, "surface_category", messagingListener.surfaceCategory(), true);
+    appendIndentedStringField(json, 6, "support_type", messagingListener.supportType(), true);
+    appendIndentedStringField(json, 6, "class_name", messagingListener.className(), true);
+    appendIndentedNullableStringField(json, 6, "method_name", messagingListener.methodName(), true);
+    appendIndentedStringField(json, 6, "source_path", messagingListener.sourcePath(), true);
+    appendIndentedStringField(json, 6, "target_kind", messagingListener.targetKind(), true);
+    appendIndentedStringField(json, 6, "annotation_symbol", messagingListener.annotationSymbol(), true);
+    appendIndentedStringField(json, 6, "listener_framework", messagingListener.listenerFramework(), true);
+    appendIndentedStringField(json, 6, "listener_signal", messagingListener.listenerSignal(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", messagingListener.evidenceIds(), false);
+    indent(json, 5);
     json.append("}");
     appendLineEnding(json, trailingComma);
   }
@@ -2512,21 +2865,6 @@ public final class SpringMvcEndpointOutputGenerator {
     indent(json, 3);
     json.append("}\n");
     indent(json, 2);
-    json.append("}");
-    appendLineEnding(json, trailingComma);
-  }
-
-  private void appendEmptySpringSurfaceItemsSection(
-      StringBuilder json,
-      int indentLevel,
-      String fieldName,
-      String analysisStatus,
-      boolean trailingComma) {
-    indent(json, indentLevel);
-    json.append(jsonString(fieldName)).append(": {\n");
-    appendIndentedStringField(json, indentLevel + 1, "analysis_status", analysisStatus, true);
-    appendIndentedStringArrayField(json, indentLevel + 1, "items", List.of(), false);
-    indent(json, indentLevel);
     json.append("}");
     appendLineEnding(json, trailingComma);
   }
@@ -2982,6 +3320,60 @@ public final class SpringMvcEndpointOutputGenerator {
         + beanMethod.idDiscriminator();
   }
 
+  private static String springTransactionBoundaryId(
+      String moduleId,
+      SpringTransactionBoundaryFact boundary) {
+    return springBehaviorTargetId(
+        boundary.surfaceCategory(),
+        moduleId,
+        boundary.className(),
+        boundary.methodName(),
+        boundary.idDiscriminator());
+  }
+
+  private static String springScheduledMethodId(
+      String moduleId,
+      SpringScheduledMethodFact scheduledMethod) {
+    return springBehaviorTargetId(
+        scheduledMethod.surfaceCategory(),
+        moduleId,
+        scheduledMethod.className(),
+        scheduledMethod.methodName(),
+        scheduledMethod.idDiscriminator());
+  }
+
+  private static String springEventListenerId(
+      String moduleId,
+      SpringEventListenerFact eventListener) {
+    return springBehaviorTargetId(
+        eventListener.surfaceCategory(),
+        moduleId,
+        eventListener.className(),
+        eventListener.methodName(),
+        eventListener.idDiscriminator());
+  }
+
+  private static String springMessagingListenerId(
+      String moduleId,
+      SpringMessagingListenerFact listener) {
+    return springBehaviorTargetId(
+        listener.surfaceCategory(),
+        moduleId,
+        listener.className(),
+        listener.methodName(),
+        listener.idDiscriminator());
+  }
+
+  private static String springBehaviorTargetId(
+      String surfaceCategory,
+      String moduleId,
+      String className,
+      String methodName,
+      String idDiscriminator) {
+    String owner = methodName == null ? className : className + "#" + methodName;
+    return surfaceCategory + ":" + moduleId + ":" + owner + ":" + idDiscriminator;
+  }
+
   private static String entityId(String moduleId, JpaEntityFact entity) {
     if (ROOT_MODULE_ID.equals(moduleId)) {
       return entity.id();
@@ -3087,6 +3479,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<SpringRepositoryEvidence> springRepositoryEvidenceRecords,
       List<SpringConfigurationEvidence> springConfigurationEvidenceRecords,
+      List<SpringBehaviorEvidence> springBehaviorEvidenceRecords,
       List<JpaEntityEvidence> entityEvidenceRecords,
       List<TestInventoryEvidence> testEvidenceRecords,
       List<AnalysisWarningEvidence> warningEvidenceRecords) {
@@ -3126,6 +3519,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     springConfigurationEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    springBehaviorEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     entityEvidenceRecords.stream()
@@ -3284,6 +3680,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(SpringConfigurationEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(SpringBehaviorEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),
@@ -3697,18 +4107,25 @@ public final class SpringMvcEndpointOutputGenerator {
       List<ModuleScopedSpringConfigurationClassFact> springConfigurationClasses,
       List<ModuleScopedSpringConfigurationPropertiesFact> springConfigurationProperties,
       List<ModuleScopedSpringBeanMethodFact> springBeanMethods,
+      List<ModuleScopedSpringTransactionBoundaryFact> springTransactionBoundaries,
+      List<ModuleScopedSpringScheduledMethodFact> springScheduledMethods,
+      List<ModuleScopedSpringEventListenerFact> springEventListeners,
+      List<ModuleScopedSpringMessagingListenerFact> springMessagingListeners,
       List<ModuleScopedEntityFact> entities,
       List<ModuleScopedTestFact> tests,
       String warningAnalysisStatus,
       String componentAnalysisStatus,
       String springRepositoryAnalysisStatus,
       String springConfigurationAnalysisStatus,
+      String springBehaviorAnalysisStatus,
+      String springMessagingAnalysisStatus,
       String entityAnalysisStatus,
       String testAnalysisStatus,
       List<SpringMvcEndpointEvidence> endpointEvidence,
       List<SpringComponentEvidence> componentEvidence,
       List<SpringRepositoryEvidence> springRepositoryEvidence,
       List<SpringConfigurationEvidence> springConfigurationEvidence,
+      List<SpringBehaviorEvidence> springBehaviorEvidence,
       List<JpaEntityEvidence> entityEvidence,
       List<TestInventoryEvidence> testEvidence,
       List<AnalysisWarningEvidence> warningEvidence) {
@@ -3720,12 +4137,17 @@ public final class SpringMvcEndpointOutputGenerator {
       springConfigurationClasses = List.copyOf(springConfigurationClasses);
       springConfigurationProperties = List.copyOf(springConfigurationProperties);
       springBeanMethods = List.copyOf(springBeanMethods);
+      springTransactionBoundaries = List.copyOf(springTransactionBoundaries);
+      springScheduledMethods = List.copyOf(springScheduledMethods);
+      springEventListeners = List.copyOf(springEventListeners);
+      springMessagingListeners = List.copyOf(springMessagingListeners);
       entities = List.copyOf(entities);
       tests = List.copyOf(tests);
       endpointEvidence = List.copyOf(endpointEvidence);
       componentEvidence = List.copyOf(componentEvidence);
       springRepositoryEvidence = List.copyOf(springRepositoryEvidence);
       springConfigurationEvidence = List.copyOf(springConfigurationEvidence);
+      springBehaviorEvidence = List.copyOf(springBehaviorEvidence);
       entityEvidence = List.copyOf(entityEvidence);
       testEvidence = List.copyOf(testEvidence);
       warningEvidence = List.copyOf(warningEvidence);
@@ -3766,6 +4188,30 @@ public final class SpringMvcEndpointOutputGenerator {
       String moduleId,
       int moduleOrder,
       SpringBeanMethodFact fact) {
+  }
+
+  private record ModuleScopedSpringTransactionBoundaryFact(
+      String moduleId,
+      int moduleOrder,
+      SpringTransactionBoundaryFact fact) {
+  }
+
+  private record ModuleScopedSpringScheduledMethodFact(
+      String moduleId,
+      int moduleOrder,
+      SpringScheduledMethodFact fact) {
+  }
+
+  private record ModuleScopedSpringEventListenerFact(
+      String moduleId,
+      int moduleOrder,
+      SpringEventListenerFact fact) {
+  }
+
+  private record ModuleScopedSpringMessagingListenerFact(
+      String moduleId,
+      int moduleOrder,
+      SpringMessagingListenerFact fact) {
   }
 
   private record ModuleScopedEntityFact(

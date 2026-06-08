@@ -1,0 +1,332 @@
+{
+  "schema_version": "0.5",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v0-5-spring-behavior-messaging-surface",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface:type",
+            "module_id": "module:.",
+            "surface_category": "spring_transaction_boundary",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": null,
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "type",
+            "annotation_symbol": "@Transactional",
+            "transaction_signal": "direct_transactional_type",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9-9:com.example.behavior.BehaviorMessagingSurface:@Transactional"
+            ]
+          },
+          {
+            "id": "spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface#settleInvoice:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_transaction_boundary",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": "settleInvoice",
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "method",
+            "annotation_symbol": "@Transactional",
+            "transaction_signal": "direct_transactional_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12-12:com.example.behavior.BehaviorMessagingSurface#settleInvoice:@Transactional"
+            ]
+          }
+        ]
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_scheduled_method:module:.:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_scheduled_method",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": "refreshInvoices",
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "method",
+            "annotation_symbol": "@Scheduled",
+            "scheduled_signal": "direct_scheduled_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16-16:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:@Scheduled"
+            ]
+          }
+        ]
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_event_listener:module:.:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_event_listener",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": "onInvoicePaid",
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "method",
+            "annotation_symbol": "@EventListener",
+            "event_listener_signal": "direct_event_listener_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20-20:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:@EventListener"
+            ]
+          }
+        ]
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface:annotation:rabbit_listener:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "messaging_listener_signal",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": null,
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "type",
+            "annotation_symbol": "@RabbitListener",
+            "listener_framework": "rabbit",
+            "listener_signal": "direct_rabbit_listener_annotation",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10-10:com.example.behavior.BehaviorMessagingSurface:@RabbitListener"
+            ]
+          },
+          {
+            "id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:annotation:kafka_listener:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "messaging_listener_signal",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": "onKafkaEvent",
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "method",
+            "annotation_symbol": "@KafkaListener",
+            "listener_framework": "kafka",
+            "listener_signal": "direct_kafka_listener_annotation",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24-24:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:@KafkaListener"
+            ]
+          },
+          {
+            "id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:annotation:rabbit_listener:decl:000002",
+            "module_id": "module:.",
+            "surface_category": "messaging_listener_signal",
+            "support_type": "extracted",
+            "class_name": "com.example.behavior.BehaviorMessagingSurface",
+            "method_name": "onRabbitRetry",
+            "source_path": "src/main/java/com/example/behavior/BehaviorMessagingSurface.java",
+            "target_kind": "method",
+            "annotation_symbol": "@RabbitListener",
+            "listener_framework": "rabbit",
+            "listener_signal": "direct_rabbit_listener_annotation",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28-28:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:@RabbitListener"
+            ]
+          }
+        ]
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "not_analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}
