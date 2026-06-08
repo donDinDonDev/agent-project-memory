@@ -455,7 +455,11 @@ final class AgentGuideGeneratorTest {
     int end = markdown.indexOf(endHeading, start);
     assertTrue(start >= 0, "start heading must exist");
     assertTrue(end > start, "end heading must exist after start heading");
-    return markdown.substring(start, end);
+    String section = markdown.substring(start, end);
+    if (section.endsWith("\n\n")) {
+      return section.substring(0, section.length() - 1);
+    }
+    return section;
   }
 
   private Path goldenRoot(String fixtureName) throws Exception {
