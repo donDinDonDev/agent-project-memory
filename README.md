@@ -181,15 +181,9 @@ Start here:
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
-- Post-v0.1 direction:
+- Product direction and release tracks:
   [docs/product/POST_V0_1_STRATEGY.md](docs/product/POST_V0_1_STRATEGY.md) and
-  the public v0.2 roadmap and release notes;
-  v0.3 build/configuration planning:
-  the public v0.3 roadmap and release notes;
-  v0.4 API surface planning:
-  the public v0.4 roadmap and release notes;
-  v0.5 Spring application surface planning:
-  the public v0.5 roadmap and release notes.
+  [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
 - Output and evidence contracts:
   [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md) and
   [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
@@ -203,7 +197,7 @@ Start here:
   [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md), and
   [SECURITY.md](SECURITY.md).
 
-Stage 8 evaluation reports are linked from the v0.1 release notes as supporting detail.
+Public evaluation summaries are linked from the release notes as supporting detail.
 
 ## What This Is Not
 
@@ -224,11 +218,11 @@ references.
 ## Project Status
 
 The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
-module-aware Maven release is published with no remaining security blockers from its
-final discovery baseline. The v0.3 build/configuration release is published. The v0.4
-API surface release is published with packaged jar and checksum assets. The v0.5
-deeper Spring application surface release is published with packaged jar and checksum
-assets after real-project evaluation and review/security audit completion. Future
+module-aware Maven release is published with no remaining release-blocking security
+findings from its final risk review. The v0.3 build/configuration release is published.
+The v0.4 API surface release is published with packaged jar and checksum assets. The
+v0.5 deeper Spring application surface release is published with packaged jar and
+checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module

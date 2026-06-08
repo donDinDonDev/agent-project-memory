@@ -190,8 +190,8 @@ analysis, or LLM output.
 ### v0.2 Maven Module Evidence
 
 v0.2 module discovery reuses the existing evidence field set and the existing
-`build_file` evidence type. No new global evidence fields are planned for module-aware
-Maven discovery.
+`build_file` evidence type. No new global evidence fields are introduced for
+module-aware Maven discovery.
 
 Root `<modules>` declaration evidence:
 
@@ -247,10 +247,10 @@ v0.2 module warnings use this same evidence:
 - `unsupported_module` warnings should reference child POM evidence and any root
   declaration evidence that led to the module candidate.
 
-### Planned v0.3 Build And Configuration Evidence
+### Current v0.3 Build And Configuration Evidence
 
 v0.3 build/configuration analysis should reuse the existing evidence field set and the
-existing evidence types. No new global evidence fields are planned for the v0.3
+existing evidence types. No new global evidence fields are introduced for the v0.3
 build/configuration contract.
 
 Maven metadata evidence:
@@ -267,7 +267,7 @@ Maven metadata evidence:
   Maven metadata. This proves only the direct POM text. It does not prove Maven defaults,
   parent inheritance, profile activation, property resolution, effective POM values, or
   runtime build behavior.
-- The current staged v0.3 implementation emits this metadata evidence where a module POM
+- The current v0.3 implementation emits this metadata evidence where a module POM
   is present, plus dependency evidence for direct `<dependencies><dependency>`
   declarations, separate `<dependencyManagement><dependencies><dependency>` management
   declarations, plugin evidence for direct `<build><plugins><plugin>` declarations,
@@ -310,7 +310,7 @@ Plugin and generator signal evidence:
 - OpenAPI/Swagger, annotation processor, and generated-source plugin evidence supports
   warnings only. It does not prove generated source contents, generated API operations,
   endpoint facts, or runtime behavior.
-- The current staged v0.3 plugin analyzer emits plugin declaration and execution evidence
+- The current v0.3 plugin analyzer emits plugin declaration and execution evidence
   excerpts as bounded declaration observations, not full `<plugin>` or `<execution>`
   source blocks, so arbitrary `<configuration>` values are not serialized through those
   evidence records.
@@ -318,7 +318,7 @@ Plugin and generator signal evidence:
 Resource and config discovery evidence:
 
 - Resource roots should be recorded in `project-map.json` as path inventory entries with
-  empty evidence IDs in the planned initial v0.3 contract, following the existing
+  empty evidence IDs in the v0.3 contract, following the existing
   source-root and test-root summary pattern. The existing evidence model does not define
   a directory evidence type.
 - Spring application and logging configuration file presence should use `config_file`
@@ -508,7 +508,7 @@ Behavior, messaging, and security evidence:
 ### Spring MVC Interface Mapping Evidence
 
 Source-visible interface-declared endpoint facts reuse the existing evidence types. No
-new global evidence fields are introduced for `EVAL-8-004` decision B.
+new global evidence fields are introduced for the v0.1 interface-mapping decision.
 
 When an endpoint mapping is declared on a Java interface method, the emitted fact should
 use:

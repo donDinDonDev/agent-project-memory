@@ -1,7 +1,7 @@
 # v0.2 Release Notes
 
 These notes summarize the v0.2 public release surface for
-`agent-project-memory`. Detailed evaluation records remain in
+`agent-project-memory`. Public evaluation summaries remain in
 [docs/development/evaluations/](../development/evaluations/).
 
 ## Release Status
@@ -11,12 +11,9 @@ v0.2 is the module-aware Maven release track for the local-first Java/Spring CLI
 The `v0.2.0` tag and GitHub release are published with the packaged CLI jar and
 `SHA256SUMS` assets. The release version and README artifact references are aligned to
 `0.2.0`.
-The required repository-wide Codex Security release-candidate gate has completed for
-the current v0.2 chain: the second scan at HEAD `451a75a` is the final discovery
-baseline, `CS-APM-RC-006` through `CS-APM-RC-012` are fixed and checkpointed in
-`53a4fab`, `3156238`, and `6b49306`, and no security blockers remain from that final
-baseline. No additional open-ended repository-wide security scan was run for `v0.2.0`;
-targeted verification was used for known findings and release-readiness checks.
+The required release-candidate security baseline completed for the v0.2 release line.
+Its findings were fixed, no release-blocking security findings remain, and targeted
+verification was used for known findings and release-readiness checks.
 
 ## Scope
 
@@ -85,7 +82,7 @@ semantics are governed by
 
 ## Evaluation Summary
 
-the v0.2 real-project evaluation evaluated the packaged CLI on two pinned public Maven multi-module
+The v0.2 evaluation ran the packaged CLI on two pinned public Maven multi-module
 Java/Spring projects:
 
 | Project | Ref | Result |
@@ -93,9 +90,9 @@ Java/Spring projects:
 | Spring PetClinic Microservices | `305a1f13e4f961001d4e6cb50a9db51dc3fc5967` | Produced deterministic module inventory, module-owned endpoint/component/entity/test facts, module-aware Markdown output, and resolving evidence references. |
 | Spring Cloud OpenFeign | `d9f528bdc3f2ad6abebf4846258592d9786f42c7` | Produced supported-vs-unsupported module inventory, unsupported-module warnings, module-owned component/test facts, and resolving evidence references. |
 
-Detailed report:
+Public evaluation summary:
 
-- [docs/development/evaluations/v0.2-module-aware-maven-real-projects.md](../development/evaluations/v0.2-module-aware-maven-real-projects.md)
+- [docs/development/evaluations/v0.2-module-aware-maven-real-projects_SUMMARY.md](../development/evaluations/v0.2-module-aware-maven-real-projects_SUMMARY.md)
 
 No confirmed analyzer, output-contract, evidence-model, or Markdown generator defect was
 found in that evaluation slice.
@@ -137,10 +134,7 @@ mvn package
 git diff --stat
 ```
 
-The active release track's repository-wide Codex Security release-candidate scan
-requirement completed. The second scan at HEAD `451a75a` is the final v0.2 discovery
-baseline, its `CS-APM-RC-006` through `CS-APM-RC-012` findings are fixed and
-checkpointed, and no additional open-ended repository-wide security scan was required
-for `v0.2.0`.
+The active release track's release-candidate security baseline completed. Its findings
+were fixed, and no additional broad security review was required for `v0.2.0`.
 
 Binary release artifact names match the maintainer-approved release version in `pom.xml`.

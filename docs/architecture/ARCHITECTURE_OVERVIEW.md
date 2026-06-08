@@ -39,14 +39,14 @@ default, or discover Gradle projects.
 
 ### Build And Configuration Analyzer
 
-The v0.3 build and configuration analyzer is being implemented in bounded slices. The
-current slice emits source-visible module-owned Maven metadata, direct Maven dependency
-inventory, separate dependency-management declarations, direct Maven plugin inventory,
-separate plugin-management declarations, conservative plugin-derived generated-source
-warnings, standard resource-root discovery, path-only supported application/logging
-config-file inventory, direct source-visible Spring Boot application signals, and a
-complete `build_config` shell. The implemented scope is direct local POM, resource,
-config-file, and source annotation observations:
+The v0.3 build and configuration analyzer emits source-visible module-owned Maven
+metadata, direct Maven dependency inventory, separate dependency-management
+declarations, direct Maven plugin inventory, separate plugin-management declarations,
+conservative plugin-derived generated-source warnings, standard resource-root
+discovery, path-only supported application/logging config-file inventory, direct
+source-visible Spring Boot application signals, and a complete `build_config` shell.
+The implemented scope is direct local POM, resource, config-file, and source annotation
+observations:
 
 - direct Maven metadata, dependency declarations, dependency-management declarations,
   plugin declarations, plugin-management declarations, and bounded generator signals;
@@ -56,10 +56,10 @@ config-file, and source annotation observations:
 - generated-source and generator-plugin warnings that remain separate from endpoint,
   generated API, and generated source facts.
 
-This planned analyzer must not execute Maven, reconstruct effective POMs, activate
-profiles, resolve remote dependencies, interpret config values, extract secrets, scan
-generated sources by default, parse OpenAPI specs, or turn build/config warnings into
-application facts.
+This analyzer must not execute Maven, reconstruct effective POMs, activate profiles,
+resolve remote dependencies, interpret config values, extract secrets, scan generated
+sources by default, parse OpenAPI specs, or turn build/config warnings into application
+facts.
 
 ### Java/Spring Analyzer
 
@@ -68,14 +68,13 @@ Spring MVC endpoint facts, deterministic hidden HTTP surface warnings, direct Sp
 stereotype component facts, and direct JPA entity facts from supported production source
 roots.
 
-For `EVAL-8-004` decision B, the v0.1 endpoint contract includes Spring MVC mappings
-declared on Java interface methods only when those interfaces are visible under
-supported production source roots such as `src/main/java` and can be uniquely bound to
-concrete controller handler methods. This is still source-visible analysis: the analyzer
-must not run Maven generation, scan `target/generated-sources` by default, parse OpenAPI
-YAML, reconstruct generated APIs, or claim complete Spring runtime handler mapping
-behavior. Ambiguous or non-unique interface bindings are skipped instead of emitted as
-uncertain endpoints.
+The v0.1 endpoint contract includes Spring MVC mappings declared on Java interface
+methods only when those interfaces are visible under supported production source roots
+such as `src/main/java` and can be uniquely bound to concrete controller handler
+methods. This is still source-visible analysis: the analyzer must not run Maven
+generation, scan `target/generated-sources` by default, parse OpenAPI YAML, reconstruct
+generated APIs, or claim complete Spring runtime handler mapping behavior. Ambiguous or
+non-unique interface bindings are skipped instead of emitted as uncertain endpoints.
 
 The hidden HTTP surface warning analyzer records bounded signals such as
 OpenAPI/Swagger spec filename presence, root `pom.xml` OpenAPI/Swagger Maven plugin

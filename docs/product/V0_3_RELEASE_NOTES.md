@@ -62,10 +62,13 @@ Release-prep validation covered:
 - `git diff --check`
 - `git diff --stat`
 - v0.3 real-project evaluation on pinned Maven Java/Spring projects
-- v0.3 review/security diff audit
-- final post-fix release-candidate risk-based security baseline
+- v0.3 review and risk-based security assessment
+- final post-fix release security baseline
 
-The final post-fix release-candidate risk-based security baseline reported no findings:
+Public evaluation summary:
+[docs/development/evaluations/v0.3-build-config-real-projects_SUMMARY.md](../development/evaluations/v0.3-build-config-real-projects_SUMMARY.md).
+
+The final post-fix release security baseline reported no release-blocking findings.
 
 ## Security Notes
 
@@ -117,19 +120,11 @@ this release:
 - Keep OpenAPI/generated API reconstruction in the future API-surface track.
 - Add nested Maven module support in a later Maven expansion track.
 
-## Maintainer Review Notes
+## Publication Status
 
-This document prepares release materials for maintainer review. Tag creation, pushing,
-publishing, GitHub release creation, artifact upload, and checksum publication remain
-manual maintainer actions.
+The `v0.3.0` tag and GitHub release are published:
 
-Recommended manual next steps:
-
-1. Review the release-prep diff for scope, version, README, roadmap, changelog, output
-   contract, and evidence contract alignment.
-2. Confirm local validation results from the release-prep summary.
-3. Create the `v0.3.0` tag only after approval.
-4. Draft the GitHub release from these notes only after the tag is approved.
-5. Attach `target/agent-project-memory-0.3.0.jar` and checksum files if publishing
-   binary assets.
-6. Verify published release notes and download instructions after publication.
+- Release: <https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.3.0>
+- Assets: `agent-project-memory-0.3.0.jar` and `SHA256SUMS`.
+- Jar SHA-256:
+  `35fe7a06f95ffa62e807461a73880bfb8391f174d5922072dda036d9a5a44cdd`.

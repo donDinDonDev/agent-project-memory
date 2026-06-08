@@ -65,16 +65,20 @@ This release-prep pass ran and passed:
 - `git diff --check`: passed.
 - `git diff --stat`: run for the release-prep diff.
 
-Earlier v0.4 release-track gates supporting this release:
+Earlier v0.4 release-track checks supporting this release:
 
 - v0.4 real-project evaluation on pinned Java/Spring Maven projects
-- v0.4 review/security diff audit
+- v0.4 review and risk-based security assessment
 
-The v0.4 implementation-range risk-based implementation-range security assessment reported no findings:
+Public evaluation summary:
+[docs/development/evaluations/v0.4-api-surface-real-projects_SUMMARY.md](../development/evaluations/v0.4-api-surface-real-projects_SUMMARY.md).
 
-The final release-prep diff uses a manual low-risk documentation assessment because it changes only
-release documentation, changelog, README/status wording, and the Maven project version;
-the v0.4 review and security audit already covered the implementation range with a risk-based security assessment.
+The v0.4 implementation-range security assessment reported no release-blocking
+findings.
+
+The final release-prep assessment was narrow because release prep changed only release
+documentation, changelog, README/status wording, and the Maven project version; the
+implementation range had already been reviewed.
 
 ## Security Notes
 

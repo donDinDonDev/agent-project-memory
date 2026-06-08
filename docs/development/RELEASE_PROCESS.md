@@ -43,16 +43,16 @@ after `0.1.0`, v0.2 development may use:
 ```
 
 This is a maintainer decision and should happen as a focused versioning change or as part
-of the first approved release-track checkpoint. Until that happens, local development
+of the first approved release-track development slice. Until that happens, local development
 builds may still produce jars named with the last released version from `pom.xml`.
 
 Use pre-release versions such as `0.2.0-alpha.1`, `0.2.0-beta.1`, or `0.2.0-rc.1` only
 when the maintainer explicitly wants public pre-release artifacts. Do not create
 pre-release tags or GitHub releases automatically.
 
-Checkpoint commits are ordinary development commits that capture a reviewed work slice.
-Release commits prepare a specific version for tagging and publishing. A checkpoint
-commit must not be treated as permission to tag, publish, or call the result a release.
+Development commits are ordinary commits that capture a reviewed work slice. Release
+commits prepare a specific version for tagging and publishing. A development commit must
+not be treated as permission to tag, publish, or call the result a release.
 
 ## Changelog Rules
 
@@ -124,21 +124,21 @@ Before preparing a release candidate:
 - Confirm `docs/architecture/EVIDENCE_MODEL.md` is synchronized with evidence records.
 - Confirm `CHANGELOG.md` has a dated release section.
 - Confirm release notes exist or are drafted for the release.
-- Confirm evaluation reports are updated when the release includes meaningful analyzer
+- Confirm evaluation summaries are updated when the release includes meaningful analyzer
   expansion.
 - Before creating a release tag, finalize release documentation in release-ready wording.
   The tag must point to a commit whose `CHANGELOG.md`, roadmap/status docs, README
   version references, and release notes already describe the release as ready/released
   rather than pending.
-- Run any Codex Security gate defined by the active release track before tagging or
-  publishing.
-- Treat a repository-wide Codex Security release scan as an open-ended discovery
-  baseline, not as routine fix verification. If the active release track identifies a
-  final security discovery baseline, do not run another open-ended repository-wide scan
-  for the same release unless the maintainer explicitly reopens that gate because the
-  baseline is invalid or incomplete. Verify that every baseline finding is fixed,
-  explicitly deferred, or maintainer-accepted using closed-set targeted verification,
-  focused security re-review, or security-diff scans of fix commits.
+- Run any risk-based security review defined by the active release track before tagging
+  or publishing.
+- Treat a broad release-candidate security review as an open-ended discovery baseline,
+  not as routine fix verification. If the active release track identifies a final
+  security discovery baseline, do not run another open-ended broad review for the same
+  release unless the maintainer explicitly reopens that baseline because it is invalid
+  or incomplete. Verify that every baseline finding is fixed, explicitly deferred, or
+  maintainer-accepted using closed-set targeted verification or focused security
+  re-review of fix changes.
 - Confirm no connector, network, AI, SaaS, web UI, repo chat, generic RAG, or automatic
   code-modification scope entered the release accidentally.
 

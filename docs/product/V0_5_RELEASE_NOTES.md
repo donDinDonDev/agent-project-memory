@@ -69,34 +69,26 @@ for this release-prep pass.
 
 ## Validation
 
-This release-prep pass ran and passed:
+This release-prep pass ran and passed the full test suite, package build, packaged CLI
+smoke test, jar metadata inspection, Markdown whitespace checks, release-prep diff
+review, and publication verification. The published `v0.5.0` release includes the
+expected jar and checksum assets, downloaded assets verify against `SHA256SUMS`, and
+embedded Maven metadata reports `version=0.5.0`.
 
-- `git status --short --branch --untracked-files=all`: expected release-prep working
-  tree on `main`.
-- `mvn test`: 230 tests, 0 failures, 0 errors, 0 skipped.
-- `mvn package`: 230 tests, 0 failures, 0 errors, 0 skipped.
-- Packaged CLI smoke from the Maven build: generated `project-map.json`,
-  `endpoints.md`, `evidence-index.jsonl`, and `agent-guide.md`.
-- Packaged jar/version inspection: `target/agent-project-memory-0.5.0.jar` exists, and
-  embedded Maven metadata reports `version=0.5.0`.
-- `git diff --check`: passed.
-- `git diff --stat`: run for the release-prep diff.
-- Release publication verification: the `v0.5.0` tag is pushed to `origin`, the GitHub
-  release is published as a non-draft, non-prerelease release,
-  `agent-project-memory-0.5.0.jar` and `SHA256SUMS` are attached, downloaded assets pass
-  `shasum -a 256 -c SHA256SUMS`, and embedded Maven metadata reports `version=0.5.0`.
-
-Earlier v0.5 release-track gates supporting this release:
+Earlier v0.5 release-track checks supporting this release:
 
 - v0.5 real-project evaluation on five pinned Java/Spring targets.
-- v0.5 review/security diff audit over the implementation range.
+- v0.5 review and risk-based security assessment over the implementation range.
 
-The v0.5 implementation-range risk-based implementation-range security assessment reported no findings:
+Public evaluation summary:
+[docs/development/evaluations/v0.5-spring-application-surface-real-projects_SUMMARY.md](../development/evaluations/v0.5-spring-application-surface-real-projects_SUMMARY.md).
 
-The final release-prep diff uses a manual low-risk documentation assessment because it changes only
-release documentation, changelog, README/status wording, the Maven project version, and
-local maintainer state; the v0.5 review and risk assessment already covered the implementation range with a clean
-risk-based security assessment.
+The v0.5 implementation-range security assessment reported no release-blocking
+findings.
+
+The final release-prep assessment was narrow because release prep changed only release
+documentation, changelog, README/status wording, the Maven project version, and release
+state; the implementation range had already been reviewed.
 
 ## Security Notes
 
@@ -112,12 +104,12 @@ v0.5.0 keeps the deterministic local analyzer boundary:
 - no Spring Security policy, endpoint protection, authentication, authorization,
   vulnerability, or correctness claims.
 
-the release-prep evidence-excerpt decision is resolved for this release prep: bounded source annotation evidence
+The release-prep evidence-excerpt decision is resolved for this release: bounded source annotation evidence
 excerpts for `@ConfigurationProperties` and inherited test annotations remain
 acceptable for v0.5. They are bounded source-local evidence excerpts, not structured
 `prefix`/`value` output fields or configuration value extraction. The v0.5 evaluation
-found no secret-looking values in the checked generated artifacts, and the the v0.5 review and risk assessment
-risk-based security assessment did not classify this as a reportable security finding. A future
+found no secret-looking values in the checked generated artifacts, and the
+implementation-range security assessment did not classify this as a reportable finding. A future
 evidence-hardening follow-up may still evaluate symbol-only excerpts, but it is not
 required before v0.5.0 release.
 

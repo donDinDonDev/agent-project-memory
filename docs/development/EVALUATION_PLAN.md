@@ -4,8 +4,8 @@ This document is the Stage 8 runbook for evaluating `agent-project-memory` on re
 open-source Spring projects. Stage 8 evaluation records observations only. Analyzer,
 contract, script, and product changes must be split into later bounded tasks.
 
-Stage 8 is closed for the v0.1 baseline after the linked evaluation reports. Keep this
-file as the historical runbook and baseline for future pilot scans.
+Stage 8 is closed for the v0.1 baseline after the linked public evaluation summaries.
+Keep this file as the historical runbook and baseline for future pilot scans.
 
 ## Stage 8 Scope
 
@@ -159,15 +159,14 @@ Field rules:
 - `Output contract issue`: field-shape, naming, sorting, nullability, or semantics issue
   against `docs/architecture/OUTPUT_CONTRACT.md`, or `None`.
 
-## Follow-up Task Format
+## Follow-up Summary Format
 
-Convert confirmed evaluation findings into bounded tasks only after the observation is
-recorded:
+Convert confirmed evaluation findings into public follow-up summaries only after the
+observation is recorded:
 
 ```md
-### EVAL-8-XXX: <bounded title>
+### Follow-up: <bounded title>
 
-- Bounded task id:
 - Project/ref:
 - Observed artifact:
 - Suspected cause:
@@ -178,7 +177,6 @@ recorded:
 
 Field rules:
 
-- `Bounded task id`: stable local identifier, for example `EVAL-8-001`.
 - `Project/ref`: selected project and exact ref where the issue was observed.
 - `Observed artifact`: generated file and, when possible, JSON path or Markdown section.
 - `Suspected cause`: narrow analyzer, generator, evidence, or contract hypothesis.
@@ -197,8 +195,9 @@ Field rules:
 - Do not commit generated third-party `.project-memory/` outputs in this slice.
 - Network access is limited to cloning public open-source repositories and verifying
   public refs or license metadata. The analyzer run itself must be local-only.
-- Evaluation notes should summarize findings and point to local paths or repository refs;
-  they should not embed large third-party source excerpts.
+- Evaluation notes should summarize findings and point to generated artifact names,
+  repository-relative references, or repository refs; they should not embed large
+  third-party source excerpts.
 
 ## Non-goals
 

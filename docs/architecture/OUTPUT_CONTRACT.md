@@ -21,17 +21,18 @@ module roots, supported root source, test, or resource roots, supported config f
 Maven module warnings are detected. Unsupported directories still only get a prepared
 `.project-memory/` directory and do not get contract output files.
 
-`EVAL-8-004` decision B keeps endpoint extraction limited to source-visible Java inputs
-under supported production source roots, while adding uniquely bound interface-declared
-Spring MVC mappings to the v0.1 endpoint semantics. It does not add Maven generation
-during scans, default `target/generated-sources` scanning, full OpenAPI validation,
-generated API reconstruction, or Spring runtime handler mapping reconstruction.
+The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
+source-visible Java inputs under supported production source roots, while adding
+uniquely bound interface-declared Spring MVC mappings to the v0.1 endpoint semantics. It
+does not add Maven generation during scans, default `target/generated-sources` scanning,
+full OpenAPI validation, generated API reconstruction, or Spring runtime handler
+mapping reconstruction.
 
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the staged v0.5 Spring application surface repository and configuration
-slices layered on top of the v0.4 API surface slice and the v0.3 module-aware Maven
+contract is the v0.5 Spring application surface repository and configuration slices
+layered on top of the v0.4 API surface slice and the v0.3 module-aware Maven
 metadata, dependency, and plugin inventory contract.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
@@ -224,7 +225,7 @@ Field rules:
 - Endpoint and request-parameter `evidence_ids` must resolve to records in
   `evidence-index.jsonl`.
 
-Endpoint mapping-source rules for `EVAL-8-004` decision B:
+Endpoint mapping-source rules for the v0.1 interface-mapping decision:
 
 - Endpoint facts for this analyzer slice include a `mapping_source` object.
 - `mapping_source.kind` is one of:
@@ -748,15 +749,15 @@ Deterministic sorting rules:
 - Evidence entries keep the existing sort order by path, line range, class, method,
   symbol, and ID.
 
-### Planned v0.3 Build And Configuration Contract
+### Current v0.3 Build And Configuration Contract
 
-This section defines the v0.3 build/configuration JSON contract. The current staged
+This section defines the v0.3 build/configuration JSON contract. The current
 implementation emits source-visible Maven metadata, source-visible Maven dependency
 inventory, source-visible Maven plugin inventory, standard resource-root inventory,
 path-only supported application/logging config-file inventory, direct source-visible
 Spring Boot application signals, and the complete `build_config` section shell.
 
-The planned v0.3 contract uses:
+The v0.3 contract uses:
 
 - `schema_version: "0.3"` only for an atomic public output state that keeps the v0.2
   module-aware contract and adds the complete v0.3 build/config section shape for every
@@ -765,8 +766,8 @@ The planned v0.3 contract uses:
 - A module-owned `build_config` object inside each `project.modules.items[]` entry.
 - Existing evidence fields and evidence types. Maven observations reuse `build_file`;
   configuration-file observations reuse `config_file`; resource-root inventory entries
-  use empty evidence IDs in the planned initial v0.3 contract; Spring Boot application
-  signals reuse `annotation` and `code_symbol`.
+  use empty evidence IDs in the v0.3 contract; Spring Boot application signals reuse
+  `annotation` and `code_symbol`.
 
 Schema and compatibility rules:
 
@@ -777,20 +778,17 @@ Schema and compatibility rules:
   metadata, only dependencies, only plugins, only config files, or only Spring Boot
   application signals are emitted while other required v0.3 `build_config` subsection
   shells are absent.
-- Implementation checkpoints before the complete public v0.3 boundary should either keep
-  unfinished data internal/test-scoped or emit the complete designed section shape with
-  explicit `analysis_status` values.
-- `analysis_status: "not_analyzed"` is valid only for staged v0.3 subsection shells whose
-  analyzers have not been implemented yet. It means the subsection made no absence claim.
-  Once a subsection analyzer exists, it must use that subsection's normal
-  `"analyzed"`/`"not_detected"` rules instead.
+- `analysis_status: "not_analyzed"` is valid only for explicit not-analyzed subsection
+  shells. It means the subsection made no absence claim. Once a subsection analyzer
+  exists, it must use that subsection's normal `"analyzed"`/`"not_detected"` rules
+  instead.
 - v0.3 single-module scans keep the existing output files and preserve v0.2
   single-module compatibility for root-module fact IDs, top-level `project.source_roots`,
   and top-level `project.test_roots`.
 - Root-level `project.build` remains a scan-level compatibility summary for build system
   detection. It must not become an effective Maven model.
 
-The planned v0.3 module item shape extends the v0.2 item shape like this:
+The v0.3 module item shape extends the v0.2 item shape like this:
 
 ```json
 {
@@ -1061,13 +1059,13 @@ The planned v0.3 module item shape extends the v0.2 item shape like this:
 
 Build/config analysis status rules:
 
-- `build_config.analysis_status` is `"analyzed"` when at least one planned v0.3
+- `build_config.analysis_status` is `"analyzed"` when at least one v0.3
   build/config analyzer runs for the module. It is `"not_detected"` when the module has
   no supported POM, source, resource, or config input for v0.3 build/config analysis.
 - Maven subsection `analysis_status` values are `"analyzed"` when a module POM is
   present and parsed for the relevant subsection. They are `"not_detected"` when the
   module has no POM available to that analyzer.
-- In the current staged v0.3 metadata, dependency, and plugin slice,
+- In the current v0.3 Maven analysis,
   `maven.metadata.analysis_status`, `dependencies.analysis_status`, and
   `dependency_management.analysis_status`, plus `plugins.analysis_status` and
   `plugin_management.analysis_status` are `"analyzed"` when a module POM is present and
@@ -1145,9 +1143,9 @@ Resource and config discovery rules:
 - Resource roots are repository-relative paths under supported modules.
 - `resource.scope` is `"main"` for `src/main/resources` and `"test"` for
   `src/test/resources`.
-- Resource-root entries are path inventory facts. In the planned initial v0.3 contract
-  they use empty `evidence_ids`, matching the current source-root and test-root summary
-  pattern, because the existing evidence model has no directory evidence type.
+- Resource-root entries are path inventory facts. In the v0.3 contract they use empty
+  `evidence_ids`, matching the current source-root and test-root summary pattern,
+  because the existing evidence model has no directory evidence type.
 - Config file facts record file paths and filename-derived metadata only.
 - `config_kind` is one of:
   - `"spring_application"` for `application.properties`, `application.yml`,
@@ -1210,9 +1208,9 @@ v0.3 warning rules:
 - OpenAPI/Swagger plugin declarations may also continue to emit the existing
   `hidden_http_surface` warning signal where appropriate. The warning remains a warning
   and must not create endpoint or API facts.
-- If the same OpenAPI/Swagger plugin declaration supports both a planned
-  `generated_source` warning and an existing `hidden_http_surface` warning, each warning
-  keeps its own category and ID namespace.
+- If the same OpenAPI/Swagger plugin declaration supports both a `generated_source`
+  warning and an existing `hidden_http_surface` warning, each warning keeps its own
+  category and ID namespace.
 - Warning messages must use detected-signal wording. They must not summarize generated
   source contents, generated API operations, runtime build behavior, or effective Maven
   execution.
@@ -1226,7 +1224,7 @@ Sensitive config handling rules:
   filename observations such as `config file detected: application.yml`.
 - Any future proposal to store config keys, selected safe values, or source excerpts from
   config files requires an explicit contract update, evidence model update if needed,
-  sensitive-fixture tests, and a security gate.
+  sensitive-fixture tests, and risk-based security review.
 
 Deterministic sorting rules:
 
@@ -1244,12 +1242,11 @@ Deterministic sorting rules:
 
 ### v0.4 Declared And Generated API Surface Contract
 
-This section defines the current v0.4 API surface contract slice and the planned
-direction for later v0.4 work. The the OpenAPI/Swagger spec discovery slice implementation emits the API surface shell,
-endpoint categories, and local OpenAPI/Swagger spec file facts. the minimal OpenAPI operation extraction slice emits minimal
-spec-backed OpenAPI/Swagger operation facts. the generated API signals and generated-source policy slice emits conservative
-generated-source path warnings with `path_signal` evidence and keeps generated-source
-content scanning non-default.
+This section defines the current v0.4 API surface contract slice. The release
+implementation emits the API surface shell, endpoint categories, local OpenAPI/Swagger
+spec file facts, minimal spec-backed OpenAPI/Swagger operation facts, and conservative
+generated-source path warnings with `path_signal` evidence while keeping
+generated-source content scanning non-default.
 
 The v0.4 contract uses:
 
@@ -1485,16 +1482,14 @@ Deterministic sorting rules:
 - API surface warning ID lists follow the existing warning sort order for their
   referenced warning items.
 
-### Current Staged v0.5 Spring Application Surface Contract
+### Current v0.5 Spring Application Surface Contract
 
-This section defines the staged v0.5 Spring application surface contract. The current
-implementation emits the the repository signal analyzer slice repository signal slice, the the configuration, bean, and configuration-properties analyzer slice
-configuration/bean/configuration-properties slice, the the transaction, scheduled, event, and messaging signal slice
-transaction/scheduled/event/messaging signal slice, and the the Spring Security configuration warning slice Spring Security
-configuration warning slice. Later v0.5 work must not change the meaning of the
-repository, configuration, behavior, messaging, or security-warning slices. The detailed
-release-track design is documented in
-the public v0.5 roadmap and release notes.
+This section defines the v0.5 Spring application surface contract. The current
+implementation emits repository signals, configuration/bean/configuration-properties
+signals, transaction/scheduled/event/messaging signals, and Spring Security
+configuration warnings. Later work must not change the meaning of the repository,
+configuration, behavior, messaging, or security-warning slices without updating this
+contract and the evidence model where applicable.
 
 The v0.5 contract uses:
 
@@ -1513,14 +1508,14 @@ The v0.5 contract uses:
   component stereotype facts and as category-specific Spring application surface items.
   This is two contract views over the same source observation, not evidence of multiple
   runtime beans or component registrations.
-- In the current staged implementation, `repositories.analysis_status`,
+- In the current implementation, `repositories.analysis_status`,
   `configuration.*.analysis_status`, `behavior.*.analysis_status`, and
   `messaging.listener_signals.analysis_status` are `"analyzed"` when supported
   production source roots exist and their analyzers run. The
   `security.configuration_warnings.analysis_status` value is also `"analyzed"` when
   supported production source roots exist and the security warning analyzer runs.
 
-Current staged high-level `project-map.json` shape:
+Current high-level `project-map.json` shape:
 
 ```json
 {
@@ -1683,7 +1678,7 @@ Spring application surface taxonomy rules:
   such as `@EventListener`. It must not imply event publication paths, listener ordering,
   transaction phase behavior, runtime event delivery, or call graph behavior.
 - `messaging_listener_signal` means a direct source-visible messaging listener
-  annotation, initially planned for common Kafka and Rabbit listener annotations. It must
+  annotation for common Kafka and Rabbit listener annotations. It must
   not imply runtime broker topology, queue/topic existence, exchange bindings, consumer
   group membership, delivery semantics, or deployment configuration.
 - `spring_security_configuration_warning` means a bounded source-visible Spring Security
@@ -1700,7 +1695,7 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- In the current the Spring Security configuration warning slice implementation state, repository, configuration, behavior,
+- In the current v0.5 implementation state, repository, configuration, behavior,
   messaging, and security configuration warning subsections emit `"analyzed"` when
   supported production source roots exist and their analyzers run.
 - `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
@@ -1903,13 +1898,13 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   sources, or runtime Spring behavior.
 - Module discovery evidence paths must remain normalized repository-relative paths and
   must not be absolute, start with `./`, or escape the scanned repository root.
-- The current staged v0.3 Maven metadata analyzer also reuses `build_file` evidence for
+- The current v0.3 Maven metadata analyzer also reuses `build_file` evidence for
   direct source-visible module metadata and parent coordinate elements. Metadata evidence
   uses `symbol_name` values such as `maven:project:artifactId` or
   `maven:parent:version`, points to the module POM path, and supports only the direct POM
   text. It does not prove Maven defaults, inherited coordinates, profile activation, or
   effective POM values.
-- The current staged v0.3 dependency analyzer reuses `build_file` evidence for direct
+- The current v0.3 dependency analyzer reuses `build_file` evidence for direct
   source-visible dependency declarations, dependency-management declarations, and their
   directly declared coordinate, `scope`, `optional`, `type`, and `classifier` elements.
   Dependency evidence uses `symbol_name` values such as
@@ -1918,7 +1913,7 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   supports only direct POM text. It does not prove resolved versions, inherited or
   managed values, transitive dependencies, active profiles, repository availability, or
   effective dependency graphs.
-- The current staged v0.3 plugin analyzer reuses `build_file` evidence for direct
+- The current v0.3 plugin analyzer reuses `build_file` evidence for direct
   source-visible plugin declarations, plugin-management declarations, directly declared
   plugin coordinates, direct execution IDs/phases/goals, bounded configuration signal
   elements, and plugin-derived generator signals. Plugin declaration and execution
@@ -2088,7 +2083,7 @@ Content rules:
   profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven
   modules. It should also call out that generated sources, OpenAPI operations, generated API
   reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings
-  are not analyzed for `EVAL-8-004` decision B, and that mapped-superclass identifier
+  are not analyzed for the v0.1 interface-mapping decision, and that mapped-superclass identifier
   traversal skips unresolved, ambiguous, cyclic, and non-source-visible branches.
 - The practical inspection order may suggest evidence paths from generated facts, but it
   must not introduce unsupported architecture, modules, domain flows, service layers, or
@@ -2109,7 +2104,7 @@ Current v0.2 `agent-guide.md` behavior:
   contents, or cross-module architecture unless future deterministic facts explicitly
   support those claims.
 
-Current staged v0.3 build/config behavior:
+Current v0.3 build/config behavior:
 
 - `project-map.json` includes module-owned Maven metadata under
   `project.modules.items[].build_config.maven.metadata`.
@@ -2137,10 +2132,10 @@ Current staged v0.3 build/config behavior:
   concise module warning summaries without interpreting config values or claiming
   effective/resolved/runtime/generated behavior.
 
-Planned v0.3 `agent-guide.md` behavior:
+Current v0.3 `agent-guide.md` behavior:
 
 - The guide should add a `Build And Configuration Orientation` section generated from
-  planned v0.3 `build_config` facts.
+  v0.3 `build_config` facts.
 - Maven metadata, dependency, and plugin sections must use `Source-visible` wording and
   must not claim effective POM coordinates, inherited values, transitive dependencies,
   resolved plugin versions, lifecycle execution, profile activation, or remote
@@ -2187,7 +2182,7 @@ Current v0.4 API surface `agent-guide.md` behavior:
   SDKs, or OpenAPI/runtime agreement unless future deterministic relations explicitly
   support those claims.
 
-Current staged v0.5 Spring application surface `agent-guide.md` behavior:
+Current v0.5 Spring application surface `agent-guide.md` behavior:
 
 - The guide includes a `Spring Application Surface` section generated from structured
   `spring_application_surface` facts and resolving evidence only.

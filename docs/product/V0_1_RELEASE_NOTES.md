@@ -1,7 +1,8 @@
 # v0.1 Release Notes
 
 These notes summarize the v0.1 public release surface for `agent-project-memory`.
-Detailed evaluation records remain in [docs/development/evaluations/](../development/evaluations/).
+Public evaluation summaries remain in
+[docs/development/evaluations/](../development/evaluations/).
 
 ## Release Status
 
@@ -62,8 +63,8 @@ semantics are governed by
 
 ## Evaluation Summary
 
-Stage 8 evaluated v0.1 against three pinned open-source Spring projects. The reports are
-supporting detail rather than the primary user path:
+Stage 8 evaluated v0.1 against three pinned open-source Spring projects. The summaries
+are supporting detail rather than the primary user path:
 
 | Project | Ref | Result |
 | --- | --- | --- |
@@ -71,11 +72,11 @@ supporting detail rather than the primary user path:
 | Spring PetClinic REST | `v4.0.2` / `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | Direct-source facts were accurate and evidence-backed; generated/OpenAPI API operations remained a documented limitation. |
 | Spring Guide REST Service | `e9efc9dfa0abe8cf8e15cf0e71830b5125322cae` (`complete/`) | Passed the bounded v0.1 scorecard for a small source-visible Maven Spring MVC sample. |
 
-Detailed reports:
+Public evaluation summaries:
 
-- [docs/development/evaluations/spring-petclinic-3c06fbf.md](../development/evaluations/spring-petclinic-3c06fbf.md)
-- [docs/development/evaluations/spring-petclinic-rest-v4.0.2.md](../development/evaluations/spring-petclinic-rest-v4.0.2.md)
-- [docs/development/evaluations/gs-rest-service-e9efc9d.md](../development/evaluations/gs-rest-service-e9efc9d.md)
+- [docs/development/evaluations/spring-petclinic-3c06fbf_SUMMARY.md](../development/evaluations/spring-petclinic-3c06fbf_SUMMARY.md)
+- [docs/development/evaluations/spring-petclinic-rest-v4.0.2_SUMMARY.md](../development/evaluations/spring-petclinic-rest-v4.0.2_SUMMARY.md)
+- [docs/development/evaluations/gs-rest-service-e9efc9d_SUMMARY.md](../development/evaluations/gs-rest-service-e9efc9d_SUMMARY.md)
 
 ## Known Limitations
 

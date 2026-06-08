@@ -15,10 +15,11 @@ Before any implementation task, read these public files:
 Use those documents as the source of product scope, stage sequencing, output shape, and
 evidence requirements.
 
-For post-v0.1 release-track work, also read the relevant release-track planning document
-under `docs/product/`, `CHANGELOG.md` when present, and
-`docs/development/RELEASE_PROCESS.md` when release, versioning, changelog, commit, tag,
-or publish behavior may be affected.
+For post-v0.1 release-track work, also read `CHANGELOG.md` when present, the relevant
+public release notes under `docs/product/`, and `docs/development/RELEASE_PROCESS.md`
+when release, versioning, changelog, commit, tag, or publish behavior may be affected.
+Detailed maintainer execution plans are not public product documentation; use local
+overlay instructions only when they are present and relevant.
 
 If `AGENTS.local.md` exists, read it after this file for local maintainer workflow
 instructions. `AGENTS.local.md` is intentionally not tracked.

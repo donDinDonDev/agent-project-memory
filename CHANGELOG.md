@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Changed
+
+- Reduced the public documentation surface to product, contract, release, evaluation
+  summary, and review-risk summary documents.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.5.0` as published with release
@@ -19,21 +24,21 @@ architecture documents.
 ### Added
 
 - Added the public v0.5 deeper Spring application surface design boundary, including
-  planned taxonomy, output contract direction, evidence semantics, non-goals, follow-up
-  goal sequence, and security gate expectations.
-- Added the staged v0.5 repository signal analyzer for the repository signal analyzer slice, including direct
+  taxonomy, output contract direction, evidence semantics, non-goals, future-work
+  boundaries, and risk-review expectations.
+- Added the v0.5 repository signal analyzer, including direct
   source-visible `@Repository` repository stereotype facts and inferred source-visible
   Spring Data repository interface extension signals.
-- Added the staged v0.5 configuration surface analyzer for the configuration, bean, and configuration-properties analyzer slice, including
+- Added the v0.5 configuration surface analyzer, including
   direct source-visible `@Configuration` class facts, direct source-visible
   `@ConfigurationProperties` type facts with `binding_status: "not_analyzed"`, and
   direct source-visible `@Bean` method facts with `bean_name_status: "not_analyzed"`.
-- Added the staged v0.5 behavior and messaging signal analyzer for the transaction, scheduled, event, and messaging signal slice,
+- Added the v0.5 behavior and messaging signal analyzer,
   including direct source-visible `@Transactional` type and method facts, direct
   source-visible `@Scheduled` method facts, direct source-visible `@EventListener`
   method facts, and direct source-visible Kafka/Rabbit listener annotation signals
   without runtime transaction, scheduling, event delivery, or messaging topology claims.
-- Added the staged v0.5 Spring Security configuration warning analyzer for the Spring Security configuration warning slice,
+- Added the v0.5 Spring Security configuration warning analyzer,
   including source-visible supported Spring Security configuration annotation warnings
   and source-visible `SecurityFilterChain` `@Bean` method warnings without endpoint
   protection, authentication, authorization, filter-chain order, vulnerability, or
@@ -76,16 +81,16 @@ architecture documents.
 
 ### Security
 
-- Completed the v0.5 review/security diff audit over the implementation range with no
-  reportable Codex Security findings and no required CS-* fix goals.
+- Completed the v0.5 implementation-range review and risk-based security assessment
+  with no release-blocking findings.
 - Kept Spring Security configuration output as warning/change-risk signals only, without
   endpoint protection, authentication, authorization, filter-chain ordering,
   vulnerability, or correctness claims.
-- Resolved the release-prep evidence-excerpt decision for release prep: bounded source annotation evidence excerpts
-  for `@ConfigurationProperties` and inherited test annotations remain acceptable for
-  v0.5 because they are bounded, source-local evidence excerpts and do not serialize
-  structured `prefix`/`value` fields, config file contents, environment values,
-  decrypted values, or secret-looking values in `project-map.json`.
+- Resolved the release-prep evidence-excerpt question: bounded source annotation
+  evidence excerpts for `@ConfigurationProperties` and inherited test annotations remain
+  acceptable for v0.5 because they are bounded, source-local evidence excerpts and do
+  not serialize structured `prefix`/`value` fields, config file contents, environment
+  values, decrypted values, or secret-looking values in `project-map.json`.
 
 ### Not Included
 
@@ -141,8 +146,8 @@ architecture documents.
 
 ### Security
 
-- Completed the v0.4 review/security diff audit over the implementation range with no
-  reportable Codex Security findings and no required CS-* fix goals.
+- Completed the v0.4 implementation-range review and risk-based security assessment
+  with no release-blocking findings.
 - Kept OpenAPI/Swagger parsing bounded and local-only: no network fetching, no external
   `$ref` resolution, invalid specs degrade to warnings, and generated-source paths
   remain warning-only signals without reading generated source contents by default.
@@ -159,36 +164,36 @@ architecture documents.
 
 ### Added
 
-- Added public v0.3 build/configuration planning documentation.
-- Added staged v0.3 module-owned source-visible Maven metadata extraction for direct
+- Added public v0.3 build/configuration contract documentation.
+- Added v0.3 module-owned source-visible Maven metadata extraction for direct
   module `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates.
-- Added staged v0.3 module-owned source-visible Maven dependency inventory for direct
+- Added v0.3 module-owned source-visible Maven dependency inventory for direct
   dependencies and separate dependency-management declarations.
-- Added staged v0.3 module-owned source-visible Maven plugin inventory for direct
+- Added v0.3 module-owned source-visible Maven plugin inventory for direct
   plugins, separate plugin-management declarations, bounded direct execution/configuration
   signals, and conservative generated-source warnings.
-- Added staged v0.3 module-owned standard resource-root discovery and path-only
+- Added v0.3 module-owned standard resource-root discovery and path-only
   application/logging config-file inventory with config-file evidence that does not
   include config contents.
-- Added staged v0.3 module-owned direct source-visible Spring Boot application signal
+- Added v0.3 module-owned direct source-visible Spring Boot application signal
   extraction for `@SpringBootApplication` classes and bounded source-visible `main`
   method signals.
 
 ### Changed
 
-- Documented planned `schema_version: "0.3"` build/configuration output and evidence
+- Documented `schema_version: "0.3"` build/configuration output and evidence
   contract decisions for source-visible Maven, resource, config-file, Spring Boot, and
   generated-source warning signals.
 - Updated public output to `schema_version: "0.3"` with a complete `build_config` shell;
   v0.3 build/config subsections use explicit `analysis_status` values and do not claim
   effective, resolved, runtime, or generated behavior.
 - Changed Maven `dependencies` and `dependency_management` build/config subsections from
-  staged placeholders to analyzed source-visible inventories.
-- Changed Maven `plugins` and `plugin_management` build/config subsections from staged
   placeholders to analyzed source-visible inventories.
-- Changed `resources` and `config_files` build/config subsections from staged
-  placeholders to analyzed path inventories when standard resource roots are present.
-- Changed `spring_boot_applications` from a staged placeholder to analyzed
+- Changed Maven `plugins` and `plugin_management` build/config subsections from
+  placeholders to analyzed source-visible inventories.
+- Changed `resources` and `config_files` build/config subsections from placeholders to
+  analyzed path inventories when standard resource roots are present.
+- Changed `spring_boot_applications` from a placeholder to analyzed
   source-visible application signal inventory when supported production source roots are
   present.
 - Added build/configuration orientation to `agent-guide.md` from structured
@@ -202,8 +207,8 @@ architecture documents.
   warning/test evidence, Maven module discovery evidence, and the evidence-index JSONL
   sink so hostile repository source cannot inflate `.project-memory` outputs through
   oversized source excerpts.
-- Completed the final v0.3 Codex Security release baseline after the bounded-excerpt
-  fix with no reportable findings.
+- Completed the final v0.3 release security baseline after the bounded-excerpt fix with
+  no release-blocking findings.
 
 ### Not Included
 
@@ -228,8 +233,8 @@ architecture documents.
 ### Added
 
 - Added public post-v0.1 strategy documentation.
-- Added public v0.2 module-aware Maven planning documentation.
-- Documented planned v0.2 module-aware output and evidence contract decisions.
+- Added public v0.2 module-aware Maven documentation.
+- Documented v0.2 module-aware output and evidence contract decisions.
 - Added public `schema_version: "0.2"` project-map output with `project.modules`,
   compatibility root summaries, direct `module_id` on module-owned facts, and
   Maven module warnings.
@@ -237,7 +242,7 @@ architecture documents.
   HTTP surface warning, and tests inventory analyzers.
 - Added module-aware `endpoints.md` grouping and `agent-guide.md` orientation based on
   `project.modules` and fact-level `module_id` values.
-- Added a real-project v0.2 evaluation report for pinned Maven multi-module
+- Added a real-project v0.2 evaluation summary for pinned Maven multi-module
   Java/Spring projects.
 - Added v0.2 release notes.
 - Adopted a public changelog.
@@ -247,28 +252,26 @@ architecture documents.
 
 - Reorganized the public roadmap from historical v0.1 stages into post-v0.1 release
   tracks.
-- Clarified planned v0.2 module-aware schema atomicity, warning analysis status, and
+- Clarified v0.2 module-aware schema atomicity, warning analysis status, and
   Maven module warning ID/sort semantics.
 - Moved normal generated `project-map.json` output from the v0.1 single-module contract
   to the atomic v0.2 module-aware JSON boundary.
 - Clarified release authority and changelog expectations in contributor documentation.
 - Clarified public agent boundaries, issue/PR scope wording, development versioning, and
-  checkpoint-vs-release commit expectations.
+  development-slice versus release commit expectations.
 - Aligned the Maven project version and README artifact references with the intended
   `0.2.0` release artifact.
 
 ### Security
 
-- Added v0.2 Codex Security gate requirements for the implementation range and
-  repository-wide release-candidate scan.
+- Added v0.2 risk-based review requirements for the implementation range and
+  release-candidate security baseline.
 - Fixed unsafe `.project-memory` symlink handling so scan output directories and
   generated output file targets must stay under the canonical scan root.
 - Fixed hardlinked generated output targets so scans cannot overwrite outside aliases
   through pre-existing multi-link `.project-memory` files.
-- Checkpointed the final v0.2 Codex Security discovery baseline fixes:
-  `CS-APM-RC-006` in `53a4fab`, `CS-APM-RC-007` through `CS-APM-RC-009` plus
-  `CS-APM-RC-011` in `3156238`, and `CS-APM-RC-010` plus `CS-APM-RC-012` in
-  `6b49306`.
+- Completed the final v0.2 release-candidate security baseline fixes, with no
+  remaining release-blocking findings.
 - Fixed malformed root `pom.xml` handling so Maven module discovery fails with a
   bounded scan error instead of treating parse failure as an empty module inventory.
 - Hardened annotation-origin checks so source-declared fake framework annotations and
@@ -321,7 +324,7 @@ architecture documents.
 - Added `.project-memory/evidence-index.jsonl`.
 - Added `.project-memory/endpoints.md`.
 - Added `.project-memory/agent-guide.md`.
-- Added Stage 8 evaluation reports for pinned open-source Spring projects.
+- Added Stage 8 evaluation summaries for pinned open-source Spring projects.
 
 ### Not Included
 

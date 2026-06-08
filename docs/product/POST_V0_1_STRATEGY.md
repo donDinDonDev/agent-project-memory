@@ -55,20 +55,14 @@ Public documents should stay concise and useful for users and contributors:
 
 - `README.md` explains the product and current usage.
 - `docs/product/MVP_SPEC.md` defines the v0.1 baseline.
-- `docs/product/ROADMAP.md` describes release tracks.
-- the public v0.2 roadmap and release notes describes the next planned release
-  track after v0.1 and remains the v0.2 historical plan.
-- the public v0.3 roadmap and release notes describes the planned v0.3 build and
-  configuration model.
-- the public v0.4 roadmap and release notes describes the planned v0.4 declared and
-  generated API surface taxonomy.
-- the public v0.5 roadmap and release notes describes the planned v0.5
-  deeper Spring application surface taxonomy.
+- `docs/product/ROADMAP.md` describes release tracks and future direction.
+- release notes summarize shipped public behavior and compatibility notes.
+- public evaluation summaries record concise validation outcomes for pinned projects.
 - `docs/architecture/OUTPUT_CONTRACT.md` and `docs/architecture/EVIDENCE_MODEL.md`
   govern generated output and evidence semantics.
 
-Maintainer-only planning can be more detailed and may live in ignored local files such
-as `AGENTS.local.md` or `docs/maintainer/`.
+Maintainer-only planning can be more detailed and may live in ignored local files that
+are not part of the public documentation set.
 
 ## v0.x Direction
 

@@ -9,15 +9,11 @@ Future work is organized by release tracks instead of extending the original v0.
 list. Connector/import work remains post-v0.1 future work and is not started.
 The v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after implementation, guide rendering, real-project evaluation,
-review/security audit, and release-prep documentation completion.
+review, risk-based security assessment, and release-prep documentation completion.
 
-For strategic context, see
-[POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
-boundary, see
-the public v0.5 roadmap and release notes.
-Historical planning records remain available in
-the public v0.4 roadmap and release notes and
-the public v0.3 roadmap and release notes.
+For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
+notes and architecture documents are the public source for shipped behavior, contract
+semantics, and compatibility notes.
 
 ## Roadmap Principles
 
@@ -56,12 +52,12 @@ The v0.1 implementation includes:
 The detailed v0.1 scope and limitations are documented in
 [V0_1_RELEASE_NOTES.md](V0_1_RELEASE_NOTES.md) and [MVP_SPEC.md](MVP_SPEC.md).
 
-## v0.2.0: Module-Aware Maven Support (Release Readiness)
+## v0.2.0: Module-Aware Maven Support (Published)
 
 Product outcome: make project memory module-aware for real Maven Java/Spring
 repositories while preserving deterministic analysis and evidence discipline.
 
-Expected scope:
+Shipped scope:
 
 - Root aggregator `pom.xml` detection.
 - `<modules>` parsing.
@@ -93,20 +89,7 @@ Non-goals:
 - Full symbol solving.
 - Runtime Spring model reconstruction.
 
-Planned goal sequence:
-
-1. Design module-aware output contract.
-2. Implement Maven module discovery.
-3. Run existing analyzers module-aware. (implemented for public JSON output)
-4. Update Markdown generators. (implemented for module-aware Markdown output)
-5. Add multi-module fixtures and golden checks. (implemented for Markdown output)
-6. Evaluate on pinned real Maven multi-module projects. (completed)
-7. Prepare v0.2 release materials. (final release-readiness pass)
-
 ## v0.3.0: Build And Configuration Model (Published)
-
-Planning boundary and contract decisions:
-the public v0.3 roadmap and release notes.
 
 Product outcome: add a deterministic module-aware build and configuration orientation
 layer on top of the v0.2 Maven module inventory.
@@ -129,23 +112,20 @@ signals, and build/config orientation in `agent-guide.md`.
 Release readiness notes:
 
 - Real-project v0.3 evaluation is complete on pinned Maven Java/Spring projects.
-- Review/security diff audit is complete.
-- Final post-fix release-candidate risk-based security baseline is clean with no reportable findings.
+- Review and risk-based security assessment are complete.
+- Final post-fix release security baseline is clean with no reportable findings.
 - The `v0.3.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
 Non-goals include effective POM reconstruction, dependency repository resolution, Maven
 execution, runtime config resolution, and secret extraction.
 
-The planned v0.3 contract uses source-visible Maven, resource, config, and Spring Boot
+The v0.3 contract uses source-visible Maven, resource, config, and Spring Boot
 signals only. Config discovery is path-oriented and must not store configuration values.
 Generated-source and generator plugin signals remain warnings until future explicit scan
 modes are designed.
 
 ## v0.4.0: Declared And Generated API Surface (Published)
-
-Planning boundary and contract decisions:
-the public v0.4 roadmap and release notes.
 
 Product outcome: represent API surfaces beyond source-visible Spring MVC controllers
 while keeping source-visible endpoints, spec-declared operations, generated API signals,
@@ -174,24 +154,21 @@ generated source analysis without an explicit mode, client SDK reconstruction, a
 SaaS, connector, web UI, repository chat, generic RAG, LLM-core, or automatic
 code-modification scope.
 
-Implementation goals must treat OpenAPI/YAML/JSON parsing, file discovery,
-generated-source path handling, source-derived output rendering, and evidence changes
-as higher-risk security-relevant surfaces. A release-candidate release-candidate risk-based security assessment is expected if broad parser,
-filesystem, generated-source, or output changes accumulate.
+Implementation work must receive risk-based review when it changes OpenAPI/YAML/JSON
+parsing, file discovery, generated-source path handling, source-derived output
+rendering, or evidence semantics. A broader release-candidate security review is
+expected if parser, filesystem, generated-source, or output changes accumulate.
 
 Release readiness notes:
 
 - Real-project v0.4 evaluation is complete on pinned Java/Spring Maven projects with
   local OpenAPI specs and generated API signals.
-- Review/security diff audit is complete with no release-blocking findings and no
-  required CS-* fix goals.
+- Review and risk-based security assessment are complete with no release-blocking
+  findings.
 - The `v0.4.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
 ## v0.5.0: Deeper Spring Application Surface (Published)
-
-Planning boundary and contract decisions:
-the public v0.5 roadmap and release notes.
 
 Product outcome: make source-visible Spring application change surfaces visible beyond
 controllers/components while preserving extracted, inferred, uncertain, and warning
@@ -227,32 +204,13 @@ topology reconstruction, security policy claims, and endpoint protection claims.
 Release readiness notes:
 
 - Real-project v0.5 evaluation is complete on five pinned Java/Spring targets.
-- Review/security diff audit is complete with no release-blocking findings, no
-  reportable risk-assessment findings, and no required CS-* fix goals.
-- the release-prep evidence-excerpt decision is resolved for release prep: bounded source annotation evidence
+- Review and risk-based security assessment are complete with no release-blocking
+  findings.
+- The release-prep evidence-excerpt decision is resolved: bounded source annotation evidence
   excerpts for `@ConfigurationProperties` and inherited test annotations remain
   acceptable for v0.5; no pre-release symbol-only evidence fix is required.
 - The `v0.5.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
-
-Planned goal sequence:
-
-1. Design Spring application surface taxonomy and contract. (documented)
-2. Implement repository signals. (implemented for direct `@Repository` and supported
-   Spring Data repository interface extension signals)
-3. Implement configuration, bean, and configuration-properties signals. (implemented
-   for direct `@Configuration`, direct `@Bean`, and direct `@ConfigurationProperties`
-   observations)
-4. Implement transaction, scheduled, event, and messaging signals. (implemented for
-   direct `@Transactional`, direct `@Scheduled`, direct `@EventListener`, and common
-   Kafka/Rabbit listener annotation signals)
-5. Implement Spring Security configuration warnings. (implemented for the current
-   security-warning slice)
-6. Render Spring application surface guidance. (implemented with module-grouped
-   extracted, inferred, not-analyzed, and warning categories)
-7. Evaluate on pinned real Spring projects. (completed)
-8. Review and security-audit the v0.5 implementation range. (completed)
-9. Prepare v0.5 release materials. (published)
 
 ## v0.6.0: JPA And Domain Model Deepening
 
