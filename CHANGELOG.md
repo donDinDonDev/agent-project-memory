@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-06-08
+
 ### Added
 
 - Added the public v0.5 deeper Spring application surface design boundary, including
@@ -66,6 +68,33 @@ architecture documents.
 
 - Updated post-release documentation status to mark `v0.4.0` as published with release
   assets and checksums.
+
+### Security
+
+- Completed the v0.5 review/security diff audit over the implementation range with no
+  reportable Codex Security findings and no required CS-* fix goals.
+- Kept Spring Security configuration output as warning/change-risk signals only, without
+  endpoint protection, authentication, authorization, filter-chain ordering,
+  vulnerability, or correctness claims.
+- Resolved the release-prep evidence-excerpt decision for release prep: bounded source annotation evidence excerpts
+  for `@ConfigurationProperties` and inherited test annotations remain acceptable for
+  v0.5 because they are bounded, source-local evidence excerpts and do not serialize
+  structured `prefix`/`value` fields, config file contents, environment values,
+  decrypted values, or secret-looking values in `project-map.json`.
+
+### Not Included
+
+- Runtime Spring bean graph reconstruction.
+- Autowiring graph reconstruction.
+- Runtime conditional evaluation or Spring Boot auto-configuration reconstruction.
+- Runtime configuration binding, active profile, or property value extraction.
+- Repository query-method semantic analysis or repository-to-entity relation claims.
+- Transaction propagation, scheduler registration, event delivery, or messaging topology
+  reconstruction.
+- Spring Security policy, endpoint protection, authentication, authorization, filter
+  chain ordering, vulnerability, or correctness analysis.
+- SaaS, connectors, repository chat, generic RAG, web UI, LLM calls in the core
+  analyzer, or automatic code modification.
 
 ## [0.4.0] - 2026-06-07
 

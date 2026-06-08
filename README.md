@@ -27,15 +27,18 @@ services by default.
 
 ## Download
 
-Release artifacts are available on the
+Release artifacts are published on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases)
-for the `v0.4.0` tag.
+after a maintainer-approved tag and release.
 
-Download `agent-project-memory-0.4.0.jar`. `SHA256SUMS` is published with the release so
-you can optionally verify the jar checksum before running it.
+The v0.5.0 release materials are prepared for maintainer review, but the `v0.5.0` tag,
+GitHub release, jar asset, and checksum publication have not been created yet. After
+publication, download `agent-project-memory-0.5.0.jar`. `SHA256SUMS` should be
+published with the release so you can optionally verify the jar checksum before running
+it.
 
 ```sh
-java -jar agent-project-memory-0.4.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.5.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -55,7 +58,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.4.0.jar
+target/agent-project-memory-0.5.0.jar
 ```
 
 ## Quick Start
@@ -63,7 +66,7 @@ target/agent-project-memory-0.4.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.4.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.5.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -175,6 +178,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.5 release summary: [docs/product/V0_5_RELEASE_NOTES.md](docs/product/V0_5_RELEASE_NOTES.md).
 - v0.4 release summary: [docs/product/V0_4_RELEASE_NOTES.md](docs/product/V0_4_RELEASE_NOTES.md).
 - v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
 - v0.2 release summary: [docs/product/V0_2_RELEASE_NOTES.md](docs/product/V0_2_RELEASE_NOTES.md).
@@ -227,11 +231,10 @@ The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
 module-aware Maven release is published with no remaining security blockers from its
 final discovery baseline. The v0.3 build/configuration release is published. The v0.4
 API surface release is published with packaged jar and checksum assets. The v0.5
-deeper Spring application surface release track has started with the repository signal
-configuration surface analyzer slices and the behavior/messaging signal slice
-implemented locally, plus Spring Security configuration warning signals implemented
-locally. Future connector/import work remains a later optional adapter track and is not
-started.
+deeper Spring application surface release materials are prepared for maintainer review
+with real-project evaluation and review/security audit complete; no `v0.5.0` tag,
+GitHub release, jar asset, or checksum publication has been performed. Future
+connector/import work remains a later optional adapter track and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
