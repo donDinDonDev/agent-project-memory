@@ -7,10 +7,9 @@ through 8 are closed as the historical v0.1 baseline.
 
 Future work is organized by release tracks instead of extending the original v0.1 stage
 list. Connector/import work remains post-v0.1 future work and is not started.
-The v0.5 deeper Spring application surface release materials are prepared for maintainer
-review: implementation, guide rendering, real-project evaluation, review/security audit,
-and release-prep documentation are complete locally. The `v0.5.0` tag, GitHub release,
-jar asset, and checksum publication have not been created.
+The v0.5 deeper Spring application surface release is published with packaged jar and
+checksum assets after implementation, guide rendering, real-project evaluation,
+review/security audit, and release-prep documentation completion.
 
 For strategic context, see
 [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). For the active release-track planning
@@ -189,7 +188,7 @@ Release readiness notes:
 - The `v0.4.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-## v0.5.0: Deeper Spring Application Surface (Release Prep Ready)
+## v0.5.0: Deeper Spring Application Surface (Published)
 
 Planning boundary and contract decisions:
 the public v0.5 roadmap and release notes.
@@ -233,9 +232,8 @@ Release readiness notes:
 - the release-prep evidence-excerpt decision is resolved for release prep: bounded source annotation evidence
   excerpts for `@ConfigurationProperties` and inherited test annotations remain
   acceptable for v0.5; no pre-release symbol-only evidence fix is required.
-- v0.5.0 release materials are prepared for maintainer review; tag, push, publish,
-  GitHub release creation, artifact upload, checksum generation, and checksum
-  publication remain separate maintainer-approved actions.
+- The `v0.5.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 Planned goal sequence:
 
@@ -254,7 +252,7 @@ Planned goal sequence:
    extracted, inferred, not-analyzed, and warning categories)
 7. Evaluate on pinned real Spring projects. (completed)
 8. Review and security-audit the v0.5 implementation range. (completed)
-9. Prepare v0.5 release materials. (prepared for maintainer review)
+9. Prepare v0.5 release materials. (published)
 
 ## v0.6.0: JPA And Domain Model Deepening
 

@@ -8,8 +8,8 @@ methods, behavior annotations, messaging listener annotations, and Spring Securi
 configuration warnings visible without claiming runtime Spring behavior, security
 policy, messaging topology, or repository/entity ownership.
 
-These release materials are prepared for maintainer review. The `v0.5.0` tag, GitHub
-release, jar asset, and checksum publication have not been created yet.
+The `v0.5.0` tag and GitHub release are published with
+`agent-project-memory-0.5.0.jar` and `SHA256SUMS` assets.
 
 ## Highlights
 
@@ -81,6 +81,10 @@ This release-prep pass ran and passed:
   embedded Maven metadata reports `version=0.5.0`.
 - `git diff --check`: passed.
 - `git diff --stat`: run for the release-prep diff.
+- Release publication verification: the `v0.5.0` tag is pushed to `origin`, the GitHub
+  release is published as a non-draft, non-prerelease release,
+  `agent-project-memory-0.5.0.jar` and `SHA256SUMS` are attached, downloaded assets pass
+  `shasum -a 256 -c SHA256SUMS`, and embedded Maven metadata reports `version=0.5.0`.
 
 Earlier v0.5 release-track gates supporting this release:
 
@@ -160,19 +164,12 @@ release:
 - Consider documenting source-root compatibility behavior for non-Maven Spring Boot
   guide inputs if that remains a supported local scan mode.
 
-## Maintainer Review Notes
+## Publication
 
-This document prepares release materials for maintainer review. Tag creation, pushing,
-publishing, GitHub release creation, artifact upload, checksum generation, and checksum
-publication remain separate maintainer-approved actions.
+The release is published at:
+<https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.5.0>
 
-Recommended manual next steps:
+Published assets:
 
-1. Review the release-prep diff for scope, version, README, roadmap, changelog, output
-   contract, and evidence contract alignment.
-2. Confirm local validation results from the release-prep summary.
-3. Create the `v0.5.0` tag only after approval.
-4. Draft the GitHub release from these notes only after the tag is approved.
-5. Attach `target/agent-project-memory-0.5.0.jar` and checksum files if publishing
-   binary assets.
-6. Verify published release notes and download instructions after publication.
+- `agent-project-memory-0.5.0.jar`
+- `SHA256SUMS`
