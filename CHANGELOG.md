@@ -40,14 +40,13 @@ architecture documents.
   `spring_application_surface.security.configuration_warnings.warning_ids` references
   to `spring_security` warning items when bounded source-visible security configuration
   signals are detected.
-- Added Spring Application Surface guidance in `agent-guide.md` that keeps direct
-  repository annotation observations, inferred Spring Data interface signals, and
-  repository-to-entity non-analysis distinct, while rendering configuration, bean, and
-  configuration-properties facts as source-visible signals rather than runtime bean
-  graph or binding claims, and rendering transaction, scheduled, event listener, and
-  messaging listener facts as operational change-surface signals rather than runtime
-  behavior or topology claims, and rendering Spring Security configuration warnings as
-  inspection hints and change-risk signals rather than security policy analysis.
+- Added concise module-grouped Spring Application Surface guidance in `agent-guide.md`
+  that separates extracted facts, inferred signals, explicit not-analyzed statuses, and
+  warnings while keeping direct repository annotation observations, inferred Spring Data
+  interface signals, repository-to-entity non-analysis, configuration, bean,
+  configuration-properties, transaction, scheduled, event listener, messaging listener,
+  and Spring Security warning semantics distinct without runtime bean graph, binding,
+  behavior, topology, or security policy claims.
 - Added focused repository analyzer fixtures and golden coverage for direct
   `@Repository`, supported Spring Data base interface extensions, spoofed framework
   origins, and output/evidence resolution.

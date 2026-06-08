@@ -251,7 +251,8 @@ observations, deterministic behavior and messaging signal extraction for direct
 annotations, deterministic Spring Security configuration warning extraction for
 supported security annotations and `SecurityFilterChain` `@Bean` methods, deterministic
 `endpoints.md`, and deterministic `agent-guide.md` generation from the structured facts
-and evidence index.
+and evidence index, including module-grouped Spring application surface guidance that
+keeps extracted facts, inferred signals, not-analyzed statuses, and warnings separate.
 
 Current limitations:
 

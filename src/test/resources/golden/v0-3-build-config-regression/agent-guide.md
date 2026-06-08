@@ -184,15 +184,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
 - Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
 - Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Repository signals: status `analyzed`; detected none.
-- Configuration classes: status `analyzed`; detected none.
-- Configuration properties: status `analyzed`; detected none.
-- Bean methods: status `analyzed`; detected none.
-- Transaction boundaries: status `analyzed`; detected none.
-- Scheduled methods: status `analyzed`; detected none.
-- Event listeners: status `analyzed`; detected none.
-- Messaging listener signals: status `analyzed`; detected none.
-- Spring Security configuration warnings: status `analyzed`; detected none.
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+- Spring application surface facts: detected none for supported modules.
 
 ## Detected Spring MVC Endpoints
 

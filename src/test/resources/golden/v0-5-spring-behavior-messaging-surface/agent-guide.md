@@ -62,43 +62,30 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
 - Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
 - Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Repository signals: status `analyzed`; detected none.
-- Configuration classes: status `analyzed`; detected none.
-- Configuration properties: status `analyzed`; detected none.
-- Bean methods: status `analyzed`; detected none.
-- Transaction boundaries: status `analyzed`; detected 2 source-visible `@Transactional` signals.
-  - Transaction boundary: Detected `com.example.behavior.BehaviorMessagingSurface` (target_kind: `type`, surface_category: `spring_transaction_boundary`, support_type: `extracted`, annotation_symbol: `@Transactional`, transaction_signal: `direct_transactional_type`).
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+
+### Module `module:.` (path: `.`)
+
+- Extracted facts: detected 7 source-visible facts.
+  - `spring_transaction_boundary`: `com.example.behavior.BehaviorMessagingSurface` (support_type: `extracted`, transaction_signal: `direct_transactional_type`, target_kind: `type`, annotation_symbol: `@Transactional`).
     - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9-9:com.example.behavior.BehaviorMessagingSurface:@Transactional`)
-  - Transaction boundary: Detected `com.example.behavior.BehaviorMessagingSurface#settleInvoice` (target_kind: `method`, surface_category: `spring_transaction_boundary`, support_type: `extracted`, annotation_symbol: `@Transactional`, transaction_signal: `direct_transactional_method`).
+  - `spring_transaction_boundary`: `com.example.behavior.BehaviorMessagingSurface#settleInvoice` (support_type: `extracted`, transaction_signal: `direct_transactional_method`, target_kind: `method`, annotation_symbol: `@Transactional`).
     - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12-12:com.example.behavior.BehaviorMessagingSurface#settleInvoice:@Transactional`)
-- Scheduled methods: status `analyzed`; detected 1 source-visible `@Scheduled` method signal.
-  - Scheduled method: Detected `com.example.behavior.BehaviorMessagingSurface#refreshInvoices` (target_kind: `method`, surface_category: `spring_scheduled_method`, support_type: `extracted`, annotation_symbol: `@Scheduled`, scheduled_signal: `direct_scheduled_method`).
+  - `spring_scheduled_method`: `com.example.behavior.BehaviorMessagingSurface#refreshInvoices` (support_type: `extracted`, scheduled_signal: `direct_scheduled_method`, target_kind: `method`, annotation_symbol: `@Scheduled`).
     - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16-16:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:@Scheduled`)
-- Event listeners: status `analyzed`; detected 1 source-visible `@EventListener` method signal.
-  - Event listener: Detected `com.example.behavior.BehaviorMessagingSurface#onInvoicePaid` (target_kind: `method`, surface_category: `spring_event_listener`, support_type: `extracted`, annotation_symbol: `@EventListener`, event_listener_signal: `direct_event_listener_method`).
+  - `spring_event_listener`: `com.example.behavior.BehaviorMessagingSurface#onInvoicePaid` (support_type: `extracted`, event_listener_signal: `direct_event_listener_method`, target_kind: `method`, annotation_symbol: `@EventListener`).
     - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20-20:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:@EventListener`)
-- Messaging listener signals: status `analyzed`; detected 3 source-visible Kafka/Rabbit listener annotation signals.
-  - Messaging listener signal: Detected `rabbit` `@RabbitListener` observation on `com.example.behavior.BehaviorMessagingSurface` (target_kind: `type`, surface_category: `messaging_listener_signal`, support_type: `extracted`, listener_signal: `direct_rabbit_listener_annotation`).
+  - `messaging_listener_signal`: `com.example.behavior.BehaviorMessagingSurface` (support_type: `extracted`, listener_signal: `direct_rabbit_listener_annotation`, target_kind: `type`, annotation_symbol: `@RabbitListener`, listener_framework: `rabbit`).
     - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10-10:com.example.behavior.BehaviorMessagingSurface:@RabbitListener`)
-  - Messaging listener signal: Detected `kafka` `@KafkaListener` observation on `com.example.behavior.BehaviorMessagingSurface#onKafkaEvent` (target_kind: `method`, surface_category: `messaging_listener_signal`, support_type: `extracted`, listener_signal: `direct_kafka_listener_annotation`).
-    - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
-    - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24-24:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:@KafkaListener`)
-  - Messaging listener signal: Detected `rabbit` `@RabbitListener` observation on `com.example.behavior.BehaviorMessagingSurface#onRabbitRetry` (target_kind: `method`, surface_category: `messaging_listener_signal`, support_type: `extracted`, listener_signal: `direct_rabbit_listener_annotation`).
-    - Source: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java`
-    - Module: Detected `module:.` (path: `.`)
-    - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28-28:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:@RabbitListener`)
-- Spring Security configuration warnings: status `analyzed`; detected none.
+  - ... and 2 more Spring application surface extracted facts in `project-map.json`.
+- Inferred signals: detected none.
+- Uncertain/not-analyzed statuses: detected none.
+- Warnings: detected none.
 
 ## Detected Spring MVC Endpoints
 

@@ -87,27 +87,25 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
 - Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
 - Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Repository signals: status `analyzed`; detected 2 repository observations.
-  - Repository signal: Detected direct `@Repository` observation `com.example.components.InventoryRepository` (surface_category: `spring_repository_stereotype`, support_type: `extracted`, repository_signal: `direct_repository_stereotype`).
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+
+### Module `module:.` (path: `.`)
+
+- Extracted facts: detected 2 source-visible facts.
+  - `spring_repository_stereotype`: `com.example.components.InventoryRepository` (support_type: `extracted`, repository_signal: `direct_repository_stereotype`).
     - Source: `src/main/java/com/example/components/InventoryComponents.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/components/InventoryComponents.java:16` (`ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository`)
-  - Repository signal: Inferred source-visible Spring Data interface `com.example.repositories.ProjectOrderRepository` extending `org.springframework.data.jpa.repository.JpaRepository`; entity_relation_status `not_analyzed` (surface_category: `spring_data_repository_interface_signal`, support_type: `inferred`, repository_signal: `spring_data_repository_interface_extension`).
-    - Source: `src/main/java/com/example/repositories/ProjectOrderRepository.java`
-    - Module: Detected `module:.` (path: `.`)
-    - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository`), `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
-- Configuration classes: status `analyzed`; detected 1 source-visible `@Configuration` class signal.
-  - Configuration class: Detected `com.example.components.AppConfiguration` (surface_category: `spring_configuration_class`, support_type: `extracted`, configuration_signal: `direct_configuration_class`).
+  - `spring_configuration_class`: `com.example.components.AppConfiguration` (support_type: `extracted`, configuration_signal: `direct_configuration_class`).
     - Source: `src/main/java/com/example/components/InventoryComponents.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/components/InventoryComponents.java:20` (`ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration`)
-- Configuration properties: status `analyzed`; detected none.
-- Bean methods: status `analyzed`; detected none.
-- Transaction boundaries: status `analyzed`; detected none.
-- Scheduled methods: status `analyzed`; detected none.
-- Event listeners: status `analyzed`; detected none.
-- Messaging listener signals: status `analyzed`; detected none.
-- Spring Security configuration warnings: status `analyzed`; detected none.
+- Inferred signals: detected 1 source-visible signal.
+  - `spring_data_repository_interface_signal`: `com.example.repositories.ProjectOrderRepository` extends `org.springframework.data.jpa.repository.JpaRepository` (support_type: `inferred`, repository_signal: `spring_data_repository_interface_extension`).
+    - Source: `src/main/java/com/example/repositories/ProjectOrderRepository.java`
+    - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository`), `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
+- Uncertain/not-analyzed statuses: detected 1 explicit status.
+  - `com.example.repositories.ProjectOrderRepository`: `entity_relation_status` is `not_analyzed`; no repository-to-entity relation is claimed.
+    - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository`), `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
+- Warnings: detected none.
 
 ## Detected Spring MVC Endpoints
 

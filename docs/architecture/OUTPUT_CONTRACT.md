@@ -2191,6 +2191,9 @@ Current staged v0.5 Spring application surface `agent-guide.md` behavior:
 
 - The guide includes a `Spring Application Surface` section generated from structured
   `spring_application_surface` facts and resolving evidence only.
+- The section is grouped by module using module identity from `project-map.json`. Inside
+  each module group, extracted facts, inferred signals, explicit not-analyzed statuses,
+  and warnings are rendered as separate categories.
 - Repository stereotype entries should be described as direct annotation observations.
 - Spring Data repository interface signals should be described as inferred
   source-visible signals. They must not be described as runtime repositories, entity
@@ -2199,6 +2202,10 @@ Current staged v0.5 Spring application surface `agent-guide.md` behavior:
   source-visible Spring configuration signals. They must not claim runtime bean graph,
   conditional activation, active profiles, config binding success, config values, bean
   scopes, lifecycle, proxy behavior, or dependency graphs.
+- Explicit status fields such as `entity_relation_status: "not_analyzed"`,
+  `binding_status: "not_analyzed"`, and `bean_name_status: "not_analyzed"` are rendered
+  as not-analyzed orientation signals, not as runtime relation, binding, or bean-name
+  facts.
 - Transaction, scheduled, event listener, and messaging listener annotations are
   described as operational change-surface signals. They must not claim runtime
   transaction behavior, transaction propagation, scheduler registration, scheduler

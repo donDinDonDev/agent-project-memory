@@ -732,552 +732,392 @@ public final class AgentGuideGenerator {
     markdown.append("- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.\n");
     markdown.append("- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.\n");
     markdown.append("- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.\n");
-    appendSpringRepositories(
-        markdown,
-        springApplicationSurface.path("repositories"),
-        moduleById,
-        evidenceById);
-    appendSpringConfigurationClasses(
-        markdown,
-        springApplicationSurface.path("configuration").path("configuration_classes"),
-        moduleById,
-        evidenceById);
-    appendSpringConfigurationProperties(
-        markdown,
-        springApplicationSurface.path("configuration").path("configuration_properties"),
-        moduleById,
-        evidenceById);
-    appendSpringBeanMethods(
-        markdown,
-        springApplicationSurface.path("configuration").path("bean_methods"),
-        moduleById,
-        evidenceById);
-    appendSpringTransactionBoundaries(
-        markdown,
-        springApplicationSurface.path("behavior").path("transaction_boundaries"),
-        moduleById,
-        evidenceById);
-    appendSpringScheduledMethods(
-        markdown,
-        springApplicationSurface.path("behavior").path("scheduled_methods"),
-        moduleById,
-        evidenceById);
-    appendSpringEventListeners(
-        markdown,
-        springApplicationSurface.path("behavior").path("event_listeners"),
-        moduleById,
-        evidenceById);
-    appendSpringMessagingListeners(
-        markdown,
-        springApplicationSurface.path("messaging").path("listener_signals"),
-        moduleById,
-        evidenceById);
-    appendSpringSecurityWarningStatus(
-        markdown,
-        springApplicationSurface.path("security").path("configuration_warnings"),
-        warnings,
-        moduleById,
-        evidenceById);
+    appendSpringSurfaceStatusSummary(markdown, springApplicationSurface);
+    appendSpringSurfaceModuleGroups(markdown, springApplicationSurface, warnings, moduleById, evidenceById);
     markdown.append("\n");
   }
 
-  private void appendSpringRepositories(
+  private void appendSpringSurfaceStatusSummary(
       StringBuilder markdown,
-      JsonNode repositories,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = repositories.path("items");
-    String analysisStatus = text(repositories, "analysis_status");
-    markdown.append("- Repository signals: status ")
-        .append(code(analysisStatus));
-    if (!"analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed for supported production source roots.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" repository observation")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode repository = items.get(index);
-      String surfaceCategory = text(repository, "surface_category");
-      String supportType = text(repository, "support_type");
-      markdown.append("  - Repository signal: ");
-      if ("spring_data_repository_interface_signal".equals(surfaceCategory)) {
-        markdown.append("Inferred source-visible Spring Data interface ")
-            .append(code(text(repository, "class_name")))
-            .append(" extending ")
-            .append(codeList(stringValues(repository.path("extends_types"))))
-            .append("; entity_relation_status ")
-            .append(code(text(repository, "entity_relation_status")));
-      } else {
-        markdown.append("Detected direct `@Repository` observation ")
-            .append(code(text(repository, "class_name")));
-      }
-      markdown.append(" (surface_category: ")
-          .append(code(surfaceCategory))
-          .append(", support_type: ")
-          .append(code(supportType))
-          .append(", repository_signal: ")
-          .append(code(text(repository, "repository_signal")))
-          .append(").\n");
-      markdown.append("    - Source: ")
-          .append(code(text(repository, "source_path")))
-          .append("\n");
-      String moduleId = nullableText(repository, "module_id");
-      markdown.append("    - Module: ");
-      if (moduleId == null || moduleId.isBlank()) {
-        markdown.append("Not analyzed; no module identity was recorded.\n");
-      } else {
-        markdown.append("Detected ")
-            .append(moduleLabel(moduleId, moduleById))
-            .append("\n");
-      }
-      appendNestedEvidenceLine(markdown, repository.path("evidence_ids"), evidenceById);
-    }
-    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "repository observations");
-  }
-
-  private void appendSpringConfigurationClasses(
-      StringBuilder markdown,
-      JsonNode configurationClasses,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = configurationClasses.path("items");
-    String analysisStatus = text(configurationClasses, "analysis_status");
-    markdown.append("- Configuration classes: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because configuration class analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@Configuration` class signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode configuration = items.get(index);
-      markdown.append("  - Configuration class: Detected ")
-          .append(code(text(configuration, "class_name")))
-          .append(" (surface_category: ")
-          .append(code(text(configuration, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(configuration, "support_type")))
-          .append(", configuration_signal: ")
-          .append(code(text(configuration, "configuration_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(
-          markdown,
-          configuration,
-          moduleById,
-          evidenceById);
-    }
-    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "configuration class signals");
-  }
-
-  private void appendSpringConfigurationProperties(
-      StringBuilder markdown,
-      JsonNode configurationProperties,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = configurationProperties.path("items");
-    String analysisStatus = text(configurationProperties, "analysis_status");
-    markdown.append("- Configuration properties: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because configuration-properties analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@ConfigurationProperties` type signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode properties = items.get(index);
-      markdown.append("  - Configuration properties type: Detected ")
-          .append(code(text(properties, "class_name")))
-          .append(" with binding_status ")
-          .append(code(text(properties, "binding_status")))
-          .append(" (surface_category: ")
-          .append(code(text(properties, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(properties, "support_type")))
-          .append(", configuration_properties_signal: ")
-          .append(code(text(properties, "configuration_properties_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(
-          markdown,
-          properties,
-          moduleById,
-          evidenceById);
-    }
-    appendOmittedBuildConfigItems(
-        markdown,
-        items.size() - visibleCount,
-        "configuration-properties type signals");
-  }
-
-  private void appendSpringBeanMethods(
-      StringBuilder markdown,
-      JsonNode beanMethods,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = beanMethods.path("items");
-    String analysisStatus = text(beanMethods, "analysis_status");
-    markdown.append("- Bean methods: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because bean method analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@Bean` method signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode beanMethod = items.get(index);
-      markdown.append("  - Bean method: Detected ")
-          .append(code(text(beanMethod, "class_name") + "#" + text(beanMethod, "method_name")))
-          .append(" with bean_name_status ")
-          .append(code(text(beanMethod, "bean_name_status")))
-          .append(" (surface_category: ")
-          .append(code(text(beanMethod, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(beanMethod, "support_type")))
-          .append(", bean_signal: ")
-          .append(code(text(beanMethod, "bean_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(
-          markdown,
-          beanMethod,
-          moduleById,
-          evidenceById);
-    }
-    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "bean method signals");
-  }
-
-  private void appendSpringTransactionBoundaries(
-      StringBuilder markdown,
-      JsonNode transactionBoundaries,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = transactionBoundaries.path("items");
-    String analysisStatus = text(transactionBoundaries, "analysis_status");
-    markdown.append("- Transaction boundaries: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because transaction analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@Transactional` signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode boundary = items.get(index);
-      markdown.append("  - Transaction boundary: Detected ")
-          .append(springTargetLabel(boundary))
-          .append(" (target_kind: ")
-          .append(code(text(boundary, "target_kind")))
-          .append(", surface_category: ")
-          .append(code(text(boundary, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(boundary, "support_type")))
-          .append(", annotation_symbol: ")
-          .append(code(text(boundary, "annotation_symbol")))
-          .append(", transaction_signal: ")
-          .append(code(text(boundary, "transaction_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(markdown, boundary, moduleById, evidenceById);
-    }
-    appendOmittedBuildConfigItems(
-        markdown,
-        items.size() - visibleCount,
-        "transaction boundary signals");
-  }
-
-  private void appendSpringScheduledMethods(
-      StringBuilder markdown,
-      JsonNode scheduledMethods,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = scheduledMethods.path("items");
-    String analysisStatus = text(scheduledMethods, "analysis_status");
-    markdown.append("- Scheduled methods: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because scheduled method analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@Scheduled` method signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode scheduledMethod = items.get(index);
-      markdown.append("  - Scheduled method: Detected ")
-          .append(springTargetLabel(scheduledMethod))
-          .append(" (target_kind: ")
-          .append(code(text(scheduledMethod, "target_kind")))
-          .append(", surface_category: ")
-          .append(code(text(scheduledMethod, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(scheduledMethod, "support_type")))
-          .append(", annotation_symbol: ")
-          .append(code(text(scheduledMethod, "annotation_symbol")))
-          .append(", scheduled_signal: ")
-          .append(code(text(scheduledMethod, "scheduled_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(markdown, scheduledMethod, moduleById, evidenceById);
-    }
-    appendOmittedBuildConfigItems(
-        markdown,
-        items.size() - visibleCount,
-        "scheduled method signals");
-  }
-
-  private void appendSpringEventListeners(
-      StringBuilder markdown,
-      JsonNode eventListeners,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = eventListeners.path("items");
-    String analysisStatus = text(eventListeners, "analysis_status");
-    markdown.append("- Event listeners: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because event listener analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible `@EventListener` method signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode eventListener = items.get(index);
-      markdown.append("  - Event listener: Detected ")
-          .append(springTargetLabel(eventListener))
-          .append(" (target_kind: ")
-          .append(code(text(eventListener, "target_kind")))
-          .append(", surface_category: ")
-          .append(code(text(eventListener, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(eventListener, "support_type")))
-          .append(", annotation_symbol: ")
-          .append(code(text(eventListener, "annotation_symbol")))
-          .append(", event_listener_signal: ")
-          .append(code(text(eventListener, "event_listener_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(markdown, eventListener, moduleById, evidenceById);
-    }
-    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "event listener signals");
-  }
-
-  private void appendSpringMessagingListeners(
-      StringBuilder markdown,
-      JsonNode messagingListeners,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    JsonNode items = messagingListeners.path("items");
-    String analysisStatus = text(messagingListeners, "analysis_status");
-    markdown.append("- Messaging listener signals: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because messaging listener analyzer has not run.\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" source-visible Kafka/Rabbit listener annotation signal")
-        .append(items.size() == 1 ? "" : "s")
-        .append(".\n");
-
-    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode listener = items.get(index);
-      markdown.append("  - Messaging listener signal: Detected ")
-          .append(code(text(listener, "listener_framework")))
-          .append(" ")
-          .append(code(text(listener, "annotation_symbol")))
-          .append(" observation on ")
-          .append(springTargetLabel(listener))
-          .append(" (target_kind: ")
-          .append(code(text(listener, "target_kind")))
-          .append(", surface_category: ")
-          .append(code(text(listener, "surface_category")))
-          .append(", support_type: ")
-          .append(code(text(listener, "support_type")))
-          .append(", listener_signal: ")
-          .append(code(text(listener, "listener_signal")))
-          .append(").\n");
-      appendNestedSourceModuleEvidence(markdown, listener, moduleById, evidenceById);
-    }
-    appendOmittedBuildConfigItems(
-        markdown,
-        items.size() - visibleCount,
-        "messaging listener signals");
-  }
-
-  private String springTargetLabel(JsonNode fact) {
-    String methodName = nullableText(fact, "method_name");
-    if (methodName == null || methodName.isBlank()) {
-      return code(text(fact, "class_name"));
-    }
-    return code(text(fact, "class_name") + "#" + methodName);
-  }
-
-  private void appendNestedSourceModuleEvidence(
-      StringBuilder markdown,
-      JsonNode fact,
-      Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    markdown.append("    - Source: ")
-        .append(code(text(fact, "source_path")))
-        .append("\n");
-    String moduleId = nullableText(fact, "module_id");
-    markdown.append("    - Module: ");
-    if (moduleId == null || moduleId.isBlank()) {
-      markdown.append("Not analyzed; no module identity was recorded.\n");
-    } else {
-      markdown.append("Detected ")
-          .append(moduleLabel(moduleId, moduleById))
-          .append("\n");
-    }
-    appendNestedEvidenceLine(markdown, fact.path("evidence_ids"), evidenceById);
-  }
-
-  private void appendSpringSurfaceStatusLine(
-      StringBuilder markdown,
-      String label,
-      JsonNode section,
-      String notAnalyzedReason) {
-    String analysisStatus = text(section, "analysis_status");
-    JsonNode items = section.path("items");
-    markdown.append("- ")
-        .append(label)
-        .append(": status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because ")
-          .append(MarkdownRenderer.text(notAnalyzedReason))
-          .append(".\n");
-      return;
-    }
-    if (!items.isArray() || items.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
-    }
-    markdown.append("; detected ")
-        .append(items.size())
-        .append(" item")
-        .append(items.size() == 1 ? "" : "s")
+      JsonNode springApplicationSurface) {
+    List<String> statuses = List.of(
+        springSurfaceStatusLabel("repositories", springApplicationSurface.path("repositories")),
+        springSurfaceStatusLabel(
+            "configuration classes",
+            springApplicationSurface.path("configuration").path("configuration_classes")),
+        springSurfaceStatusLabel(
+            "configuration properties",
+            springApplicationSurface.path("configuration").path("configuration_properties")),
+        springSurfaceStatusLabel(
+            "bean methods",
+            springApplicationSurface.path("configuration").path("bean_methods")),
+        springSurfaceStatusLabel(
+            "transaction boundaries",
+            springApplicationSurface.path("behavior").path("transaction_boundaries")),
+        springSurfaceStatusLabel(
+            "scheduled methods",
+            springApplicationSurface.path("behavior").path("scheduled_methods")),
+        springSurfaceStatusLabel(
+            "event listeners",
+            springApplicationSurface.path("behavior").path("event_listeners")),
+        springSurfaceStatusLabel(
+            "messaging listeners",
+            springApplicationSurface.path("messaging").path("listener_signals")),
+        springSurfaceStatusLabel(
+            "security warnings",
+            springApplicationSurface.path("security").path("configuration_warnings")));
+    markdown.append("- Subsection statuses: ")
+        .append(String.join(", ", statuses))
         .append(".\n");
   }
 
-  private void appendSpringSecurityWarningStatus(
+  private String springSurfaceStatusLabel(String label, JsonNode section) {
+    return label + " " + code(text(section, "analysis_status"));
+  }
+
+  private void appendSpringSurfaceModuleGroups(
       StringBuilder markdown,
-      JsonNode section,
+      JsonNode springApplicationSurface,
       JsonNode warnings,
       Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
-    String analysisStatus = text(section, "analysis_status");
-    List<String> warningIds = stringValues(section.path("warning_ids"));
-    markdown.append("- Spring Security configuration warnings: status ")
-        .append(code(analysisStatus));
-    if ("not_analyzed".equals(analysisStatus)) {
-      markdown.append("; not analyzed in the current v0.5 implementation slice because security configuration warning analysis has not run.\n");
+    Map<String, SpringSurfaceModuleGroup> groups = springSurfaceModuleGroups(
+        springApplicationSurface,
+        warnings,
+        moduleById);
+    List<SpringSurfaceModuleGroup> visibleGroups = groups.values().stream()
+        .filter(SpringSurfaceModuleGroup::hasContent)
+        .toList();
+
+    if (visibleGroups.isEmpty()) {
+      markdown.append("- Spring application surface facts: detected none for supported modules.\n");
       return;
     }
-    if (warningIds.isEmpty()) {
-      markdown.append("; detected none.\n");
-      return;
+
+    for (SpringSurfaceModuleGroup group : visibleGroups) {
+      markdown.append("\n### ")
+          .append(springSurfaceModuleHeading(group.moduleId(), moduleById))
+          .append("\n\n");
+      appendSpringExtractedFacts(markdown, group.extractedFacts(), evidenceById);
+      appendSpringInferredSignals(markdown, group.inferredSignals(), evidenceById);
+      appendSpringUncertainStatuses(markdown, group.uncertainStatuses(), evidenceById);
+      appendSpringWarningFacts(markdown, group.warningFacts(), evidenceById);
     }
-    markdown.append("; referenced ")
-        .append(warningIds.size())
-        .append(" inspection hint/change-risk warning ID")
-        .append(warningIds.size() == 1 ? "" : "s")
-        .append(" ")
-        .append(cappedCodeList(warningIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning IDs"))
-        .append(".\n");
+  }
+
+  private Map<String, SpringSurfaceModuleGroup> springSurfaceModuleGroups(
+      JsonNode springApplicationSurface,
+      JsonNode warnings,
+      Map<String, ModuleInfo> moduleById) {
+    Map<String, SpringSurfaceModuleGroup> groups = new LinkedHashMap<>();
+    for (String moduleId : moduleById.keySet()) {
+      groups.put(moduleId, new SpringSurfaceModuleGroup(moduleId));
+    }
+
+    for (JsonNode repository : items(springApplicationSurface.path("repositories"))) {
+      if ("inferred".equals(text(repository, "support_type"))) {
+        groupFor(groups, nullableText(repository, "module_id")).inferredSignals().add(repository);
+      } else {
+        groupFor(groups, nullableText(repository, "module_id")).extractedFacts().add(repository);
+      }
+      String entityRelationStatus = nullableText(repository, "entity_relation_status");
+      if (entityRelationStatus != null && !entityRelationStatus.isBlank()) {
+        groupFor(groups, nullableText(repository, "module_id"))
+            .uncertainStatuses()
+            .add(new SpringSurfaceUncertainStatus(
+                springSurfaceFactTarget(repository),
+                "entity_relation_status",
+                entityRelationStatus,
+                "no repository-to-entity relation is claimed",
+                stringValues(repository.path("evidence_ids"))));
+      }
+    }
+
+    addExtractedFacts(
+        groups,
+        items(springApplicationSurface.path("configuration").path("configuration_classes")));
+    for (JsonNode properties : items(
+        springApplicationSurface.path("configuration").path("configuration_properties"))) {
+      groupFor(groups, nullableText(properties, "module_id")).extractedFacts().add(properties);
+      String bindingStatus = nullableText(properties, "binding_status");
+      if (bindingStatus != null && !bindingStatus.isBlank()) {
+        groupFor(groups, nullableText(properties, "module_id"))
+            .uncertainStatuses()
+            .add(new SpringSurfaceUncertainStatus(
+                springSurfaceFactTarget(properties),
+                "binding_status",
+                bindingStatus,
+                "no runtime binding success or config values are claimed",
+                stringValues(properties.path("evidence_ids"))));
+      }
+    }
+    for (JsonNode beanMethod : items(
+        springApplicationSurface.path("configuration").path("bean_methods"))) {
+      groupFor(groups, nullableText(beanMethod, "module_id")).extractedFacts().add(beanMethod);
+      String beanNameStatus = nullableText(beanMethod, "bean_name_status");
+      if (beanNameStatus != null && !beanNameStatus.isBlank()) {
+        groupFor(groups, nullableText(beanMethod, "module_id"))
+            .uncertainStatuses()
+            .add(new SpringSurfaceUncertainStatus(
+                springSurfaceFactTarget(beanMethod),
+                "bean_name_status",
+                beanNameStatus,
+                "no effective runtime bean name is claimed",
+                stringValues(beanMethod.path("evidence_ids"))));
+      }
+    }
+
+    addExtractedFacts(
+        groups,
+        items(springApplicationSurface.path("behavior").path("transaction_boundaries")));
+    addExtractedFacts(
+        groups,
+        items(springApplicationSurface.path("behavior").path("scheduled_methods")));
+    addExtractedFacts(
+        groups,
+        items(springApplicationSurface.path("behavior").path("event_listeners")));
+    addExtractedFacts(
+        groups,
+        items(springApplicationSurface.path("messaging").path("listener_signals")));
 
     Map<String, JsonNode> warningById = warningById(warnings);
-    int visibleCount = Math.min(warningIds.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
-    for (int index = 0; index < visibleCount; index++) {
-      String warningId = warningIds.get(index);
+    for (String warningId : stringValues(
+        springApplicationSurface.path("security").path("configuration_warnings").path("warning_ids"))) {
       JsonNode warning = warningById.get(warningId);
+      String moduleId = warning == null ? null : nullableText(warning, "module_id");
+      groupFor(groups, moduleId).warningFacts().add(new SpringSurfaceWarningFact(warningId, warning));
+    }
+
+    return groups;
+  }
+
+  private void addExtractedFacts(
+      Map<String, SpringSurfaceModuleGroup> groups,
+      List<JsonNode> facts) {
+    for (JsonNode fact : facts) {
+      groupFor(groups, nullableText(fact, "module_id")).extractedFacts().add(fact);
+    }
+  }
+
+  private SpringSurfaceModuleGroup groupFor(
+      Map<String, SpringSurfaceModuleGroup> groups,
+      String moduleId) {
+    String key = moduleId == null ? "" : moduleId;
+    SpringSurfaceModuleGroup group = groups.get(key);
+    if (group == null) {
+      group = new SpringSurfaceModuleGroup(key);
+      groups.put(key, group);
+    }
+    return group;
+  }
+
+  private List<JsonNode> items(JsonNode section) {
+    JsonNode items = section.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      return List.of();
+    }
+    List<JsonNode> values = new ArrayList<>();
+    for (JsonNode item : items) {
+      values.add(item);
+    }
+    return List.copyOf(values);
+  }
+
+  private String springSurfaceModuleHeading(
+      String moduleId,
+      Map<String, ModuleInfo> moduleById) {
+    if (moduleId == null || moduleId.isBlank()) {
+      return "Module not recorded";
+    }
+    return "Module " + moduleLabel(moduleId, moduleById);
+  }
+
+  private void appendSpringExtractedFacts(
+      StringBuilder markdown,
+      List<JsonNode> facts,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("- Extracted facts: ");
+    if (facts.isEmpty()) {
+      markdown.append("detected none.\n");
+      return;
+    }
+    markdown.append("detected ")
+        .append(facts.size())
+        .append(" source-visible fact")
+        .append(facts.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(facts.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode fact = facts.get(index);
+      markdown.append("  - ")
+          .append(code(text(fact, "surface_category")))
+          .append(": ")
+          .append(springSurfaceFactDescription(fact))
+          .append("\n");
+      appendSpringSurfaceSourceLine(markdown, fact);
+      appendNestedEvidenceLine(markdown, fact.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, facts.size() - visibleCount, "Spring application surface extracted facts");
+  }
+
+  private void appendSpringInferredSignals(
+      StringBuilder markdown,
+      List<JsonNode> signals,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("- Inferred signals: ");
+    if (signals.isEmpty()) {
+      markdown.append("detected none.\n");
+      return;
+    }
+    markdown.append("detected ")
+        .append(signals.size())
+        .append(" source-visible signal")
+        .append(signals.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(signals.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode signal = signals.get(index);
+      markdown.append("  - ")
+          .append(code(text(signal, "surface_category")))
+          .append(": ")
+          .append(code(text(signal, "class_name")))
+          .append(" extends ")
+          .append(codeList(stringValues(signal.path("extends_types"))))
+          .append(" (support_type: ")
+          .append(code(text(signal, "support_type")))
+          .append(", repository_signal: ")
+          .append(code(text(signal, "repository_signal")))
+          .append(").\n");
+      appendSpringSurfaceSourceLine(markdown, signal);
+      appendNestedEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, signals.size() - visibleCount, "Spring application surface inferred signals");
+  }
+
+  private void appendSpringUncertainStatuses(
+      StringBuilder markdown,
+      List<SpringSurfaceUncertainStatus> statuses,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("- Uncertain/not-analyzed statuses: ");
+    if (statuses.isEmpty()) {
+      markdown.append("detected none.\n");
+      return;
+    }
+    markdown.append("detected ")
+        .append(statuses.size())
+        .append(" explicit status")
+        .append(statuses.size() == 1 ? "" : "es")
+        .append(".\n");
+
+    int visibleCount = Math.min(statuses.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      SpringSurfaceUncertainStatus status = statuses.get(index);
+      markdown.append("  - ")
+          .append(code(status.target()))
+          .append(": ")
+          .append(code(status.fieldName()))
+          .append(" is ")
+          .append(code(status.status()))
+          .append("; ")
+          .append(MarkdownRenderer.text(status.reason()))
+          .append(".\n");
+      appendNestedEvidenceLine(markdown, status.evidenceIds(), evidenceById);
+    }
+    appendOmittedBuildConfigItems(markdown, statuses.size() - visibleCount, "Spring application surface not-analyzed statuses");
+  }
+
+  private void appendSpringWarningFacts(
+      StringBuilder markdown,
+      List<SpringSurfaceWarningFact> warningFacts,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("- Warnings: ");
+    if (warningFacts.isEmpty()) {
+      markdown.append("detected none.\n");
+      return;
+    }
+    markdown.append("referenced ")
+        .append(warningFacts.size())
+        .append(" inspection hint/change-risk warning")
+        .append(warningFacts.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(warningFacts.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      SpringSurfaceWarningFact warningFact = warningFacts.get(index);
+      JsonNode warning = warningFact.warning();
       if (warning == null) {
         markdown.append("  - Spring Security warning: Referenced warning ID ")
-            .append(code(warningId))
+            .append(code(warningFact.warningId()))
             .append(" was not found in `warnings.items`.\n");
         continue;
       }
-      markdown.append("  - Spring Security warning: Inspection hint ")
-          .append(code(text(warning, "signal")));
-      String moduleDescription = moduleWarningLabel(warning, moduleById);
-      if (!moduleDescription.isBlank()) {
-        markdown.append(" for ").append(moduleDescription);
-      }
-      markdown.append(" at ")
+      markdown.append("  - Warning ")
+          .append(code(text(warning, "category")))
+          .append(": inspection hint ")
+          .append(code(text(warning, "signal")))
+          .append(" (warning_id: ")
+          .append(code(warningFact.warningId()))
+          .append(")")
+          .append(" at ")
           .append(code(text(warning, "source_path")))
           .append(". ")
           .append(MarkdownRenderer.text(text(warning, "message")))
           .append("\n");
       appendNestedEvidenceLine(markdown, warning.path("evidence_ids"), evidenceById);
     }
-    appendOmittedBuildConfigItems(markdown, warningIds.size() - visibleCount, "Spring Security warnings");
+    appendOmittedBuildConfigItems(markdown, warningFacts.size() - visibleCount, "Spring application surface warnings");
+  }
+
+  private void appendSpringSurfaceSourceLine(StringBuilder markdown, JsonNode fact) {
+    markdown.append("    - Source: ")
+        .append(code(text(fact, "source_path")))
+        .append("\n");
+  }
+
+  private String springSurfaceFactDescription(JsonNode fact) {
+    String supportType = text(fact, "support_type");
+    String target = springSurfaceFactTarget(fact);
+    StringBuilder description = new StringBuilder();
+    description.append(code(target))
+        .append(" (support_type: ")
+        .append(code(supportType));
+    appendPresentFactField(description, fact, "repository_signal");
+    appendPresentFactField(description, fact, "configuration_signal");
+    appendPresentFactField(description, fact, "configuration_properties_signal");
+    appendPresentFactField(description, fact, "bean_signal");
+    appendPresentFactField(description, fact, "transaction_signal");
+    appendPresentFactField(description, fact, "scheduled_signal");
+    appendPresentFactField(description, fact, "event_listener_signal");
+    appendPresentFactField(description, fact, "listener_signal");
+    appendPresentFactField(description, fact, "target_kind");
+    appendPresentFactField(description, fact, "annotation_symbol");
+    appendPresentFactField(description, fact, "listener_framework");
+    description.append(").");
+    return description.toString();
+  }
+
+  private void appendPresentFactField(
+      StringBuilder description,
+      JsonNode fact,
+      String fieldName) {
+    String value = nullableText(fact, fieldName);
+    if (value == null || value.isBlank()) {
+      return;
+    }
+    description.append(", ")
+        .append(fieldName)
+        .append(": ")
+        .append(code(value));
+  }
+
+  private String springSurfaceFactTarget(JsonNode fact) {
+    String methodName = nullableText(fact, "method_name");
+    if (methodName == null || methodName.isBlank()) {
+      return text(fact, "class_name");
+    }
+    return text(fact, "class_name") + "#" + methodName;
   }
 
   private Map<String, JsonNode> warningById(JsonNode warnings) {
@@ -1805,7 +1645,13 @@ public final class AgentGuideGenerator {
       StringBuilder markdown,
       JsonNode evidenceIds,
       Map<String, EvidenceRecord> evidenceById) {
-    List<String> ids = stringValues(evidenceIds);
+    appendNestedEvidenceLine(markdown, stringValues(evidenceIds), evidenceById);
+  }
+
+  private void appendNestedEvidenceLine(
+      StringBuilder markdown,
+      List<String> ids,
+      Map<String, EvidenceRecord> evidenceById) {
     markdown.append("    - Evidence: ");
     if (ids.isEmpty()) {
       markdown.append("none recorded.\n");
@@ -2203,6 +2049,61 @@ public final class AgentGuideGenerator {
 
   private String code(String value) {
     return MarkdownRenderer.inlineCode(value);
+  }
+
+  private static final class SpringSurfaceModuleGroup {
+    private final String moduleId;
+    private final List<JsonNode> extractedFacts = new ArrayList<>();
+    private final List<JsonNode> inferredSignals = new ArrayList<>();
+    private final List<SpringSurfaceUncertainStatus> uncertainStatuses = new ArrayList<>();
+    private final List<SpringSurfaceWarningFact> warningFacts = new ArrayList<>();
+
+    private SpringSurfaceModuleGroup(String moduleId) {
+      this.moduleId = moduleId;
+    }
+
+    private boolean hasContent() {
+      return !extractedFacts.isEmpty()
+          || !inferredSignals.isEmpty()
+          || !uncertainStatuses.isEmpty()
+          || !warningFacts.isEmpty();
+    }
+
+    private String moduleId() {
+      return moduleId;
+    }
+
+    private List<JsonNode> extractedFacts() {
+      return extractedFacts;
+    }
+
+    private List<JsonNode> inferredSignals() {
+      return inferredSignals;
+    }
+
+    private List<SpringSurfaceUncertainStatus> uncertainStatuses() {
+      return uncertainStatuses;
+    }
+
+    private List<SpringSurfaceWarningFact> warningFacts() {
+      return warningFacts;
+    }
+  }
+
+  private record SpringSurfaceUncertainStatus(
+      String target,
+      String fieldName,
+      String status,
+      String reason,
+      List<String> evidenceIds) {
+    private SpringSurfaceUncertainStatus {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record SpringSurfaceWarningFact(
+      String warningId,
+      JsonNode warning) {
   }
 
   private record EvidenceRecord(

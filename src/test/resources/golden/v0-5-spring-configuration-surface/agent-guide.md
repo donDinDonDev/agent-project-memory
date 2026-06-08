@@ -62,39 +62,40 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
 - Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
 - Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Repository signals: status `analyzed`; detected none.
-- Configuration classes: status `analyzed`; detected 1 source-visible `@Configuration` class signal.
-  - Configuration class: Detected `com.example.config.InventoryConfiguration` (surface_category: `spring_configuration_class`, support_type: `extracted`, configuration_signal: `direct_configuration_class`).
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+
+### Module `module:.` (path: `.`)
+
+- Extracted facts: detected 6 source-visible facts.
+  - `spring_configuration_class`: `com.example.config.InventoryConfiguration` (support_type: `extracted`, configuration_signal: `direct_configuration_class`).
     - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:7` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:7-7:com.example.config.InventoryConfiguration:@Configuration`)
-- Configuration properties: status `analyzed`; detected 2 source-visible `@ConfigurationProperties` type signals.
-  - Configuration properties type: Detected `com.example.config.CatalogProperties` with binding_status `not_analyzed` (surface_category: `spring_configuration_properties_type`, support_type: `extracted`, configuration_properties_signal: `direct_configuration_properties_type`).
+  - `spring_configuration_properties_type`: `com.example.config.CatalogProperties` (support_type: `extracted`, configuration_properties_signal: `direct_configuration_properties_type`).
     - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:37` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:37-37:com.example.config.CatalogProperties:@ConfigurationProperties`)
-  - Configuration properties type: Detected `com.example.config.InventoryProperties` with binding_status `not_analyzed` (surface_category: `spring_configuration_properties_type`, support_type: `extracted`, configuration_properties_signal: `direct_configuration_properties_type`).
+  - `spring_configuration_properties_type`: `com.example.config.InventoryProperties` (support_type: `extracted`, configuration_properties_signal: `direct_configuration_properties_type`).
     - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:20` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:20-20:com.example.config.InventoryProperties:@ConfigurationProperties`)
-- Bean methods: status `analyzed`; detected 3 source-visible `@Bean` method signals.
-  - Bean method: Detected `com.example.config.InventoryConfiguration#inventoryClient` with bean_name_status `not_analyzed` (surface_category: `spring_bean_method`, support_type: `extracted`, bean_signal: `direct_bean_method`).
+  - `spring_bean_method`: `com.example.config.InventoryConfiguration#inventoryClient` (support_type: `extracted`, bean_signal: `direct_bean_method`).
     - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:9` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:9-9:com.example.config.InventoryConfiguration#inventoryClient:@Bean`)
-  - Bean method: Detected `com.example.config.InventoryConfiguration#inventoryClock` with bean_name_status `not_analyzed` (surface_category: `spring_bean_method`, support_type: `extracted`, bean_signal: `direct_bean_method`).
+  - `spring_bean_method`: `com.example.config.InventoryConfiguration#inventoryClock` (support_type: `extracted`, bean_signal: `direct_bean_method`).
     - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:14` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:14-14:com.example.config.InventoryConfiguration#inventoryClock:@Bean`)
-  - Bean method: Detected `com.example.config.SecondaryBeanFactory#secondaryBean` with bean_name_status `not_analyzed` (surface_category: `spring_bean_method`, support_type: `extracted`, bean_signal: `direct_bean_method`).
-    - Source: `src/main/java/com/example/config/ConfigurationSurface.java`
-    - Module: Detected `module:.` (path: `.`)
+  - ... and 1 more Spring application surface extracted facts in `project-map.json`.
+- Inferred signals: detected none.
+- Uncertain/not-analyzed statuses: detected 5 explicit statuses.
+  - `com.example.config.CatalogProperties`: `binding_status` is `not_analyzed`; no runtime binding success or config values are claimed.
+    - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:37` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:37-37:com.example.config.CatalogProperties:@ConfigurationProperties`)
+  - `com.example.config.InventoryProperties`: `binding_status` is `not_analyzed`; no runtime binding success or config values are claimed.
+    - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:20` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:20-20:com.example.config.InventoryProperties:@ConfigurationProperties`)
+  - `com.example.config.InventoryConfiguration#inventoryClient`: `bean_name_status` is `not_analyzed`; no effective runtime bean name is claimed.
+    - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:9` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:9-9:com.example.config.InventoryConfiguration#inventoryClient:@Bean`)
+  - `com.example.config.InventoryConfiguration#inventoryClock`: `bean_name_status` is `not_analyzed`; no effective runtime bean name is claimed.
+    - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:14` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:14-14:com.example.config.InventoryConfiguration#inventoryClock:@Bean`)
+  - `com.example.config.SecondaryBeanFactory#secondaryBean`: `bean_name_status` is `not_analyzed`; no effective runtime bean name is claimed.
     - Evidence: `src/main/java/com/example/config/ConfigurationSurface.java:25` (`ev:src/main/java/com/example/config/ConfigurationSurface.java:25-25:com.example.config.SecondaryBeanFactory#secondaryBean:@Bean`)
-- Transaction boundaries: status `analyzed`; detected none.
-- Scheduled methods: status `analyzed`; detected none.
-- Event listeners: status `analyzed`; detected none.
-- Messaging listener signals: status `analyzed`; detected none.
-- Spring Security configuration warnings: status `analyzed`; detected none.
+- Warnings: detected none.
 
 ## Detected Spring MVC Endpoints
 
