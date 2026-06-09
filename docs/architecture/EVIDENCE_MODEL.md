@@ -589,7 +589,7 @@ Relationship evidence:
 - A future relationship target link to an emitted entity fact would be inferred from
   source-visible type observations and must be labeled as inferred. It must preserve
   evidence for the relationship annotation and the target entity evidence that led to
-  the link. The current V060-G005 implementation does not emit relationship target
+  the link. The current v0.6 implementation does not emit relationship target
   links.
 - Ambiguous, unresolved, unsupported collection, wildcard, generated-source-only, or
   classpath-only relationship targets must remain uncertain rather than being emitted as

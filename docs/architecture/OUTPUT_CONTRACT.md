@@ -1815,7 +1815,7 @@ Deterministic sorting rules:
 
 ### v0.6 JPA And Domain Contract
 
-This section defines the v0.6 JPA/domain output contract. The current V060-G005
+This section defines the v0.6 JPA/domain output contract. The current v0.6
 implementation emits `schema_version: "0.6"`, implements the bounded entity field
 annotation slice for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`,
 and `@Version`, and adds bounded embedded and identifier-model signals for direct
@@ -1824,8 +1824,10 @@ and `@Version`, and adds bounded embedded and identifier-model signals for direc
 annotations, direct string-literal `mappedBy`, bounded direct `@JoinColumn` and
 `@JoinTable` metadata, selected directly visible relationship attributes, and
 conservative repository/entity inferred relations for supported source-visible Spring
-Data repository generic types. Later v0.6 goals may fill the planned table metadata and
-source-visible relationship target links described below.
+Data repository generic types, safe JPA-only wildcard import support for the existing
+supported JPA annotation set, and quieter no-domain guide rendering. Future goals may
+fill the planned table metadata and source-visible relationship target links described
+below.
 
 The v0.6 contract uses:
 
@@ -1844,7 +1846,7 @@ The v0.6 contract uses:
   Data repository interface signals. They are inferred relations, not extracted entity
   facts.
 
-Current V060-G005 implementation state:
+Current v0.6 implementation state:
 
 - `schema_version` is `"0.6"`.
 - `entities.items[]` continues to emit existing entity, table compatibility,
@@ -1879,7 +1881,7 @@ Current V060-G005 implementation state:
 - Relationship `target` currently preserves the declared type only with
   `target_resolution: "declared_type_only"` and `uncertainty:
   "target_type_not_resolved"`. Source-visible entity target matching is planned later
-  and is not emitted by V060-G005.
+  and is not emitted by the current v0.6 implementation.
 - `relationship.mapped_by` records only direct string-literal `mappedBy` values.
   Unsupported expressions are not converted to defaults.
 - Direct relationship `optional`, `fetch`, `cascade`, and `orphan_removal` values are
@@ -1898,8 +1900,8 @@ Current V060-G005 implementation state:
   matched to exactly one emitted entity fact. Missing, ambiguous, raw, wildcard, nested,
   or otherwise unsupported generic shapes use explicit status values and keep
   `entity_relation: null`.
-- `table_metadata` and relationship target links are planned for later v0.6 goals and
-  are not emitted by V060-G005.
+- `table_metadata` and relationship target links are planned for future goals and are
+  not emitted by the current v0.6 implementation.
 
 Full-track `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
 some objects for focus, but remain required by their existing contracts when those
@@ -2142,7 +2144,7 @@ v0.6 entity and embeddable rules:
   embeddable is used by any entity unless a separate `@Embedded` or `@EmbeddedId` fact
   supports that relation.
 
-Current V060-G004 relationship rules and planned target-link extension:
+Current v0.6 relationship rules and planned target-link extension:
 
 - `entity.relationships[]` remains the relationship fact list for direct field-level
   `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations.
@@ -2151,11 +2153,11 @@ Current V060-G004 relationship rules and planned target-link extension:
 - `relationship.java_type` preserves the declared Java field type string. It is not a
   database type, table name, or guaranteed entity target.
 - `relationship.target.target_resolution` is currently `"declared_type_only"` because
-  V060-G004 preserves only the declared field type. Future relationship target-link
-  work may use `"source_visible_entity"` only when a unique emitted entity fact is
-  deterministically matched, and `"ambiguous"` when source-visible candidates cannot be
-  reduced to one target. Target links are inferred relation support, not extracted
-  annotation facts.
+  the current v0.6 implementation preserves only the declared field type. Future
+  relationship target-link work may use `"source_visible_entity"` only when a unique
+  emitted entity fact is deterministically matched, and `"ambiguous"` when
+  source-visible candidates cannot be reduced to one target. Target links are inferred
+  relation support, not extracted annotation facts.
 - `relationship.target.support_type` is currently `null`. Future target-link work may
   use `"inferred"` only when `target_resolution: "source_visible_entity"`.
 - `relationship.target.uncertainty` must preserve uncertainty values such as

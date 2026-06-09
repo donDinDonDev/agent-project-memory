@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-09
+
 ### Added
 
 - Added the planned v0.6 JPA/domain contract design boundary, including source-visible
@@ -63,6 +65,8 @@ architecture documents.
   present.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
+- Aligned release-prep README usage, roadmap status, release notes, changelog, and Maven
+  project version for `v0.6.0`.
 
 ### Fixed
 
@@ -72,6 +76,29 @@ architecture documents.
   annotation protections.
 - Updated post-release documentation status to mark `v0.5.0` as published with release
   assets and checksums.
+
+### Security
+
+- Completed v0.6 risk-based review and Codex Security gates for implementation and
+  follow-up slices with no release-blocking findings.
+- Kept v0.6 JPA/domain output local-first and evidence-backed, without database
+  introspection, runtime Hibernate metadata, DDL reconstruction, JPQL semantic parsing,
+  migration interpretation, runtime repository/entity verification, or provider-default
+  claims.
+
+### Not Included
+
+- Getter/property-access JPA annotation extraction.
+- Full composite-key semantic reconstruction.
+- Relationship target entity linking beyond declared unresolved targets.
+- Database schema reconstruction, database introspection, runtime Hibernate/JPA metadata,
+  DDL reconstruction, JPQL semantic parsing, or migration interpretation.
+- Runtime Spring Data repository registration, query-method behavior, database access,
+  or repository/entity verification.
+- V060-FU-003 corpus expansion for embeddables, embedded IDs, id-class signals,
+  enumerated fields, and version fields.
+- SaaS, connectors, repository chat, generic RAG, web UI, LLM calls in the core
+  analyzer, or automatic code modification.
 
 ## [0.5.0] - 2026-06-08
 

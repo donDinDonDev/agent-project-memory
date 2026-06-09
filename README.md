@@ -30,11 +30,11 @@ services by default.
 Release artifacts are published on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.5.0` release is published with `agent-project-memory-0.5.0.jar` and
-`SHA256SUMS` assets. You can optionally verify the jar checksum before running it.
+The `v0.6.0` release artifact is `agent-project-memory-0.6.0.jar`; release assets use
+`SHA256SUMS` for optional checksum verification.
 
 ```sh
-java -jar agent-project-memory-0.5.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.6.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -54,7 +54,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.5.0.jar
+target/agent-project-memory-0.6.0.jar
 ```
 
 ## Quick Start
@@ -62,7 +62,7 @@ target/agent-project-memory-0.5.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.5.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.6.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -137,22 +137,26 @@ for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts with bounded source-visible
-field metadata and partial embedded/identifier signals for the current v0.6 annotation
-slice, a minimal tests inventory,
+field metadata, partial embedded/identifier signals, relationship metadata, and
+repository/entity relation statuses for the current v0.6 JPA/domain slice, a minimal
+tests inventory,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
 `spring_application_surface.behavior` transaction, scheduled, and event listener
 inventories, `spring_application_surface.messaging.listener_signals` inventories, and
 `spring_application_surface.security.configuration_warnings` warning-ID references, and
-evidence ID references. The current v0.5 Spring application surface implementation emits
+evidence ID references. The current Spring application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
 current v0.6 JPA/domain implementation emits field metadata for direct field-level
 `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` annotations, direct
 `@Embeddable` facts, direct field-level `@Embedded`/`@EmbeddedId` signals, and direct
-class-level `@IdClass` composite-id signals without runtime schema, access-strategy,
-generated-identifier, optimistic-locking, composite-key, or provider-default claims.
+class-level `@IdClass` composite-id signals, direct source-visible relationship
+metadata, conservative Spring Data repository/entity inferred relations, and quiet
+no-domain guide rendering without runtime schema, access-strategy, generated-identifier,
+optimistic-locking, composite-key, relationship target-resolution, repository runtime,
+or provider-default claims.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -183,6 +187,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.6 release summary: [docs/product/V0_6_RELEASE_NOTES.md](docs/product/V0_6_RELEASE_NOTES.md).
 - v0.5 release summary: [docs/product/V0_5_RELEASE_NOTES.md](docs/product/V0_5_RELEASE_NOTES.md).
 - v0.4 release summary: [docs/product/V0_4_RELEASE_NOTES.md](docs/product/V0_4_RELEASE_NOTES.md).
 - v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
@@ -233,10 +238,12 @@ The v0.4 API surface release is published with packaged jar and checksum assets.
 v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
-The v0.6 JPA/domain release track is in development. The current checkout implements the
-first bounded v0.6 entity field annotation slice, embedded and identifier model signals,
-relationship metadata deepening, conservative repository/entity inferred relations, and
-emits `schema_version: "0.6"`; real-project evaluation work remains upcoming.
+The v0.6 JPA/domain release track is implemented and evaluated in the current checkout.
+It includes bounded v0.6 entity field annotation metadata, embedded and identifier model
+signals, relationship metadata deepening, conservative repository/entity inferred
+relations, safe JPA wildcard import support, quieter no-domain guide rendering, and
+`schema_version: "0.6"`. Tagging, publishing, and release asset upload remain separate
+maintainer-approved release actions.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
