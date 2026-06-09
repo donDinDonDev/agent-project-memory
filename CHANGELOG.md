@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated post-release documentation status to mark `v0.6.0` as published with release
+  assets and checksums.
+
 ## [0.6.0] - 2026-06-09
 
 ### Added
