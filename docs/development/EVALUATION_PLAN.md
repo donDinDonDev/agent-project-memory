@@ -68,6 +68,25 @@ Suggested local layout:
   gs-rest-service/
 ```
 
+## Public Summary Boundary
+
+Evaluation work may produce maintainer-only raw execution notes outside tracked public
+documentation. Raw notes can include local paths, command transcripts, internal task or
+goal identifiers, maintainer workflow details, and tool-specific internal report names or
+local report paths. Do not copy raw notes directly into tracked documentation.
+
+Tracked public evaluation summaries under `docs/development/evaluations/` must be
+publicized before writing or committing them. They should summarize reproducible
+project/ref identity, generated artifact names, scorecard outcomes, confirmed
+observations, follow-up candidates, and release relevance. Public summaries must not
+expose:
+
+- local machine paths;
+- raw command transcripts;
+- internal task, goal, checkpoint, or decision IDs;
+- maintainer-only workflow notes;
+- tool-specific internal report names or local report paths.
+
 ## Evaluation Procedure
 
 1. Build the packaged CLI locally from this repository:
@@ -162,7 +181,8 @@ Field rules:
 ## Follow-up Summary Format
 
 Convert confirmed evaluation findings into public follow-up summaries only after the
-observation is recorded:
+observation is recorded and the summary text has been publicized for tracked
+documentation:
 
 ```md
 ### Follow-up: <bounded title>
@@ -198,6 +218,7 @@ Field rules:
 - Evaluation notes should summarize findings and point to generated artifact names,
   repository-relative references, or repository refs; they should not embed large
   third-party source excerpts.
+- Keep maintainer-only raw execution notes separate from tracked public summaries.
 
 ## Non-goals
 

@@ -2,10 +2,10 @@
 
 This document defines the public release discipline for `agent-project-memory`.
 
-The human maintainer owns release authority. Codex or another coding agent may prepare
-release materials, run checks, and summarize state, but must not create commits, tags,
-GitHub releases, or publish artifacts unless the maintainer explicitly asks for that
-specific action.
+The human maintainer owns release authority. A coding agent may prepare release
+materials, run checks, and summarize state, but must not create commits, tags, GitHub
+releases, or publish artifacts unless the maintainer explicitly asks for that specific
+action.
 
 ## Versioning Policy
 
@@ -112,6 +112,28 @@ Any evidence shape or evidence semantic change requires:
 
 LLM-generated text must not be used as authoritative evidence in any release line.
 
+## Public Surface Audit
+
+Before any release-prep checkpoint, release tag, publication step, or GitHub Release
+body publish/edit, audit every public-facing text surface that will be committed or
+published. Public surfaces include README usage text, changelog entries, product and
+release documentation, public evaluation summaries, public review or risk summaries,
+release notes, and GitHub Release body text.
+
+The audit is tool-neutral and checks that public text contains only product, contract,
+validation, limitation, and release facts. Public text must not expose:
+
+- local machine paths;
+- raw command transcripts or unreviewed execution logs;
+- internal task, goal, checkpoint, or decision IDs;
+- maintainer-only workflow notes;
+- tool-specific internal report names or local report paths.
+
+If the audit fails, publicize the text or move raw details to maintainer-only notes
+before checkpointing, tagging, publishing, or editing public release metadata. After
+publishing or editing a GitHub Release body, read back the saved body and verify the
+same boundary before considering that release step complete.
+
 ## Release Readiness Checklist
 
 Before preparing a release candidate:
@@ -126,6 +148,9 @@ Before preparing a release candidate:
 - Confirm release notes exist or are drafted for the release.
 - Confirm evaluation summaries are updated when the release includes meaningful analyzer
   expansion.
+- Complete the public-surface audit for release notes, evaluation summaries, public
+  status docs, changelog entries, and any GitHub Release body text that will be
+  published or edited.
 - Before creating a release tag, finalize release documentation in release-ready wording.
   The tag must point to a commit whose `CHANGELOG.md`, roadmap/status docs, README
   version references, and release notes already describe the release as ready/released
@@ -162,14 +187,18 @@ are attached.
 3. Update README usage examples if the artifact version changes.
 4. Update `CHANGELOG.md`.
 5. Update or create release notes under `docs/product/`.
-6. Run the release readiness checks.
+6. Run the release readiness checks, including the public-surface audit.
 7. Review the full diff for scope drift, contract drift, evidence drift, and generated
    artifact hygiene.
 8. Merge only after maintainer review.
-9. Create the `vX.Y.Z` tag only after explicit maintainer approval.
-10. Draft the GitHub release only after the tag is approved.
-11. Attach the packaged jar and checksum files when publishing binary assets.
-12. Verify the published release notes and download instructions.
+9. Create the `vX.Y.Z` tag only after explicit maintainer approval and a clean
+   public-surface audit on the tagged release documentation.
+10. Draft the GitHub release only after the tag is approved, using audited public
+    release notes.
+11. Before publishing or editing a GitHub Release body, audit the body text; after the
+    publish or edit, read back the saved body and verify the same boundary.
+12. Attach the packaged jar and checksum files when publishing binary assets.
+13. Verify the published release notes and download instructions.
 
 ## Agent Boundaries
 
