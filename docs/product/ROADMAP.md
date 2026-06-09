@@ -10,19 +10,19 @@ list. Connector/import work remains post-v0.1 future work and is not started.
 The v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after implementation, guide rendering, real-project evaluation,
 review, risk-based security assessment, and release-prep documentation completion.
-The v0.6 JPA/domain release track is implemented, evaluated, and release-prepared in the
-current checkout. It extracts bounded source-visible entity field annotations for direct
-field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version`, emits partial
-embedded and identifier model signals for direct `@Embeddable`, `@Embedded`,
-`@EmbeddedId`, and `@IdClass`, extracts bounded source-visible relationship metadata for
-direct field-level relationship cardinality, `mappedBy`, `@JoinColumn`, `@JoinTable`,
-and direct relationship attributes while keeping relationship targets
-declared-type-only and uncertain, infers conservative repository/entity relations from
-supported source-visible Spring Data repository generic types only when exactly one
-emitted entity fact matches, supports safe JPA-only wildcard imports for the existing
-supported JPA annotation set, and omits noisy no-domain guide sections. Tagging,
-publishing, and release asset upload remain separate maintainer-approved release
-actions.
+The v0.6 JPA/domain release is published with packaged jar and checksum assets after
+implementation, real-project evaluation, follow-up fixes, release-prep documentation,
+and risk-based review/compliance gates. It extracts bounded source-visible entity field
+annotations for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and
+`@Version`, emits partial embedded and identifier model signals for direct
+`@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`, extracts bounded
+source-visible relationship metadata for direct field-level relationship cardinality,
+`mappedBy`, `@JoinColumn`, `@JoinTable`, and direct relationship attributes while
+keeping relationship targets declared-type-only and uncertain, infers conservative
+repository/entity relations from supported source-visible Spring Data repository generic
+types only when exactly one emitted entity fact matches, supports safe JPA-only wildcard
+imports for the existing supported JPA annotation set, and omits noisy no-domain guide
+sections.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -225,7 +225,7 @@ Release readiness notes:
 - The `v0.5.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-## v0.6.0: JPA And Domain Model Deepening (Release Prepared)
+## v0.6.0: JPA And Domain Model Deepening (Published)
 
 Product outcome: make source-visible JPA/domain facts more useful for legacy change
 planning while preserving extracted, inferred, uncertain, and warning semantics.
@@ -278,8 +278,8 @@ Release readiness notes:
   enumerated fields, and version fields remains future evaluation coverage and is not a
   release blocker.
 - Release notes exist in [V0_6_RELEASE_NOTES.md](V0_6_RELEASE_NOTES.md).
-- Tagging, GitHub release creation, jar/checksum upload, and publication are not part
-  of this roadmap state and require explicit maintainer approval.
+- The `v0.6.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 ## v0.7.0: Tests, Quality, And Change-Risk Map
 
