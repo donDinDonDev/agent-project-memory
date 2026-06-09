@@ -35,15 +35,27 @@ public final class JpaEntityAnalyzer {
   private static final String ENUMERATED = "Enumerated";
   private static final String GENERATED_VALUE = "GeneratedValue";
   private static final String VERSION = "Version";
+  private static final String EMBEDDABLE = "Embeddable";
+  private static final String EMBEDDED = "Embedded";
+  private static final String EMBEDDED_ID = "EmbeddedId";
+  private static final String ID_CLASS = "IdClass";
   private static final String HIGH_CONFIDENCE = "high";
   private static final String TARGET_RESOLUTION = "declared_type_only";
   private static final String UNCERTAINTY = "target_type_not_resolved";
+  private static final String EMBEDDED_TARGET_RESOLUTION_SOURCE_VISIBLE = "source_visible_embeddable";
+  private static final String EMBEDDED_UNCERTAINTY = "embeddable_target_not_resolved";
   private static final String SOURCE_KIND_DECLARED = "declared";
   private static final String SOURCE_KIND_MAPPED_SUPERCLASS = "mapped_superclass";
   private static final String IDENTIFIER_KIND_SIMPLE_ID = "simple_id";
+  private static final String IDENTIFIER_KIND_EMBEDDED_ID = "embedded_id";
   private static final String PERSISTENCE_ROLE_BASIC = "basic";
   private static final String PERSISTENCE_ROLE_SIMPLE_ID = "simple_id";
   private static final String PERSISTENCE_ROLE_VERSION = "version";
+  private static final String PERSISTENCE_ROLE_EMBEDDED = "embedded";
+  private static final String PERSISTENCE_ROLE_EMBEDDED_ID = "embedded_id";
+  private static final String SUPPORT_TYPE_INFERRED = "inferred";
+  private static final String MEDIUM_CONFIDENCE = "medium";
+  private static final String STATUS_NOT_ANALYZED = "not_analyzed";
   private static final Map<String, Set<String>> SUPPORTED_JPA_ANNOTATION_ORIGINS = Map.ofEntries(
       Map.entry(ENTITY, Set.of("jakarta.persistence.Entity", "javax.persistence.Entity")),
       Map.entry(TABLE, Set.of("jakarta.persistence.Table", "javax.persistence.Table")),
@@ -57,6 +69,10 @@ public final class JpaEntityAnalyzer {
           "jakarta.persistence.GeneratedValue",
           "javax.persistence.GeneratedValue")),
       Map.entry(VERSION, Set.of("jakarta.persistence.Version", "javax.persistence.Version")),
+      Map.entry(EMBEDDABLE, Set.of("jakarta.persistence.Embeddable", "javax.persistence.Embeddable")),
+      Map.entry(EMBEDDED, Set.of("jakarta.persistence.Embedded", "javax.persistence.Embedded")),
+      Map.entry(EMBEDDED_ID, Set.of("jakarta.persistence.EmbeddedId", "javax.persistence.EmbeddedId")),
+      Map.entry(ID_CLASS, Set.of("jakarta.persistence.IdClass", "javax.persistence.IdClass")),
       Map.entry("ManyToOne", Set.of("jakarta.persistence.ManyToOne", "javax.persistence.ManyToOne")),
       Map.entry("OneToMany", Set.of("jakarta.persistence.OneToMany", "javax.persistence.OneToMany")),
       Map.entry("OneToOne", Set.of("jakarta.persistence.OneToOne", "javax.persistence.OneToOne")),
@@ -69,7 +85,9 @@ public final class JpaEntityAnalyzer {
       "@Column",
       "@Enumerated",
       "@GeneratedValue",
-      "@Version");
+      "@Version",
+      "@Embedded",
+      "@EmbeddedId");
   private static final List<String> RELATIONSHIP_ANNOTATIONS = List.of(
       "@ManyToOne",
       "@OneToMany",
@@ -94,6 +112,10 @@ public final class JpaEntityAnalyzer {
   private static final Comparator<JpaEntityFact> ENTITY_ORDER = Comparator
       .comparing(JpaEntityFact::className)
       .thenComparing(JpaEntityFact::id);
+  private static final Comparator<JpaEmbeddableFact> EMBEDDABLE_ORDER = Comparator
+      .comparing(JpaEmbeddableFact::className)
+      .thenComparing(JpaEmbeddableFact::sourcePath)
+      .thenComparing(JpaEmbeddableFact::id);
 
   public JpaEntityAnalysis analyze(Path repositoryRoot, List<Path> sourceRoots) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
@@ -103,6 +125,7 @@ public final class JpaEntityAnalyzer {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     List<JavaTypeSource> javaTypes = new ArrayList<>();
     List<JpaEntityFact> entities = new ArrayList<>();
+    List<JpaEmbeddableFact> embeddables = new ArrayList<>();
     List<JpaEntityEvidence> evidence = new ArrayList<>();
     Set<String> sourceDeclaredTypeNames = new LinkedHashSet<>();
 
@@ -120,12 +143,17 @@ public final class JpaEntityAnalyzer {
     }
 
     Map<String, MappedSuperclassSource> mappedSuperclasses = mappedSuperclasses(javaTypes);
+    Map<String, EmbeddableSource> embeddableSources = embeddableSources(javaTypes);
+    for (EmbeddableSource embeddableSource : embeddableSources.values()) {
+      embeddables.add(embeddableFact(embeddableSource, embeddableSources, evidence));
+    }
     for (JavaTypeSource javaType : javaTypes) {
-      analyzeJavaType(javaType, mappedSuperclasses, entities, evidence);
+      analyzeJavaType(javaType, mappedSuperclasses, embeddableSources, entities, evidence);
     }
 
     return new JpaEntityAnalysis(
         entities.stream().sorted(ENTITY_ORDER).toList(),
+        embeddables.stream().sorted(EMBEDDABLE_ORDER).toList(),
         evidence);
   }
 
@@ -184,6 +212,7 @@ public final class JpaEntityAnalyzer {
           javaType,
           SOURCE_KIND_MAPPED_SUPERCLASS,
           List.of(mappedSuperclassEvidence.id()),
+          Map.of(),
           evidence);
 
       mappedSuperclasses.put(
@@ -194,9 +223,53 @@ public final class JpaEntityAnalyzer {
     return mappedSuperclasses;
   }
 
+  private Map<String, EmbeddableSource> embeddableSources(List<JavaTypeSource> javaTypes) {
+    Map<String, EmbeddableSource> embeddables = new LinkedHashMap<>();
+
+    for (JavaTypeSource javaType : javaTypes) {
+      Optional<AnnotationExpr> embeddableAnnotation =
+          findAnnotation(javaType, javaType.type().getAnnotations(), EMBEDDABLE);
+      if (embeddableAnnotation.isEmpty()) {
+        continue;
+      }
+
+      JpaEntityEvidence embeddableEvidence = annotationEvidence(
+          javaType.sourcePath(),
+          javaType.className(),
+          embeddableAnnotation.orElseThrow(),
+          javaType.sourceLines(),
+          null);
+      embeddables.put(
+          javaType.className(),
+          new EmbeddableSource(javaType, embeddableEvidence));
+    }
+
+    return embeddables;
+  }
+
+  private JpaEmbeddableFact embeddableFact(
+      EmbeddableSource embeddableSource,
+      Map<String, EmbeddableSource> embeddableSources,
+      List<JpaEntityEvidence> evidence) {
+    JavaTypeSource javaType = embeddableSource.javaType();
+    evidence.add(embeddableSource.embeddableEvidence());
+    List<JpaEntityFieldFact> fields = fields(
+        javaType,
+        SOURCE_KIND_DECLARED,
+        embeddableSources,
+        evidence);
+    return new JpaEmbeddableFact(
+        "embeddable:" + javaType.className(),
+        javaType.className(),
+        javaType.sourcePath(),
+        fields.stream().sorted(FIELD_ORDER).toList(),
+        List.of(embeddableSource.embeddableEvidence().id()));
+  }
+
   private void analyzeJavaType(
       JavaTypeSource javaType,
       Map<String, MappedSuperclassSource> mappedSuperclasses,
+      Map<String, EmbeddableSource> embeddableSources,
       List<JpaEntityFact> entities,
       List<JpaEntityEvidence> evidence) {
     ClassOrInterfaceDeclaration type = javaType.type();
@@ -225,11 +298,13 @@ public final class JpaEntityAnalyzer {
     String tableName = tableAnnotation
         .flatMap(this::tableName)
         .orElse(null);
+    JpaIdClassFact idClass = idClass(javaType, entityEvidence);
 
     List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>(identifierFields(
         javaType,
         SOURCE_KIND_DECLARED,
         List.of(),
+        embeddableSources,
         evidence));
     MappedSuperclassTraversal mappedSuperclassTraversal = mappedSuperclassTraversal(
         javaType,
@@ -239,6 +314,7 @@ public final class JpaEntityAnalyzer {
     List<JpaEntityFieldFact> fields = fields(
         javaType,
         SOURCE_KIND_DECLARED,
+        embeddableSources,
         evidence);
     List<JpaRelationshipFact> relationships = relationships(
         javaType.sourcePath(),
@@ -253,6 +329,7 @@ public final class JpaEntityAnalyzer {
         "entity:" + javaType.className(),
         javaType.className(),
         tableName,
+        idClass,
         fields.stream().sorted(FIELD_ORDER).toList(),
         identifierFields.stream().sorted(IDENTIFIER_FIELD_ORDER).toList(),
         relationships.stream().sorted(RELATIONSHIP_ORDER).toList(),
@@ -260,40 +337,90 @@ public final class JpaEntityAnalyzer {
     evidence.addAll(entityEvidence);
   }
 
+  private JpaIdClassFact idClass(
+      JavaTypeSource javaType,
+      List<JpaEntityEvidence> entityEvidence) {
+    Optional<AnnotationExpr> idClassAnnotation = findAnnotation(
+        javaType,
+        javaType.type().getAnnotations(),
+        ID_CLASS);
+    if (idClassAnnotation.isEmpty()) {
+      return null;
+    }
+
+    JpaEntityEvidence idClassEvidence = annotationEvidence(
+        javaType.sourcePath(),
+        javaType.className(),
+        idClassAnnotation.orElseThrow(),
+        javaType.sourceLines(),
+        null);
+    entityEvidence.add(idClassEvidence);
+    return new JpaIdClassFact(
+        annotationValue(idClassAnnotation.orElseThrow())
+            .flatMap(this::classLiteralType)
+            .orElse(null),
+        STATUS_NOT_ANALYZED,
+        STATUS_NOT_ANALYZED,
+        List.of(idClassEvidence.id()));
+  }
+
   private List<JpaIdentifierFieldFact> identifierFields(
       JavaTypeSource javaType,
       String sourceKind,
       List<String> additionalEvidenceIds,
+      Map<String, EmbeddableSource> embeddableSources,
       List<JpaEntityEvidence> evidence) {
     List<JpaIdentifierFieldFact> identifierFields = new ArrayList<>();
 
     for (FieldDeclaration field : javaType.type().getFields()) {
       Optional<AnnotationExpr> idAnnotation = findAnnotation(javaType, field.getAnnotations(), ID);
-      if (idAnnotation.isEmpty()) {
+      Optional<AnnotationExpr> embeddedIdAnnotation = findAnnotation(
+          javaType,
+          field.getAnnotations(),
+          EMBEDDED_ID);
+      if (idAnnotation.isEmpty() && embeddedIdAnnotation.isEmpty()) {
         continue;
       }
 
       for (VariableDeclarator variable : field.getVariables()) {
-        JpaEntityEvidence idEvidence = annotationEvidence(
-            javaType.sourcePath(),
-            javaType.className(),
-            idAnnotation.orElseThrow(),
-            javaType.sourceLines(),
-            "field:" + variable.getNameAsString());
-        evidence.add(idEvidence);
+        JpaEmbeddedFact embeddedId = embeddedIdAnnotation
+            .map(annotation -> embeddedFact(
+                javaType,
+                annotation,
+                variable,
+                embeddableSources,
+                evidence))
+            .orElse(null);
+        JpaEntityEvidence idEvidence = null;
+        if (idAnnotation.isPresent()) {
+          idEvidence = annotationEvidence(
+              javaType.sourcePath(),
+              javaType.className(),
+              idAnnotation.orElseThrow(),
+              javaType.sourceLines(),
+              "field:" + variable.getNameAsString());
+          evidence.add(idEvidence);
+        }
         Optional<AnnotationExpr> generatedValueAnnotation = findAnnotation(
             javaType,
             field.getAnnotations(),
             GENERATED_VALUE);
-        JpaGeneratedValueFact generatedValue = generatedValueAnnotation
+        JpaGeneratedValueFact generatedValue = idAnnotation.isPresent()
+            ? generatedValueAnnotation
             .map(annotation -> generatedValueFact(
                 javaType,
                 annotation,
                 variable.getNameAsString(),
                 evidence))
-            .orElse(null);
+            .orElse(null)
+            : null;
         List<String> evidenceIds = new ArrayList<>();
-        evidenceIds.add(idEvidence.id());
+        if (idEvidence != null) {
+          evidenceIds.add(idEvidence.id());
+        }
+        if (embeddedId != null) {
+          evidenceIds.addAll(embeddedId.evidenceIds());
+        }
         if (generatedValue != null) {
           evidenceIds.addAll(generatedValue.evidenceIds());
         }
@@ -303,7 +430,7 @@ public final class JpaEntityAnalyzer {
             variable.getType().asString(),
             javaType.className(),
             sourceKind,
-            IDENTIFIER_KIND_SIMPLE_ID,
+            embeddedId != null ? IDENTIFIER_KIND_EMBEDDED_ID : IDENTIFIER_KIND_SIMPLE_ID,
             generatedValue,
             evidenceIds));
       }
@@ -315,6 +442,7 @@ public final class JpaEntityAnalyzer {
   private List<JpaEntityFieldFact> fields(
       JavaTypeSource javaType,
       String sourceKind,
+      Map<String, EmbeddableSource> embeddableSources,
       List<JpaEntityEvidence> evidence) {
     List<JpaEntityFieldFact> fields = new ArrayList<>();
 
@@ -326,21 +454,28 @@ public final class JpaEntityAnalyzer {
           field.getAnnotations(),
           GENERATED_VALUE);
       Optional<AnnotationExpr> versionAnnotation = findAnnotation(javaType, field.getAnnotations(), VERSION);
+      Optional<AnnotationExpr> embeddedAnnotation = findAnnotation(javaType, field.getAnnotations(), EMBEDDED);
+      Optional<AnnotationExpr> embeddedIdAnnotation = findAnnotation(javaType, field.getAnnotations(), EMBEDDED_ID);
       if (columnAnnotation.isEmpty()
           && enumeratedAnnotation.isEmpty()
           && generatedValueAnnotation.isEmpty()
-          && versionAnnotation.isEmpty()) {
+          && versionAnnotation.isEmpty()
+          && embeddedAnnotation.isEmpty()
+          && embeddedIdAnnotation.isEmpty()) {
         continue;
       }
 
       boolean identifier = findAnnotation(javaType, field.getAnnotations(), ID).isPresent();
+      boolean embeddedId = embeddedIdAnnotation.isPresent();
       for (VariableDeclarator variable : field.getVariables()) {
         String fieldName = variable.getNameAsString();
         List<String> annotations = fieldAnnotations(
             columnAnnotation,
             enumeratedAnnotation,
             generatedValueAnnotation,
-            versionAnnotation);
+            versionAnnotation,
+            embeddedAnnotation,
+            embeddedIdAnnotation);
         JpaColumnFact column = columnAnnotation
             .map(annotation -> columnFact(javaType, annotation, fieldName, evidence))
             .orElse(null);
@@ -352,6 +487,15 @@ public final class JpaEntityAnalyzer {
             .orElse(null);
         JpaVersionFact version = versionAnnotation
             .map(annotation -> versionFact(javaType, annotation, fieldName, evidence))
+            .orElse(null);
+        JpaEmbeddedFact embedded = embeddedAnnotation
+            .or(() -> embeddedIdAnnotation)
+            .map(annotation -> embeddedFact(
+                javaType,
+                annotation,
+                variable,
+                embeddableSources,
+                evidence))
             .orElse(null);
         List<String> evidenceIds = new ArrayList<>();
         if (column != null) {
@@ -366,17 +510,21 @@ public final class JpaEntityAnalyzer {
         if (version != null) {
           evidenceIds.addAll(version.evidenceIds());
         }
+        if (embedded != null) {
+          evidenceIds.addAll(embedded.evidenceIds());
+        }
         fields.add(new JpaEntityFieldFact(
             fieldName,
             variable.getType().asString(),
             javaType.className(),
             sourceKind,
-            persistenceRole(identifier, version != null),
+            persistenceRole(identifier, embeddedId, embeddedAnnotation.isPresent(), version != null),
             annotations,
             column,
             enumerated,
             generatedValue,
             version,
+            embedded,
             evidenceIds));
       }
     }
@@ -388,7 +536,9 @@ public final class JpaEntityAnalyzer {
       Optional<AnnotationExpr> columnAnnotation,
       Optional<AnnotationExpr> enumeratedAnnotation,
       Optional<AnnotationExpr> generatedValueAnnotation,
-      Optional<AnnotationExpr> versionAnnotation) {
+      Optional<AnnotationExpr> versionAnnotation,
+      Optional<AnnotationExpr> embeddedAnnotation,
+      Optional<AnnotationExpr> embeddedIdAnnotation) {
     List<String> annotations = new ArrayList<>();
     if (columnAnnotation.isPresent()) {
       annotations.add("@Column");
@@ -402,17 +552,33 @@ public final class JpaEntityAnalyzer {
     if (versionAnnotation.isPresent()) {
       annotations.add("@Version");
     }
+    if (embeddedAnnotation.isPresent()) {
+      annotations.add("@Embedded");
+    }
+    if (embeddedIdAnnotation.isPresent()) {
+      annotations.add("@EmbeddedId");
+    }
     return annotations.stream()
         .sorted(Comparator.comparingInt(FIELD_ANNOTATION_ORDER::indexOf))
         .toList();
   }
 
-  private String persistenceRole(boolean identifier, boolean version) {
+  private String persistenceRole(
+      boolean identifier,
+      boolean embeddedId,
+      boolean embedded,
+      boolean version) {
+    if (embeddedId) {
+      return PERSISTENCE_ROLE_EMBEDDED_ID;
+    }
     if (version) {
       return PERSISTENCE_ROLE_VERSION;
     }
     if (identifier) {
       return PERSISTENCE_ROLE_SIMPLE_ID;
+    }
+    if (embedded) {
+      return PERSISTENCE_ROLE_EMBEDDED;
     }
     return PERSISTENCE_ROLE_BASIC;
   }
@@ -475,6 +641,53 @@ public final class JpaEntityAnalyzer {
     return new JpaVersionFact(List.of(versionEvidence.id()));
   }
 
+  private JpaEmbeddedFact embeddedFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      VariableDeclarator variable,
+      Map<String, EmbeddableSource> embeddableSources,
+      List<JpaEntityEvidence> evidence) {
+    String fieldName = variable.getNameAsString();
+    JpaEntityEvidence embeddedEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(embeddedEvidence);
+    Optional<String> targetClassName = uniqueEmbeddableTarget(javaType, variable, embeddableSources);
+    List<String> evidenceIds = new ArrayList<>();
+    evidenceIds.add(embeddedEvidence.id());
+    targetClassName
+        .map(embeddableSources::get)
+        .map(EmbeddableSource::embeddableEvidence)
+        .map(JpaEntityEvidence::id)
+        .ifPresent(evidenceIds::add);
+
+    return new JpaEmbeddedFact(
+        annotationSymbol(annotation),
+        variable.getType().asString(),
+        targetClassName.isPresent() ? EMBEDDED_TARGET_RESOLUTION_SOURCE_VISIBLE : TARGET_RESOLUTION,
+        targetClassName.orElse(null),
+        targetClassName.isPresent() ? SUPPORT_TYPE_INFERRED : null,
+        targetClassName.isPresent() ? MEDIUM_CONFIDENCE : null,
+        targetClassName.isPresent() ? null : EMBEDDED_UNCERTAINTY,
+        evidenceIds);
+  }
+
+  private Optional<String> uniqueEmbeddableTarget(
+      JavaTypeSource javaType,
+      VariableDeclarator variable,
+      Map<String, EmbeddableSource> embeddableSources) {
+    if (!variable.getType().isClassOrInterfaceType()) {
+      return Optional.empty();
+    }
+
+    List<String> matches = typeCandidates(javaType, variable.getType().asClassOrInterfaceType()).stream()
+        .filter(embeddableSources::containsKey)
+        .distinct()
+        .toList();
+    if (matches.size() != 1) {
+      return Optional.empty();
+    }
+    return Optional.of(matches.get(0));
+  }
+
   private JpaEntityEvidence fieldAnnotationEvidence(
       JavaTypeSource javaType,
       AnnotationExpr annotation,
@@ -501,7 +714,7 @@ public final class JpaEntityAnalyzer {
     ClassOrInterfaceType currentExtendedType = javaType.type().getExtendedTypes().get(0);
 
     while (true) {
-      List<MappedSuperclassSource> matches = superclassCandidates(currentContext, currentExtendedType).stream()
+      List<MappedSuperclassSource> matches = typeCandidates(currentContext, currentExtendedType).stream()
           .map(mappedSuperclasses::get)
           .filter(Objects::nonNull)
           .distinct()
@@ -529,11 +742,11 @@ public final class JpaEntityAnalyzer {
     }
   }
 
-  private List<String> superclassCandidates(
+  private List<String> typeCandidates(
       JavaTypeSource javaType,
-      ClassOrInterfaceType extendedType) {
+      ClassOrInterfaceType sourceType) {
     LinkedHashSet<String> candidates = new LinkedHashSet<>();
-    String nameWithScope = extendedType.getNameWithScope();
+    String nameWithScope = sourceType.getNameWithScope();
     if (nameWithScope.contains(".")) {
       candidates.add(nameWithScope);
       return List.copyOf(candidates);
@@ -683,6 +896,13 @@ public final class JpaEntityAnalyzer {
     return Optional.empty();
   }
 
+  private Optional<String> classLiteralType(Expression expression) {
+    if (expression.isClassExpr()) {
+      return Optional.of(expression.asClassExpr().getType().asString());
+    }
+    return Optional.empty();
+  }
+
   private Optional<Boolean> literalBooleanValue(Expression expression) {
     if (expression.isBooleanLiteralExpr()) {
       return Optional.of(expression.asBooleanLiteralExpr().getValue());
@@ -804,6 +1024,11 @@ public final class JpaEntityAnalyzer {
       identifierFields = List.copyOf(identifierFields);
       evidence = List.copyOf(evidence);
     }
+  }
+
+  private record EmbeddableSource(
+      JavaTypeSource javaType,
+      JpaEntityEvidence embeddableEvidence) {
   }
 
   private record MappedSuperclassTraversal(

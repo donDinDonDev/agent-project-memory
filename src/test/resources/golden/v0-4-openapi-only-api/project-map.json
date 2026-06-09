@@ -287,7 +287,11 @@
   },
   "entities": {
     "analysis_status": "not_detected",
-    "items": []
+    "items": [],
+    "embeddables": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   },
   "tests": {
     "analysis_status": "not_detected",

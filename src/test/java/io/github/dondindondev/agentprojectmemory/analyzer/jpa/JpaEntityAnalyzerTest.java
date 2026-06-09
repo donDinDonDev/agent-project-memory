@@ -129,6 +129,124 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void embeddableClassesAreDetectedSeparatelyFromEntities() throws Exception {
+    JpaEntityAnalysis analysis = analyzeFixture();
+
+    JpaEmbeddableFact address = embeddable(analysis, "Address");
+    JpaEntityFieldFact zipCode = field(address, "zipCode");
+
+    assertAll(
+        () -> assertEquals("embeddable:com.example.domain.Address", address.id()),
+        () -> assertEquals("com.example.domain.Address", address.className()),
+        () -> assertTrue(address.sourcePath().endsWith("src/main/java/com/example/domain/JpaEntities.java")),
+        () -> assertEquals(List.of("@Column"), zipCode.annotations()),
+        () -> assertEquals("zip_code", zipCode.column().name()),
+        () -> assertTrue(address.evidenceIds().stream()
+            .anyMatch(evidenceId -> evidence(analysis, evidenceId).annotationSymbol().equals("@Embeddable"))),
+        () -> assertFalse(analysis.entities().stream()
+            .anyMatch(entity -> entity.className().equals(address.className()))));
+  }
+
+  @Test
+  void embeddedFieldLinksUniqueSourceVisibleEmbeddableTarget() throws Exception {
+    JpaEntityAnalysis analysis = analyzeFixture();
+
+    JpaEntityFieldFact destination = field(entity(analysis, "Shipment"), "destination");
+
+    assertAll(
+        () -> assertEquals(List.of("@Embedded"), destination.annotations()),
+        () -> assertEquals("embedded", destination.persistenceRole()),
+        () -> assertNotNull(destination.embedded()),
+        () -> assertEquals("@Embedded", destination.embedded().annotation()),
+        () -> assertEquals("Address", destination.embedded().javaType()),
+        () -> assertEquals("source_visible_embeddable", destination.embedded().targetResolution()),
+        () -> assertEquals("com.example.domain.Address", destination.embedded().targetClassName()),
+        () -> assertEquals("inferred", destination.embedded().supportType()),
+        () -> assertEquals("medium", destination.embedded().confidence()),
+        () -> assertNull(destination.embedded().uncertainty()),
+        () -> assertTrue(destination.embedded().evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId).annotationSymbol())
+            .toList()
+            .containsAll(List.of("@Embedded", "@Embeddable"))));
+  }
+
+  @Test
+  void embeddedIdFieldIsEmittedAsPartialIdentifierSignal() throws Exception {
+    JpaEntityAnalysis analysis = analyzeFixture();
+
+    JpaEntityFact shipment = entity(analysis, "Shipment");
+    JpaEntityFieldFact idField = field(shipment, "id");
+    JpaIdentifierFieldFact identifier = identifierField(shipment, "id");
+
+    assertAll(
+        () -> assertEquals(List.of("@EmbeddedId"), idField.annotations()),
+        () -> assertEquals("embedded_id", idField.persistenceRole()),
+        () -> assertNotNull(idField.embedded()),
+        () -> assertEquals("@EmbeddedId", idField.embedded().annotation()),
+        () -> assertEquals("ShipmentId", idField.embedded().javaType()),
+        () -> assertEquals("source_visible_embeddable", idField.embedded().targetResolution()),
+        () -> assertEquals("com.example.domain.ShipmentId", idField.embedded().targetClassName()),
+        () -> assertEquals("embedded_id", identifier.identifierKind()),
+        () -> assertEquals("ShipmentId", identifier.javaType()),
+        () -> assertNull(identifier.generatedValue()),
+        () -> assertTrue(identifier.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId).annotationSymbol())
+            .toList()
+            .contains("@EmbeddedId")));
+  }
+
+  @Test
+  void unresolvedEmbeddedTargetKeepsDeclaredTypeOnlyUncertainty() throws Exception {
+    JpaEntityFieldFact address = field(entity(analyzeFixture(), "ExternalProfile"), "address");
+
+    assertAll(
+        () -> assertEquals(List.of("@Embedded"), address.annotations()),
+        () -> assertEquals("declared_type_only", address.embedded().targetResolution()),
+        () -> assertNull(address.embedded().targetClassName()),
+        () -> assertNull(address.embedded().supportType()),
+        () -> assertNull(address.embedded().confidence()),
+        () -> assertEquals("embeddable_target_not_resolved", address.embedded().uncertainty()));
+  }
+
+  @Test
+  void idClassSignalIsDetectedWithoutCompositeKeyReconstruction() throws Exception {
+    JpaEntityAnalysis analysis = analyzeFixture();
+    JpaEntityFact legacyOrder = entity(analysis, "LegacyOrder");
+
+    assertAll(
+        () -> assertNotNull(legacyOrder.idClass()),
+        () -> assertEquals("LegacyOrderKey", legacyOrder.idClass().typeName()),
+        () -> assertEquals("not_analyzed", legacyOrder.idClass().fieldMatchingStatus()),
+        () -> assertEquals("not_analyzed", legacyOrder.idClass().semanticReconstructionStatus()),
+        () -> assertEquals(
+            List.of("orderNumber", "tenantId"),
+            legacyOrder.identifierFields().stream()
+                .map(JpaIdentifierFieldFact::fieldName)
+                .sorted()
+                .toList()),
+        () -> assertTrue(legacyOrder.idClass().evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId).annotationSymbol())
+            .toList()
+            .contains("@IdClass")));
+  }
+
+  @Test
+  void wildcardOnlyEmbeddedAnnotationIsSkippedConservatively() throws Exception {
+    Path fixtureRoot = wildcardEmbeddedFixtureRoot();
+    JpaEntityAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    JpaEntityFact entity = entity(analysis, "WildcardEmbeddedEntity");
+
+    assertAll(
+        () -> assertTrue(entity.fields().isEmpty()),
+        () -> assertEquals(List.of("id"), entity.identifierFields().stream()
+            .map(JpaIdentifierFieldFact::fieldName)
+            .toList()));
+  }
+
+  @Test
   void mappedSuperclassIdentifierIsAttachedToDirectEntitySubclass() throws Exception {
     JpaEntityAnalysis analysis = analyzeMappedSuperclassFixture();
 
@@ -244,6 +362,7 @@ final class JpaEntityAnalyzerTest {
 
     assertAll(
         () -> assertTrue(analysis.entities().isEmpty()),
+        () -> assertTrue(analysis.embeddables().isEmpty()),
         () -> assertTrue(analysis.evidence().isEmpty()));
   }
 
@@ -255,9 +374,17 @@ final class JpaEntityAnalyzerTest {
         () -> assertEquals(
             List.of(
                 "com.example.domain.Customer",
+                "com.example.domain.ExternalProfile",
+                "com.example.domain.LegacyOrder",
                 "com.example.domain.Order",
-                "com.example.domain.PropertyAccessEntity"),
+                "com.example.domain.PropertyAccessEntity",
+                "com.example.domain.Shipment"),
             analysis.entities().stream().map(JpaEntityFact::className).toList()),
+        () -> assertEquals(
+            List.of(
+                "com.example.domain.Address",
+                "com.example.domain.ShipmentId"),
+            analysis.embeddables().stream().map(JpaEmbeddableFact::className).toList()),
         () -> assertEquals(
             List.of("id", "status", "version"),
             entity(analysis, "Order").fields().stream()
@@ -279,6 +406,9 @@ final class JpaEntityAnalyzerTest {
 
     for (JpaEntityFact entity : analysis.entities()) {
       assertTrue(evidenceIds.containsAll(entity.evidenceIds()));
+      if (entity.idClass() != null) {
+        assertTrue(evidenceIds.containsAll(entity.idClass().evidenceIds()));
+      }
       for (JpaIdentifierFieldFact identifierField : entity.identifierFields()) {
         assertTrue(evidenceIds.containsAll(identifierField.evidenceIds()));
       }
@@ -296,9 +426,24 @@ final class JpaEntityAnalyzerTest {
         if (field.version() != null) {
           assertTrue(evidenceIds.containsAll(field.version().evidenceIds()));
         }
+        if (field.embedded() != null) {
+          assertTrue(evidenceIds.containsAll(field.embedded().evidenceIds()));
+        }
       }
       for (JpaRelationshipFact relationship : entity.relationships()) {
         assertTrue(evidenceIds.containsAll(relationship.evidenceIds()));
+      }
+    }
+    for (JpaEmbeddableFact embeddable : analysis.embeddables()) {
+      assertTrue(evidenceIds.containsAll(embeddable.evidenceIds()));
+      for (JpaEntityFieldFact field : embeddable.fields()) {
+        assertTrue(evidenceIds.containsAll(field.evidenceIds()));
+        if (field.column() != null) {
+          assertTrue(evidenceIds.containsAll(field.column().evidenceIds()));
+        }
+        if (field.embedded() != null) {
+          assertTrue(evidenceIds.containsAll(field.embedded().evidenceIds()));
+        }
       }
     }
   }
@@ -365,6 +510,11 @@ final class JpaEntityAnalyzerTest {
         getClass().getResource("/fixtures/jpa-mapped-superclass")).toURI());
   }
 
+  private Path wildcardEmbeddedFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/jpa-embedded-conservative")).toURI());
+  }
+
   private Path spoofedOriginsFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-spoofed-origins")).toURI());
@@ -372,6 +522,13 @@ final class JpaEntityAnalyzerTest {
 
   private JpaEntityFact entity(JpaEntityAnalysis analysis, String simpleName) {
     return analysis.entities().stream()
+        .filter(candidate -> candidate.className().equals("com.example.domain." + simpleName))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private JpaEmbeddableFact embeddable(JpaEntityAnalysis analysis, String simpleName) {
+    return analysis.embeddables().stream()
         .filter(candidate -> candidate.className().equals("com.example.domain." + simpleName))
         .findFirst()
         .orElseThrow();
@@ -386,6 +543,13 @@ final class JpaEntityAnalyzerTest {
 
   private JpaEntityFieldFact field(JpaEntityFact entity, String fieldName) {
     return entity.fields().stream()
+        .filter(candidate -> candidate.fieldName().equals(fieldName))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private JpaEntityFieldFact field(JpaEmbeddableFact embeddable, String fieldName) {
+    return embeddable.fields().stream()
         .filter(candidate -> candidate.fieldName().equals(fieldName))
         .findFirst()
         .orElseThrow();

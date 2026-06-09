@@ -19,6 +19,10 @@ architecture documents.
   field annotation extraction, including field-level `@Column`, `@Enumerated`,
   `@GeneratedValue`, and `@Version` metadata with evidence-backed output and conservative
   getter/property-access skips.
+- Added the v0.6 embedded and identifier model implementation slice for direct
+  source-visible `@Embeddable` classes, direct field-level `@Embedded` and
+  `@EmbeddedId` signals, and direct class-level `@IdClass` composite-id signals with
+  explicit partial/not-analyzed semantics and evidence-backed output.
 
 ### Changed
 
@@ -26,6 +30,10 @@ architecture documents.
   JPA field annotation slice, with `entities.items[].fields[]`, `identifier_kind`, and
   nullable `generated_value` identifier metadata while keeping missing annotation
   attributes distinct from runtime JPA defaults.
+- Expanded generated `project-map.json` and `agent-guide.md` JPA/domain output with
+  `entities.embeddables`, nullable `entity.id_class`, nullable `field.embedded`, and
+  `identifier_kind: "embedded_id"` while keeping embedded target links conservative and
+  composite-id semantics not analyzed.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 

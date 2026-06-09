@@ -1807,12 +1807,13 @@ Deterministic sorting rules:
 
 ### v0.6 JPA And Domain Contract
 
-This section defines the v0.6 JPA/domain output contract. The current V060-G002
-implementation moves normal generated output to `schema_version: "0.6"` and implements
-the bounded entity field annotation slice for direct field-level `@Column`,
-`@Enumerated`, `@GeneratedValue`, and `@Version`. Later v0.6 goals may fill the planned
-table metadata, embedded/composite identifier, relationship metadata, and
-repository/entity relation portions described below.
+This section defines the v0.6 JPA/domain output contract. The current V060-G003
+implementation emits `schema_version: "0.6"`, implements the bounded entity field
+annotation slice for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`,
+and `@Version`, and adds bounded embedded and identifier-model signals for direct
+`@Embeddable`, direct field-level `@Embedded` and `@EmbeddedId`, and direct class-level
+`@IdClass`. Later v0.6 goals may fill the planned table metadata, relationship metadata,
+and repository/entity relation portions described below.
 
 The v0.6 contract uses:
 
@@ -1831,29 +1832,41 @@ The v0.6 contract uses:
   Data repository interface signals. They are inferred relations, not extracted entity
   facts.
 
-Current V060-G002 implementation state:
+Current V060-G003 implementation state:
 
 - `schema_version` is `"0.6"`.
 - `entities.items[]` continues to emit existing entity, table compatibility,
   identifier, and relationship fields.
 - Each entity object emits `fields`, sorted deterministically, as a possibly empty
   array.
-- `fields[]` currently contains only direct field-level `@Column`, `@Enumerated`,
-  `@GeneratedValue`, and `@Version` metadata declared on the entity class. Getter or
-  property-access annotations are not emitted in this slice.
+- `fields[]` currently contains direct field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, `@Version`, `@Embedded`, and `@EmbeddedId` metadata declared on the
+  entity class. Getter or property-access annotations are not emitted in this slice.
 - `identifier_fields[]` now emits `identifier_kind: "simple_id"` for supported simple
   `@Id` facts and a nullable `generated_value` object when a direct field-level
   `@GeneratedValue` annotation is present on that identifier field.
+- `identifier_fields[]` also emits `identifier_kind: "embedded_id"` for direct
+  field-level `@EmbeddedId` identifier signals. This is a partial source-visible
+  composite identifier signal and does not reconstruct composite-key semantics.
+- `entity.id_class` is `null` unless a direct class-level `@IdClass` annotation is
+  present. When present, it records a nullable `type_name`, `field_matching_status:
+  "not_analyzed"`, `semantic_reconstruction_status: "not_analyzed"`, and evidence IDs.
+- `field.embedded` is `null` unless a direct field-level `@Embedded` or `@EmbeddedId`
+  annotation is present. When present, it records the annotation symbol, declared Java
+  type, target resolution, nullable target embeddable identity fields, nullable
+  inference support fields, uncertainty, and evidence IDs.
+- `entities.embeddables` is emitted with its own `analysis_status` and contains direct
+  source-visible `@Embeddable` class facts. Embeddables are not emitted as entity/table
+  facts.
 - Missing annotation attributes remain `null`; generated output must not fill JPA
   runtime defaults.
-- `table_metadata`, `id_class`, `entities.embeddables`, field `embedded`, relationship
-  metadata deepening, and repository/entity relation fields are planned for later v0.6
-  goals and are not emitted by V060-G002.
+- `table_metadata`, relationship metadata deepening, and repository/entity relation
+  fields are planned for later v0.6 goals and are not emitted by V060-G003.
 
 Full-track planned `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
 some objects for focus, but remain required by their existing contracts when those
 objects are emitted. Fields explicitly listed as planned later are not current
-V060-G002 output until their implementation goals land:
+V060-G003 output until their implementation goals land:
 
 ```json
 {
@@ -2042,8 +2055,8 @@ v0.6 entity and embeddable rules:
   annotations. It is not a complete persistent-property inventory. Fields with no
   supported JPA annotation do not have to be emitted.
 - Current field metadata supports direct field-level `@Column`, `@Enumerated`,
-  `@GeneratedValue`, and `@Version` on entity classes. Planned later field metadata may
-  add `@Embedded`, `@EmbeddedId`, relationship annotations, `@JoinColumn`, and
+  `@GeneratedValue`, `@Version`, `@Embedded`, and `@EmbeddedId` on entity classes.
+  Planned later field metadata may add relationship annotations, `@JoinColumn`, and
   `@JoinTable`. Getter/property-access support is a separate bounded implementation
   choice; if added, it must preserve a distinct member kind and evidence for the
   annotated method without pretending it was a field declaration.
@@ -2065,18 +2078,26 @@ v0.6 entity and embeddable rules:
   sequence/table existence, database identity behavior, or provider defaults.
 - `field.version` records direct `@Version` presence and evidence only. It must not
   claim optimistic-locking correctness or runtime version behavior.
-- `field.embedded` is planned to record direct `@Embedded` or `@EmbeddedId` presence and the declared
-  Java type. A source-visible `@Embeddable` target may be linked only when the type can
-  be matched deterministically to a unique emitted embeddable fact; otherwise it remains
-  declared-type-only with explicit uncertainty.
+- `field.embedded` records direct `@Embedded` or `@EmbeddedId` presence and the declared
+  Java type. `field.embedded.annotation` is either `"@Embedded"` or `"@EmbeddedId"`.
+  `field.embedded.target_resolution` is `"source_visible_embeddable"` only when the
+  declared type can be matched deterministically to a unique emitted embeddable fact in
+  the same supported module; otherwise it is `"declared_type_only"` with
+  `uncertainty: "embeddable_target_not_resolved"`. `target_embeddable_id`,
+  `target_module_id`, and `target_class_name` are nullable and are populated only for
+  the unique source-visible embeddable match. `support_type: "inferred"` and
+  `confidence: "medium"` are used only for that source-visible match. This target link
+  is a conservative source-visible inference, not runtime ORM resolution.
 - `entity.identifier_fields[]` keeps existing simple `@Id` support and may add
   `identifier_kind` values such as `"simple_id"`, `"embedded_id"`, and
   `"id_class_field"`. Mapped-superclass identifiers keep `source_kind:
   "mapped_superclass"` and the existing conservative hierarchy boundary.
-- `entity.id_class` records direct class-level `@IdClass` source-visible type literals
-  when present. It is a composite-id signal only. It must not reconstruct field matching,
-  equality semantics, serializability, generated keys, provider behavior, or database
-  primary keys.
+- `entity.id_class` records direct class-level `@IdClass` source-visible class literals
+  when present. `type_name` is nullable when the annotation value is not a direct class
+  literal. `field_matching_status` and `semantic_reconstruction_status` are
+  `"not_analyzed"`. It is a composite-id signal only. It must not reconstruct field
+  matching, equality semantics, serializability, generated keys, provider behavior, or
+  database primary keys.
 - `entities.embeddables.items[].fields[]` uses the same supported field metadata shape
   as entity fields where applicable. Embeddable field facts must not imply that an
   embeddable is used by any entity unless a separate `@Embedded` or `@EmbeddedId` fact

@@ -1234,35 +1234,87 @@ public final class AgentGuideGenerator {
     JsonNode items = entities.path("items");
     if (!items.isArray() || items.isEmpty()) {
       markdown.append("- Detected: no direct JPA entities recorded.\n\n");
+    } else {
+      markdown.append("\n");
+      for (JsonNode entity : items) {
+        markdown.append("### ").append(code(text(entity, "class_name"))).append("\n\n");
+        appendModuleLine(markdown, entity, moduleById);
+        String tableName = nullableText(entity, "table_name");
+        List<String> tableEvidenceIds = evidenceIdsWithSymbol(
+            entity.path("evidence_ids"),
+            evidenceById,
+            "@Table");
+        List<String> entityEvidenceIds = evidenceIdsWithoutSymbols(
+            entity.path("evidence_ids"),
+            evidenceById,
+            Set.of("@Table", "@IdClass"));
+        markdown.append("- Entity: Detected ")
+            .append(code(text(entity, "class_name")))
+            .append("\n");
+        appendEvidenceLine(markdown, entityEvidenceIds, evidenceById);
+        appendNullableDetectedLine(markdown, "Table", tableName);
+        if (tableName != null && !tableName.isBlank()) {
+          appendEvidenceLine(markdown, tableEvidenceIds, evidenceById);
+        }
+        appendIdClass(markdown, entity.path("id_class"), evidenceById);
+        appendEntityFields(markdown, entity.path("fields"), evidenceById);
+        appendIdentifierFields(markdown, entity.path("identifier_fields"), evidenceById);
+        appendRelationships(markdown, entity.path("relationships"), evidenceById);
+        markdown.append("\n");
+      }
+    }
+    appendEmbeddables(markdown, entities.path("embeddables"), moduleById, evidenceById);
+  }
+
+  private void appendIdClass(
+      StringBuilder markdown,
+      JsonNode idClass,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!idClass.isObject()) {
       return;
     }
 
-    markdown.append("\n");
-    for (JsonNode entity : items) {
-      markdown.append("### ").append(code(text(entity, "class_name"))).append("\n\n");
-      appendModuleLine(markdown, entity, moduleById);
-      String tableName = nullableText(entity, "table_name");
-      List<String> tableEvidenceIds = evidenceIdsWithSymbol(
-          entity.path("evidence_ids"),
-          evidenceById,
-          "@Table");
-      List<String> entityEvidenceIds = evidenceIdsWithoutSymbols(
-          entity.path("evidence_ids"),
-          evidenceById,
-          Set.of("@Table"));
-      markdown.append("- Entity: Detected ")
-          .append(code(text(entity, "class_name")))
-          .append("\n");
-      appendEvidenceLine(markdown, entityEvidenceIds, evidenceById);
-      appendNullableDetectedLine(markdown, "Table", tableName);
-      if (tableName != null && !tableName.isBlank()) {
-        appendEvidenceLine(markdown, tableEvidenceIds, evidenceById);
-      }
-      appendEntityFields(markdown, entity.path("fields"), evidenceById);
-      appendIdentifierFields(markdown, entity.path("identifier_fields"), evidenceById);
-      appendRelationships(markdown, entity.path("relationships"), evidenceById);
-      markdown.append("\n");
+    markdown.append("- IdClass signal: Source-visible type ")
+        .append(code(nullDisplay(nullableText(idClass, "type_name"))))
+        .append(" with field_matching_status ")
+        .append(code(text(idClass, "field_matching_status")))
+        .append(" and semantic_reconstruction_status ")
+        .append(code(text(idClass, "semantic_reconstruction_status")))
+        .append("\n");
+    appendEvidenceLine(markdown, idClass.path("evidence_ids"), evidenceById);
+  }
+
+  private void appendEmbeddables(
+      StringBuilder markdown,
+      JsonNode embeddables,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!embeddables.isObject()) {
+      return;
     }
+
+    markdown.append("### Embeddables\n\n");
+    markdown.append("- Analysis status: ")
+        .append(code(text(embeddables, "analysis_status")))
+        .append("\n");
+    JsonNode items = embeddables.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Detected: no direct `@Embeddable` classes recorded.\n\n");
+      return;
+    }
+
+    for (JsonNode embeddable : items) {
+      markdown.append("- Embeddable: Detected ")
+          .append(code(text(embeddable, "class_name")))
+          .append("\n");
+      appendModuleLine(markdown, embeddable, moduleById);
+      markdown.append("  - Source: Detected ")
+          .append(code(text(embeddable, "source_path")))
+          .append("\n");
+      appendEvidenceLine(markdown, embeddable.path("evidence_ids"), evidenceById);
+      appendEntityFields(markdown, embeddable.path("fields"), evidenceById);
+    }
+    markdown.append("\n");
   }
 
   private void appendEntityFields(
@@ -1288,6 +1340,7 @@ public final class AgentGuideGenerator {
       appendEnumeratedAttributes(markdown, field.path("enumerated"));
       appendGeneratedValueAttributes(markdown, field.path("generated_value"));
       appendVersionAttributes(markdown, field.path("version"));
+      appendEmbeddedAttributes(markdown, field.path("embedded"));
       appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
     }
   }
@@ -1342,6 +1395,30 @@ public final class AgentGuideGenerator {
     markdown.append("  - Version: Source-visible `@Version` presence.\n");
   }
 
+  private void appendEmbeddedAttributes(StringBuilder markdown, JsonNode embedded) {
+    if (!embedded.isObject()) {
+      return;
+    }
+
+    markdown.append("  - Embedded signal: ")
+        .append(code(text(embedded, "annotation")))
+        .append(" declared type ")
+        .append(code(text(embedded, "java_type")))
+        .append(" target_resolution ")
+        .append(code(text(embedded, "target_resolution")));
+    String targetClassName = nullableText(embedded, "target_class_name");
+    if (targetClassName != null && !targetClassName.isBlank()) {
+      markdown.append(" target_class ")
+          .append(code(targetClassName));
+    }
+    String uncertainty = nullableText(embedded, "uncertainty");
+    if (uncertainty != null) {
+      markdown.append(" uncertainty ")
+          .append(code(uncertainty));
+    }
+    markdown.append("\n");
+  }
+
   private void addNullableAttribute(List<String> attributes, String name, String value) {
     if (value != null) {
       attributes.add(name + "=" + value);
@@ -1365,11 +1442,15 @@ public final class AgentGuideGenerator {
           .append(")");
       String declaringClass = nullableText(field, "declaring_class");
       String sourceKind = nullableText(field, "source_kind");
+      String identifierKind = nullableText(field, "identifier_kind");
       if (declaringClass != null && !declaringClass.isBlank()) {
         markdown.append(" declared by ").append(code(declaringClass));
       }
       if (sourceKind != null && !sourceKind.isBlank()) {
         markdown.append(" with source_kind ").append(code(sourceKind));
+      }
+      if (identifierKind != null && !identifierKind.isBlank()) {
+        markdown.append(" identifier_kind ").append(code(identifierKind));
       }
       markdown.append("\n");
       JsonNode generatedValue = field.path("generated_value");
@@ -1505,6 +1586,11 @@ public final class AgentGuideGenerator {
     markdown.append("- Not analyzed: JPA mapped-superclass identifier support is limited to ")
         .append("conservative source-visible mapped-superclass chains; unresolved, ambiguous, ")
         .append("cyclic, or non-source-visible branches are skipped.\n");
+    markdown.append("- Partial: JPA embedded and composite identifier support is limited to direct ")
+        .append("source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` ")
+        .append("signals. Embedded targets are linked only when a unique local `@Embeddable` ")
+        .append("can be matched; `@IdClass` field matching and composite-key semantics are ")
+        .append("not analyzed.\n");
     markdown.append("- Inferred: tested-subject relations use naming conventions only. Test execution, ")
         .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
         .append("analyzed.\n");

@@ -1,12 +1,16 @@
 package com.example.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.MappedSuperclass;
@@ -27,6 +31,18 @@ class ProjectBaseEntity {
 class ProjectCustomer {
   @Id
   private Long id;
+}
+
+@Embeddable
+class ProjectAddress {
+  @Column(name = "postal_code")
+  private String postalCode;
+}
+
+@Embeddable
+class ProjectShipmentId {
+  @Column(name = "tracking_number")
+  private String trackingNumber;
 }
 
 @Entity
@@ -54,6 +70,33 @@ class ProjectOrder {
 
   @ManyToMany
   private Set<ProjectTag> tags;
+}
+
+@Entity
+class ProjectShipment {
+  @EmbeddedId
+  private ProjectShipmentId id;
+
+  @Embedded
+  private ProjectAddress destination;
+
+  @Embedded
+  private ExternalProjectAddress externalAddress;
+}
+
+@Entity
+@IdClass(ProjectLegacyOrderKey.class)
+class ProjectLegacyOrder {
+  @Id
+  private String tenantId;
+
+  @Id
+  private Long orderNumber;
+}
+
+class ProjectLegacyOrderKey {
+  private String tenantId;
+  private Long orderNumber;
 }
 
 @Entity

@@ -6,6 +6,7 @@ public record JpaEntityFact(
     String id,
     String className,
     String tableName,
+    JpaIdClassFact idClass,
     List<JpaEntityFieldFact> fields,
     List<JpaIdentifierFieldFact> identifierFields,
     List<JpaRelationshipFact> relationships,

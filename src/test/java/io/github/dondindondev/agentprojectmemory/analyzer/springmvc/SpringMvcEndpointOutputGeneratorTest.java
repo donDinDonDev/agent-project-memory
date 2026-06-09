@@ -76,7 +76,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(62, projectMapEvidenceIds.size()),
+        () -> assertEquals(74, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -352,9 +352,25 @@ final class SpringMvcEndpointOutputGeneratorTest {
         projectMapJson.path("entities").path("items"),
         "class_name",
         "com.example.domain.ProjectOrder");
+    JsonNode shipmentEntity = objectWithText(
+        projectMapJson.path("entities").path("items"),
+        "class_name",
+        "com.example.domain.ProjectShipment");
+    JsonNode legacyOrderEntity = objectWithText(
+        projectMapJson.path("entities").path("items"),
+        "class_name",
+        "com.example.domain.ProjectLegacyOrder");
     JsonNode fields = orderEntity.path("fields");
     JsonNode statusField = objectWithText(fields, "field_name", "status");
     JsonNode idIdentifier = objectWithText(orderEntity.path("identifier_fields"), "field_name", "id");
+    JsonNode shipmentDestination = objectWithText(shipmentEntity.path("fields"), "field_name", "destination");
+    JsonNode shipmentExternalAddress = objectWithText(
+        shipmentEntity.path("fields"),
+        "field_name",
+        "externalAddress");
+    JsonNode shipmentIdIdentifier = objectWithText(shipmentEntity.path("identifier_fields"), "field_name", "id");
+    JsonNode embeddables = projectMapJson.path("entities").path("embeddables").path("items");
+    JsonNode projectAddress = objectWithText(embeddables, "class_name", "com.example.domain.ProjectAddress");
 
     assertAll(
         () -> assertTrue(projectMap.contains("\"entities\": {")),
@@ -385,6 +401,40 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "GenerationType.IDENTITY",
             idIdentifier.path("generated_value").path("strategy").asText()),
         () -> assertTrue(idIdentifier.path("generated_value").path("generator").isNull()),
+        () -> assertTrue(orderEntity.path("id_class").isNull()),
+        () -> assertEquals("ProjectLegacyOrderKey", legacyOrderEntity.path("id_class").path("type_name").asText()),
+        () -> assertEquals(
+            "not_analyzed",
+            legacyOrderEntity.path("id_class").path("field_matching_status").asText()),
+        () -> assertEquals(
+            "not_analyzed",
+            legacyOrderEntity.path("id_class").path("semantic_reconstruction_status").asText()),
+        () -> assertEquals("embedded_id", shipmentIdIdentifier.path("identifier_kind").asText()),
+        () -> assertTrue(shipmentIdIdentifier.path("generated_value").isNull()),
+        () -> assertEquals(
+            "@Embedded",
+            shipmentDestination.path("embedded").path("annotation").asText()),
+        () -> assertEquals(
+            "source_visible_embeddable",
+            shipmentDestination.path("embedded").path("target_resolution").asText()),
+        () -> assertEquals(
+            "embeddable:com.example.domain.ProjectAddress",
+            shipmentDestination.path("embedded").path("target_embeddable_id").asText()),
+        () -> assertEquals(
+            "module:.",
+            shipmentDestination.path("embedded").path("target_module_id").asText()),
+        () -> assertTrue(shipmentDestination.path("embedded").path("uncertainty").isNull()),
+        () -> assertEquals(
+            "declared_type_only",
+            shipmentExternalAddress.path("embedded").path("target_resolution").asText()),
+        () -> assertEquals(
+            "embeddable_target_not_resolved",
+            shipmentExternalAddress.path("embedded").path("uncertainty").asText()),
+        () -> assertEquals("analyzed", projectMapJson.path("entities").path("embeddables")
+            .path("analysis_status").asText()),
+        () -> assertEquals("embeddable:com.example.domain.ProjectAddress", projectAddress.path("id").asText()),
+        () -> assertEquals(1, projectAddress.path("fields").size()),
+        () -> assertTrue(projectAddress.path("evidence_ids").toString().contains("@Embeddable")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToOne\"")),
         () -> assertTrue(projectMap.contains("\"java_type\": \"ProjectCustomer\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToMany\"")),

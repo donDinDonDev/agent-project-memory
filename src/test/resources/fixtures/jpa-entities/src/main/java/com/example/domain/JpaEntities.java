@@ -1,12 +1,16 @@
 package com.example.domain;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Embedded;
+import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
+import jakarta.persistence.IdClass;
 import jakarta.persistence.ManyToMany;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
@@ -20,6 +24,18 @@ import java.util.Set;
 class Customer {
   @Id
   private Long id;
+}
+
+@Embeddable
+class Address {
+  @Column(name = "zip_code")
+  private String zipCode;
+}
+
+@Embeddable
+class ShipmentId {
+  @Column(name = "tracking_number")
+  private String trackingNumber;
 }
 
 @Entity
@@ -55,6 +71,39 @@ class Order {
 
   @ManyToMany
   private Set<Tag> tags;
+}
+
+@Entity
+class Shipment {
+  @EmbeddedId
+  private ShipmentId id;
+
+  @Embedded
+  private Address destination;
+}
+
+@Entity
+class ExternalProfile {
+  @Id
+  private Long id;
+
+  @Embedded
+  private ExternalAddress address;
+}
+
+@Entity
+@IdClass(LegacyOrderKey.class)
+class LegacyOrder {
+  @Id
+  private String tenantId;
+
+  @Id
+  private Long orderNumber;
+}
+
+class LegacyOrderKey {
+  private String tenantId;
+  private Long orderNumber;
 }
 
 class NotAnEntity {

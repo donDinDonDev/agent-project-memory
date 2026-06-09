@@ -13,6 +13,7 @@ public record JpaEntityFieldFact(
     JpaEnumeratedFact enumerated,
     JpaGeneratedValueFact generatedValue,
     JpaVersionFact version,
+    JpaEmbeddedFact embedded,
     List<String> evidenceIds) {
   public JpaEntityFieldFact {
     annotations = List.copyOf(annotations);

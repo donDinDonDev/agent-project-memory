@@ -668,6 +668,7 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectCustomer",
         "table_name": null,
+        "id_class": null,
         "fields": [],
         "identifier_fields": [
           {
@@ -678,13 +679,57 @@
             "identifier_kind": "simple_id",
             "generated_value": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectCustomer:@Id:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectCustomer:@Id:field:id"
             ]
           }
         ],
         "relationships": [],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectCustomer:@Entity"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:30-30:com.example.domain.ProjectCustomer:@Entity"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectLegacyOrder",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectLegacyOrder",
+        "table_name": null,
+        "id_class": {
+          "type_name": "ProjectLegacyOrderKey",
+          "field_matching_status": "not_analyzed",
+          "semantic_reconstruction_status": "not_analyzed",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:88-88:com.example.domain.ProjectLegacyOrder:@IdClass"
+          ]
+        },
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "orderNumber",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectLegacyOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:93-93:com.example.domain.ProjectLegacyOrder:@Id:field:orderNumber"
+            ]
+          },
+          {
+            "field_name": "tenantId",
+            "java_type": "String",
+            "declaring_class": "com.example.domain.ProjectLegacyOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:90-90:com.example.domain.ProjectLegacyOrder:@Id:field:tenantId"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:87-87:com.example.domain.ProjectLegacyOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:88-88:com.example.domain.ProjectLegacyOrder:@IdClass"
         ]
       },
       {
@@ -692,6 +737,7 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectOrder",
         "table_name": "orders",
+        "id_class": null,
         "fields": [
           {
             "field_name": "id",
@@ -708,12 +754,13 @@
               "strategy": "GenerationType.IDENTITY",
               "generator": null,
               "evidence_ids": [
-                "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
               ]
             },
             "version": null,
+            "embedded": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
             ]
           },
           {
@@ -736,20 +783,21 @@
               "insertable": null,
               "updatable": null,
               "evidence_ids": [
-                "ev:src/main/java/com/example/domain/ProjectEntities.java:39-39:com.example.domain.ProjectOrder:@Column:field:status"
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@Column:field:status"
               ]
             },
             "enumerated": {
               "value": "EnumType.STRING",
               "evidence_ids": [
-                "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectOrder:@Enumerated:field:status"
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@Enumerated:field:status"
               ]
             },
             "generated_value": null,
             "version": null,
+            "embedded": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:39-39:com.example.domain.ProjectOrder:@Column:field:status",
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectOrder:@Enumerated:field:status"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@Column:field:status",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@Enumerated:field:status"
             ]
           },
           {
@@ -766,11 +814,12 @@
             "generated_value": null,
             "version": {
               "evidence_ids": [
-                "ev:src/main/java/com/example/domain/ProjectEntities.java:43-43:com.example.domain.ProjectOrder:@Version:field:version"
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectOrder:@Version:field:version"
               ]
             },
+            "embedded": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:43-43:com.example.domain.ProjectOrder:@Version:field:version"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectOrder:@Version:field:version"
             ]
           }
         ],
@@ -785,12 +834,12 @@
               "strategy": "GenerationType.IDENTITY",
               "generator": null,
               "evidence_ids": [
-                "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
               ]
             },
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@Id:field:id",
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:51-51:com.example.domain.ProjectOrder:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
             ]
           }
         ],
@@ -802,7 +851,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:62-62:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
             ]
           },
           {
@@ -812,7 +861,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:68-68:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
             ]
           },
           {
@@ -822,7 +871,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:49-49:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:65-65:com.example.domain.ProjectOrder:@OneToMany:field:lines"
             ]
           },
           {
@@ -832,13 +881,137 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:71-71:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
             ]
           }
         ],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@Entity",
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:33-33:com.example.domain.ProjectOrder:@Table"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:48-48:com.example.domain.ProjectOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:49-49:com.example.domain.ProjectOrder:@Table"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectShipment",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectShipment",
+        "table_name": null,
+        "id_class": null,
+        "fields": [
+          {
+            "field_name": "destination",
+            "java_type": "ProjectAddress",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded",
+            "annotations": [
+              "@Embedded"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@Embedded",
+              "java_type": "ProjectAddress",
+              "target_resolution": "source_visible_embeddable",
+              "target_embeddable_id": "embeddable:com.example.domain.ProjectAddress",
+              "target_module_id": "module:.",
+              "target_class_name": "com.example.domain.ProjectAddress",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectShipment:@Embedded:field:destination",
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectAddress:@Embeddable"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectShipment:@Embedded:field:destination",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectAddress:@Embeddable"
+            ]
+          },
+          {
+            "field_name": "externalAddress",
+            "java_type": "ExternalProjectAddress",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded",
+            "annotations": [
+              "@Embedded"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@Embedded",
+              "java_type": "ExternalProjectAddress",
+              "target_resolution": "declared_type_only",
+              "target_embeddable_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "embeddable_target_not_resolved",
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectShipment:@Embedded:field:externalAddress"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectShipment:@Embedded:field:externalAddress"
+            ]
+          },
+          {
+            "field_name": "id",
+            "java_type": "ProjectShipmentId",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded_id",
+            "annotations": [
+              "@EmbeddedId"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@EmbeddedId",
+              "java_type": "ProjectShipmentId",
+              "target_resolution": "source_visible_embeddable",
+              "target_embeddable_id": "embeddable:com.example.domain.ProjectShipmentId",
+              "target_module_id": "module:.",
+              "target_class_name": "com.example.domain.ProjectShipmentId",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:77-77:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectShipmentId:@Embeddable"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:77-77:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectShipmentId:@Embeddable"
+            ]
+          }
+        ],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "ProjectShipmentId",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "identifier_kind": "embedded_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:77-77:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectShipmentId:@Embeddable"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:75-75:com.example.domain.ProjectShipment:@Entity"
         ]
       },
       {
@@ -846,6 +1019,7 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectVisit",
         "table_name": "visits",
+        "id_class": null,
         "fields": [],
         "identifier_fields": [
           {
@@ -856,18 +1030,105 @@
             "identifier_kind": "simple_id",
             "generated_value": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectBaseEntity:@Id:field:id",
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectBaseEntity:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:24-24:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
             ]
           }
         ],
         "relationships": [],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectVisit:@Entity",
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:60-60:com.example.domain.ProjectVisit:@Table"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:102-102:com.example.domain.ProjectVisit:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:103-103:com.example.domain.ProjectVisit:@Table"
         ]
       }
-    ]
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "embeddable:com.example.domain.ProjectAddress",
+          "module_id": "module:.",
+          "class_name": "com.example.domain.ProjectAddress",
+          "source_path": "src/main/java/com/example/domain/ProjectEntities.java",
+          "fields": [
+            {
+              "field_name": "postalCode",
+              "java_type": "String",
+              "declaring_class": "com.example.domain.ProjectAddress",
+              "source_kind": "declared",
+              "persistence_role": "basic",
+              "annotations": [
+                "@Column"
+              ],
+              "column": {
+                "name": "postal_code",
+                "nullable": null,
+                "unique": null,
+                "length": null,
+                "precision": null,
+                "scale": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectAddress:@Column:field:postalCode"
+                ]
+              },
+              "enumerated": null,
+              "generated_value": null,
+              "version": null,
+              "embedded": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectAddress:@Column:field:postalCode"
+              ]
+            }
+          ],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectAddress:@Embeddable"
+          ]
+        },
+        {
+          "id": "embeddable:com.example.domain.ProjectShipmentId",
+          "module_id": "module:.",
+          "class_name": "com.example.domain.ProjectShipmentId",
+          "source_path": "src/main/java/com/example/domain/ProjectEntities.java",
+          "fields": [
+            {
+              "field_name": "trackingNumber",
+              "java_type": "String",
+              "declaring_class": "com.example.domain.ProjectShipmentId",
+              "source_kind": "declared",
+              "persistence_role": "basic",
+              "annotations": [
+                "@Column"
+              ],
+              "column": {
+                "name": "tracking_number",
+                "nullable": null,
+                "unique": null,
+                "length": null,
+                "precision": null,
+                "scale": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:44-44:com.example.domain.ProjectShipmentId:@Column:field:trackingNumber"
+                ]
+              },
+              "enumerated": null,
+              "generated_value": null,
+              "version": null,
+              "embedded": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:44-44:com.example.domain.ProjectShipmentId:@Column:field:trackingNumber"
+              ]
+            }
+          ],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectShipmentId:@Embeddable"
+          ]
+        }
+      ]
+    }
   },
   "tests": {
     "analysis_status": "analyzed",

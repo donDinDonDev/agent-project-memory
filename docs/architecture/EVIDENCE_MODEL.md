@@ -119,10 +119,11 @@ Examples:
   surface facts, plus Spring Security configuration warnings, where these observations
   support extracted facts or warning signals without runtime reconstruction.
 - v0.6 source-visible JPA/domain annotations. The current implementation emits direct
-  field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` evidence; later
-  v0.6 goals may add `@JoinColumn`, `@JoinTable`, `@Embedded`, `@Embeddable`,
-  `@EmbeddedId`, and `@IdClass`, where these observations support extracted source
-  facts without database schema or runtime ORM claims.
+  field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` evidence,
+  direct class-level `@Embeddable` and `@IdClass` evidence, and direct field-level
+  `@Embedded` and `@EmbeddedId` evidence. Later v0.6 goals may add `@JoinColumn` and
+  `@JoinTable`, where these observations support extracted source facts without
+  database schema or runtime ORM claims.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -523,11 +524,11 @@ Direct JPA annotation evidence:
   `javax.persistence.*` origin through an exact fully qualified annotation name or
   explicit single-type import, and that exact framework type is not declared by scanned
   source.
-- Current annotation-backed facts include class-level `@Entity` and `@Table`, plus
-  field-level `@Id`, `@Column`, `@Enumerated`, `@GeneratedValue`, `@Version`,
-  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Planned later v0.6 facts
-  include class-level `@Embeddable` and `@IdClass`, plus field-level `@Embedded`,
-  `@EmbeddedId`, `@JoinColumn`, and `@JoinTable`.
+- Current annotation-backed facts include class-level `@Entity`, `@Table`,
+  `@Embeddable`, and `@IdClass`, plus field-level `@Id`, `@Column`, `@Enumerated`,
+  `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, `@ManyToOne`,
+  `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Planned later v0.6 facts include
+  field-level `@JoinColumn` and `@JoinTable`.
 - Field-level JPA annotation evidence keeps using the existing field discriminator in
   evidence IDs, such as `:field:<field_name>`, while preserving the global evidence
   field set.
@@ -557,9 +558,12 @@ Source-visible annotation attributes:
 Embedded and identifier evidence:
 
 - Direct `@Embeddable` class facts use class-level `annotation` evidence.
-- Direct `@Embedded` and `@EmbeddedId` facts use field-level `annotation` evidence and
-  may be paired with `code_symbol` evidence for a source-visible Java type declaration
-  only when a unique local target can be matched deterministically.
+- Direct `@Embedded` and `@EmbeddedId` facts use field-level `annotation` evidence. The
+  current implementation may pair that field-level evidence with the target
+  `@Embeddable` class-level annotation evidence when the declared field type can be
+  matched deterministically to a unique local embeddable in the same supported module.
+  This supports only a source-visible target signal; unresolved or classpath-only
+  targets remain `declared_type_only` with explicit uncertainty.
 - Direct `@IdClass` facts use class-level `annotation` evidence and may preserve the
   source-visible type literal. This evidence supports only a composite-id signal; it
   does not prove field matching, equality semantics, serializability, generated keys,

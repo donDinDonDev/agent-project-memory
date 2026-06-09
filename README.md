@@ -135,7 +135,8 @@ for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts with bounded source-visible
-field metadata for the current v0.6 annotation slice, a minimal tests inventory,
+field metadata and partial embedded/identifier signals for the current v0.6 annotation
+slice, a minimal tests inventory,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
@@ -146,9 +147,10 @@ evidence ID references. The current v0.5 Spring application surface implementati
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
 current v0.6 JPA/domain implementation emits field metadata for direct field-level
-`@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` annotations without runtime
-schema, access-strategy, generated-identifier, optimistic-locking, or provider-default
-claims.
+`@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` annotations, direct
+`@Embeddable` facts, direct field-level `@Embedded`/`@EmbeddedId` signals, and direct
+class-level `@IdClass` composite-id signals without runtime schema, access-strategy,
+generated-identifier, optimistic-locking, composite-key, or provider-default claims.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -230,9 +232,9 @@ v0.5 deeper Spring application surface release is published with packaged jar an
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
 The v0.6 JPA/domain release track is in development. The current checkout implements the
-first bounded v0.6 entity field annotation slice and emits `schema_version: "0.6"`;
-embedded/composite identifier, relationship metadata, repository/entity relation, and
-real-project evaluation work remains upcoming.
+first bounded v0.6 entity field annotation slice, embedded and identifier model signals,
+and emits `schema_version: "0.6"`; relationship metadata, repository/entity relation,
+and real-project evaluation work remains upcoming.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -252,10 +254,12 @@ observations, deterministic behavior and messaging signal extraction for direct
 annotations, deterministic Spring Security configuration warning extraction for
 supported security annotations and `SecurityFilterChain` `@Bean` methods, deterministic
 direct source-visible JPA field annotation extraction for `@Column`, `@Enumerated`,
-`@GeneratedValue`, and `@Version`, deterministic `endpoints.md`, and deterministic
-`agent-guide.md` generation from the structured facts and evidence index, including
-module-grouped Spring application surface guidance and bounded JPA field metadata
-guidance that keeps extracted facts, inferred signals, not-analyzed statuses, and
+`@GeneratedValue`, and `@Version`, deterministic partial embedded and identifier model
+signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`,
+deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
+structured facts and evidence index, including module-grouped Spring application
+surface guidance and bounded JPA field metadata and embedded/id guidance that keeps
+extracted facts, inferred signals, uncertain targets, not-analyzed statuses, and
 warnings separate.
 
 Current limitations:
@@ -350,14 +354,19 @@ Current limitations:
   `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
   conservative source-visible `@MappedSuperclass` chain, field-level `@Column`,
   `@Enumerated`, `@GeneratedValue`, and `@Version` annotations on direct entity fields,
-  and field-level `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`
-  annotations under `src/main/java`.
+  direct `@Embeddable` classes, direct field-level `@Embedded` and `@EmbeddedId`
+  signals, direct class-level `@IdClass` signals, and field-level `@ManyToOne`,
+  `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
 - Entity field metadata is limited to supported direct field-level annotations on the
   entity class. It records only bounded source-visible annotation attributes for
   `@Column`, `@Enumerated`, and `@GeneratedValue`, plus direct `@Version` presence, and
   does not fill runtime JPA defaults.
-- Entity analysis does not implement getter/property-access mapping, embedded IDs,
-  embeddables, id classes, join-column or join-table details, repository/entity
+- Entity embedded/id support is partial: it records direct `@Embeddable`,
+  `@Embedded`, `@EmbeddedId`, and `@IdClass` source-visible signals, links embedded
+  targets only when a unique local embeddable can be matched deterministically, and
+  marks unresolved embedded targets and `@IdClass` semantic reconstruction explicitly.
+- Entity analysis does not implement getter/property-access mapping, full composite-key
+  semantic reconstruction, join-column or join-table details, repository/entity
   relations, schema generation, transactional semantics, symbol solving, or ORM runtime
   behavior.
 - API surface spec discovery is limited to common local filenames such as

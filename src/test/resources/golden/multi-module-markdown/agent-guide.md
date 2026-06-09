@@ -217,7 +217,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/billing/src/main/java/com/example/shared/SharedController.java:16` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:16-16:com.example.shared.SharedEntity:@Entity`)
 - Table: Detected none.
 - Field metadata: Detected none.
-- Identifier field: Detected `id` (`Long`) declared by `com.example.shared.SharedEntity` with source_kind `declared`
+- Identifier field: Detected `id` (`Long`) declared by `com.example.shared.SharedEntity` with source_kind `declared` identifier_kind `simple_id`
   - Evidence: `services/billing/src/main/java/com/example/shared/SharedController.java:18` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:18-18:com.example.shared.SharedEntity:@Id:field:id`)
 - Relationships: Detected none.
 
@@ -228,9 +228,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:16` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:16-16:com.example.shared.SharedEntity:@Entity`)
 - Table: Detected none.
 - Field metadata: Detected none.
-- Identifier field: Detected `id` (`Long`) declared by `com.example.shared.SharedEntity` with source_kind `declared`
+- Identifier field: Detected `id` (`Long`) declared by `com.example.shared.SharedEntity` with source_kind `declared` identifier_kind `simple_id`
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:18` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:18-18:com.example.shared.SharedEntity:@Id:field:id`)
 - Relationships: Detected none.
+
+### Embeddables
+
+- Analysis status: `analyzed`
+- Detected: no direct `@Embeddable` classes recorded.
 
 ## Detected Tests
 
@@ -277,6 +282,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
+- Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.

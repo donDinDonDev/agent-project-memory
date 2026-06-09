@@ -16,11 +16,14 @@ import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigA
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdClassFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaColumnFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEnumeratedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaGeneratedValueFact;
@@ -245,11 +248,17 @@ public final class SpringMvcEndpointOutputGenerator {
       .comparingInt(ModuleScopedEntityFact::moduleOrder)
       .thenComparing(entity -> entity.fact().className())
       .thenComparing(entity -> entityId(entity.moduleId(), entity.fact()));
+  private static final Comparator<ModuleScopedEmbeddableFact> EMBEDDABLE_ORDER = Comparator
+      .comparingInt(ModuleScopedEmbeddableFact::moduleOrder)
+      .thenComparing(embeddable -> embeddable.fact().className())
+      .thenComparing(embeddable -> embeddable.fact().sourcePath())
+      .thenComparing(embeddable -> embeddableId(embeddable.moduleId(), embeddable.fact()));
   private static final Comparator<JpaIdentifierFieldFact> IDENTIFIER_FIELD_ORDER = Comparator
       .comparing(JpaIdentifierFieldFact::sourceKind)
       .thenComparing(JpaIdentifierFieldFact::declaringClass)
       .thenComparing(JpaIdentifierFieldFact::fieldName)
-      .thenComparing(JpaIdentifierFieldFact::javaType);
+      .thenComparing(JpaIdentifierFieldFact::javaType)
+      .thenComparing(JpaIdentifierFieldFact::identifierKind);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
       .thenComparing(JpaRelationshipFact::annotation)
@@ -651,6 +660,7 @@ public final class SpringMvcEndpointOutputGenerator {
     List<ModuleScopedSpringEventListenerFact> springEventListeners = new ArrayList<>();
     List<ModuleScopedSpringMessagingListenerFact> springMessagingListeners = new ArrayList<>();
     List<SpringBehaviorEvidence> springBehaviorEvidence = new ArrayList<>();
+    List<ModuleScopedEmbeddableFact> embeddables = new ArrayList<>();
     List<JpaEntityEvidence> entityEvidence = new ArrayList<>();
     List<TestInventoryEvidence> testEvidence = new ArrayList<>();
     List<AnalysisWarningEvidence> warningEvidence = new ArrayList<>();
@@ -805,6 +815,8 @@ public final class SpringMvcEndpointOutputGenerator {
         JpaEntityAnalysis entityAnalysis = entityAnalyzer.analyze(repositoryRoot, sourceRoots);
         entityAnalysis.entities().forEach(entity ->
             entities.add(new ModuleScopedEntityFact(module.moduleId(), order, entity)));
+        entityAnalysis.embeddables().forEach(embeddable ->
+            embeddables.add(new ModuleScopedEmbeddableFact(module.moduleId(), order, embeddable)));
         entityEvidence.addAll(entityAnalysis.evidence());
         entityAnalyzerRan = true;
       }
@@ -855,6 +867,7 @@ public final class SpringMvcEndpointOutputGenerator {
         springEventListeners.stream().sorted(SPRING_EVENT_LISTENER_ORDER).toList(),
         springMessagingListeners.stream().sorted(SPRING_MESSAGING_LISTENER_ORDER).toList(),
         entities.stream().sorted(ENTITY_ORDER).toList(),
+        embeddables.stream().sorted(EMBEDDABLE_ORDER).toList(),
         tests.stream().sorted(TEST_CLASS_ORDER).toList(),
         warningAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
         componentAnalyzerRan ? ANALYSIS_ANALYZED : MODULE_ANALYSIS_NOT_DETECTED,
@@ -1357,6 +1370,7 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("  \"entities\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", scan.entityAnalysisStatus(), true);
     appendEntities(json, scan.entities());
+    appendEmbeddables(json, scan.embeddables(), scan.entityAnalysisStatus());
     json.append("  },\n");
     json.append("  \"tests\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", scan.testAnalysisStatus(), true);
@@ -3138,7 +3152,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendEntities(StringBuilder json, List<ModuleScopedEntityFact> entities) {
     json.append("    \"items\": [");
     if (entities.isEmpty()) {
-      json.append("]\n");
+      json.append("],\n");
       return;
     }
 
@@ -3146,7 +3160,47 @@ public final class SpringMvcEndpointOutputGenerator {
     for (int index = 0; index < entities.size(); index++) {
       appendEntity(json, entities.get(index), index < entities.size() - 1);
     }
-    json.append("    ]\n");
+    json.append("    ],\n");
+  }
+
+  private void appendEmbeddables(
+      StringBuilder json,
+      List<ModuleScopedEmbeddableFact> embeddables,
+      String analysisStatus) {
+    json.append("    \"embeddables\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", analysisStatus, true);
+    json.append("      \"items\": [");
+    if (embeddables.isEmpty()) {
+      json.append("]\n");
+      json.append("    }\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < embeddables.size(); index++) {
+      appendEmbeddable(json, embeddables.get(index), index < embeddables.size() - 1);
+    }
+    json.append("      ]\n");
+    json.append("    }\n");
+  }
+
+  private void appendEmbeddable(
+      StringBuilder json,
+      ModuleScopedEmbeddableFact scopedEmbeddable,
+      boolean trailingComma) {
+    JpaEmbeddableFact embeddable = scopedEmbeddable.fact();
+    json.append("        {\n");
+    appendIndentedStringField(json, 5, "id", embeddableId(scopedEmbeddable.moduleId(), embeddable), true);
+    appendIndentedStringField(json, 5, "module_id", scopedEmbeddable.moduleId(), true);
+    appendIndentedStringField(json, 5, "class_name", embeddable.className(), true);
+    appendIndentedStringField(json, 5, "source_path", embeddable.sourcePath(), true);
+    appendEntityFields(json, scopedEmbeddable.moduleId(), embeddable.fields(), 5);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", embeddable.evidenceIds(), false);
+    json.append("        }");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
   }
 
   private void appendEntity(
@@ -3159,7 +3213,8 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 4, "module_id", scopedEntity.moduleId(), true);
     appendIndentedStringField(json, 4, "class_name", entity.className(), true);
     appendIndentedNullableStringField(json, 4, "table_name", entity.tableName(), true);
-    appendEntityFields(json, entity.fields());
+    appendIdClass(json, entity.idClass());
+    appendEntityFields(json, scopedEntity.moduleId(), entity.fields(), 4);
     appendIdentifierFields(json, entity.identifierFields());
     appendRelationships(json, entity.relationships());
     appendIndentedStringArrayField(json, 4, "evidence_ids", entity.evidenceIds(), false);
@@ -3170,10 +3225,35 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("\n");
   }
 
+  private void appendIdClass(StringBuilder json, JpaIdClassFact idClass) {
+    indent(json, 4);
+    json.append("\"id_class\": ");
+    if (idClass == null) {
+      json.append("null,\n");
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedNullableStringField(json, 5, "type_name", idClass.typeName(), true);
+    appendIndentedStringField(json, 5, "field_matching_status", idClass.fieldMatchingStatus(), true);
+    appendIndentedStringField(
+        json,
+        5,
+        "semantic_reconstruction_status",
+        idClass.semanticReconstructionStatus(),
+        true);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", idClass.evidenceIds(), false);
+    indent(json, 4);
+    json.append("},\n");
+  }
+
   private void appendEntityFields(
       StringBuilder json,
-      List<JpaEntityFieldFact> fields) {
-    json.append("        \"fields\": [");
+      String moduleId,
+      List<JpaEntityFieldFact> fields,
+      int propertyIndentLevel) {
+    indent(json, propertyIndentLevel);
+    json.append("\"fields\": [");
     List<JpaEntityFieldFact> sortedFields = fields.stream()
         .sorted(ENTITY_FIELD_ORDER)
         .toList();
@@ -3185,29 +3265,35 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("\n");
     for (int index = 0; index < sortedFields.size(); index++) {
       JpaEntityFieldFact field = sortedFields.get(index);
-      json.append("          {\n");
-      appendIndentedStringField(json, 6, "field_name", field.fieldName(), true);
-      appendIndentedStringField(json, 6, "java_type", field.javaType(), true);
-      appendIndentedStringField(json, 6, "declaring_class", field.declaringClass(), true);
-      appendIndentedStringField(json, 6, "source_kind", field.sourceKind(), true);
-      appendIndentedStringField(json, 6, "persistence_role", field.persistenceRole(), true);
-      appendIndentedStringArrayField(json, 6, "annotations", field.annotations(), true);
-      appendColumn(json, field.column());
-      appendEnumerated(json, field.enumerated());
-      appendGeneratedValue(json, 6, "generated_value", field.generatedValue(), true);
-      appendVersion(json, field.version());
-      appendIndentedStringArrayField(json, 6, "evidence_ids", field.evidenceIds(), false);
-      json.append("          }");
+      int itemIndentLevel = propertyIndentLevel + 1;
+      int fieldIndentLevel = propertyIndentLevel + 2;
+      indent(json, itemIndentLevel);
+      json.append("{\n");
+      appendIndentedStringField(json, fieldIndentLevel, "field_name", field.fieldName(), true);
+      appendIndentedStringField(json, fieldIndentLevel, "java_type", field.javaType(), true);
+      appendIndentedStringField(json, fieldIndentLevel, "declaring_class", field.declaringClass(), true);
+      appendIndentedStringField(json, fieldIndentLevel, "source_kind", field.sourceKind(), true);
+      appendIndentedStringField(json, fieldIndentLevel, "persistence_role", field.persistenceRole(), true);
+      appendIndentedStringArrayField(json, fieldIndentLevel, "annotations", field.annotations(), true);
+      appendColumn(json, field.column(), fieldIndentLevel);
+      appendEnumerated(json, field.enumerated(), fieldIndentLevel);
+      appendGeneratedValue(json, fieldIndentLevel, "generated_value", field.generatedValue(), true);
+      appendVersion(json, field.version(), fieldIndentLevel);
+      appendEmbedded(json, moduleId, field.embedded(), fieldIndentLevel);
+      appendIndentedStringArrayField(json, fieldIndentLevel, "evidence_ids", field.evidenceIds(), false);
+      indent(json, itemIndentLevel);
+      json.append("}");
       if (index < sortedFields.size() - 1) {
         json.append(",");
       }
       json.append("\n");
     }
-    json.append("        ],\n");
+    indent(json, propertyIndentLevel);
+    json.append("],\n");
   }
 
-  private void appendColumn(StringBuilder json, JpaColumnFact column) {
-    indent(json, 6);
+  private void appendColumn(StringBuilder json, JpaColumnFact column, int indentLevel) {
+    indent(json, indentLevel);
     json.append("\"column\": ");
     if (column == null) {
       json.append("null,\n");
@@ -3215,23 +3301,24 @@ public final class SpringMvcEndpointOutputGenerator {
     }
 
     json.append("{\n");
-    appendIndentedNullableStringField(json, 7, "name", column.name(), true);
-    appendIndentedNullableBooleanField(json, 7, "nullable", column.nullable(), true);
-    appendIndentedNullableBooleanField(json, 7, "unique", column.unique(), true);
-    appendIndentedNullableIntegerField(json, 7, "length", column.length(), true);
-    appendIndentedNullableIntegerField(json, 7, "precision", column.precision(), true);
-    appendIndentedNullableIntegerField(json, 7, "scale", column.scale(), true);
-    appendIndentedNullableBooleanField(json, 7, "insertable", column.insertable(), true);
-    appendIndentedNullableBooleanField(json, 7, "updatable", column.updatable(), true);
-    appendIndentedStringArrayField(json, 7, "evidence_ids", column.evidenceIds(), false);
-    indent(json, 6);
+    appendIndentedNullableStringField(json, indentLevel + 1, "name", column.name(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "nullable", column.nullable(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "unique", column.unique(), true);
+    appendIndentedNullableIntegerField(json, indentLevel + 1, "length", column.length(), true);
+    appendIndentedNullableIntegerField(json, indentLevel + 1, "precision", column.precision(), true);
+    appendIndentedNullableIntegerField(json, indentLevel + 1, "scale", column.scale(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "insertable", column.insertable(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "updatable", column.updatable(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", column.evidenceIds(), false);
+    indent(json, indentLevel);
     json.append("},\n");
   }
 
   private void appendEnumerated(
       StringBuilder json,
-      JpaEnumeratedFact enumerated) {
-    indent(json, 6);
+      JpaEnumeratedFact enumerated,
+      int indentLevel) {
+    indent(json, indentLevel);
     json.append("\"enumerated\": ");
     if (enumerated == null) {
       json.append("null,\n");
@@ -3239,9 +3326,9 @@ public final class SpringMvcEndpointOutputGenerator {
     }
 
     json.append("{\n");
-    appendIndentedNullableStringField(json, 7, "value", enumerated.value(), true);
-    appendIndentedStringArrayField(json, 7, "evidence_ids", enumerated.evidenceIds(), false);
-    indent(json, 6);
+    appendIndentedNullableStringField(json, indentLevel + 1, "value", enumerated.value(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", enumerated.evidenceIds(), false);
+    indent(json, indentLevel);
     json.append("},\n");
   }
 
@@ -3275,8 +3362,9 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private void appendVersion(
       StringBuilder json,
-      JpaVersionFact version) {
-    indent(json, 6);
+      JpaVersionFact version,
+      int indentLevel) {
+    indent(json, indentLevel);
     json.append("\"version\": ");
     if (version == null) {
       json.append("null,\n");
@@ -3284,8 +3372,46 @@ public final class SpringMvcEndpointOutputGenerator {
     }
 
     json.append("{\n");
-    appendIndentedStringArrayField(json, 7, "evidence_ids", version.evidenceIds(), false);
-    indent(json, 6);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", version.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("},\n");
+  }
+
+  private void appendEmbedded(
+      StringBuilder json,
+      String moduleId,
+      JpaEmbeddedFact embedded,
+      int indentLevel) {
+    indent(json, indentLevel);
+    json.append("\"embedded\": ");
+    if (embedded == null) {
+      json.append("null,\n");
+      return;
+    }
+
+    String targetClassName = embedded.targetClassName();
+    json.append("{\n");
+    appendIndentedStringField(json, indentLevel + 1, "annotation", embedded.annotation(), true);
+    appendIndentedStringField(json, indentLevel + 1, "java_type", embedded.javaType(), true);
+    appendIndentedStringField(json, indentLevel + 1, "target_resolution", embedded.targetResolution(), true);
+    appendIndentedNullableStringField(
+        json,
+        indentLevel + 1,
+        "target_embeddable_id",
+        targetClassName == null ? null : embeddableId(moduleId, targetClassName),
+        true);
+    appendIndentedNullableStringField(
+        json,
+        indentLevel + 1,
+        "target_module_id",
+        targetClassName == null ? null : moduleId,
+        true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "target_class_name", targetClassName, true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "support_type", embedded.supportType(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "confidence", embedded.confidence(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "uncertainty", embedded.uncertainty(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", embedded.evidenceIds(), false);
+    indent(json, indentLevel);
     json.append("},\n");
   }
 
@@ -3545,6 +3671,17 @@ public final class SpringMvcEndpointOutputGenerator {
       return entity.id();
     }
     return "entity:" + moduleId + ":" + entity.className();
+  }
+
+  private static String embeddableId(String moduleId, JpaEmbeddableFact embeddable) {
+    return embeddableId(moduleId, embeddable.className());
+  }
+
+  private static String embeddableId(String moduleId, String className) {
+    if (ROOT_MODULE_ID.equals(moduleId)) {
+      return "embeddable:" + className;
+    }
+    return "embeddable:" + moduleId + ":" + className;
   }
 
   private List<EndpointRow> endpointRows(List<ModuleScopedEndpointFact> endpoints) {
@@ -4310,6 +4447,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<ModuleScopedSpringEventListenerFact> springEventListeners,
       List<ModuleScopedSpringMessagingListenerFact> springMessagingListeners,
       List<ModuleScopedEntityFact> entities,
+      List<ModuleScopedEmbeddableFact> embeddables,
       List<ModuleScopedTestFact> tests,
       String warningAnalysisStatus,
       String componentAnalysisStatus,
@@ -4341,6 +4479,7 @@ public final class SpringMvcEndpointOutputGenerator {
       springEventListeners = List.copyOf(springEventListeners);
       springMessagingListeners = List.copyOf(springMessagingListeners);
       entities = List.copyOf(entities);
+      embeddables = List.copyOf(embeddables);
       tests = List.copyOf(tests);
       endpointEvidence = List.copyOf(endpointEvidence);
       componentEvidence = List.copyOf(componentEvidence);
@@ -4417,6 +4556,12 @@ public final class SpringMvcEndpointOutputGenerator {
       String moduleId,
       int moduleOrder,
       JpaEntityFact fact) {
+  }
+
+  private record ModuleScopedEmbeddableFact(
+      String moduleId,
+      int moduleOrder,
+      JpaEmbeddableFact fact) {
   }
 
   private record ModuleScopedTestFact(

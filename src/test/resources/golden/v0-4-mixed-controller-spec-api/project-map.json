@@ -321,7 +321,11 @@
   },
   "entities": {
     "analysis_status": "analyzed",
-    "items": []
+    "items": [],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
   },
   "tests": {
     "analysis_status": "not_detected",
