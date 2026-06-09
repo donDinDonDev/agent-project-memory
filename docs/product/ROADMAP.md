@@ -283,15 +283,46 @@ Release readiness notes:
 
 ## v0.7.0: Tests, Quality, And Change-Risk Map
 
-Expected direction:
+Product outcome: make source-visible test structure and conservative change-planning
+signals more useful while preserving the difference between extracted test facts,
+inferred tested-subject relations, uncertain test gaps, and warning/change-risk hints.
 
-- Better test class and method inventory.
-- Spring test slice signals such as `@SpringBootTest`, `@WebMvcTest`, and `@DataJpaTest`.
-- Conservative source-visible tested-subject inference.
-- Test-gap and change-risk signals labeled as inferred or uncertain.
+Planned contract boundary:
+
+- Better test class inventory under supported standard Maven test roots, preserving the
+  existing helper/support/configuration filtering boundary.
+- Bounded test method inventory only when a method has directly visible supported JUnit
+  test annotations. Method inventory is source structure, not assertion understanding.
+- Directly visible framework and annotation signals for JUnit Jupiter, JUnit 4, and
+  Spring Test where origin can be trusted from source-visible imports or fully qualified
+  annotation names.
+- Spring test slice signals such as `@SpringBootTest`, `@WebMvcTest`, and
+  `@DataJpaTest`, recorded as source-visible annotations and not as runtime Spring
+  context behavior.
+- Conservative tested-subject inference from supported naming conventions and bounded
+  source-visible Spring test slice class literals when they can be matched to emitted
+  production facts.
+- Explicit tested-subject relation statuses such as inferred, not detected, ambiguous,
+  unsupported, and not analyzed.
+- Test-gap signals emitted only as inferred or uncertain planning hints when no supported
+  tested-subject relation is inferred for selected source-visible change surfaces.
+- Change-risk signals emitted only as warning-oriented or uncertain planning hints from
+  existing deterministic facts such as endpoint, Spring application surface, security
+  warning, messaging, transaction/scheduled, repository/entity, or JPA relationship
+  surfaces.
 
 Non-goals include coverage claims, mutation testing, behavioral assertion understanding,
-CI result claims, and full call graph reconstruction.
+CI result claims, runtime test execution, runtime Spring context reconstruction, runtime
+repository or database verification, and full call graph reconstruction.
+
+Implementation sequence:
+
+- Contract design for the planned v0.7 output and evidence semantics.
+- Test class, annotation, and method inventory refinement.
+- Spring test slice signal extraction.
+- Conservative tested-subject relation status support.
+- Test-gap and change-risk planning hints.
+- Guide rendering, fixtures, goldens, and real-project evaluation.
 
 ## v0.8.0: Local Markdown And Document Ingestion
 

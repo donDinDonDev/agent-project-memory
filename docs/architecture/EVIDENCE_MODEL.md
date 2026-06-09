@@ -124,6 +124,11 @@ Examples:
   `@Embedded`, `@EmbeddedId`, `@ManyToOne`, `@OneToMany`, `@OneToOne`, `@ManyToMany`,
   `@JoinColumn`, and `@JoinTable` evidence where these observations support extracted
   source facts without database schema or runtime ORM claims.
+- Planned v0.7 source-visible test structure, including emitted test class declarations,
+  supported directly visible test method annotations, and supported Spring test slice
+  annotations such as `@SpringBootTest`, `@WebMvcTest`, and `@DataJpaTest`, where these
+  observations support extracted test inventory or source-visible test slice facts
+  without test execution, coverage, assertion, CI, or runtime Spring context claims.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -708,6 +713,10 @@ Inferred relations must be marked as inferred and must preserve the evidence tha
 The v0.1 tests inventory uses only naming-convention inferred relations for
 `tested_subjects`; it does not use call graphs, assertions, runtime execution, or coverage
 data.
+The planned v0.7 tests contract may also infer tested-subject relations from bounded
+source-visible Spring test slice class literals when the test-side annotation and the
+production-side source fact can both be evidenced. Such relations remain tested-subject
+orientation hints, not coverage or runtime execution evidence.
 
 ### Uncertain Signals
 
@@ -783,6 +792,85 @@ Every emitted tested-subject relation includes:
 
 These relations are orientation hints. They do not claim complete subject mapping, test
 execution, code coverage, assertion behavior, or runtime verification.
+
+### Planned v0.7 Tests, Quality, And Change-Risk Evidence
+
+The planned v0.7 tests, quality, and change-risk contract preserves the existing
+evidence field set. No new global evidence fields or evidence types are introduced by
+the planned design.
+
+Test class and method evidence:
+
+- Emitted test class declarations continue to use `source_type: "test_file"` for the
+  class-level inventory fact. The evidence path points to the supported Maven test root,
+  `class_name` is the detected test class, `method_name` is `null`, `symbol_name` is the
+  fully qualified class name, and confidence is `high`.
+- Emitted test method facts use directly visible `annotation` evidence for the supported
+  test method annotation and may use `code_symbol` evidence for the method declaration
+  when implementation needs a separate method declaration reference. `method_name`
+  identifies the test method when applicable.
+- Planned supported test method annotations include JUnit Jupiter `@Test`,
+  `@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`, and `@TestTemplate`, plus JUnit
+  4 `@Test`, only when source-visible syntax supports a trusted external origin through
+  a fully qualified annotation name or explicit single-type import.
+- Lifecycle, setup, teardown, helper, support, and configuration methods are not test
+  method evidence in the planned initial v0.7 contract unless a later bounded contract
+  explicitly adds separate setup/teardown signal semantics.
+- Test method evidence proves only source-visible test structure. It does not prove that
+  a test ran, passed, failed, asserted behavior, covered a subject, or executes in CI.
+
+Spring test slice evidence:
+
+- Supported Spring test slice annotations use `source_type: "annotation"` only when the
+  annotation origin is visible as a supported `org.springframework.test.*` or
+  `org.springframework.boot.test.*` type and that exact framework type is not declared
+  by scanned source.
+- Planned initial Spring test slice annotations include `@SpringBootTest`,
+  `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`. Additional Spring test
+  annotations may be added only with focused tests and a synchronized output/evidence
+  contract update if semantics change.
+- Bounded class-literal observations from supported Spring test slice annotations may be
+  preserved in annotation evidence excerpts or referenced by a separate `code_symbol`
+  observation when needed, but excerpts must remain short and must not serialize
+  arbitrary annotation payloads, property values, profiles, environment values, or test
+  configuration contents.
+- Spring test slice evidence proves only a source-visible annotation signal. It does not
+  prove runtime Spring context startup, bean graph contents, active profiles, MockMvc
+  setup, database access, repository behavior, or slice correctness.
+
+Planned tested-subject relation evidence:
+
+- Naming-convention tested-subject relations continue to preserve evidence for the test
+  class declaration and the candidate production class declaration.
+- Spring test slice class-literal tested-subject relations preserve evidence for the
+  test-side slice annotation and the production-side source fact that matched the class
+  literal.
+- Ambiguous, unsupported, unresolved, generated-source-only, classpath-only, or
+  otherwise non-source-visible target shapes must use explicit relation statuses or
+  uncertainty instead of an inferred relation object.
+- Tested-subject relation evidence does not prove coverage, assertion behavior, runtime
+  calls, dependency injection, request routing, repository behavior, database access, or
+  CI execution.
+
+Quality and change-risk evidence:
+
+- Test-gap and change-risk signals are inferred or uncertain planning hints derived from
+  deterministic facts. Their evidence IDs must point to the underlying source-visible
+  facts that produced the hint, such as endpoint annotations, Spring application surface
+  annotations, JPA annotations, warning signals, test class evidence, or tested-subject
+  relation evidence.
+- Absence-sensitive hints, such as a planned
+  `no_inferred_test_subject_for_endpoint` signal, do not have direct absence evidence.
+  Their evidence supports the subject fact being considered; the signal uncertainty
+  must state that it is limited to the bounded generated test inventory and supported
+  relation rules.
+- Quality and change-risk evidence must not include test execution logs, CI provider
+  output, coverage reports, mutation testing reports, runtime application traces,
+  database inspection output, or LLM-generated summaries unless a future contract adds a
+  separate non-core evidence source. Such external or runtime material is not evidence
+  for the planned v0.7 deterministic core.
+- A change-risk hint must not be treated as vulnerability evidence, production impact
+  evidence, business priority evidence, or correctness evidence.
 
 ## Evidence Discipline
 

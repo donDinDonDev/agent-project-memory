@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added the planned v0.7 tests, quality, and change-risk contract design boundary,
+  including source-visible test class and method inventory, Spring test slice signals,
+  conservative tested-subject relation statuses, inferred/uncertain test-gap and
+  change-risk planning hints, evidence semantics, and explicit non-goals for coverage,
+  assertion, CI, runtime, and call-graph claims.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.6.0` as published with release
