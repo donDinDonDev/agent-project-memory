@@ -81,7 +81,7 @@ Earlier v0.6 release-track checks supporting this release:
   implementation slices;
 - v0.6 real-project evaluation on pinned Spring PetClinic, Spring PetClinic REST, Spring
   PetClinic Microservices, and Spring Cloud OpenFeign targets;
-- risk-based review and Codex Security gates for implementation and follow-up slices.
+- risk-based implementation and follow-up review gates.
 
 Public evaluation summary:
 [docs/development/evaluations/v0.6-jpa-domain-real-projects_SUMMARY.md][v0.6-eval].

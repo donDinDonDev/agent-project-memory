@@ -274,9 +274,9 @@ Release readiness notes:
   REST, Spring PetClinic Microservices, and Spring Cloud OpenFeign targets.
 - Follow-ups from that evaluation that were required for this release-prep state are
   complete: safe JPA wildcard import support and quieter no-domain guide rendering.
-- `V060-FU-003` corpus expansion for embeddables, embedded IDs, id-class signals,
-  enumerated fields, and version fields remains future evaluation coverage and is not a
-  release blocker.
+- Additional real-project corpus coverage for embeddables, embedded IDs, id-class
+  signals, enumerated fields, and version fields was tracked separately from the release
+  and is not a release blocker.
 - Release notes exist in [V0_6_RELEASE_NOTES.md](V0_6_RELEASE_NOTES.md).
 - The `v0.6.0` tag and GitHub release are published with the packaged jar and checksum
   assets.

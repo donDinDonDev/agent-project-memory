@@ -84,8 +84,8 @@ architecture documents.
 
 ### Security
 
-- Completed v0.6 risk-based review and Codex Security gates for implementation and
-  follow-up slices with no release-blocking findings.
+- Completed v0.6 risk-based implementation and follow-up review gates with no
+  release-blocking findings.
 - Kept v0.6 JPA/domain output local-first and evidence-backed, without database
   introspection, runtime Hibernate metadata, DDL reconstruction, JPQL semantic parsing,
   migration interpretation, runtime repository/entity verification, or provider-default
@@ -100,8 +100,8 @@ architecture documents.
   DDL reconstruction, JPQL semantic parsing, or migration interpretation.
 - Runtime Spring Data repository registration, query-method behavior, database access,
   or repository/entity verification.
-- V060-FU-003 corpus expansion for embeddables, embedded IDs, id-class signals,
-  enumerated fields, and version fields.
+- Additional real-project corpus coverage for embeddables, embedded IDs, id-class
+  signals, enumerated fields, and version fields.
 - SaaS, connectors, repository chat, generic RAG, web UI, LLM calls in the core
   analyzer, or automatic code modification.
 
