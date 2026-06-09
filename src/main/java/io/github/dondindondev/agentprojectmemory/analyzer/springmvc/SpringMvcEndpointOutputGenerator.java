@@ -74,6 +74,8 @@ import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringEventL
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringMessagingListenerFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEntityGenericFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEntityRelationFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringRepositoryFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.springapp.SpringScheduledMethodFact;
@@ -858,11 +860,14 @@ public final class SpringMvcEndpointOutputGenerator {
       warningEvidence.addAll(warningAnalysis.evidence());
     }
 
+    List<ModuleScopedSpringRepositoryFact> springRepositoriesWithEntityRelations =
+        inferRepositoryEntityRelations(springRepositories, entities);
+
     return new ModuleAwareScan(
         endpoints.stream().sorted(ENDPOINT_ORDER).toList(),
         warnings.stream().sorted(WARNING_ORDER).toList(),
         components.stream().sorted(COMPONENT_ORDER).toList(),
-        springRepositories.stream().sorted(SPRING_REPOSITORY_ORDER).toList(),
+        springRepositoriesWithEntityRelations.stream().sorted(SPRING_REPOSITORY_ORDER).toList(),
         springConfigurationClasses.stream().sorted(SPRING_CONFIGURATION_CLASS_ORDER).toList(),
         springConfigurationProperties.stream().sorted(SPRING_CONFIGURATION_PROPERTIES_ORDER).toList(),
         springBeanMethods.stream().sorted(SPRING_BEAN_METHOD_ORDER).toList(),
@@ -890,6 +895,93 @@ public final class SpringMvcEndpointOutputGenerator {
         entityEvidence,
         testEvidence,
         warningEvidence);
+  }
+
+  private List<ModuleScopedSpringRepositoryFact> inferRepositoryEntityRelations(
+      List<ModuleScopedSpringRepositoryFact> springRepositories,
+      List<ModuleScopedEntityFact> entities) {
+    Map<String, List<ModuleScopedEntityFact>> entitiesByClassName = new LinkedHashMap<>();
+    for (ModuleScopedEntityFact entity : entities) {
+      entitiesByClassName.computeIfAbsent(entity.fact().className(), ignored -> new ArrayList<>())
+          .add(entity);
+    }
+
+    List<ModuleScopedSpringRepositoryFact> inferredRepositories = new ArrayList<>();
+    for (ModuleScopedSpringRepositoryFact scopedRepository : springRepositories) {
+      SpringRepositoryFact repository = scopedRepository.fact();
+      if (!SpringRepositoryAnalyzer.SURFACE_CATEGORY_SPRING_DATA_INTERFACE.equals(
+          repository.surfaceCategory())) {
+        inferredRepositories.add(scopedRepository);
+        continue;
+      }
+
+      SpringRepositoryFact updatedRepository = repositoryWithEntityRelation(
+          repository,
+          entitiesByClassName);
+      inferredRepositories.add(new ModuleScopedSpringRepositoryFact(
+          scopedRepository.moduleId(),
+          scopedRepository.moduleOrder(),
+          updatedRepository));
+    }
+    return inferredRepositories;
+  }
+
+  private SpringRepositoryFact repositoryWithEntityRelation(
+      SpringRepositoryFact repository,
+      Map<String, List<ModuleScopedEntityFact>> entitiesByClassName) {
+    List<SpringRepositoryEntityGenericFact> entityGenericTypes = repository.entityGenericTypes();
+    if (entityGenericTypes.isEmpty()
+        || entityGenericTypes.stream().anyMatch(generic ->
+            !SpringRepositoryAnalyzer.ENTITY_GENERIC_SUPPORTED.equals(generic.supportStatus()))) {
+      return repository.withEntityRelation(
+          SpringRepositoryAnalyzer.ENTITY_RELATION_UNSUPPORTED,
+          null);
+    }
+
+    List<String> genericTypeNames = entityGenericTypes.stream()
+        .map(SpringRepositoryEntityGenericFact::qualifiedTypeName)
+        .filter(Objects::nonNull)
+        .distinct()
+        .toList();
+    if (genericTypeNames.size() != 1) {
+      return repository.withEntityRelation(
+          SpringRepositoryAnalyzer.ENTITY_RELATION_AMBIGUOUS,
+          null);
+    }
+
+    String genericTypeName = genericTypeNames.get(0);
+    List<ModuleScopedEntityFact> matches = entitiesByClassName.getOrDefault(genericTypeName, List.of());
+    if (matches.isEmpty()) {
+      return repository.withEntityRelation(
+          SpringRepositoryAnalyzer.ENTITY_RELATION_NOT_DETECTED,
+          null);
+    }
+    if (matches.size() > 1) {
+      return repository.withEntityRelation(
+          SpringRepositoryAnalyzer.ENTITY_RELATION_AMBIGUOUS,
+          null);
+    }
+
+    ModuleScopedEntityFact targetEntity = matches.get(0);
+    List<String> relationEvidenceIds = new ArrayList<>();
+    entityGenericTypes.stream()
+        .flatMap(generic -> generic.evidenceIds().stream())
+        .forEach(relationEvidenceIds::add);
+    targetEntity.fact().evidenceIds().forEach(relationEvidenceIds::add);
+
+    SpringRepositoryEntityRelationFact relation = new SpringRepositoryEntityRelationFact(
+        SpringRepositoryAnalyzer.SUPPORT_TYPE_INFERRED,
+        "repository_entity_generic",
+        entityId(targetEntity.moduleId(), targetEntity.fact()),
+        targetEntity.moduleId(),
+        targetEntity.fact().className(),
+        genericTypeName,
+        "medium",
+        null,
+        relationEvidenceIds.stream().distinct().toList());
+    return repository.withEntityRelation(
+        SpringRepositoryAnalyzer.ENTITY_RELATION_INFERRED,
+        relation);
   }
 
   private Map<String, Integer> moduleOrder(List<MavenModuleItem> modules) {
@@ -2410,9 +2502,37 @@ public final class SpringMvcEndpointOutputGenerator {
           "entity_relation_status",
           repository.entityRelationStatus(),
           true);
+      appendSpringRepositoryEntityRelation(json, repository.entityRelation(), true);
     }
     appendIndentedStringArrayField(json, 5, "evidence_ids", repository.evidenceIds(), false);
     indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendSpringRepositoryEntityRelation(
+      StringBuilder json,
+      SpringRepositoryEntityRelationFact relation,
+      boolean trailingComma) {
+    indent(json, 5);
+    json.append("\"entity_relation\": ");
+    if (relation == null) {
+      json.append("null");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedStringField(json, 6, "support_type", relation.supportType(), true);
+    appendIndentedStringField(json, 6, "relation_type", relation.relationType(), true);
+    appendIndentedStringField(json, 6, "target_entity_id", relation.targetEntityId(), true);
+    appendIndentedStringField(json, 6, "target_module_id", relation.targetModuleId(), true);
+    appendIndentedStringField(json, 6, "target_class_name", relation.targetClassName(), true);
+    appendIndentedStringField(json, 6, "generic_type", relation.genericType(), true);
+    appendIndentedStringField(json, 6, "confidence", relation.confidence(), true);
+    appendIndentedNullableStringField(json, 6, "uncertainty", relation.uncertainty(), true);
+    appendIndentedStringArrayField(json, 6, "evidence_ids", relation.evidenceIds(), false);
+    indent(json, 5);
     json.append("}");
     appendLineEnding(json, trailingComma);
   }

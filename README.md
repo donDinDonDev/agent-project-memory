@@ -97,7 +97,9 @@ source-visible Maven dependency and plugin declarations from module POMs, plus
 path-only standard resource-root and supported application/logging config-file
 inventory. It also emits direct source-visible `@Repository` repository surface facts
 and inferred source-visible Spring Data repository interface extension signals in a
-separate Spring application surface section, plus direct source-visible `@Configuration`
+separate Spring application surface section, with conservative inferred repository/entity
+links when a supported Spring Data generic type matches exactly one emitted entity fact,
+plus direct source-visible `@Configuration`
 class, `@ConfigurationProperties` type, and `@Bean` method signals without runtime bean
 graph or binding claims, direct source-visible `@Transactional`, `@Scheduled`, and
 `@EventListener` signals, and common source-visible Kafka/Rabbit listener annotation
@@ -233,8 +235,8 @@ checksum assets after real-project evaluation and risk-based review completion. 
 connector/import work remains a later optional adapter track and is not started.
 The v0.6 JPA/domain release track is in development. The current checkout implements the
 first bounded v0.6 entity field annotation slice, embedded and identifier model signals,
-relationship metadata deepening, and emits `schema_version: "0.6"`; repository/entity
-relation and real-project evaluation work remains upcoming.
+relationship metadata deepening, conservative repository/entity inferred relations, and
+emits `schema_version: "0.6"`; real-project evaluation work remains upcoming.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -319,11 +321,13 @@ Current limitations:
   `org.springframework.data.repository.CrudRepository`,
   `org.springframework.data.repository.PagingAndSortingRepository`,
   `org.springframework.data.jpa.repository.JpaRepository`, and
-  `org.springframework.data.mongodb.repository.MongoRepository`. It does not perform
-  dependency type solving, wildcard-import fallback, runtime Spring Data
-  reconstruction, query method parsing, database access analysis, or repository-to-entity
-  relation claims; repository interface signals preserve
-  `entity_relation_status: "not_analyzed"`.
+  `org.springframework.data.mongodb.repository.MongoRepository`. Repository/entity
+  relations are inferred only when a supported source-visible repository generic type
+  can be matched to exactly one emitted entity fact; missing, ambiguous, raw, wildcard,
+  nested, or otherwise unsupported generic shapes use explicit relation statuses and do
+  not emit relation objects. It does not perform dependency type solving, wildcard-import
+  fallback, runtime Spring Data reconstruction, query method parsing, database access
+  analysis, dependency graph analysis, or runtime repository/entity verification.
 - Spring application surface configuration analysis is limited to direct source-visible
   `@Configuration` classes, direct source-visible `@ConfigurationProperties` types, and
   direct source-visible `@Bean` methods visible through a fully qualified name or
@@ -378,9 +382,9 @@ Current limitations:
   targets only when a unique local embeddable can be matched deterministically, and
   marks unresolved embedded targets and `@IdClass` semantic reconstruction explicitly.
 - Entity analysis does not implement getter/property-access mapping, full composite-key
-  semantic reconstruction, repository/entity relations, schema generation,
-  transactional semantics, symbol solving, relationship target resolution, or ORM
-  runtime behavior.
+  semantic reconstruction, schema generation, transactional semantics, symbol solving,
+  relationship target resolution, runtime repository/entity verification, or ORM runtime
+  behavior.
 - API surface spec discovery is limited to common local filenames such as
   `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
   `swagger.json`. It records normalized repository-relative paths, format, spec kind,

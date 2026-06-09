@@ -298,8 +298,28 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("spring_data_repository_interface_signal",
             repositoryItems.get(1).path("surface_category").asText()),
         () -> assertEquals("inferred", repositoryItems.get(1).path("support_type").asText()),
-        () -> assertEquals("not_analyzed",
+        () -> assertEquals("inferred",
             repositoryItems.get(1).path("entity_relation_status").asText()),
+        () -> assertEquals(
+            "repository_entity_generic",
+            repositoryItems.get(1).path("entity_relation").path("relation_type").asText()),
+        () -> assertEquals(
+            "entity:com.example.domain.ProjectOrder",
+            repositoryItems.get(1).path("entity_relation").path("target_entity_id").asText()),
+        () -> assertEquals(
+            "module:.",
+            repositoryItems.get(1).path("entity_relation").path("target_module_id").asText()),
+        () -> assertEquals(
+            "com.example.domain.ProjectOrder",
+            repositoryItems.get(1).path("entity_relation").path("target_class_name").asText()),
+        () -> assertEquals(
+            "com.example.domain.ProjectOrder",
+            repositoryItems.get(1).path("entity_relation").path("generic_type").asText()),
+        () -> assertEquals(
+            "inferred",
+            repositoryItems.get(1).path("entity_relation").path("support_type").asText()),
+        () -> assertTrue(repositoryItems.get(1).path("entity_relation")
+            .path("evidence_ids").toString().contains("@Entity")),
         () -> assertEquals(
             List.of("org.springframework.data.jpa.repository.JpaRepository"),
             stringValues(repositoryItems.get(1).path("extends_types"))),
@@ -315,6 +335,82 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"id\": \"endpoint:com.example.web.ProjectMapController#getItem\"")),
         () -> assertTrue(projectMap.contains(
             "\"id\": \"endpoint:com.example.web.ProjectMapController#createItem\"")));
+  }
+
+  @Test
+  void projectMapInfersRepositoryEntityRelationsConservatively() throws Exception {
+    Path fixture = Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/v0-6-repository-entity-relations")).toURI());
+    Path projectPath = tempDir.resolve("v0-6-repository-entity-relations");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixture, projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    JsonNode repositoryItems = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")))
+        .path("spring_application_surface")
+        .path("repositories")
+        .path("items");
+    JsonNode uniqueRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.UniqueOrderRepository");
+    JsonNode fqcnRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.FqcnUniqueOrderRepository");
+    JsonNode missingRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.MissingOrderRepository");
+    JsonNode ambiguousRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.AmbiguousSharedOrderRepository");
+    JsonNode nestedRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.NestedGenericOrderRepository");
+    JsonNode wildcardRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.WildcardGenericOrderRepository");
+    JsonNode rawRepository = objectWithText(
+        repositoryItems,
+        "class_name",
+        "com.example.repositories.RawOrderRepository");
+
+    assertAll(
+        () -> assertEquals("inferred", uniqueRepository.path("entity_relation_status").asText()),
+        () -> assertEquals(
+            "entity:module:domain-a:com.example.unique.UniqueOrder",
+            uniqueRepository.path("entity_relation").path("target_entity_id").asText()),
+        () -> assertEquals(
+            "module:domain-a",
+            uniqueRepository.path("entity_relation").path("target_module_id").asText()),
+        () -> assertEquals(
+            "com.example.unique.UniqueOrder",
+            uniqueRepository.path("entity_relation").path("generic_type").asText()),
+        () -> assertTrue(uniqueRepository.path("entity_relation")
+            .path("evidence_ids").toString().contains("@Entity")),
+        () -> assertEquals("inferred", fqcnRepository.path("entity_relation_status").asText()),
+        () -> assertEquals(
+            "entity:module:domain-a:com.example.unique.UniqueOrder",
+            fqcnRepository.path("entity_relation").path("target_entity_id").asText()),
+        () -> assertEquals(
+            "com.example.unique.UniqueOrder",
+            fqcnRepository.path("entity_relation").path("generic_type").asText()),
+        () -> assertEquals("not_detected", missingRepository.path("entity_relation_status").asText()),
+        () -> assertTrue(missingRepository.path("entity_relation").isNull()),
+        () -> assertEquals("ambiguous", ambiguousRepository.path("entity_relation_status").asText()),
+        () -> assertTrue(ambiguousRepository.path("entity_relation").isNull()),
+        () -> assertEquals("unsupported", nestedRepository.path("entity_relation_status").asText()),
+        () -> assertTrue(nestedRepository.path("entity_relation").isNull()),
+        () -> assertEquals("unsupported", wildcardRepository.path("entity_relation_status").asText()),
+        () -> assertTrue(wildcardRepository.path("entity_relation").isNull()),
+        () -> assertEquals("unsupported", rawRepository.path("entity_relation_status").asText()),
+        () -> assertTrue(rawRepository.path("entity_relation").isNull()));
   }
 
   @Test

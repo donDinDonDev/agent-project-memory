@@ -4,6 +4,7 @@ import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
@@ -30,6 +31,12 @@ public final class SpringRepositoryAnalyzer {
   public static final String DIRECT_REPOSITORY_STEREOTYPE = "direct_repository_stereotype";
   public static final String SPRING_DATA_REPOSITORY_INTERFACE_EXTENSION =
       "spring_data_repository_interface_extension";
+  public static final String ENTITY_GENERIC_SUPPORTED = "supported";
+  public static final String ENTITY_GENERIC_UNSUPPORTED = "unsupported";
+  public static final String ENTITY_RELATION_INFERRED = "inferred";
+  public static final String ENTITY_RELATION_NOT_DETECTED = "not_detected";
+  public static final String ENTITY_RELATION_AMBIGUOUS = "ambiguous";
+  public static final String ENTITY_RELATION_UNSUPPORTED = "unsupported";
   public static final String ENTITY_RELATION_NOT_ANALYZED = "not_analyzed";
 
   private static final String HIGH_CONFIDENCE = "high";
@@ -132,6 +139,8 @@ public final class SpringRepositoryAnalyzer {
         sourceFile.sourcePath(),
         DIRECT_REPOSITORY_STEREOTYPE,
         List.of(),
+        List.of(),
+        null,
         null,
         List.of(annotationEvidence.id())));
   }
@@ -147,12 +156,12 @@ public final class SpringRepositoryAnalyzer {
       return;
     }
 
-    List<SpringRepositoryEvidence> extendsEvidence = supportedExtendsEvidence(
+    List<SpringDataRepositoryExtendsObservation> extendsObservations = supportedExtendsObservations(
         sourceFile,
         type,
         className,
         sourceDeclaredTypeNames);
-    if (extendsEvidence.isEmpty()) {
+    if (extendsObservations.isEmpty()) {
       return;
     }
 
@@ -167,11 +176,14 @@ public final class SpringRepositoryAnalyzer {
             sourceFile.sourceLines(),
             type.getRange().map(range -> range.begin.line).orElse(null)));
     evidence.putIfAbsent(declarationEvidence.id(), declarationEvidence);
-    extendsEvidence.forEach(record -> evidence.putIfAbsent(record.id(), record));
+    extendsObservations.stream()
+        .map(SpringDataRepositoryExtendsObservation::extendsEvidence)
+        .forEach(record -> evidence.putIfAbsent(record.id(), record));
 
     List<String> evidenceIds = new ArrayList<>();
     evidenceIds.add(declarationEvidence.id());
-    extendsEvidence.stream()
+    extendsObservations.stream()
+        .map(SpringDataRepositoryExtendsObservation::extendsEvidence)
         .map(SpringRepositoryEvidence::id)
         .forEach(evidenceIds::add);
 
@@ -181,20 +193,23 @@ public final class SpringRepositoryAnalyzer {
         className,
         sourceFile.sourcePath(),
         SPRING_DATA_REPOSITORY_INTERFACE_EXTENSION,
-        extendsEvidence.stream()
-            .map(SpringRepositoryEvidence::symbolName)
-            .map(symbol -> symbol.substring("extends:".length()))
+        extendsObservations.stream()
+            .map(SpringDataRepositoryExtendsObservation::baseType)
+            .toList(),
+        extendsObservations.stream()
+            .map(SpringDataRepositoryExtendsObservation::entityGeneric)
             .toList(),
         ENTITY_RELATION_NOT_ANALYZED,
+        null,
         evidenceIds));
   }
 
-  private List<SpringRepositoryEvidence> supportedExtendsEvidence(
+  private List<SpringDataRepositoryExtendsObservation> supportedExtendsObservations(
       RepositorySourceFile sourceFile,
       ClassOrInterfaceDeclaration type,
       String className,
       Set<String> sourceDeclaredTypeNames) {
-    List<SpringRepositoryEvidence> evidence = new ArrayList<>();
+    List<SpringDataRepositoryExtendsObservation> observations = new ArrayList<>();
     Set<String> seenExtendsTypes = new LinkedHashSet<>();
     for (ClassOrInterfaceType extendedType : type.getExtendedTypes()) {
       Optional<String> supportedQualifiedName = supportedSpringDataRepositoryType(
@@ -206,15 +221,75 @@ public final class SpringRepositoryAnalyzer {
       }
       Integer lineStart = extendedType.getRange().map(range -> range.begin.line).orElse(null);
       Integer lineEnd = extendedType.getRange().map(range -> range.end.line).orElse(null);
-      evidence.add(codeSymbolEvidence(
+      SpringRepositoryEvidence extendsEvidence = codeSymbolEvidence(
           sourceFile.sourcePath(),
           className,
           "extends:" + supportedQualifiedName.orElseThrow(),
           lineStart,
           lineEnd,
-          EvidenceExcerpts.singleLine(extendedType, sourceFile.sourceLines(), lineStart)));
+          EvidenceExcerpts.singleLine(extendedType, sourceFile.sourceLines(), lineStart));
+      observations.add(new SpringDataRepositoryExtendsObservation(
+          supportedQualifiedName.orElseThrow(),
+          extendsEvidence,
+          entityGeneric(sourceFile, extendedType, extendsEvidence.id())));
     }
-    return evidence;
+    return observations;
+  }
+
+  private SpringRepositoryEntityGenericFact entityGeneric(
+      RepositorySourceFile sourceFile,
+      ClassOrInterfaceType extendedType,
+      String evidenceId) {
+    Optional<com.github.javaparser.ast.NodeList<Type>> typeArguments = extendedType.getTypeArguments();
+    if (typeArguments.isEmpty() || typeArguments.orElseThrow().isEmpty()) {
+      return new SpringRepositoryEntityGenericFact(
+          null,
+          null,
+          ENTITY_GENERIC_UNSUPPORTED,
+          List.of(evidenceId));
+    }
+
+    Type entityType = typeArguments.orElseThrow().get(0);
+    Optional<String> qualifiedTypeName = supportedEntityGenericType(
+        sourceFile.packageName(),
+        sourceFile.importsBySimpleName(),
+        entityType);
+    return new SpringRepositoryEntityGenericFact(
+        entityType.toString(),
+        qualifiedTypeName.orElse(null),
+        qualifiedTypeName.isPresent() ? ENTITY_GENERIC_SUPPORTED : ENTITY_GENERIC_UNSUPPORTED,
+        List.of(evidenceId));
+  }
+
+  private Optional<String> supportedEntityGenericType(
+      String packageName,
+      Map<String, String> importsBySimpleName,
+      Type entityType) {
+    if (!entityType.isClassOrInterfaceType()) {
+      return Optional.empty();
+    }
+
+    ClassOrInterfaceType classOrInterfaceType = entityType.asClassOrInterfaceType();
+    if (classOrInterfaceType.getTypeArguments().isPresent()
+        && !classOrInterfaceType.getTypeArguments().orElseThrow().isEmpty()) {
+      return Optional.empty();
+    }
+
+    String referenceName = classOrInterfaceType.getNameWithScope();
+    String simpleName = JavaSourceOrigins.simpleName(referenceName);
+    if (referenceName.contains(".")) {
+      return Optional.of(referenceName);
+    }
+
+    String importedQualifiedName = importsBySimpleName.get(simpleName);
+    if (importedQualifiedName != null) {
+      return Optional.of(importedQualifiedName);
+    }
+
+    if (packageName.isBlank()) {
+      return Optional.of(simpleName);
+    }
+    return Optional.of(packageName + "." + simpleName);
   }
 
   private Optional<AnnotationExpr> repositoryAnnotation(
@@ -366,5 +441,11 @@ public final class SpringRepositoryAnalyzer {
       importsBySimpleName = Map.copyOf(importsBySimpleName);
       declaredTypeNames = Set.copyOf(declaredTypeNames);
     }
+  }
+
+  private record SpringDataRepositoryExtendsObservation(
+      String baseType,
+      SpringRepositoryEvidence extendsEvidence,
+      SpringRepositoryEntityGenericFact entityGeneric) {
   }
 }

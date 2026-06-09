@@ -470,8 +470,11 @@ Spring Data repository interface signal evidence:
   `org.springframework.data.jpa.repository.JpaRepository`, and
   `org.springframework.data.mongodb.repository.MongoRepository` when visible through a
   fully qualified name or explicit single-type import.
-- This evidence does not prove runtime repository registration, resolved generic entity
-  type, query method behavior, database access, or repository-to-entity relation.
+- This repository-signal evidence does not by itself prove runtime repository
+  registration, resolved generic entity type, query method behavior, database access, or
+  repository-to-entity relation. In v0.6 it may also support a separate inferred
+  repository/entity relation only when paired with a supported source-visible generic
+  observation and exactly one emitted entity fact.
 
 Configuration and bean evidence:
 
@@ -511,11 +514,11 @@ Behavior, messaging, and security evidence:
 - LLM-generated text, generated Markdown guidance, release notes, and chat output are
   never evidence for Spring application surface facts, warnings, or relations.
 
-### Planned v0.6 JPA And Domain Evidence
+### Current v0.6 JPA And Domain Evidence
 
 The v0.6 JPA/domain model preserves the existing evidence field set and reuses existing
 evidence types. No new global evidence fields or database evidence types are introduced
-by the current field annotation slice or planned later v0.6 contract.
+by the current JPA/domain contract.
 
 Direct JPA annotation evidence:
 
@@ -578,7 +581,7 @@ Relationship evidence:
 - A future relationship target link to an emitted entity fact would be inferred from
   source-visible type observations and must be labeled as inferred. It must preserve
   evidence for the relationship annotation and the target entity evidence that led to
-  the link. The current V060-G004 implementation does not emit relationship target
+  the link. The current V060-G005 implementation does not emit relationship target
   links.
 - Ambiguous, unresolved, unsupported collection, wildcard, generated-source-only, or
   classpath-only relationship targets must remain uncertain rather than being emitted as

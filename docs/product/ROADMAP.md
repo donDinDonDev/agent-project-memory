@@ -17,7 +17,9 @@ signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`. It
 extracts bounded source-visible relationship metadata for direct field-level
 relationship cardinality, `mappedBy`, `@JoinColumn`, `@JoinTable`, and direct
 relationship attributes while keeping relationship targets declared-type-only and
-uncertain.
+uncertain, and infers conservative repository/entity relations from supported
+source-visible Spring Data repository generic types only when exactly one emitted entity
+fact matches.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -254,7 +256,7 @@ Implementation sequence:
   `@GeneratedValue`, and `@Version`. (implemented)
 - Embedded and identifier model support. (implemented)
 - Relationship metadata deepening. (current bounded slice implemented)
-- Repository-to-entity inferred relation support.
+- Repository-to-entity inferred relation support. (implemented)
 - Guide rendering, fixtures, goldens, and real-project evaluation.
 
 ## v0.7.0: Tests, Quality, And Change-Risk Map

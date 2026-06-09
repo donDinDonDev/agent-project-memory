@@ -29,6 +29,10 @@ architecture documents.
   `optional`, `fetch`, `cascade`, and `orphanRemoval` attributes without ORM runtime,
   database, ownership-correctness, foreign-key, join-table-existence, fetch-behavior, or
   cascade-behavior claims.
+- Added the v0.6 repository/entity inferred relation slice for source-visible Spring
+  Data repository interface generic types, linking to an emitted entity fact only when
+  the target is unique and representing missing, ambiguous, raw, wildcard, nested, or
+  otherwise unsupported generic shapes with explicit relation statuses.
 
 ### Changed
 
@@ -44,6 +48,11 @@ architecture documents.
   nested uncertain `target` object, `mapped_by`, `ownership_signal`, direct relationship
   attribute fields, `join_columns`, and nullable `join_table`; relationship targets
   remain declared-type-only and uncertain in this slice.
+- Expanded generated `spring_application_surface.repositories.items[]` Spring Data
+  interface signal entries with `entity_relation_status` values and nullable
+  `entity_relation` objects for conservative inferred repository/entity generic links,
+  and updated `agent-guide.md` to render those links as inferred source-visible
+  relations rather than runtime repository or database facts.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 

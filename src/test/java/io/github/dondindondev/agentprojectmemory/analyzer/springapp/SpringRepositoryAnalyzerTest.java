@@ -49,7 +49,18 @@ final class SpringRepositoryAnalyzerTest {
         () -> assertEquals(
             List.of("org.springframework.data.jpa.repository.JpaRepository"),
             inferredInterface.extendsTypes()),
+        () -> assertEquals(1, inferredInterface.entityGenericTypes().size()),
+        () -> assertEquals(
+            "ProjectOrder",
+            inferredInterface.entityGenericTypes().get(0).sourceTypeName()),
+        () -> assertEquals(
+            "com.example.repositories.ProjectOrder",
+            inferredInterface.entityGenericTypes().get(0).qualifiedTypeName()),
+        () -> assertEquals(
+            SpringRepositoryAnalyzer.ENTITY_GENERIC_SUPPORTED,
+            inferredInterface.entityGenericTypes().get(0).supportStatus()),
         () -> assertEquals("not_analyzed", inferredInterface.entityRelationStatus()),
+        () -> assertNull(inferredInterface.entityRelation()),
         () -> assertEquals("extracted", bothDirect.supportType()),
         () -> assertEquals("inferred", bothInferred.supportType()),
         () -> assertEquals(

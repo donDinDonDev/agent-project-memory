@@ -728,7 +728,7 @@ public final class AgentGuideGenerator {
         .append(code(text(springApplicationSurface, "analysis_status")))
         .append("\n");
     markdown.append("- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.\n");
-    markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; they do not prove runtime repositories, query method behavior, database access, or repository-to-entity relations.\n");
+    markdown.append("- Spring Data repository interface entries are inferred source-visible extension signals; repository/entity relation rows, when present, are inferred generic links. They do not prove runtime repositories, query method behavior, database access, or runtime repository/entity verification.\n");
     markdown.append("- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.\n");
     markdown.append("- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.\n");
     markdown.append("- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.\n");
@@ -800,6 +800,7 @@ public final class AgentGuideGenerator {
           .append("\n\n");
       appendSpringExtractedFacts(markdown, group.extractedFacts(), evidenceById);
       appendSpringInferredSignals(markdown, group.inferredSignals(), evidenceById);
+      appendSpringInferredRelations(markdown, group.inferredRelations(), evidenceById);
       appendSpringUncertainStatuses(markdown, group.uncertainStatuses(), evidenceById);
       appendSpringWarningFacts(markdown, group.warningFacts(), evidenceById);
     }
@@ -822,14 +823,19 @@ public final class AgentGuideGenerator {
       }
       String entityRelationStatus = nullableText(repository, "entity_relation_status");
       if (entityRelationStatus != null && !entityRelationStatus.isBlank()) {
-        groupFor(groups, nullableText(repository, "module_id"))
-            .uncertainStatuses()
-            .add(new SpringSurfaceUncertainStatus(
-                springSurfaceFactTarget(repository),
-                "entity_relation_status",
-                entityRelationStatus,
-                "no repository-to-entity relation is claimed",
-                stringValues(repository.path("evidence_ids"))));
+        if ("inferred".equals(entityRelationStatus)
+            && repository.path("entity_relation").isObject()) {
+          groupFor(groups, nullableText(repository, "module_id")).inferredRelations().add(repository);
+        } else {
+          groupFor(groups, nullableText(repository, "module_id"))
+              .uncertainStatuses()
+              .add(new SpringSurfaceUncertainStatus(
+                  springSurfaceFactTarget(repository),
+                  "entity_relation_status",
+                  entityRelationStatus,
+                  "no runtime repository/entity relation is claimed",
+                  stringValues(repository.path("evidence_ids"))));
+        }
       }
     }
 
@@ -994,6 +1000,44 @@ public final class AgentGuideGenerator {
       appendNestedEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
     }
     appendOmittedBuildConfigItems(markdown, signals.size() - visibleCount, "Spring application surface inferred signals");
+  }
+
+  private void appendSpringInferredRelations(
+      StringBuilder markdown,
+      List<JsonNode> repositories,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (repositories.isEmpty()) {
+      return;
+    }
+    markdown.append("- Inferred repository/entity relations: detected ")
+        .append(repositories.size())
+        .append(" source-visible Spring Data generic relation")
+        .append(repositories.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(repositories.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode repository = repositories.get(index);
+      JsonNode relation = repository.path("entity_relation");
+      markdown.append("  - ")
+          .append(code(text(repository, "class_name")))
+          .append(" -> ")
+          .append(code(text(relation, "target_class_name")))
+          .append(" (relation_type: ")
+          .append(code(text(relation, "relation_type")))
+          .append(", support_type: ")
+          .append(code(text(relation, "support_type")))
+          .append(", generic_type: ")
+          .append(code(text(relation, "generic_type")))
+          .append(", confidence: ")
+          .append(code(text(relation, "confidence")))
+          .append(").\n");
+      appendNestedEvidenceLine(markdown, relation.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        repositories.size() - visibleCount,
+        "Spring application surface inferred repository/entity relations");
   }
 
   private void appendSpringUncertainStatuses(
@@ -1712,9 +1756,10 @@ public final class AgentGuideGenerator {
         .append("active profiles, runtime auto-configuration, bean graphs, component scanning ")
         .append("results, deployment behavior, or actual process entrypoint behavior.\n");
     markdown.append("- Not analyzed: Spring Data repository interface signals do not prove runtime ")
-        .append("repository registration, query method behavior, database access, or ")
-        .append("repository-to-entity relations; `entity_relation_status: not_analyzed` is ")
-        .append("preserved for those inferred signals.\n");
+        .append("repository registration, query method behavior, database access, or runtime ")
+        .append("repository/entity verification. Repository/entity links, when present, are ")
+        .append("bounded inferred Spring Data generic relations with explicit ")
+        .append("`entity_relation_status` values.\n");
     markdown.append("- Not analyzed: JPA field metadata is limited to supported direct ")
         .append("field-level source-visible annotations. It is not a complete persistent-property ")
         .append("inventory, does not support getter/property access in this slice, and does not ")
@@ -2331,6 +2376,7 @@ public final class AgentGuideGenerator {
     private final String moduleId;
     private final List<JsonNode> extractedFacts = new ArrayList<>();
     private final List<JsonNode> inferredSignals = new ArrayList<>();
+    private final List<JsonNode> inferredRelations = new ArrayList<>();
     private final List<SpringSurfaceUncertainStatus> uncertainStatuses = new ArrayList<>();
     private final List<SpringSurfaceWarningFact> warningFacts = new ArrayList<>();
 
@@ -2341,6 +2387,7 @@ public final class AgentGuideGenerator {
     private boolean hasContent() {
       return !extractedFacts.isEmpty()
           || !inferredSignals.isEmpty()
+          || !inferredRelations.isEmpty()
           || !uncertainStatuses.isEmpty()
           || !warningFacts.isEmpty();
     }
@@ -2355,6 +2402,10 @@ public final class AgentGuideGenerator {
 
     private List<JsonNode> inferredSignals() {
       return inferredSignals;
+    }
+
+    private List<JsonNode> inferredRelations() {
+      return inferredRelations;
     }
 
     private List<SpringSurfaceUncertainStatus> uncertainStatuses() {

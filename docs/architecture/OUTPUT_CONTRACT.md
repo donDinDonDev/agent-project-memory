@@ -1516,7 +1516,7 @@ The v0.5 contract uses:
   `security.configuration_warnings.analysis_status` value is also `"analyzed"` when
   supported production source roots exist and the security warning analyzer runs.
 
-Current high-level `project-map.json` shape:
+v0.5 high-level `project-map.json` shape:
 
 ```json
 {
@@ -1649,15 +1649,17 @@ Spring application surface taxonomy rules:
   on a Java class or interface. It is an extracted fact and must not imply Spring Data
   repository behavior, query semantics, runtime bean registration, or entity ownership.
 - `spring_data_repository_interface_signal` means a source-visible Java interface
-  appears to extend a supported Spring Data repository base type. The current
-  implementation supports `org.springframework.data.repository.Repository`,
+  appears to extend a supported Spring Data repository base type. The bounded Spring
+  Data signal implementation supports `org.springframework.data.repository.Repository`,
   `org.springframework.data.repository.CrudRepository`,
   `org.springframework.data.repository.PagingAndSortingRepository`,
   `org.springframework.data.jpa.repository.JpaRepository`, and
   `org.springframework.data.mongodb.repository.MongoRepository` when visible through a
   fully qualified name or explicit single-type import. It is an inferred signal and
-  must not imply runtime repository registration, resolved generic entity type, query
-  method behavior, database access, or repository-to-entity relation.
+  must not by itself imply runtime repository registration, resolved generic entity
+  type, query method behavior, database access, or repository-to-entity relation. The
+  v0.6 repository/entity relation extension is a separate inferred relation object with
+  its own conservative status and evidence rules.
 - `spring_configuration_class` means a direct source-visible `@Configuration`
   annotation. It must not imply conditional activation, bean graph, component scan
   result, or auto-configuration behavior.
@@ -1738,6 +1740,8 @@ Spring application surface field rules:
   creation.
 - `entity_relation_status: "not_analyzed"` is required for v0.5 Spring Data repository
   interface signals where a reader might otherwise assume repository-to-entity mapping.
+  v0.6 replaces this compatibility value with the bounded relation status values defined
+  in the v0.6 JPA/domain contract when the repository/entity relation analyzer runs.
 - `configuration_signal` is `"direct_configuration_class"` for current direct
   `@Configuration` facts.
 - `configuration_properties_signal` is `"direct_configuration_properties_type"` for
@@ -1807,16 +1811,17 @@ Deterministic sorting rules:
 
 ### v0.6 JPA And Domain Contract
 
-This section defines the v0.6 JPA/domain output contract. The current V060-G004
+This section defines the v0.6 JPA/domain output contract. The current V060-G005
 implementation emits `schema_version: "0.6"`, implements the bounded entity field
 annotation slice for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`,
 and `@Version`, and adds bounded embedded and identifier-model signals for direct
 `@Embeddable`, direct field-level `@Embedded` and `@EmbeddedId`, and direct class-level
 `@IdClass`. It also deepens relationship metadata for direct field-level relationship
 annotations, direct string-literal `mappedBy`, bounded direct `@JoinColumn` and
-`@JoinTable` metadata, and selected directly visible relationship attributes. Later v0.6
-goals may fill the planned table metadata, source-visible relationship target links,
-and repository/entity relation portions described below.
+`@JoinTable` metadata, selected directly visible relationship attributes, and
+conservative repository/entity inferred relations for supported source-visible Spring
+Data repository generic types. Later v0.6 goals may fill the planned table metadata and
+source-visible relationship target links described below.
 
 The v0.6 contract uses:
 
@@ -1835,7 +1840,7 @@ The v0.6 contract uses:
   Data repository interface signals. They are inferred relations, not extracted entity
   facts.
 
-Current V060-G004 implementation state:
+Current V060-G005 implementation state:
 
 - `schema_version` is `"0.6"`.
 - `entities.items[]` continues to emit existing entity, table compatibility,
@@ -1870,7 +1875,7 @@ Current V060-G004 implementation state:
 - Relationship `target` currently preserves the declared type only with
   `target_resolution: "declared_type_only"` and `uncertainty:
   "target_type_not_resolved"`. Source-visible entity target matching is planned later
-  and is not emitted by V060-G004.
+  and is not emitted by V060-G005.
 - `relationship.mapped_by` records only direct string-literal `mappedBy` values.
   Unsupported expressions are not converted to defaults.
 - Direct relationship `optional`, `fetch`, `cascade`, and `orphan_removal` values are
@@ -1883,13 +1888,19 @@ Current V060-G004 implementation state:
 - Relationship metadata is source-visible orientation only. It must not claim ORM
   ownership correctness, foreign keys, join tables, database constraints, fetch
   behavior, cascade behavior, provider defaults, or runtime ORM behavior.
-- `table_metadata` and repository/entity relation fields are planned for later v0.6
-  goals and are not emitted by V060-G004.
+- `spring_application_surface.repositories.items[]` Spring Data interface signals now
+  emit `entity_relation_status` and nullable `entity_relation`. A relation object is
+  emitted only when a supported source-visible repository entity generic type can be
+  matched to exactly one emitted entity fact. Missing, ambiguous, raw, wildcard, nested,
+  or otherwise unsupported generic shapes use explicit status values and keep
+  `entity_relation: null`.
+- `table_metadata` and relationship target links are planned for later v0.6 goals and
+  are not emitted by V060-G005.
 
-Full-track planned `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
+Full-track `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
 some objects for focus, but remain required by their existing contracts when those
-objects are emitted. Repository/entity relation fields and source-visible relationship
-target links shown below remain planned later until their implementation goals land:
+objects are emitted. Source-visible relationship target links shown below remain planned
+later until their implementation goals land:
 
 ```json
 {
@@ -2161,12 +2172,13 @@ Current V060-G004 relationship rules and planned target-link extension:
   as `name`, `schema`, `catalog`, `join_columns`, and `inverse_join_columns` when
   directly extractable. It must not reconstruct join tables or migration state.
 
-Planned v0.6 repository/entity relation rules:
+Current v0.6 repository/entity relation rules:
 
 - v0.5 `spring_data_repository_interface_signal` items continue to be inferred Spring
-  Data interface signals. v0.6 may replace `entity_relation_status: "not_analyzed"` with
-  a conservative relation status only when the repository/entity relation analyzer runs.
-- Planned `entity_relation_status` values are:
+  Data interface signals. The v0.6 repository/entity relation analyzer replaces
+  `entity_relation_status: "not_analyzed"` with a conservative relation status when it
+  runs for those items.
+- `entity_relation_status` values are:
   - `"inferred"`: a supported source-visible Spring Data repository generic type can be
     matched to exactly one emitted entity fact.
   - `"not_detected"`: the analyzer ran but did not find a supported source-visible
@@ -2181,6 +2193,7 @@ Planned v0.6 repository/entity relation rules:
   "repository_entity_generic"`, target entity identity, the source-visible generic type
   string, confidence, uncertainty, and evidence IDs for both repository-side generic
   evidence and target entity evidence.
+  For every non-inferred relation status, `entity_relation` is emitted as `null`.
 - All unchanged v0.5 repository item fields remain required when v0.6 adds
   `entity_relation_status` and `entity_relation` relation fields.
 - Inferred repository/entity relations must not be emitted for direct `@Repository`
@@ -2581,25 +2594,29 @@ Current v0.4 API surface `agent-guide.md` behavior:
   SDKs, or OpenAPI/runtime agreement unless future deterministic relations explicitly
   support those claims.
 
-Current v0.5 Spring application surface `agent-guide.md` behavior:
+Current Spring application surface `agent-guide.md` behavior:
 
 - The guide includes a `Spring Application Surface` section generated from structured
   `spring_application_surface` facts and resolving evidence only.
 - The section is grouped by module using module identity from `project-map.json`. Inside
-  each module group, extracted facts, inferred signals, explicit not-analyzed statuses,
-  and warnings are rendered as separate categories.
+  each module group, extracted facts, inferred signals, inferred repository/entity
+  relations, explicit uncertain/not-analyzed statuses, and warnings are rendered as
+  separate categories when present.
 - Repository stereotype entries should be described as direct annotation observations.
 - Spring Data repository interface signals should be described as inferred
-  source-visible signals. They must not be described as runtime repositories, entity
-  ownership, query method behavior, or database access facts.
+  source-visible signals. Repository/entity relation rows, when present, should be
+  described as inferred generic links. Neither category must be described as runtime
+  repositories, entity ownership, query method behavior, database access facts, or
+  runtime repository/entity verification.
 - Configuration classes, configuration properties, and bean methods are described as
   source-visible Spring configuration signals. They must not claim runtime bean graph,
   conditional activation, active profiles, config binding success, config values, bean
   scopes, lifecycle, proxy behavior, or dependency graphs.
-- Explicit status fields such as `entity_relation_status: "not_analyzed"`,
+- Explicit status fields such as non-inferred `entity_relation_status` values,
   `binding_status: "not_analyzed"`, and `bean_name_status: "not_analyzed"` are rendered
-  as not-analyzed orientation signals, not as runtime relation, binding, or bean-name
-  facts.
+  as uncertain or not-analyzed orientation signals, not as runtime relation, binding, or
+  bean-name facts. `entity_relation_status: "inferred"` is rendered as an inferred
+  source-visible Spring Data generic relation.
 - Transaction, scheduled, event listener, and messaging listener annotations are
   described as operational change-surface signals. They must not claim runtime
   transaction behavior, transaction propagation, scheduler registration, scheduler
@@ -2613,7 +2630,7 @@ Current v0.5 Spring application surface `agent-guide.md` behavior:
   protection, authentication behavior, authorization behavior, vulnerability, or
   correctness.
 
-Planned v0.6 JPA/domain `agent-guide.md` behavior:
+Current v0.6 JPA/domain `agent-guide.md` behavior:
 
 - The guide may expand `Detected JPA Entities` or add a concise `Domain And Data Model`
   section generated from structured `entities` facts, repository/entity relation

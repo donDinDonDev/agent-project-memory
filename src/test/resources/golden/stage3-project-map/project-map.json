@@ -534,7 +534,22 @@
           "extends_types": [
             "org.springframework.data.jpa.repository.JpaRepository"
           ],
-          "entity_relation_status": "not_analyzed",
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:com.example.domain.ProjectOrder",
+            "target_module_id": "module:.",
+            "target_class_name": "com.example.domain.ProjectOrder",
+            "generic_type": "com.example.domain.ProjectOrder",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+            ]
+          },
           "evidence_ids": [
             "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
             "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
