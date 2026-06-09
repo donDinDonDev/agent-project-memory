@@ -144,10 +144,17 @@ required for this release:
 
 ## Publication
 
-This release-prep change does not create a tag, GitHub release, uploaded jar, checksum
-file, or published asset. Those remain separate maintainer-approved release actions.
+The `v0.6.0` GitHub release is published at
+https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.6.0 with packaged
+jar and checksum assets.
 
-Expected release assets when publication is approved:
+Published assets:
 
 - `agent-project-memory-0.6.0.jar`
 - `SHA256SUMS`
+
+Published jar checksum:
+
+```text
+ab0cb5b1c1bbf660e53864ffb4aad7eae97989e1b985ec98d9d1f74b72f3f89b  agent-project-memory-0.6.0.jar
+```

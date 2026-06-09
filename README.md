@@ -238,12 +238,12 @@ The v0.4 API surface release is published with packaged jar and checksum assets.
 v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
-The v0.6 JPA/domain release track is implemented and evaluated in the current checkout.
-It includes bounded v0.6 entity field annotation metadata, embedded and identifier model
-signals, relationship metadata deepening, conservative repository/entity inferred
-relations, safe JPA wildcard import support, quieter no-domain guide rendering, and
-`schema_version: "0.6"`. Tagging, publishing, and release asset upload remain separate
-maintainer-approved release actions.
+The v0.6 JPA/domain release is published with packaged jar and checksum assets after
+implementation, real-project evaluation, follow-up fixes, release-prep documentation,
+and risk-based review/compliance gates. It includes bounded v0.6 entity field annotation
+metadata, embedded and identifier model signals, relationship metadata deepening,
+conservative repository/entity inferred relations, safe JPA wildcard import support,
+quieter no-domain guide rendering, and `schema_version: "0.6"`.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
