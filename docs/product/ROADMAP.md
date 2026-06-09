@@ -214,16 +214,39 @@ Release readiness notes:
 
 ## v0.6.0: JPA And Domain Model Deepening
 
-Expected direction:
+Product outcome: make source-visible JPA/domain facts more useful for legacy change
+planning while preserving extracted, inferred, uncertain, and warning semantics.
+
+Planned contract boundary:
 
 - Additional source-visible JPA annotations such as `@Column`, `@JoinColumn`,
-  `@Embedded`, `@Embeddable`, `@EmbeddedId`, `@IdClass`, `@Enumerated`,
+  `@JoinTable`, `@Embedded`, `@Embeddable`, `@EmbeddedId`, `@IdClass`, `@Enumerated`,
   `@GeneratedValue`, and `@Version`.
-- Better relationship uncertainty handling.
-- Repository-to-entity inferred relations when evidence supports them.
+- Source-visible table metadata for `@Table` name/schema/catalog when directly visible,
+  without database verification.
+- Entity field metadata for supported direct JPA annotations, without claiming complete
+  persistent-property inventory or runtime access strategy.
+- Embedded and composite identifier signals with explicit partial-support boundaries.
+- Relationship metadata for cardinality, `mappedBy`, source-visible join metadata, and
+  directly visible annotation attributes when designed, while keeping target resolution
+  inferred or uncertain.
+- Repository-to-entity inferred relations from deterministic source-visible Spring Data
+  repository generic types when a unique emitted entity fact supports the link.
+- Domain/data guidance in `agent-guide.md` that separates extracted facts, inferred
+  links, uncertain targets, and not-analyzed/runtime boundaries.
 
 Non-goals include generated schema reconstruction, database introspection, runtime
-Hibernate metadata, and full JPQL semantics.
+Hibernate metadata, DDL reconstruction, JPQL semantic parsing, migration tool
+interpretation, and complete ORM model guarantees.
+
+Implementation sequence:
+
+- Contract design for the planned v0.6 output and evidence semantics.
+- Entity field annotation extraction.
+- Embedded and identifier model support.
+- Relationship metadata deepening.
+- Repository-to-entity inferred relation support.
+- Guide rendering, fixtures, goldens, and real-project evaluation.
 
 ## v0.7.0: Tests, Quality, And Change-Risk Map
 

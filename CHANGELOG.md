@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added the planned v0.6 JPA/domain contract design boundary, including source-visible
+  entity field metadata, relationship metadata, embedded and identifier support,
+  inferred repository/entity relation semantics, guide-rendering expectations, evidence
+  semantics, and explicit runtime ORM/database non-goals.
+
 ### Changed
 
 - Reduced the public documentation surface to product, contract, release, evaluation

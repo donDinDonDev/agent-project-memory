@@ -224,6 +224,8 @@ The v0.4 API surface release is published with packaged jar and checksum assets.
 v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
+The planned v0.6 JPA/domain contract is documented for upcoming work; implementation has
+not started and current generated output remains `schema_version: "0.5"`.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

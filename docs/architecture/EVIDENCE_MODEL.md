@@ -118,6 +118,10 @@ Examples:
   `@EventListener`, and common Kafka/Rabbit listener annotation Spring application
   surface facts, plus Spring Security configuration warnings, where these observations
   support extracted facts or warning signals without runtime reconstruction.
+- Planned v0.6 source-visible JPA/domain annotations, including `@Column`,
+  `@JoinColumn`, `@JoinTable`, `@Enumerated`, `@GeneratedValue`, `@Version`,
+  `@Embedded`, `@Embeddable`, `@EmbeddedId`, and `@IdClass`, where these observations
+  support extracted source facts without database schema or runtime ORM claims.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -504,6 +508,103 @@ Behavior, messaging, and security evidence:
   `SecurityFilterChain`.
 - LLM-generated text, generated Markdown guidance, release notes, and chat output are
   never evidence for Spring application surface facts, warnings, or relations.
+
+### Planned v0.6 JPA And Domain Evidence
+
+The planned v0.6 JPA/domain model preserves the existing evidence field set and reuses
+existing evidence types. No new global evidence fields or database evidence types are
+introduced by the planned contract.
+
+Direct JPA annotation evidence:
+
+- Direct source-visible JPA annotations continue to use `source_type: "annotation"`
+  only when source-visible syntax supports a supported `jakarta.persistence.*` or
+  `javax.persistence.*` origin through an exact fully qualified annotation name or
+  explicit single-type import, and that exact framework type is not declared by scanned
+  source.
+- Planned annotation-backed facts include class-level `@Entity`, `@Table`,
+  `@Embeddable`, and `@IdClass`, plus field-level `@Id`, `@Column`, `@Enumerated`,
+  `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, `@ManyToOne`,
+  `@OneToMany`, `@OneToOne`, `@ManyToMany`, `@JoinColumn`, and `@JoinTable`.
+- Field-level JPA annotation evidence keeps using the existing field discriminator in
+  evidence IDs, such as `:field:<field_name>`, while preserving the global evidence
+  field set.
+- If a future bounded implementation supports getter/property-access annotations, that
+  evidence must identify the annotated method through `method_name` and a stable
+  property or method discriminator. It must not be merged with field declaration
+  evidence.
+- JPA annotation evidence supports source-visible facts only. It does not prove runtime
+  access strategy, schema generation, table or column existence, foreign keys, indexes,
+  constraints, generated identifier behavior, optimistic-locking correctness, cascade
+  behavior, fetch behavior, proxy behavior, or provider defaults.
+
+Source-visible annotation attributes:
+
+- v0.6 field, table, identifier, relationship, embedded, and join metadata may record
+  bounded direct annotation attributes chosen by the output contract, such as
+  `@Table` name/schema/catalog, `@Column` name/nullable/unique/length/precision/scale,
+  `@Enumerated` value, `@GeneratedValue` strategy/generator, `mappedBy`, directly
+  visible relationship attributes, and bounded `@JoinColumn` or `@JoinTable` names.
+- Missing annotation attributes are not evidence for JPA defaults. Unsupported
+  expressions, classpath-only values, provider defaults, and runtime metadata must not
+  be converted into extracted values.
+- Evidence excerpts for JPA annotations must remain bounded source excerpts. They should
+  identify the annotation or a short normalized observation and must not serialize
+  arbitrary DDL, migration content, generated schema, or database inspection output.
+
+Embedded and identifier evidence:
+
+- Direct `@Embeddable` class facts use class-level `annotation` evidence.
+- Direct `@Embedded` and `@EmbeddedId` facts use field-level `annotation` evidence and
+  may be paired with `code_symbol` evidence for a source-visible Java type declaration
+  only when a unique local target can be matched deterministically.
+- Direct `@IdClass` facts use class-level `annotation` evidence and may preserve the
+  source-visible type literal. This evidence supports only a composite-id signal; it
+  does not prove field matching, equality semantics, serializability, generated keys,
+  provider behavior, or database primary-key shape.
+- Existing mapped-superclass identifier evidence remains conservative and continues to
+  require field-level `@Id` evidence plus class-level `@MappedSuperclass` evidence on
+  the declaring class.
+
+Relationship evidence:
+
+- Direct relationship annotations and relationship metadata annotations support
+  extracted source-visible relationship facts.
+- A relationship target link to an emitted entity fact is inferred from source-visible
+  type observations and must be labeled as inferred. It must preserve evidence for the
+  relationship annotation and the target entity evidence that led to the link.
+- Ambiguous, unresolved, unsupported collection, wildcard, generated-source-only, or
+  classpath-only relationship targets must remain uncertain rather than being emitted as
+  resolved entity links.
+- `mappedBy`, `optional`, `fetch`, `cascade`, `orphanRemoval`, `@JoinColumn`, and
+  `@JoinTable` evidence supports source-visible orientation only. It does not prove ORM
+  owning side correctness, foreign keys, join tables, database constraints, runtime
+  cascade behavior, lazy/eager loading behavior, or provider-specific mapping semantics.
+
+Repository/entity inferred relation evidence:
+
+- A v0.6 repository/entity relation is an inferred relation attached to an inferred
+  Spring Data repository interface signal when a supported source-visible generic entity
+  type can be matched to exactly one emitted entity fact.
+- The relation must preserve repository-side `code_symbol` evidence for the interface
+  and supported Spring Data base-type/generic observation, plus target entity evidence
+  such as the direct `@Entity` annotation evidence or a source-visible entity class
+  `code_symbol` evidence record if the implementation emits one.
+- This evidence does not prove runtime Spring Data repository registration, query method
+  behavior, JPQL semantics, database access, transaction behavior, dependency graph
+  reachability, complete type solving, or cross-module dependency correctness.
+- Ambiguous, unsupported, raw, wildcard, nested, unresolved, classpath-only, and missing
+  entity generic shapes must use explicit relation status or uncertainty instead of an
+  inferred relation object.
+
+Runtime database and ORM non-evidence:
+
+- Database introspection output, runtime Hibernate metadata, generated DDL, migration
+  tool interpretation, JPQL semantic parsing, runtime application behavior, and LLM
+  output are not evidence for v0.6 JPA/domain facts or relations.
+- Local migration files or SQL files may become future document or file facts only after
+  an explicit contract update. They must not silently become database schema evidence in
+  v0.6.
 
 ### Spring MVC Interface Mapping Evidence
 

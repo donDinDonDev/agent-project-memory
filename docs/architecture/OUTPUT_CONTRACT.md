@@ -1804,6 +1804,333 @@ Deterministic sorting rules:
 - Security warning ID lists follow the existing warning sort order for their referenced
   warning items.
 
+### Planned v0.6 JPA And Domain Contract
+
+This section defines the planned v0.6 JPA/domain output contract. It is design-only
+until implementation moves normal generated output to `schema_version: "0.6"`. The
+current v0.5 implementation does not emit the fields described in this section.
+
+The planned v0.6 contract uses:
+
+- `schema_version: "0.6"` for an atomic public output state that preserves the v0.5
+  module-aware build/config, API surface, and Spring application surface contracts while
+  deepening the existing JPA/domain model.
+- The same four output files under `.project-memory/`.
+- The existing top-level `entities` object as the owner of source-visible JPA entity,
+  embeddable, field, identifier, and relationship facts. v0.6 does not add a database
+  schema file or a runtime ORM model file.
+- Existing evidence fields and evidence types. Direct JPA annotations reuse
+  `annotation` evidence; source-visible Java type declarations and generic type
+  observations reuse `code_symbol` evidence.
+- Repository/entity links remain attached to v0.5
+  `spring_application_surface.repositories.items[]` because they refine inferred Spring
+  Data repository interface signals. They are inferred relations, not extracted entity
+  facts.
+
+Planned high-level `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
+some objects for focus, but remain required by their existing contracts when those
+objects are emitted:
+
+```json
+{
+  "schema_version": "0.6",
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:module:services/orders:com.example.orders.Order",
+        "module_id": "module:services/orders",
+        "class_name": "com.example.orders.Order",
+        "source_path": "services/orders/src/main/java/com/example/orders/Order.java",
+        "table_name": "orders",
+        "table_metadata": {
+          "name": "orders",
+          "schema": "sales",
+          "catalog": null,
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/Order.java:12-12:com.example.orders.Order:@Table"
+          ]
+        },
+        "id_class": null,
+        "fields": [
+          {
+            "field_name": "status",
+            "java_type": "OrderStatus",
+            "declaring_class": "com.example.orders.Order",
+            "source_kind": "declared",
+            "persistence_role": "basic",
+            "annotations": ["@Column", "@Enumerated"],
+            "column": {
+              "name": "status",
+              "nullable": false,
+              "unique": null,
+              "length": null,
+              "precision": null,
+              "scale": null,
+              "insertable": null,
+              "updatable": null,
+              "evidence_ids": [
+                "ev:services/orders/src/main/java/com/example/orders/Order.java:20-20:com.example.orders.Order:@Column:field:status"
+              ]
+            },
+            "enumerated": {
+              "value": "EnumType.STRING",
+              "evidence_ids": [
+                "ev:services/orders/src/main/java/com/example/orders/Order.java:21-21:com.example.orders.Order:@Enumerated:field:status"
+              ]
+            },
+            "generated_value": null,
+            "version": null,
+            "embedded": null,
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:20-20:com.example.orders.Order:@Column:field:status",
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:21-21:com.example.orders.Order:@Enumerated:field:status"
+            ]
+          }
+        ],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.orders.Order",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": {
+              "strategy": "GenerationType.IDENTITY",
+              "generator": null,
+              "evidence_ids": [
+                "ev:services/orders/src/main/java/com/example/orders/Order.java:16-16:com.example.orders.Order:@GeneratedValue:field:id"
+              ]
+            },
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:15-15:com.example.orders.Order:@Id:field:id",
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:16-16:com.example.orders.Order:@GeneratedValue:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "cardinality": "many_to_one",
+            "java_type": "Customer",
+            "target": {
+              "declared_type": "Customer",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "mapped_by_absent",
+            "optional": false,
+            "fetch": "FetchType.LAZY",
+            "cascade": [],
+            "orphan_removal": null,
+            "join_columns": [
+              {
+                "name": "customer_id",
+                "referenced_column_name": null,
+                "nullable": false,
+                "unique": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:services/orders/src/main/java/com/example/orders/Order.java:30-30:com.example.orders.Order:@JoinColumn:field:customer"
+                ]
+              }
+            ],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:29-29:com.example.orders.Order:@ManyToOne:field:customer",
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:30-30:com.example.orders.Order:@JoinColumn:field:customer"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:services/orders/src/main/java/com/example/orders/Order.java:11-11:com.example.orders.Order:@Entity",
+          "ev:services/orders/src/main/java/com/example/orders/Order.java:12-12:com.example.orders.Order:@Table"
+        ]
+      }
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "embeddable:module:services/orders:com.example.orders.OrderId",
+          "module_id": "module:services/orders",
+          "class_name": "com.example.orders.OrderId",
+          "source_path": "services/orders/src/main/java/com/example/orders/OrderId.java",
+          "fields": [],
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/OrderId.java:8-8:com.example.orders.OrderId:@Embeddable"
+          ]
+        }
+      ]
+    }
+  },
+  "spring_application_surface": {
+    "repositories": {
+      "items": [
+        {
+          "id": "spring_data_repository_interface_signal:module:services/orders:com.example.orders.OrderRepository",
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:module:services/orders:com.example.orders.Order",
+            "target_module_id": "module:services/orders",
+            "target_class_name": "com.example.orders.Order",
+            "generic_type": "com.example.orders.Order",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:8-8:com.example.orders.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:services/orders/src/main/java/com/example/orders/Order.java:11-11:com.example.orders.Order:@Entity"
+            ]
+          }
+        }
+      ]
+    }
+  }
+}
+```
+
+Planned v0.6 entity and embeddable rules:
+
+- `entities.analysis_status` remains `"analyzed"` when supported production source roots
+  exist and the JPA/domain analyzer runs. `entities.embeddables.analysis_status` follows
+  the same rule for `@Embeddable` detection.
+- `entities.items[]` continues to contain direct source-visible `@Entity` facts.
+  `entities.embeddables.items[]` contains direct source-visible `@Embeddable` facts and
+  must not be described as entity/table facts.
+- Existing entity IDs remain stable for root-module compatibility. Child module entity
+  IDs include `module_id` as in the existing v0.2 module-aware fact-ID rule.
+- `entity.table_name` remains the compatibility string for direct
+  `@Table(name = "...")`. `entity.table_metadata` is the planned v0.6 structured
+  source-visible `@Table` view with optional `name`, `schema`, and `catalog` values when
+  directly extractable. It must not imply that a table exists in any database.
+- `entity.fields[]` contains source-visible field metadata for supported direct JPA
+  annotations. It is not a complete persistent-property inventory. Fields with no
+  supported JPA annotation do not have to be emitted.
+- Planned field metadata supports direct field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, relationship annotations,
+  `@JoinColumn`, and `@JoinTable`. Getter/property-access support is a separate bounded
+  implementation choice; if added, it must preserve a distinct member kind and evidence
+  for the annotated method without pretending it was a field declaration.
+- `field.persistence_role` is a source-visible classification such as `"basic"`,
+  `"simple_id"`, `"embedded"`, `"embedded_id"`, `"version"`, or `"relationship"`. It is
+  not a runtime access strategy or schema role claim.
+- `field.annotations` lists only supported direct JPA annotation symbols detected on
+  that field. It must not include classpath-only, wildcard-only, unresolved, generated,
+  or source-declared fake annotations.
+- `field.column` records only source-visible direct `@Column` literal attributes chosen
+  by the implementation, such as `name`, `nullable`, `unique`, `length`, `precision`,
+  `scale`, `insertable`, and `updatable`. Missing attributes remain `null`; the analyzer
+  must not fill JPA defaults.
+- `field.enumerated` records only direct `@Enumerated` source-visible enum/literal
+  values, such as `EnumType.STRING`; it must not infer enum storage when the annotation
+  is absent or unsupported.
+- `field.generated_value` records only direct `@GeneratedValue` source-visible
+  `strategy` and `generator` literals. It must not claim generated identifier behavior,
+  sequence/table existence, database identity behavior, or provider defaults.
+- `field.version` records direct `@Version` presence and evidence only. It must not
+  claim optimistic-locking correctness or runtime version behavior.
+- `field.embedded` records direct `@Embedded` or `@EmbeddedId` presence and the declared
+  Java type. A source-visible `@Embeddable` target may be linked only when the type can
+  be matched deterministically to a unique emitted embeddable fact; otherwise it remains
+  declared-type-only with explicit uncertainty.
+- `entity.identifier_fields[]` keeps existing simple `@Id` support and may add
+  `identifier_kind` values such as `"simple_id"`, `"embedded_id"`, and
+  `"id_class_field"`. Mapped-superclass identifiers keep `source_kind:
+  "mapped_superclass"` and the existing conservative hierarchy boundary.
+- `entity.id_class` records direct class-level `@IdClass` source-visible type literals
+  when present. It is a composite-id signal only. It must not reconstruct field matching,
+  equality semantics, serializability, generated keys, provider behavior, or database
+  primary keys.
+- `entities.embeddables.items[].fields[]` uses the same supported field metadata shape
+  as entity fields where applicable. Embeddable field facts must not imply that an
+  embeddable is used by any entity unless a separate `@Embedded` or `@EmbeddedId` fact
+  supports that relation.
+
+Planned v0.6 relationship rules:
+
+- `entity.relationships[]` remains the relationship fact list for direct field-level
+  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations.
+- `relationship.cardinality` is derived only from the direct relationship annotation:
+  `"many_to_one"`, `"one_to_many"`, `"one_to_one"`, or `"many_to_many"`.
+- `relationship.java_type` preserves the declared Java field type string. It is not a
+  database type, table name, or guaranteed entity target.
+- `relationship.target.target_resolution` is `"declared_type_only"` when only the
+  declared field type is preserved, `"source_visible_entity"` only when a unique
+  emitted entity fact is deterministically matched, and `"ambiguous"` when source-visible
+  candidates cannot be reduced to one target. Target links are inferred relation
+  support, not extracted annotation facts.
+- `relationship.target.support_type` is `"inferred"` only when
+  `target_resolution: "source_visible_entity"`; otherwise it is `null`.
+- `relationship.target.uncertainty` must preserve uncertainty values such as
+  `"target_type_not_resolved"`, `"ambiguous_target_type"`, or
+  `"unsupported_collection_type"` when a target link cannot be made conservatively.
+- `relationship.mapped_by` records only directly visible `mappedBy` string literals.
+  Unsupported expressions or absent attributes must not be converted to runtime defaults.
+- `relationship.ownership_signal` is a source-visible orientation signal, not a runtime
+  ORM ownership guarantee. Allowed planned values include `"mapped_by_present"`,
+  `"mapped_by_absent"`, `"join_metadata_present"`, and `"not_analyzed"`.
+- `relationship.optional`, `fetch`, `cascade`, and `orphan_removal` record only directly
+  visible annotation attributes chosen by the implementation. Missing values remain
+  `null` or empty arrays and must not be filled from JPA defaults.
+- `relationship.join_columns[]` records bounded source-visible `@JoinColumn` metadata
+  such as `name`, `referenced_column_name`, `nullable`, `unique`, `insertable`, and
+  `updatable`. It must not reconstruct foreign keys, indexes, constraints, or database
+  columns.
+- `relationship.join_table` records bounded source-visible `@JoinTable` metadata such
+  as `name`, `schema`, `catalog`, `join_columns`, and `inverse_join_columns` when
+  directly extractable. It must not reconstruct join tables or migration state.
+
+Planned v0.6 repository/entity relation rules:
+
+- v0.5 `spring_data_repository_interface_signal` items continue to be inferred Spring
+  Data interface signals. v0.6 may replace `entity_relation_status: "not_analyzed"` with
+  a conservative relation status only when the repository/entity relation analyzer runs.
+- Planned `entity_relation_status` values are:
+  - `"inferred"`: a supported source-visible Spring Data repository generic type can be
+    matched to exactly one emitted entity fact.
+  - `"not_detected"`: the analyzer ran but did not find a supported source-visible
+    entity generic or matching entity fact.
+  - `"ambiguous"`: the analyzer found multiple possible source-visible entity matches.
+  - `"unsupported"`: the generic shape is source-visible but outside the supported
+    bounded parser, such as nested, wildcard, raw, or unresolved generic forms.
+  - `"not_analyzed"`: compatibility value used only when this relation analyzer did not
+    run for the item.
+- `entity_relation` is non-null only when `entity_relation_status` is `"inferred"`.
+  It must include `support_type: "inferred"`, `relation_type:
+  "repository_entity_generic"`, target entity identity, the source-visible generic type
+  string, confidence, uncertainty, and evidence IDs for both repository-side generic
+  evidence and target entity evidence.
+- All unchanged v0.5 repository item fields remain required when v0.6 adds
+  `entity_relation_status` and `entity_relation` relation fields.
+- Inferred repository/entity relations must not be emitted for direct `@Repository`
+  stereotype facts unless they also have a separate supported Spring Data repository
+  interface signal.
+- Repository/entity relations must not use runtime Spring Data registration, query
+  method parsing, JPQL semantics, database access, dependency graphs, classpath solving,
+  Hibernate metadata, or migration files as evidence.
+
+Planned v0.6 deterministic sorting rules:
+
+- Entity fields sort by module order, declaring class, source kind, field name, Java
+  type, persistence role, and ID/evidence discriminator where needed.
+- Identifier fields keep the existing deterministic order and then sort by
+  `identifier_kind`.
+- Relationships sort by module order, declaring class, field name, cardinality,
+  annotation, Java type, and ID/evidence discriminator where needed.
+- Embeddables sort by module order, class name, source path, and ID.
+- Repository/entity relation status does not change repository item sort order.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -2213,6 +2540,41 @@ Current v0.5 Spring application surface `agent-guide.md` behavior:
   analyzer scope. Security warning guidance must not claim security policy, endpoint
   protection, authentication behavior, authorization behavior, vulnerability, or
   correctness.
+
+Planned v0.6 JPA/domain `agent-guide.md` behavior:
+
+- The guide may expand `Detected JPA Entities` or add a concise `Domain And Data Model`
+  section generated from structured `entities` facts, repository/entity relation
+  statuses, and resolving evidence only.
+- Entity and embeddable entries must be grouped or labeled by module using
+  `module_id`. Embeddables must be described as `@Embeddable` source-visible types, not
+  as tables or standalone entities.
+- Entity field metadata should use `Source-visible` or `Detected` wording for direct
+  JPA annotations and must not claim complete persistent-property inventory, runtime
+  access strategy, database columns, table existence, generated IDs, optimistic-locking
+  correctness, or provider defaults.
+- Identifier and embedded-id entries must show the explicit source-visible support
+  boundary, such as simple `@Id`, mapped-superclass `@Id`, `@EmbeddedId`, or `@IdClass`
+  signal. `@IdClass` must be rendered as a composite-id signal, not reconstructed
+  composite-key semantics.
+- Relationship entries must separate direct relationship annotation facts from inferred
+  target links. Declared-type-only relationships should remain `Uncertain`; unique
+  source-visible entity target links should be rendered as `Inferred`; ambiguous or
+  unsupported targets should show the corresponding uncertainty/status.
+- Relationship metadata such as `mappedBy`, join columns, join tables, optional, fetch,
+  cascade, and orphan-removal values must be described as source-visible annotation
+  attributes only. The guide must not claim ORM ownership correctness, foreign keys,
+  database constraints, join-table existence, fetch behavior, cascade behavior, or
+  runtime provider behavior.
+- Repository/entity links should be rendered inside or near the Spring/Data/domain
+  guidance as inferred Spring Data generic relations. The guide must show relation
+  status values such as `inferred`, `not_detected`, `ambiguous`, `unsupported`, or
+  `not_analyzed` without describing them as runtime repositories, query semantics, or
+  database access facts.
+- The known-limits section should explicitly state that v0.6 JPA/domain facts do not
+  perform database introspection, runtime Hibernate metadata analysis, DDL
+  reconstruction, JPQL semantic parsing, migration interpretation, complete ORM model
+  reconstruction, or runtime repository/entity verification.
 
 Markdown rendering safety:
 
