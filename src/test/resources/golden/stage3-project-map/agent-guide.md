@@ -103,7 +103,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
     - Source: `src/main/java/com/example/repositories/ProjectOrderRepository.java`
     - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository`), `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
 - Inferred repository/entity relations: detected 1 source-visible Spring Data generic relation.
-  - `com.example.repositories.ProjectOrderRepository` -> `com.example.domain.ProjectOrder` (relation_type: `repository_entity_generic`, support_type: `inferred`, generic_type: `com.example.domain.ProjectOrder`, confidence: `medium`).
+  - `com.example.repositories.ProjectOrderRepository` -> `com.example.domain.ProjectOrder` (entity_relation_status: `inferred`, relation_type: `repository_entity_generic`, support_type: `inferred`, generic_type: `com.example.domain.ProjectOrder`, confidence: `medium`, uncertainty: `null`).
     - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`), `src/main/java/com/example/domain/ProjectEntities.java:52` (`ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity`), `src/main/java/com/example/domain/ProjectEntities.java:53` (`ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table`)
 - Uncertain/not-analyzed statuses: detected none.
 - Warnings: detected none.
@@ -173,6 +173,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Detected JPA Entities
 
 - Analysis status: `analyzed`
+- Domain/data facts are source-visible JPA annotations and Spring Data generic signals only; no database schema, runtime Hibernate metadata, migration interpretation, or provider defaults are claimed.
+- Extracted entity, field, identifier, embeddable, and relationship facts stay separate from inferred repository/entity links, uncertain relationship targets, and explicit not-analyzed composite-id/runtime boundaries.
 
 ### `com.example.domain.ProjectCustomer`
 

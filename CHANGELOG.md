@@ -53,6 +53,10 @@ architecture documents.
   `entity_relation` objects for conservative inferred repository/entity generic links,
   and updated `agent-guide.md` to render those links as inferred source-visible
   relations rather than runtime repository or database facts.
+- Refined v0.6 `agent-guide.md` domain/data rendering to state source-visible JPA and
+  Spring Data generic boundaries only when domain facts are present, and to show inferred
+  repository/entity relation status and uncertainty without turning JSON `null`
+  uncertainty into a source-attribute placeholder.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 

@@ -209,6 +209,8 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Detected JPA Entities
 
 - Analysis status: `analyzed`
+- Domain/data facts are source-visible JPA annotations and Spring Data generic signals only; no database schema, runtime Hibernate metadata, migration interpretation, or provider defaults are claimed.
+- Extracted entity, field, identifier, embeddable, and relationship facts stay separate from inferred repository/entity links, uncertain relationship targets, and explicit not-analyzed composite-id/runtime boundaries.
 
 ### `com.example.shared.SharedEntity`
 

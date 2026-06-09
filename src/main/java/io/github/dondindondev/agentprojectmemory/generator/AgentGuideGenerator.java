@@ -1019,11 +1019,14 @@ public final class AgentGuideGenerator {
     for (int index = 0; index < visibleCount; index++) {
       JsonNode repository = repositories.get(index);
       JsonNode relation = repository.path("entity_relation");
+      String uncertainty = nullableText(relation, "uncertainty");
       markdown.append("  - ")
           .append(code(text(repository, "class_name")))
           .append(" -> ")
           .append(code(text(relation, "target_class_name")))
-          .append(" (relation_type: ")
+          .append(" (entity_relation_status: ")
+          .append(code(text(repository, "entity_relation_status")))
+          .append(", relation_type: ")
           .append(code(text(relation, "relation_type")))
           .append(", support_type: ")
           .append(code(text(relation, "support_type")))
@@ -1031,6 +1034,8 @@ public final class AgentGuideGenerator {
           .append(code(text(relation, "generic_type")))
           .append(", confidence: ")
           .append(code(text(relation, "confidence")))
+          .append(", uncertainty: ")
+          .append(code(uncertainty == null ? "null" : uncertainty))
           .append(").\n");
       appendNestedEvidenceLine(markdown, relation.path("evidence_ids"), evidenceById);
     }
@@ -1274,8 +1279,19 @@ public final class AgentGuideGenerator {
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Detected JPA Entities\n\n");
     markdown.append("- Analysis status: ").append(code(text(entities, "analysis_status"))).append("\n");
-
     JsonNode items = entities.path("items");
+    JsonNode embeddableItems = entities.path("embeddables").path("items");
+    boolean hasDomainData = items.isArray() && !items.isEmpty()
+        || embeddableItems.isArray() && !embeddableItems.isEmpty();
+    if (hasDomainData) {
+      markdown.append("- Domain/data facts are source-visible JPA annotations and Spring Data generic ")
+          .append("signals only; no database schema, runtime Hibernate metadata, migration ")
+          .append("interpretation, or provider defaults are claimed.\n");
+      markdown.append("- Extracted entity, field, identifier, embeddable, and relationship facts stay ")
+          .append("separate from inferred repository/entity links, uncertain relationship targets, ")
+          .append("and explicit not-analyzed composite-id/runtime boundaries.\n");
+    }
+
     if (!items.isArray() || items.isEmpty()) {
       markdown.append("- Detected: no direct JPA entities recorded.\n\n");
     } else {

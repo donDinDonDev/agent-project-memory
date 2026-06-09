@@ -1,0 +1,651 @@
+{
+  "schema_version": "0.6",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "domain-a/src/main/java",
+      "domain-b/src/main/java",
+      "repositories/src/main/java"
+    ],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:domain-a",
+          "module_path": "domain-a",
+          "pom_path": "domain-a/pom.xml",
+          "source_roots": [
+            "domain-a/src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "domain-a",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:13-13:build_file:module:domain-a"
+          ],
+          "pom_evidence_ids": [
+            "ev:domain-a/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": "domain-a",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:domain-a/pom.xml:7-7:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:domain-b",
+          "module_path": "domain-b",
+          "pom_path": "domain-b/pom.xml",
+          "source_roots": [
+            "domain-b/src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "domain-b",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:14-14:build_file:module:domain-b"
+          ],
+          "pom_evidence_ids": [
+            "ev:domain-b/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": "domain-b",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:domain-b/pom.xml:7-7:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:repositories",
+          "module_path": "repositories",
+          "pom_path": "repositories/pom.xml",
+          "source_roots": [
+            "repositories/src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "root_modules_entry",
+          "declared_path": "repositories",
+          "declaration_evidence_ids": [
+            "ev:pom.xml:15-15:build_file:module:repositories"
+          ],
+          "pom_evidence_ids": [
+            "ev:repositories/pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": "repositories",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:repositories/pom.xml:7-7:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.AmbiguousSharedOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.AmbiguousSharedOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "ambiguous",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-19:com.example.repositories.AmbiguousSharedOrderRepository:com.example.repositories.AmbiguousSharedOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-18:com.example.repositories.AmbiguousSharedOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.FqcnUniqueOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.FqcnUniqueOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:module:domain-a:com.example.unique.UniqueOrder",
+            "target_module_id": "module:domain-a",
+            "target_class_name": "com.example.unique.UniqueOrder",
+            "generic_type": "com.example.unique.UniqueOrder",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:12-12:com.example.repositories.FqcnUniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:domain-a/src/main/java/com/example/unique/UniqueOrder.java:6-6:com.example.unique.UniqueOrder:@Entity"
+            ]
+          },
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:12-13:com.example.repositories.FqcnUniqueOrderRepository:com.example.repositories.FqcnUniqueOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:12-12:com.example.repositories.FqcnUniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.MissingOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "not_detected",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-16:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-15:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.NestedGenericOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.NestedGenericOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "unsupported",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-22:com.example.repositories.NestedGenericOrderRepository:com.example.repositories.NestedGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-21:com.example.repositories.NestedGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.RawOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.RawOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "unsupported",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-28:com.example.repositories.RawOrderRepository:com.example.repositories.RawOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-27:com.example.repositories.RawOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.UniqueOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.UniqueOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:module:domain-a:com.example.unique.UniqueOrder",
+            "target_module_id": "module:domain-a",
+            "target_class_name": "com.example.unique.UniqueOrder",
+            "generic_type": "com.example.unique.UniqueOrder",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:9-9:com.example.repositories.UniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:domain-a/src/main/java/com/example/unique/UniqueOrder.java:6-6:com.example.unique.UniqueOrder:@Entity"
+            ]
+          },
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:9-10:com.example.repositories.UniqueOrderRepository:com.example.repositories.UniqueOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:9-9:com.example.repositories.UniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.WildcardGenericOrderRepository",
+          "module_id": "module:repositories",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.WildcardGenericOrderRepository",
+          "source_path": "repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "unsupported",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25:com.example.repositories.WildcardGenericOrderRepository:com.example.repositories.WildcardGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-24:com.example.repositories.WildcardGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:module:domain-a:com.example.domain.SharedOrder",
+        "module_id": "module:domain-a",
+        "class_name": "com.example.domain.SharedOrder",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.SharedOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:domain-a/src/main/java/com/example/domain/SharedOrder.java:8-8:com.example.domain.SharedOrder:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:domain-a/src/main/java/com/example/domain/SharedOrder.java:6-6:com.example.domain.SharedOrder:@Entity"
+        ]
+      },
+      {
+        "id": "entity:module:domain-a:com.example.unique.UniqueOrder",
+        "module_id": "module:domain-a",
+        "class_name": "com.example.unique.UniqueOrder",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.unique.UniqueOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:domain-a/src/main/java/com/example/unique/UniqueOrder.java:8-8:com.example.unique.UniqueOrder:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:domain-a/src/main/java/com/example/unique/UniqueOrder.java:6-6:com.example.unique.UniqueOrder:@Entity"
+        ]
+      },
+      {
+        "id": "entity:module:domain-b:com.example.domain.SharedOrder",
+        "module_id": "module:domain-b",
+        "class_name": "com.example.domain.SharedOrder",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.SharedOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:domain-b/src/main/java/com/example/domain/SharedOrder.java:8-8:com.example.domain.SharedOrder:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:domain-b/src/main/java/com/example/domain/SharedOrder.java:6-6:com.example.domain.SharedOrder:@Entity"
+        ]
+      }
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  }
+}
