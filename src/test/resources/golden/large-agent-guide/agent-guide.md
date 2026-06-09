@@ -59,11 +59,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Stereotypes: Detected `@Service`
   - Evidence: `src/main/java/com/example/components/ComponentSeven.java:8` (`ev:src/main/java/com/example/components/ComponentSeven.java:8-8:com.example.components.ComponentSeven:@Service`)
 
-## Detected JPA Entities
-
-- Analysis status: `analyzed`
-- Detected: no direct JPA entities recorded.
-
 ## Detected Tests
 
 - Analysis status: `analyzed`
@@ -101,5 +96,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 1. Start with detected build and layout facts in `pom.xml`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/components/ComponentOne.java`, `src/main/java/com/example/components/ComponentTwo.java`, `src/main/java/com/example/components/ComponentThree.java`, `src/main/java/com/example/components/ComponentFour.java`, `src/main/java/com/example/components/ComponentFive.java`, ... and 2 more evidence paths in `evidence-index.jsonl` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
-5. For tests, inspect detected test files and inferred tested-subject evidence in `src/test/java/com/example/web/LargeControllerTest.java`, `src/main/java/com/example/web/LargeController.java`; do not treat inferred subjects as coverage proof.
+4. For tests, inspect detected test files and inferred tested-subject evidence in `src/test/java/com/example/web/LargeControllerTest.java`, `src/main/java/com/example/web/LargeController.java`; do not treat inferred subjects as coverage proof.

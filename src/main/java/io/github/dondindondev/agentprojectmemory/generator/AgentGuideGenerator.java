@@ -43,7 +43,7 @@ public final class AgentGuideGenerator {
         evidenceById);
     appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
-    appendEntities(markdown, projectMap.path("entities"), moduleById, evidenceById);
+    appendEntities(markdown, projectMap, moduleById, evidenceById);
     appendTests(markdown, projectMap.path("tests"), moduleById, evidenceById);
     appendKnownLimits(markdown, projectMap, moduleById, evidenceById);
     appendInspectionOrder(markdown, projectMap, evidenceById);
@@ -1274,9 +1274,14 @@ public final class AgentGuideGenerator {
 
   private void appendEntities(
       StringBuilder markdown,
-      JsonNode entities,
+      JsonNode projectMap,
       Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
+    if (!hasDomainGuideContent(projectMap)) {
+      return;
+    }
+
+    JsonNode entities = projectMap.path("entities");
     markdown.append("## Detected JPA Entities\n\n");
     markdown.append("- Analysis status: ").append(code(text(entities, "analysis_status"))).append("\n");
     JsonNode items = entities.path("items");
@@ -1813,37 +1818,68 @@ public final class AgentGuideGenerator {
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Practical Inspection Order For Coding Agents\n\n");
     boolean moduleAware = projectMap.path("project").path("modules").isObject();
+    int step = 1;
     if (moduleAware) {
-      markdown.append("1. Start with detected build, module, and layout facts");
+      markdown.append(step++).append(". Start with detected build, module, and layout facts");
     } else {
-      markdown.append("1. Start with detected build and layout facts");
+      markdown.append(step++).append(". Start with detected build and layout facts");
     }
     LinkedHashSet<String> layoutPaths = new LinkedHashSet<>();
     layoutPaths.addAll(evidencePaths(projectMap.path("project").path("build"), evidenceById));
     layoutPaths.addAll(evidencePaths(projectMap.path("project").path("modules"), evidenceById));
     appendPathHint(markdown, List.copyOf(layoutPaths));
     markdown.append(".\n");
-    markdown.append("2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence");
+    markdown.append(step++)
+        .append(". For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence");
     LinkedHashSet<String> httpPaths = new LinkedHashSet<>();
     httpPaths.addAll(evidencePaths(projectMap.path("endpoints"), evidenceById));
     httpPaths.addAll(evidencePaths(projectMap.path("api_surface"), evidenceById));
     httpPaths.addAll(hiddenHttpWarningEvidencePaths(projectMap.path("warnings"), evidenceById));
     appendPathHint(markdown, List.copyOf(httpPaths));
     markdown.append(".\n");
-    markdown.append("3. For Spring application surface changes, inspect Spring application surface and component evidence");
+    markdown.append(step++)
+        .append(". For Spring application surface changes, inspect Spring application surface and component evidence");
     LinkedHashSet<String> springPaths = new LinkedHashSet<>();
     springPaths.addAll(evidencePaths(projectMap.path("spring_application_surface"), evidenceById));
     springPaths.addAll(evidencePaths(projectMap.path("components").path("items"), evidenceById));
     appendPathHint(markdown, List.copyOf(springPaths));
     markdown.append(" and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.\n");
-    markdown.append("4. For persistence changes, inspect detected entity evidence");
-    appendPathHint(markdown, evidencePaths(projectMap.path("entities").path("items"), evidenceById));
-    markdown.append(" and treat field metadata as source-visible annotations only, not runtime schema, ")
-        .append("provider defaults, or complete access-strategy reconstruction; relationship targets ")
-        .append("remain declared-type-only.\n");
-    markdown.append("5. For tests, inspect detected test files and inferred tested-subject evidence");
+    if (hasDomainGuideContent(projectMap)) {
+      markdown.append(step++)
+          .append(". For persistence changes, inspect detected entity evidence");
+      appendPathHint(markdown, evidencePaths(projectMap.path("entities").path("items"), evidenceById));
+      markdown.append(" and treat field metadata as source-visible annotations only, not runtime schema, ")
+          .append("provider defaults, or complete access-strategy reconstruction; relationship targets ")
+          .append("remain declared-type-only.\n");
+    }
+    markdown.append(step++)
+        .append(". For tests, inspect detected test files and inferred tested-subject evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("tests").path("items"), evidenceById));
     markdown.append("; do not treat inferred subjects as coverage proof.\n");
+  }
+
+  private boolean hasDomainGuideContent(JsonNode projectMap) {
+    JsonNode entities = projectMap.path("entities");
+    if (hasItems(entities) || hasItems(entities.path("embeddables"))) {
+      return true;
+    }
+    return hasRepositoryEntityRelations(projectMap);
+  }
+
+  private boolean hasRepositoryEntityRelations(JsonNode projectMap) {
+    for (JsonNode repository : items(
+        projectMap.path("spring_application_surface").path("repositories"))) {
+      if ("inferred".equals(text(repository, "entity_relation_status"))
+          && repository.path("entity_relation").isObject()) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasItems(JsonNode section) {
+    JsonNode items = section.path("items");
+    return items.isArray() && !items.isEmpty();
   }
 
   private void appendWarnings(

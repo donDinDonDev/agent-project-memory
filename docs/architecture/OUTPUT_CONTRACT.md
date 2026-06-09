@@ -2665,6 +2665,11 @@ Current v0.6 JPA/domain `agent-guide.md` behavior:
   status values such as `inferred`, `not_detected`, `ambiguous`, `unsupported`, or
   `not_analyzed` without describing them as runtime repositories, query semantics, or
   database access facts.
+- When no entity facts, embeddable facts, entity relationship facts, or inferred
+  repository/entity relation objects are present, the guide omits the full
+  `Detected JPA Entities` section and does not add a persistence inspection-order step
+  that only reports no evidence paths. Domain-bearing outputs still render the JPA/domain
+  section and persistence inspection guidance.
 - The known-limits section should explicitly state that v0.6 JPA/domain facts do not
   perform database introspection, runtime Hibernate metadata analysis, DDL
   reconstruction, JPQL semantic parsing, migration interpretation, complete ORM model

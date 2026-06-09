@@ -21,7 +21,142 @@ final class AgentGuideGeneratorTest {
         Files.readString(goldenRoot.resolve("evidence-index.jsonl")));
 
     assertEquals(Files.readString(goldenRoot.resolve("agent-guide.md")), guide);
+    assertTrue(guide.contains("## Detected JPA Entities"));
+    assertTrue(guide.contains(
+        "For persistence changes, inspect detected entity evidence in "
+            + "`src/main/java/com/example/domain/ProjectEntities.java`"));
     assertEvidenceIsAttachedToDetectedClaims(guide);
+  }
+
+  @Test
+  void noDomainGuideSkipsJpaSectionAndPersistenceInspectionHint() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.6",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+            },
+            "source_roots": ["src/main/java"],
+            "test_roots": [],
+            "modules": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "module_id": "module:.",
+                  "module_path": ".",
+                  "pom_path": "pom.xml",
+                  "support_status": "supported",
+                  "declaration_kind": "scan_root",
+                  "declared_path": ".",
+                  "source_roots": ["src/main/java"],
+                  "test_roots": [],
+                  "declaration_evidence_ids": [],
+                  "pom_evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+                }
+              ]
+            }
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": [],
+            "embeddables": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "spring_application_surface": {
+            "analysis_status": "analyzed",
+            "repositories": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_data_repository_interface_signal:com.example.NoDomainRepository",
+                  "module_id": "module:.",
+                  "surface_category": "spring_data_repository_interface_signal",
+                  "support_type": "inferred",
+                  "class_name": "com.example.NoDomainRepository",
+                  "source_path": "src/main/java/com/example/NoDomainRepository.java",
+                  "repository_signal": "spring_data_repository_interface_extension",
+                  "extends_types": [
+                    "org.springframework.data.jpa.repository.JpaRepository"
+                  ],
+                  "entity_relation_status": "not_detected",
+                  "entity_relation": null,
+                  "evidence_ids": ["ev:repo"]
+                }
+              ]
+            },
+            "configuration": {
+              "configuration_classes": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "configuration_properties": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "bean_methods": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "behavior": {
+              "transaction_boundaries": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "scheduled_methods": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "event_listeners": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "messaging": {
+              "listener_signals": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "security": {
+              "configuration_warnings": {
+                "analysis_status": "analyzed",
+                "warning_ids": []
+              }
+            }
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:pom.xml:1-1:build_file:pom.xml","source_type":"build_file","path":"pom.xml","class_name":null,"method_name":null,"symbol_name":"pom.xml","line_start":1,"line_end":1,"excerpt":"<project>","confidence":"high"}
+        {"id":"ev:repo","source_type":"code_symbol","path":"src/main/java/com/example/NoDomainRepository.java","class_name":"com.example.NoDomainRepository","method_name":null,"symbol_name":"extends:org.springframework.data.jpa.repository.JpaRepository","line_start":6,"line_end":6,"excerpt":"extends JpaRepository","confidence":"high"}
+        """;
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertFalse(guide.contains("## Detected JPA Entities"));
+    assertFalse(guide.contains("For persistence changes, inspect detected entity evidence"));
+    assertFalse(guide.contains("inspect detected entity evidence (no evidence paths recorded)"));
+    assertTrue(guide.contains(
+        "`com.example.NoDomainRepository`: `entity_relation_status` is `not_detected`"));
   }
 
   @Test

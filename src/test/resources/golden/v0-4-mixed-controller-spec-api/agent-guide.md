@@ -101,16 +101,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Stereotypes: Detected `@RestController`
   - Evidence: `src/main/java/com/example/mixed/OrderController.java:6` (`ev:src/main/java/com/example/mixed/OrderController.java:6-6:com.example.mixed.OrderController:@RestController`)
 
-## Detected JPA Entities
-
-- Analysis status: `analyzed`
-- Detected: no direct JPA entities recorded.
-
-### Embeddables
-
-- Analysis status: `analyzed`
-- Detected: no direct `@Embeddable` classes recorded.
-
 ## Detected Tests
 
 - Analysis status: `not_detected`
@@ -143,5 +133,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 1. Start with detected build, module, and layout facts in `pom.xml`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/mixed/OrderController.java`, `src/main/resources/openapi.yml`.
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/mixed/OrderController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
-5. For tests, inspect detected test files and inferred tested-subject evidence (no evidence paths recorded); do not treat inferred subjects as coverage proof.
+4. For tests, inspect detected test files and inferred tested-subject evidence (no evidence paths recorded); do not treat inferred subjects as coverage proof.

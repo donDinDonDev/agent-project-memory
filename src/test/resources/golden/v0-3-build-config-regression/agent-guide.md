@@ -231,16 +231,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Stereotypes: Detected `@RestController`
   - Evidence: `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:7` (`ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:7-7:com.example.zeta.ZetaController:@RestController`)
 
-## Detected JPA Entities
-
-- Analysis status: `analyzed`
-- Detected: no direct JPA entities recorded.
-
-### Embeddables
-
-- Analysis status: `analyzed`
-- Detected: no direct `@Embeddable` classes recorded.
-
 ## Detected Tests
 
 - Analysis status: `analyzed`
@@ -307,5 +297,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 1. Start with detected build, module, and layout facts in `pom.xml`, `libraries/common/pom.xml`, `services/alpha/pom.xml`, `services/alpha/src/main/resources/logback-spring.xml`, `services/alpha/src/main/resources/application-ci.properties`, ... and 7 more evidence paths in `evidence-index.jsonl`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`, `services/zeta/src/main/resources/openapi.yml`, `services/zeta/pom.xml`.
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence (no evidence paths recorded) and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
-5. For tests, inspect detected test files and inferred tested-subject evidence in `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java`, `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`; do not treat inferred subjects as coverage proof.
+4. For tests, inspect detected test files and inferred tested-subject evidence in `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java`, `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java`, `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java`, `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java`; do not treat inferred subjects as coverage proof.

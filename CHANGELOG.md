@@ -57,6 +57,10 @@ architecture documents.
   Spring Data generic boundaries only when domain facts are present, and to show inferred
   repository/entity relation status and uncertainty without turning JSON `null`
   uncertainty into a source-attribute placeholder.
+- Quieted no-domain `agent-guide.md` rendering by omitting the empty
+  `Detected JPA Entities` section and the persistence inspection-order step when no
+  entity, embeddable, relationship, or inferred repository/entity relation facts are
+  present.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 
