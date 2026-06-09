@@ -27,6 +27,17 @@ public final class JavaSourceOrigins {
     return imports;
   }
 
+  public static Set<String> wildcardImportPackages(CompilationUnit compilationUnit) {
+    Set<String> imports = new LinkedHashSet<>();
+    for (ImportDeclaration importDeclaration : compilationUnit.getImports()) {
+      if (importDeclaration.isStatic() || !importDeclaration.isAsterisk()) {
+        continue;
+      }
+      imports.add(importDeclaration.getNameAsString());
+    }
+    return imports;
+  }
+
   public static Set<String> declaredTypeNames(
       CompilationUnit compilationUnit,
       String packageName) {

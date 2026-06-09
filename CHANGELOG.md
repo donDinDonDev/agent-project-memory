@@ -62,6 +62,10 @@ architecture documents.
 
 ### Fixed
 
+- Added safe v0.6 JPA/domain origin support for explicit `jakarta.persistence.*` and
+  `javax.persistence.*` wildcard imports for the existing supported JPA annotation and
+  enum-attribute slice, while preserving source-declared and same-package fake
+  annotation protections.
 - Updated post-release documentation status to mark `v0.5.0` as published with release
   assets and checksums.
 

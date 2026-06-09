@@ -122,6 +122,44 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void persistenceWildcardImportsAreTrustedForSupportedJpaAnnotations() throws Exception {
+    JpaEntityAnalysis analysis = analyzeWildcardImportsFixture();
+
+    JpaEntityFact order = entity(analysis, "WildcardOrder");
+    JpaIdentifierFieldFact id = identifierField(order, "id");
+    JpaEntityFieldFact idField = field(order, "id");
+    JpaEntityFieldFact status = field(order, "status");
+    JpaEntityFieldFact address = field(order, "address");
+    JpaRelationshipFact customer = relationship(order, "customer");
+    JpaRelationshipFact lines = relationship(order, "lines");
+    JpaEmbeddableFact embeddable = embeddable(analysis, "WildcardAddress");
+    JpaEntityFact legacy = entity(analysis, "LegacyWildcardEntity");
+
+    assertAll(
+        () -> assertEquals("wildcard_orders", order.tableName()),
+        () -> assertEquals("GenerationType.IDENTITY", id.generatedValue().strategy()),
+        () -> assertEquals("wildcard-id", id.generatedValue().generator()),
+        () -> assertEquals(List.of("@GeneratedValue"), idField.annotations()),
+        () -> assertEquals(List.of("@Column", "@Enumerated"), status.annotations()),
+        () -> assertEquals("status_code", status.column().name()),
+        () -> assertEquals(false, status.column().nullable()),
+        () -> assertEquals("EnumType.STRING", status.enumerated().value()),
+        () -> assertEquals(List.of("@Embedded"), address.annotations()),
+        () -> assertEquals("source_visible_embeddable", address.embedded().targetResolution()),
+        () -> assertEquals("com.example.domain.WildcardAddress", address.embedded().targetClassName()),
+        () -> assertEquals("zip", field(embeddable, "zip").column().name()),
+        () -> assertEquals("@ManyToOne", customer.annotation()),
+        () -> assertEquals(false, customer.optional()),
+        () -> assertEquals("FetchType.LAZY", customer.fetch()),
+        () -> assertEquals(List.of("CascadeType.PERSIST", "CascadeType.MERGE"), customer.cascade()),
+        () -> assertEquals("customer_id", customer.joinColumns().get(0).name()),
+        () -> assertEquals("order", lines.mappedBy()),
+        () -> assertEquals(List.of("CascadeType.ALL"), lines.cascade()),
+        () -> assertEquals(true, lines.orphanRemoval()),
+        () -> assertEquals("legacy_id", field(legacy, "id").column().name()));
+  }
+
+  @Test
   void getterPropertyAccessAnnotationsAreSkippedForCurrentFieldOnlySlice() throws Exception {
     JpaEntityFact propertyAccessEntity = entity(analyzeFixture(), "PropertyAccessEntity");
 
@@ -231,16 +269,19 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
-  void wildcardOnlyEmbeddedAnnotationIsSkippedConservatively() throws Exception {
+  void wildcardImportedEmbeddedAnnotationKeepsUnresolvedTargetConservative() throws Exception {
     Path fixtureRoot = wildcardEmbeddedFixtureRoot();
     JpaEntityAnalysis analysis = analyzer.analyze(
         fixtureRoot,
         List.of(fixtureRoot.resolve("src/main/java")));
 
     JpaEntityFact entity = entity(analysis, "WildcardEmbeddedEntity");
+    JpaEntityFieldFact address = field(entity, "address");
 
     assertAll(
-        () -> assertTrue(entity.fields().isEmpty()),
+        () -> assertEquals(List.of("@Embedded"), address.annotations()),
+        () -> assertEquals("declared_type_only", address.embedded().targetResolution()),
+        () -> assertEquals("embeddable_target_not_resolved", address.embedded().uncertainty()),
         () -> assertEquals(List.of("id"), entity.identifierFields().stream()
             .map(JpaIdentifierFieldFact::fieldName)
             .toList()));
@@ -412,6 +453,19 @@ final class JpaEntityAnalyzerTest {
   }
 
   @Test
+  void samePackageFakeJpaAnnotationsWithWildcardImportDoNotEmitEntityFacts() throws Exception {
+    Path fixtureRoot = localFakeWildcardFixtureRoot();
+    JpaEntityAnalysis analysis = analyzer.analyze(
+        fixtureRoot,
+        List.of(fixtureRoot.resolve("src/main/java")));
+
+    assertAll(
+        () -> assertTrue(analysis.entities().isEmpty()),
+        () -> assertTrue(analysis.embeddables().isEmpty()),
+        () -> assertTrue(analysis.evidence().isEmpty()));
+  }
+
+  @Test
   void entitiesAndNestedFactsAreSortedDeterministically() throws Exception {
     JpaEntityAnalysis analysis = analyzeFixture();
 
@@ -561,6 +615,11 @@ final class JpaEntityAnalyzerTest {
     return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
   }
 
+  private JpaEntityAnalysis analyzeWildcardImportsFixture() throws Exception {
+    Path fixtureRoot = wildcardImportsFixtureRoot();
+    return analyzer.analyze(fixtureRoot, List.of(fixtureRoot.resolve("src/main/java")));
+  }
+
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-entities")).toURI());
@@ -576,6 +635,11 @@ final class JpaEntityAnalyzerTest {
         getClass().getResource("/fixtures/jpa-mapped-superclass")).toURI());
   }
 
+  private Path wildcardImportsFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/jpa-wildcard-imports")).toURI());
+  }
+
   private Path wildcardEmbeddedFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-embedded-conservative")).toURI());
@@ -584,6 +648,11 @@ final class JpaEntityAnalyzerTest {
   private Path spoofedOriginsFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/jpa-spoofed-origins")).toURI());
+  }
+
+  private Path localFakeWildcardFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/jpa-wildcard-local-fake")).toURI());
   }
 
   private JpaEntityFact entity(JpaEntityAnalysis analysis, String simpleName) {

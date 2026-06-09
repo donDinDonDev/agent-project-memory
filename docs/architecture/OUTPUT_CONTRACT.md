@@ -381,12 +381,16 @@ Example source-visible interface mapping source:
   `null`.
 - Direct JPA annotations are trusted only when source-visible syntax supports a
   supported JPA origin: a fully qualified `jakarta.persistence.*` or `javax.persistence.*`
-  annotation name, or a simple annotation name with an explicit single-type import for a
-  supported JPA annotation, and only when that exact framework type is not declared by
-  scanned source. Unresolved simple-name annotations, wildcard-import-only annotations,
-  same-package/local fake annotations, source-declared fake framework annotations,
-  generated-source-only annotations, and classpath-only annotations are skipped rather
-  than emitted as entity, identifier, table, mapped-superclass, or relationship facts.
+  annotation name, a simple annotation name with an explicit single-type import for a
+  supported JPA annotation, or a simple annotation name covered by an explicit
+  non-static `jakarta.persistence.*` or `javax.persistence.*` wildcard import for the
+  existing supported JPA annotation set. Wildcard trust is per exact JPA type and only
+  when there is no conflicting explicit import, no same-package/local simple-name
+  declaration, and that exact framework type is not declared by scanned source.
+  Unresolved simple-name annotations, unsupported wildcard imports, same-package/local
+  fake annotations, source-declared fake framework annotations, generated-source-only
+  annotations, and classpath-only annotations are skipped rather than emitted as entity,
+  identifier, table, mapped-superclass, or relationship facts.
 - `entity.identifier_fields` contains field-level `@Id` facts declared directly on the
   entity class or declared on a conservative source-visible superclass chain where each
   traversed superclass is present under supported production source roots and has a
@@ -2098,8 +2102,9 @@ v0.6 entity and embeddable rules:
   `"simple_id"`, `"embedded"`, `"embedded_id"`, `"version"`, or `"relationship"`. It is
   not a runtime access strategy or schema role claim.
 - `field.annotations` lists only supported direct JPA annotation symbols detected on
-  that field. It must not include classpath-only, wildcard-only, unresolved, generated,
-  or source-declared fake annotations.
+  that field. It may include annotations backed by the explicit supported JPA wildcard
+  import rule above, but must not include classpath-only, unsupported wildcard-only,
+  unresolved, generated, same-package/local fake, or source-declared fake annotations.
 - `field.column` records only source-visible direct `@Column` literal attributes chosen
   by the implementation, such as `name`, `nullable`, `unique`, `length`, `precision`,
   `scale`, `insertable`, and `updatable`. Missing attributes remain `null`; the analyzer

@@ -138,10 +138,13 @@ high-confidence Spring evidence and are skipped.
 
 Direct JPA annotation evidence is emitted only when source-visible syntax supports a
 supported `jakarta.persistence.*` or `javax.persistence.*` origin through an exact fully
-qualified annotation name or explicit single-type import, and that exact framework type
-is not declared by scanned source. The same source-declared-fake, unresolved, wildcard,
-generated-source-only, and classpath-only cases are skipped rather than emitted as
-high-confidence JPA evidence.
+qualified annotation name, explicit single-type import, or explicit non-static
+`jakarta.persistence.*` or `javax.persistence.*` wildcard import for the existing
+supported JPA annotation set, and that exact framework type is not declared by scanned
+source. Wildcard JPA evidence is skipped when a conflicting explicit import,
+same-package/local simple-name declaration, source-declared fake framework type,
+unresolved simple name, unsupported wildcard import, generated-source-only signal, or
+classpath-only signal prevents a high-confidence source-visible JPA origin.
 
 Hidden HTTP surface `@RepositoryRestResource` annotation evidence and Spring Test
 annotation/import evidence follow the same external-origin rule for their supported
@@ -524,9 +527,14 @@ Direct JPA annotation evidence:
 
 - Direct source-visible JPA annotations continue to use `source_type: "annotation"`
   only when source-visible syntax supports a supported `jakarta.persistence.*` or
-  `javax.persistence.*` origin through an exact fully qualified annotation name or
-  explicit single-type import, and that exact framework type is not declared by scanned
-  source.
+  `javax.persistence.*` origin through an exact fully qualified annotation name,
+  explicit single-type import, or explicit non-static `jakarta.persistence.*` or
+  `javax.persistence.*` wildcard import for the existing supported JPA annotation set,
+  and that exact framework type is not declared by scanned source. Wildcard support
+  remains per exact JPA type and is skipped for conflicting explicit imports,
+  same-package/local simple-name declarations, unsupported wildcard imports,
+  source-declared fake framework types, generated-source-only signals, and
+  classpath-only signals.
 - Current annotation-backed facts include class-level `@Entity`, `@Table`,
   `@Embeddable`, and `@IdClass`, plus field-level `@Id`, `@Column`, `@Enumerated`,
   `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, `@ManyToOne`,

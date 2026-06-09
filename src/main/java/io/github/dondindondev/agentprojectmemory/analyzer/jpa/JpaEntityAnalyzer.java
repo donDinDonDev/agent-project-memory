@@ -92,6 +92,9 @@ public final class JpaEntityAnalyzer {
       "FetchType", Set.of("jakarta.persistence.FetchType", "javax.persistence.FetchType"));
   private static final Map<String, Set<String>> SUPPORTED_CASCADE_TYPE_ORIGINS = Map.of(
       "CascadeType", Set.of("jakarta.persistence.CascadeType", "javax.persistence.CascadeType"));
+  private static final Set<String> SUPPORTED_JPA_WILDCARD_IMPORT_PACKAGES = Set.of(
+      "jakarta.persistence",
+      "javax.persistence");
   private static final List<String> FIELD_ANNOTATION_ORDER = List.of(
       "@Column",
       "@Enumerated",
@@ -180,6 +183,7 @@ public final class JpaEntityAnalyzer {
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile);
     Map<String, String> importsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit);
+    Set<String> wildcardImportPackages = JavaSourceOrigins.wildcardImportPackages(compilationUnit);
     sourceDeclaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
     List<JavaTypeSource> javaTypes = new ArrayList<>();
 
@@ -196,6 +200,7 @@ public final class JpaEntityAnalyzer {
           type,
           qualifiedClassName(packageName, type),
           importsBySimpleName,
+          wildcardImportPackages,
           sourceDeclaredTypeNames));
     }
 
@@ -1059,11 +1064,10 @@ public final class JpaEntityAnalyzer {
   private Optional<String> supportedJpaAnnotationName(
       JavaTypeSource javaType,
       AnnotationExpr annotation) {
-    return JavaSourceOrigins.supportedAnnotationSimpleName(
-        annotation,
-        javaType.importsBySimpleName(),
-        SUPPORTED_JPA_ANNOTATION_ORIGINS,
-        javaType.sourceDeclaredTypeNames());
+    return supportedJpaTypeSimpleName(
+        javaType,
+        annotation.getNameAsString(),
+        SUPPORTED_JPA_ANNOTATION_ORIGINS);
   }
 
   private Optional<String> tableName(AnnotationExpr annotation) {
@@ -1138,12 +1142,60 @@ public final class JpaEntityAnalyzer {
 
     String scope = expression.asFieldAccessExpr().getScope().toString();
     String value = expression.asFieldAccessExpr().getNameAsString();
-    return JavaSourceOrigins.supportedTypeSimpleName(
+    return supportedJpaTypeSimpleName(
+            javaType,
             scope,
-            javaType.importsBySimpleName(),
-            supportedOrigins,
-            javaType.sourceDeclaredTypeNames())
+            supportedOrigins)
         .map(simpleName -> simpleName + "." + value);
+  }
+
+  private Optional<String> supportedJpaTypeSimpleName(
+      JavaTypeSource javaType,
+      String referenceName,
+      Map<String, Set<String>> supportedOrigins) {
+    Optional<String> exactOrSingleImport = JavaSourceOrigins.supportedTypeSimpleName(
+        referenceName,
+        javaType.importsBySimpleName(),
+        supportedOrigins,
+        javaType.sourceDeclaredTypeNames());
+    if (exactOrSingleImport.isPresent()) {
+      return exactOrSingleImport;
+    }
+
+    if (referenceName.contains(".")) {
+      return Optional.empty();
+    }
+
+    String simpleName = JavaSourceOrigins.simpleName(referenceName);
+    Set<String> supportedQualifiedNames = supportedOrigins.get(simpleName);
+    if (supportedQualifiedNames == null) {
+      return Optional.empty();
+    }
+    if (javaType.importsBySimpleName().containsKey(simpleName)) {
+      return Optional.empty();
+    }
+    if (sourceDeclaresSamePackageType(javaType, simpleName)) {
+      return Optional.empty();
+    }
+
+    List<String> wildcardCandidates = javaType.wildcardImportPackages().stream()
+        .filter(SUPPORTED_JPA_WILDCARD_IMPORT_PACKAGES::contains)
+        .map(packageName -> packageName + "." + simpleName)
+        .filter(supportedQualifiedNames::contains)
+        .filter(qualifiedName -> !javaType.sourceDeclaredTypeNames().contains(qualifiedName))
+        .distinct()
+        .toList();
+    if (wildcardCandidates.size() == 1) {
+      return Optional.of(simpleName);
+    }
+    return Optional.empty();
+  }
+
+  private boolean sourceDeclaresSamePackageType(JavaTypeSource javaType, String simpleName) {
+    String qualifiedName = javaType.packageName().isBlank()
+        ? simpleName
+        : javaType.packageName() + "." + simpleName;
+    return javaType.sourceDeclaredTypeNames().contains(qualifiedName);
   }
 
   private JpaEntityEvidence annotationEvidence(
@@ -1215,10 +1267,12 @@ public final class JpaEntityAnalyzer {
       ClassOrInterfaceDeclaration type,
       String className,
       Map<String, String> importsBySimpleName,
+      Set<String> wildcardImportPackages,
       Set<String> sourceDeclaredTypeNames) {
     private JavaTypeSource {
       sourceLines = List.copyOf(sourceLines);
       importsBySimpleName = Map.copyOf(importsBySimpleName);
+      wildcardImportPackages = Set.copyOf(wildcardImportPackages);
     }
   }
 
