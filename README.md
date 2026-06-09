@@ -117,7 +117,7 @@ inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, the
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.5"` and includes detected root `pom.xml` build metadata when
+`schema_version: "0.6"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -134,7 +134,8 @@ for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
 `api_surface.openapi.operations`, direct `module_id`
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
-facts, direct component inventory, direct JPA entity facts, a minimal tests inventory,
+facts, direct component inventory, direct JPA entity facts with bounded source-visible
+field metadata for the current v0.6 annotation slice, a minimal tests inventory,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
@@ -143,7 +144,11 @@ inventories, `spring_application_surface.messaging.listener_signals` inventories
 `spring_application_surface.security.configuration_warnings` warning-ID references, and
 evidence ID references. The current v0.5 Spring application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
-configuration warning references when bounded source-visible signals are detected.
+configuration warning references when bounded source-visible signals are detected. The
+current v0.6 JPA/domain implementation emits field metadata for direct field-level
+`@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` annotations without runtime
+schema, access-strategy, generated-identifier, optimistic-locking, or provider-default
+claims.
 `endpoints.md` is a deterministic API surface Markdown inventory that keeps
 source-visible Spring MVC endpoints, declared OpenAPI operations, generated-source API
 signals, repository-rest warnings, and hidden HTTP warnings in separate sections.
@@ -224,8 +229,10 @@ The v0.4 API surface release is published with packaged jar and checksum assets.
 v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
-The planned v0.6 JPA/domain contract is documented for upcoming work; implementation has
-not started and current generated output remains `schema_version: "0.5"`.
+The v0.6 JPA/domain release track is in development. The current checkout implements the
+first bounded v0.6 entity field annotation slice and emits `schema_version: "0.6"`;
+embedded/composite identifier, relationship metadata, repository/entity relation, and
+real-project evaluation work remains upcoming.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -244,9 +251,12 @@ observations, deterministic behavior and messaging signal extraction for direct
 `@Transactional`, `@Scheduled`, `@EventListener`, and common Kafka/Rabbit listener
 annotations, deterministic Spring Security configuration warning extraction for
 supported security annotations and `SecurityFilterChain` `@Bean` methods, deterministic
-`endpoints.md`, and deterministic `agent-guide.md` generation from the structured facts
-and evidence index, including module-grouped Spring application surface guidance that
-keeps extracted facts, inferred signals, not-analyzed statuses, and warnings separate.
+direct source-visible JPA field annotation extraction for `@Column`, `@Enumerated`,
+`@GeneratedValue`, and `@Version`, deterministic `endpoints.md`, and deterministic
+`agent-guide.md` generation from the structured facts and evidence index, including
+module-grouped Spring application surface guidance and bounded JPA field metadata
+guidance that keeps extracted facts, inferred signals, not-analyzed statuses, and
+warnings separate.
 
 Current limitations:
 
@@ -338,11 +348,18 @@ Current limitations:
   correctness.
 - Entity analysis is limited to direct class-level `@Entity`, direct class-level
   `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
-  conservative source-visible `@MappedSuperclass` chain, and field-level `@ManyToOne`,
-  `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
+  conservative source-visible `@MappedSuperclass` chain, field-level `@Column`,
+  `@Enumerated`, `@GeneratedValue`, and `@Version` annotations on direct entity fields,
+  and field-level `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`
+  annotations under `src/main/java`.
+- Entity field metadata is limited to supported direct field-level annotations on the
+  entity class. It records only bounded source-visible annotation attributes for
+  `@Column`, `@Enumerated`, and `@GeneratedValue`, plus direct `@Version` presence, and
+  does not fill runtime JPA defaults.
 - Entity analysis does not implement getter/property-access mapping, embedded IDs,
-  generated values, column or join-column details, repository analysis, schema
-  generation, transactional semantics, symbol solving, or ORM runtime behavior.
+  embeddables, id classes, join-column or join-table details, repository/entity
+  relations, schema generation, transactional semantics, symbol solving, or ORM runtime
+  behavior.
 - API surface spec discovery is limited to common local filenames such as
   `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
   `swagger.json`. It records normalized repository-relative paths, format, spec kind,

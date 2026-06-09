@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.5",
+  "schema_version": "0.6",
   "project": {
     "root": ".",
     "build": {
@@ -668,20 +668,23 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectCustomer",
         "table_name": null,
+        "fields": [],
         "identifier_fields": [
           {
             "field_name": "id",
             "java_type": "Long",
             "declaring_class": "com.example.domain.ProjectCustomer",
             "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectCustomer:@Id:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectCustomer:@Id:field:id"
             ]
           }
         ],
         "relationships": [],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectCustomer:@Entity"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectCustomer:@Entity"
         ]
       },
       {
@@ -689,14 +692,105 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectOrder",
         "table_name": "orders",
+        "fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "simple_id",
+            "annotations": [
+              "@GeneratedValue"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": {
+              "strategy": "GenerationType.IDENTITY",
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              ]
+            },
+            "version": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+            ]
+          },
+          {
+            "field_name": "status",
+            "java_type": "ProjectOrderStatus",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "basic",
+            "annotations": [
+              "@Column",
+              "@Enumerated"
+            ],
+            "column": {
+              "name": "status",
+              "nullable": false,
+              "unique": null,
+              "length": 32,
+              "precision": null,
+              "scale": null,
+              "insertable": null,
+              "updatable": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:39-39:com.example.domain.ProjectOrder:@Column:field:status"
+              ]
+            },
+            "enumerated": {
+              "value": "EnumType.STRING",
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectOrder:@Enumerated:field:status"
+              ]
+            },
+            "generated_value": null,
+            "version": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:39-39:com.example.domain.ProjectOrder:@Column:field:status",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectOrder:@Enumerated:field:status"
+            ]
+          },
+          {
+            "field_name": "version",
+            "java_type": "long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "version",
+            "annotations": [
+              "@Version"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": {
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:43-43:com.example.domain.ProjectOrder:@Version:field:version"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:43-43:com.example.domain.ProjectOrder:@Version:field:version"
+            ]
+          }
+        ],
         "identifier_fields": [
           {
             "field_name": "id",
             "java_type": "Long",
             "declaring_class": "com.example.domain.ProjectOrder",
             "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": {
+              "strategy": "GenerationType.IDENTITY",
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              ]
+            },
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:29-29:com.example.domain.ProjectOrder:@Id:field:id"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
             ]
           }
         ],
@@ -708,7 +802,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectOrder:@ManyToOne:field:customer"
             ]
           },
           {
@@ -718,7 +812,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@OneToOne:field:invoice"
             ]
           },
           {
@@ -728,7 +822,7 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:49-49:com.example.domain.ProjectOrder:@OneToMany:field:lines"
             ]
           },
           {
@@ -738,13 +832,13 @@
             "target_resolution": "declared_type_only",
             "uncertainty": "target_type_not_resolved",
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:41-41:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@ManyToMany:field:tags"
             ]
           }
         ],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity",
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:27-27:com.example.domain.ProjectOrder:@Table"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:33-33:com.example.domain.ProjectOrder:@Table"
         ]
       },
       {
@@ -752,22 +846,25 @@
         "module_id": "module:.",
         "class_name": "com.example.domain.ProjectVisit",
         "table_name": "visits",
+        "fields": [],
         "identifier_fields": [
           {
             "field_name": "id",
             "java_type": "Long",
             "declaring_class": "com.example.domain.ProjectBaseEntity",
             "source_kind": "mapped_superclass",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
             "evidence_ids": [
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:16-16:com.example.domain.ProjectBaseEntity:@Id:field:id",
-              "ev:src/main/java/com/example/domain/ProjectEntities.java:14-14:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectBaseEntity:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
             ]
           }
         ],
         "relationships": [],
         "evidence_ids": [
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:45-45:com.example.domain.ProjectVisit:@Entity",
-          "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectVisit:@Table"
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectVisit:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:60-60:com.example.domain.ProjectVisit:@Table"
         ]
       }
     ]

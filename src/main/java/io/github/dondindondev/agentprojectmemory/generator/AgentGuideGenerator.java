@@ -1258,9 +1258,93 @@ public final class AgentGuideGenerator {
       if (tableName != null && !tableName.isBlank()) {
         appendEvidenceLine(markdown, tableEvidenceIds, evidenceById);
       }
+      appendEntityFields(markdown, entity.path("fields"), evidenceById);
       appendIdentifierFields(markdown, entity.path("identifier_fields"), evidenceById);
       appendRelationships(markdown, entity.path("relationships"), evidenceById);
       markdown.append("\n");
+    }
+  }
+
+  private void appendEntityFields(
+      StringBuilder markdown,
+      JsonNode fields,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!fields.isArray() || fields.isEmpty()) {
+      markdown.append("- Field metadata: Detected none.\n");
+      return;
+    }
+
+    for (JsonNode field : fields) {
+      markdown.append("- Field metadata: Source-visible ")
+          .append(code(text(field, "field_name")))
+          .append(" (")
+          .append(code(text(field, "java_type")))
+          .append(") role ")
+          .append(code(text(field, "persistence_role")))
+          .append(" annotations ")
+          .append(codeList(stringValues(field.path("annotations"))))
+          .append("\n");
+      appendColumnAttributes(markdown, field.path("column"));
+      appendEnumeratedAttributes(markdown, field.path("enumerated"));
+      appendGeneratedValueAttributes(markdown, field.path("generated_value"));
+      appendVersionAttributes(markdown, field.path("version"));
+      appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
+    }
+  }
+
+  private void appendColumnAttributes(StringBuilder markdown, JsonNode column) {
+    if (!column.isObject()) {
+      return;
+    }
+
+    List<String> attributes = new ArrayList<>();
+    addNullableAttribute(attributes, "name", nullableText(column, "name"));
+    addNullableAttribute(attributes, "nullable", nullableText(column, "nullable"));
+    addNullableAttribute(attributes, "unique", nullableText(column, "unique"));
+    addNullableAttribute(attributes, "length", nullableText(column, "length"));
+    addNullableAttribute(attributes, "precision", nullableText(column, "precision"));
+    addNullableAttribute(attributes, "scale", nullableText(column, "scale"));
+    addNullableAttribute(attributes, "insertable", nullableText(column, "insertable"));
+    addNullableAttribute(attributes, "updatable", nullableText(column, "updatable"));
+    markdown.append("  - Column attributes: Source-visible ")
+        .append(codeList(attributes))
+        .append("\n");
+  }
+
+  private void appendEnumeratedAttributes(StringBuilder markdown, JsonNode enumerated) {
+    if (!enumerated.isObject()) {
+      return;
+    }
+
+    markdown.append("  - Enumerated value: Source-visible ")
+        .append(code(nullDisplay(nullableText(enumerated, "value"))))
+        .append("\n");
+  }
+
+  private void appendGeneratedValueAttributes(StringBuilder markdown, JsonNode generatedValue) {
+    if (!generatedValue.isObject()) {
+      return;
+    }
+
+    List<String> attributes = new ArrayList<>();
+    addNullableAttribute(attributes, "strategy", nullableText(generatedValue, "strategy"));
+    addNullableAttribute(attributes, "generator", nullableText(generatedValue, "generator"));
+    markdown.append("  - Generated value attributes: Source-visible ")
+        .append(codeList(attributes))
+        .append("\n");
+  }
+
+  private void appendVersionAttributes(StringBuilder markdown, JsonNode version) {
+    if (!version.isObject()) {
+      return;
+    }
+
+    markdown.append("  - Version: Source-visible `@Version` presence.\n");
+  }
+
+  private void addNullableAttribute(List<String> attributes, String name, String value) {
+    if (value != null) {
+      attributes.add(name + "=" + value);
     }
   }
 
@@ -1288,6 +1372,10 @@ public final class AgentGuideGenerator {
         markdown.append(" with source_kind ").append(code(sourceKind));
       }
       markdown.append("\n");
+      JsonNode generatedValue = field.path("generated_value");
+      if (generatedValue.isObject()) {
+        appendGeneratedValueAttributes(markdown, generatedValue);
+      }
       appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
     }
   }
@@ -1445,6 +1533,10 @@ public final class AgentGuideGenerator {
         .append("repository registration, query method behavior, database access, or ")
         .append("repository-to-entity relations; `entity_relation_status: not_analyzed` is ")
         .append("preserved for those inferred signals.\n");
+    markdown.append("- Not analyzed: JPA field metadata is limited to supported direct ")
+        .append("field-level source-visible annotations. It is not a complete persistent-property ")
+        .append("inventory, does not support getter/property access in this slice, and does not ")
+        .append("fill missing annotation attributes from JPA provider defaults.\n");
     if (projectMap.path("spring_application_surface").isObject()) {
       markdown.append("- Not analyzed: v0.5 transaction, scheduling, event listener, and ")
           .append("messaging listener facts are annotation-presence change-surface signals only. ")
@@ -1503,7 +1595,9 @@ public final class AgentGuideGenerator {
     markdown.append(" and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.\n");
     markdown.append("4. For persistence changes, inspect detected entity evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("entities").path("items"), evidenceById));
-    markdown.append(" and treat relationship targets as declared-type-only.\n");
+    markdown.append(" and treat field metadata as source-visible annotations only, not runtime schema, ")
+        .append("provider defaults, or complete access-strategy reconstruction; relationship targets ")
+        .append("remain declared-type-only.\n");
     markdown.append("5. For tests, inspect detected test files and inferred tested-subject evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("tests").path("items"), evidenceById));
     markdown.append("; do not treat inferred subjects as coverage proof.\n");

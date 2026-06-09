@@ -76,7 +76,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(58, projectMapEvidenceIds.size()),
+        () -> assertEquals(62, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -347,6 +347,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
     generator.generate(projectPath, outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    JsonNode projectMapJson = JSON.readTree(projectMap);
+    JsonNode orderEntity = objectWithText(
+        projectMapJson.path("entities").path("items"),
+        "class_name",
+        "com.example.domain.ProjectOrder");
+    JsonNode fields = orderEntity.path("fields");
+    JsonNode statusField = objectWithText(fields, "field_name", "status");
+    JsonNode idIdentifier = objectWithText(orderEntity.path("identifier_fields"), "field_name", "id");
 
     assertAll(
         () -> assertTrue(projectMap.contains("\"entities\": {")),
@@ -362,6 +370,21 @@ final class SpringMvcEndpointOutputGeneratorTest {
             "\"declaring_class\": \"com.example.domain.ProjectBaseEntity\"")),
         () -> assertTrue(projectMap.contains("\"source_kind\": \"mapped_superclass\"")),
         () -> assertTrue(projectMap.contains("\"source_kind\": \"declared\"")),
+        () -> assertEquals(3, fields.size()),
+        () -> assertEquals(
+            List.of("@Column", "@Enumerated"),
+            stringValues(statusField.path("annotations"))),
+        () -> assertEquals("basic", statusField.path("persistence_role").asText()),
+        () -> assertEquals("status", statusField.path("column").path("name").asText()),
+        () -> assertEquals(false, statusField.path("column").path("nullable").asBoolean()),
+        () -> assertEquals(32, statusField.path("column").path("length").asInt()),
+        () -> assertTrue(statusField.path("column").path("unique").isNull()),
+        () -> assertEquals("EnumType.STRING", statusField.path("enumerated").path("value").asText()),
+        () -> assertEquals("simple_id", idIdentifier.path("identifier_kind").asText()),
+        () -> assertEquals(
+            "GenerationType.IDENTITY",
+            idIdentifier.path("generated_value").path("strategy").asText()),
+        () -> assertTrue(idIdentifier.path("generated_value").path("generator").isNull()),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToOne\"")),
         () -> assertTrue(projectMap.contains("\"java_type\": \"ProjectCustomer\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToMany\"")),
@@ -482,7 +505,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(0, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.6\"")),
         () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
         () -> assertEquals("analyzed", specFiles.path("analysis_status").asText()),
         () -> assertEquals(1, specFiles.path("items").size()),
@@ -759,7 +782,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.6\"")),
         () -> assertTrue(projectMap.contains("\"api_surface_category\": \"source_visible_spring_mvc_endpoint\"")),
         () -> assertTrue(projectMap.contains("\"source_visible_spring_mvc_endpoints\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
@@ -837,7 +860,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.6\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -907,7 +930,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     assertAll(
         () -> assertTrue(result.generated()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.6\"")),
         () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
             < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
         () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
@@ -1396,7 +1419,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.5\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.6\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),
@@ -1513,6 +1536,18 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
   private List<String> jsonPathValues(JsonNode items) {
     return jsonTextValues(items, "path");
+  }
+
+  private JsonNode objectWithText(JsonNode items, String fieldName, String value) {
+    if (!items.isArray()) {
+      throw new AssertionError("Expected array of objects");
+    }
+    for (JsonNode item : items) {
+      if (value.equals(item.path(fieldName).asText())) {
+        return item;
+      }
+    }
+    throw new AssertionError("Missing object with " + fieldName + "=" + value);
   }
 
   private List<String> jsonTextValues(JsonNode items, String fieldName) {

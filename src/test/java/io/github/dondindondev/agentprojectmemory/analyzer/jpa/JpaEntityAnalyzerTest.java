@@ -73,10 +73,59 @@ final class JpaEntityAnalyzerTest {
         () -> assertEquals("Long", id.javaType()),
         () -> assertEquals("com.example.domain.Order", id.declaringClass()),
         () -> assertEquals("declared", id.sourceKind()),
+        () -> assertEquals("simple_id", id.identifierKind()),
         () -> assertEquals("@Id", idEvidence.annotationSymbol()),
         () -> assertEquals("com.example.domain.Order", idEvidence.className()),
         () -> assertNull(idEvidence.methodName()),
         () -> assertTrue(idEvidence.id().endsWith(":@Id:field:id")));
+  }
+
+  @Test
+  void commonFieldAnnotationsAreExtractedWithSourceVisibleAttributes() throws Exception {
+    JpaEntityAnalysis analysis = analyzeFixture();
+    JpaEntityFact order = entity(analysis, "Order");
+
+    JpaEntityFieldFact id = field(order, "id");
+    JpaEntityFieldFact status = field(order, "status");
+    JpaEntityFieldFact version = field(order, "version");
+    JpaIdentifierFieldFact identifier = identifierField(order, "id");
+
+    assertAll(
+        () -> assertEquals(List.of("@GeneratedValue"), id.annotations()),
+        () -> assertEquals("simple_id", id.persistenceRole()),
+        () -> assertNotNull(id.generatedValue()),
+        () -> assertEquals("GenerationType.IDENTITY", id.generatedValue().strategy()),
+        () -> assertEquals("order-id", id.generatedValue().generator()),
+        () -> assertEquals("GenerationType.IDENTITY", identifier.generatedValue().strategy()),
+        () -> assertEquals("order-id", identifier.generatedValue().generator()),
+        () -> assertTrue(identifier.evidenceIds().stream()
+            .anyMatch(evidenceId -> evidence(analysis, evidenceId).annotationSymbol().equals("@GeneratedValue"))),
+        () -> assertEquals(List.of("@Column", "@Enumerated"), status.annotations()),
+        () -> assertEquals("basic", status.persistenceRole()),
+        () -> assertEquals("OrderStatus", status.javaType()),
+        () -> assertEquals("status_code", status.column().name()),
+        () -> assertEquals(false, status.column().nullable()),
+        () -> assertEquals(true, status.column().unique()),
+        () -> assertEquals(24, status.column().length()),
+        () -> assertEquals(10, status.column().precision()),
+        () -> assertEquals(2, status.column().scale()),
+        () -> assertEquals(false, status.column().insertable()),
+        () -> assertEquals(true, status.column().updatable()),
+        () -> assertEquals("EnumType.STRING", status.enumerated().value()),
+        () -> assertEquals(List.of("@Version"), version.annotations()),
+        () -> assertEquals("version", version.persistenceRole()),
+        () -> assertNotNull(version.version()),
+        () -> assertTrue(version.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId).annotationSymbol())
+            .toList()
+            .contains("@Version")));
+  }
+
+  @Test
+  void getterPropertyAccessAnnotationsAreSkippedForCurrentFieldOnlySlice() throws Exception {
+    JpaEntityFact propertyAccessEntity = entity(analyzeFixture(), "PropertyAccessEntity");
+
+    assertTrue(propertyAccessEntity.fields().isEmpty());
   }
 
   @Test
@@ -93,6 +142,8 @@ final class JpaEntityAnalyzerTest {
         () -> assertEquals("com.example.domain.BaseEntity", id.declaringClass()),
         () -> assertEquals("mapped_superclass", id.sourceKind()),
         () -> assertEquals(2, id.evidenceIds().size()),
+        () -> assertEquals("simple_id", id.identifierKind()),
+        () -> assertNull(id.generatedValue()),
         () -> assertTrue(identifierEvidence.stream()
             .anyMatch(evidence -> evidence.annotationSymbol().equals("@Id")
                 && evidence.className().equals("com.example.domain.BaseEntity")
@@ -118,6 +169,7 @@ final class JpaEntityAnalyzerTest {
         () -> assertEquals("Long", id.javaType()),
         () -> assertEquals("com.example.domain.BaseEntity", id.declaringClass()),
         () -> assertEquals("mapped_superclass", id.sourceKind()),
+        () -> assertEquals("simple_id", id.identifierKind()),
         () -> assertTrue(identifierEvidence.stream()
             .anyMatch(evidence -> evidence.annotationSymbol().equals("@Id")
                 && evidence.className().equals("com.example.domain.BaseEntity"))),
@@ -201,8 +253,16 @@ final class JpaEntityAnalyzerTest {
 
     assertAll(
         () -> assertEquals(
-            List.of("com.example.domain.Customer", "com.example.domain.Order"),
+            List.of(
+                "com.example.domain.Customer",
+                "com.example.domain.Order",
+                "com.example.domain.PropertyAccessEntity"),
             analysis.entities().stream().map(JpaEntityFact::className).toList()),
+        () -> assertEquals(
+            List.of("id", "status", "version"),
+            entity(analysis, "Order").fields().stream()
+                .map(JpaEntityFieldFact::fieldName)
+                .toList()),
         () -> assertEquals(
             List.of("customer", "invoice", "lines", "tags"),
             entity(analysis, "Order").relationships().stream()
@@ -221,6 +281,21 @@ final class JpaEntityAnalyzerTest {
       assertTrue(evidenceIds.containsAll(entity.evidenceIds()));
       for (JpaIdentifierFieldFact identifierField : entity.identifierFields()) {
         assertTrue(evidenceIds.containsAll(identifierField.evidenceIds()));
+      }
+      for (JpaEntityFieldFact field : entity.fields()) {
+        assertTrue(evidenceIds.containsAll(field.evidenceIds()));
+        if (field.column() != null) {
+          assertTrue(evidenceIds.containsAll(field.column().evidenceIds()));
+        }
+        if (field.enumerated() != null) {
+          assertTrue(evidenceIds.containsAll(field.enumerated().evidenceIds()));
+        }
+        if (field.generatedValue() != null) {
+          assertTrue(evidenceIds.containsAll(field.generatedValue().evidenceIds()));
+        }
+        if (field.version() != null) {
+          assertTrue(evidenceIds.containsAll(field.version().evidenceIds()));
+        }
       }
       for (JpaRelationshipFact relationship : entity.relationships()) {
         assertTrue(evidenceIds.containsAll(relationship.evidenceIds()));
@@ -304,6 +379,13 @@ final class JpaEntityAnalyzerTest {
 
   private JpaIdentifierFieldFact identifierField(JpaEntityFact entity, String fieldName) {
     return entity.identifierFields().stream()
+        .filter(candidate -> candidate.fieldName().equals(fieldName))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private JpaEntityFieldFact field(JpaEntityFact entity, String fieldName) {
+    return entity.fields().stream()
         .filter(candidate -> candidate.fieldName().equals(fieldName))
         .findFirst()
         .orElseThrow();

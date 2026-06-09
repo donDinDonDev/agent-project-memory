@@ -10,6 +10,9 @@ list. Connector/import work remains post-v0.1 future work and is not started.
 The v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after implementation, guide rendering, real-project evaluation,
 review, risk-based security assessment, and release-prep documentation completion.
+The v0.6 JPA/domain release track is open; the first implementation slice now extracts
+bounded source-visible entity field annotations for direct field-level `@Column`,
+`@Enumerated`, `@GeneratedValue`, and `@Version`.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -241,8 +244,9 @@ interpretation, and complete ORM model guarantees.
 
 Implementation sequence:
 
-- Contract design for the planned v0.6 output and evidence semantics.
-- Entity field annotation extraction.
+- Contract design for the planned v0.6 output and evidence semantics. (complete)
+- Entity field annotation extraction for direct field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, and `@Version`. (current bounded slice implemented)
 - Embedded and identifier model support.
 - Relationship metadata deepening.
 - Repository-to-entity inferred relation support.

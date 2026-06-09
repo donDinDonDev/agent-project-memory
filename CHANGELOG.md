@@ -15,9 +15,17 @@ architecture documents.
   entity field metadata, relationship metadata, embedded and identifier support,
   inferred repository/entity relation semantics, guide-rendering expectations, evidence
   semantics, and explicit runtime ORM/database non-goals.
+- Added the first v0.6 JPA/domain implementation slice for direct source-visible entity
+  field annotation extraction, including field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, and `@Version` metadata with evidence-backed output and conservative
+  getter/property-access skips.
 
 ### Changed
 
+- Updated generated `project-map.json` output to `schema_version: "0.6"` for the bounded
+  JPA field annotation slice, with `entities.items[].fields[]`, `identifier_kind`, and
+  nullable `generated_value` identifier metadata while keeping missing annotation
+  attributes distinct from runtime JPA defaults.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 

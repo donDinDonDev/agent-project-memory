@@ -397,8 +397,9 @@ Example source-visible interface mapping source:
   cyclic, wildcard-import-only, classpath-only, generated-source-only, or otherwise
   non-source-visible hierarchy branches are skipped. This does not imply full ORM
   inheritance reconstruction, classpath solving, `@Inheritance` handling, property-access
-  mapping, embedded IDs, generated-value semantics, column or join-column analysis,
-  repository analysis, schema generation, or runtime ORM behavior.
+  mapping, embedded IDs, generated-value runtime semantics, join-column analysis,
+  repository analysis, schema generation, or runtime ORM behavior. The bounded v0.6
+  direct field-level `@Column` metadata slice is described in the v0.6 section below.
 - `identifier_field.field_name` is the declared Java field name.
 - `identifier_field.java_type` is the declared Java field type string.
 - `identifier_field.declaring_class` is the fully qualified Java class that declares the
@@ -1695,7 +1696,7 @@ Spring application surface field rules:
 - Subsection `analysis_status` values are `"analyzed"` when their analyzer runs, even
   when their item or warning-reference collections are empty. They are `"not_detected"`
   only when no supported input exists for that subsection.
-- In the current v0.5 implementation state, repository, configuration, behavior,
+- In the v0.5 implementation state, repository, configuration, behavior,
   messaging, and security configuration warning subsections emit `"analyzed"` when
   supported production source roots exist and their analyzers run.
 - `surface_category` uses one of the v0.5 taxonomy values. Warning-reference
@@ -1804,13 +1805,16 @@ Deterministic sorting rules:
 - Security warning ID lists follow the existing warning sort order for their referenced
   warning items.
 
-### Planned v0.6 JPA And Domain Contract
+### v0.6 JPA And Domain Contract
 
-This section defines the planned v0.6 JPA/domain output contract. It is design-only
-until implementation moves normal generated output to `schema_version: "0.6"`. The
-current v0.5 implementation does not emit the fields described in this section.
+This section defines the v0.6 JPA/domain output contract. The current V060-G002
+implementation moves normal generated output to `schema_version: "0.6"` and implements
+the bounded entity field annotation slice for direct field-level `@Column`,
+`@Enumerated`, `@GeneratedValue`, and `@Version`. Later v0.6 goals may fill the planned
+table metadata, embedded/composite identifier, relationship metadata, and
+repository/entity relation portions described below.
 
-The planned v0.6 contract uses:
+The v0.6 contract uses:
 
 - `schema_version: "0.6"` for an atomic public output state that preserves the v0.5
   module-aware build/config, API surface, and Spring application surface contracts while
@@ -1827,9 +1831,29 @@ The planned v0.6 contract uses:
   Data repository interface signals. They are inferred relations, not extracted entity
   facts.
 
-Planned high-level `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
+Current V060-G002 implementation state:
+
+- `schema_version` is `"0.6"`.
+- `entities.items[]` continues to emit existing entity, table compatibility,
+  identifier, and relationship fields.
+- Each entity object emits `fields`, sorted deterministically, as a possibly empty
+  array.
+- `fields[]` currently contains only direct field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, and `@Version` metadata declared on the entity class. Getter or
+  property-access annotations are not emitted in this slice.
+- `identifier_fields[]` now emits `identifier_kind: "simple_id"` for supported simple
+  `@Id` facts and a nullable `generated_value` object when a direct field-level
+  `@GeneratedValue` annotation is present on that identifier field.
+- Missing annotation attributes remain `null`; generated output must not fill JPA
+  runtime defaults.
+- `table_metadata`, `id_class`, `entities.embeddables`, field `embedded`, relationship
+  metadata deepening, and repository/entity relation fields are planned for later v0.6
+  goals and are not emitted by V060-G002.
+
+Full-track planned `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
 some objects for focus, but remain required by their existing contracts when those
-objects are emitted:
+objects are emitted. Fields explicitly listed as planned later are not current
+V060-G002 output until their implementation goals land:
 
 ```json
 {
@@ -2000,7 +2024,7 @@ objects are emitted:
 }
 ```
 
-Planned v0.6 entity and embeddable rules:
+v0.6 entity and embeddable rules:
 
 - `entities.analysis_status` remains `"analyzed"` when supported production source roots
   exist and the JPA/domain analyzer runs. `entities.embeddables.analysis_status` follows
@@ -2011,17 +2035,18 @@ Planned v0.6 entity and embeddable rules:
 - Existing entity IDs remain stable for root-module compatibility. Child module entity
   IDs include `module_id` as in the existing v0.2 module-aware fact-ID rule.
 - `entity.table_name` remains the compatibility string for direct
-  `@Table(name = "...")`. `entity.table_metadata` is the planned v0.6 structured
+  `@Table(name = "...")`. `entity.table_metadata` is a planned structured
   source-visible `@Table` view with optional `name`, `schema`, and `catalog` values when
   directly extractable. It must not imply that a table exists in any database.
 - `entity.fields[]` contains source-visible field metadata for supported direct JPA
   annotations. It is not a complete persistent-property inventory. Fields with no
   supported JPA annotation do not have to be emitted.
-- Planned field metadata supports direct field-level `@Column`, `@Enumerated`,
-  `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, relationship annotations,
-  `@JoinColumn`, and `@JoinTable`. Getter/property-access support is a separate bounded
-  implementation choice; if added, it must preserve a distinct member kind and evidence
-  for the annotated method without pretending it was a field declaration.
+- Current field metadata supports direct field-level `@Column`, `@Enumerated`,
+  `@GeneratedValue`, and `@Version` on entity classes. Planned later field metadata may
+  add `@Embedded`, `@EmbeddedId`, relationship annotations, `@JoinColumn`, and
+  `@JoinTable`. Getter/property-access support is a separate bounded implementation
+  choice; if added, it must preserve a distinct member kind and evidence for the
+  annotated method without pretending it was a field declaration.
 - `field.persistence_role` is a source-visible classification such as `"basic"`,
   `"simple_id"`, `"embedded"`, `"embedded_id"`, `"version"`, or `"relationship"`. It is
   not a runtime access strategy or schema role claim.
@@ -2040,7 +2065,7 @@ Planned v0.6 entity and embeddable rules:
   sequence/table existence, database identity behavior, or provider defaults.
 - `field.version` records direct `@Version` presence and evidence only. It must not
   claim optimistic-locking correctness or runtime version behavior.
-- `field.embedded` records direct `@Embedded` or `@EmbeddedId` presence and the declared
+- `field.embedded` is planned to record direct `@Embedded` or `@EmbeddedId` presence and the declared
   Java type. A source-visible `@Embeddable` target may be linked only when the type can
   be matched deterministically to a unique emitted embeddable fact; otherwise it remains
   declared-type-only with explicit uncertainty.
@@ -2178,7 +2203,8 @@ The current implementation emits:
   queues, exchanges, routing keys, or group IDs.
 - `annotation` evidence for direct JPA annotations that support entity facts, including
   class-level `@Entity`, class-level `@Table`, field-level `@Id`, and field-level
-  relationship annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
+  `@Column`, `@Enumerated`, `@GeneratedValue`, `@Version`, and relationship annotations
+  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`.
   Field-level evidence IDs include a `field:<field_name>` discriminator because the
   current evidence record field set does not add a separate field-name property.
 - `test_file` evidence for emitted test-like Java class declarations under supported

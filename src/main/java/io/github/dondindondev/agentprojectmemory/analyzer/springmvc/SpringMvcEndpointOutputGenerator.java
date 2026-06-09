@@ -19,9 +19,14 @@ import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFac
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaColumnFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEnumeratedFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaGeneratedValueFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaVersionFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyDeclaration;
@@ -104,7 +109,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.5";
+  private static final String SCHEMA_VERSION = "0.6";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
@@ -249,6 +254,12 @@ public final class SpringMvcEndpointOutputGenerator {
       .comparing(JpaRelationshipFact::fieldName)
       .thenComparing(JpaRelationshipFact::annotation)
       .thenComparing(JpaRelationshipFact::javaType);
+  private static final Comparator<JpaEntityFieldFact> ENTITY_FIELD_ORDER = Comparator
+      .comparing(JpaEntityFieldFact::declaringClass)
+      .thenComparing(JpaEntityFieldFact::sourceKind)
+      .thenComparing(JpaEntityFieldFact::fieldName)
+      .thenComparing(JpaEntityFieldFact::javaType)
+      .thenComparing(JpaEntityFieldFact::persistenceRole);
   private static final Comparator<ModuleScopedTestFact> TEST_CLASS_ORDER = Comparator
       .comparingInt(ModuleScopedTestFact::moduleOrder)
       .thenComparing(test -> test.fact().className())
@@ -3148,6 +3159,7 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 4, "module_id", scopedEntity.moduleId(), true);
     appendIndentedStringField(json, 4, "class_name", entity.className(), true);
     appendIndentedNullableStringField(json, 4, "table_name", entity.tableName(), true);
+    appendEntityFields(json, entity.fields());
     appendIdentifierFields(json, entity.identifierFields());
     appendRelationships(json, entity.relationships());
     appendIndentedStringArrayField(json, 4, "evidence_ids", entity.evidenceIds(), false);
@@ -3156,6 +3168,125 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append(",");
     }
     json.append("\n");
+  }
+
+  private void appendEntityFields(
+      StringBuilder json,
+      List<JpaEntityFieldFact> fields) {
+    json.append("        \"fields\": [");
+    List<JpaEntityFieldFact> sortedFields = fields.stream()
+        .sorted(ENTITY_FIELD_ORDER)
+        .toList();
+    if (sortedFields.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedFields.size(); index++) {
+      JpaEntityFieldFact field = sortedFields.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "field_name", field.fieldName(), true);
+      appendIndentedStringField(json, 6, "java_type", field.javaType(), true);
+      appendIndentedStringField(json, 6, "declaring_class", field.declaringClass(), true);
+      appendIndentedStringField(json, 6, "source_kind", field.sourceKind(), true);
+      appendIndentedStringField(json, 6, "persistence_role", field.persistenceRole(), true);
+      appendIndentedStringArrayField(json, 6, "annotations", field.annotations(), true);
+      appendColumn(json, field.column());
+      appendEnumerated(json, field.enumerated());
+      appendGeneratedValue(json, 6, "generated_value", field.generatedValue(), true);
+      appendVersion(json, field.version());
+      appendIndentedStringArrayField(json, 6, "evidence_ids", field.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedFields.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendColumn(StringBuilder json, JpaColumnFact column) {
+    indent(json, 6);
+    json.append("\"column\": ");
+    if (column == null) {
+      json.append("null,\n");
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedNullableStringField(json, 7, "name", column.name(), true);
+    appendIndentedNullableBooleanField(json, 7, "nullable", column.nullable(), true);
+    appendIndentedNullableBooleanField(json, 7, "unique", column.unique(), true);
+    appendIndentedNullableIntegerField(json, 7, "length", column.length(), true);
+    appendIndentedNullableIntegerField(json, 7, "precision", column.precision(), true);
+    appendIndentedNullableIntegerField(json, 7, "scale", column.scale(), true);
+    appendIndentedNullableBooleanField(json, 7, "insertable", column.insertable(), true);
+    appendIndentedNullableBooleanField(json, 7, "updatable", column.updatable(), true);
+    appendIndentedStringArrayField(json, 7, "evidence_ids", column.evidenceIds(), false);
+    indent(json, 6);
+    json.append("},\n");
+  }
+
+  private void appendEnumerated(
+      StringBuilder json,
+      JpaEnumeratedFact enumerated) {
+    indent(json, 6);
+    json.append("\"enumerated\": ");
+    if (enumerated == null) {
+      json.append("null,\n");
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedNullableStringField(json, 7, "value", enumerated.value(), true);
+    appendIndentedStringArrayField(json, 7, "evidence_ids", enumerated.evidenceIds(), false);
+    indent(json, 6);
+    json.append("},\n");
+  }
+
+  private void appendGeneratedValue(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      JpaGeneratedValueFact generatedValue,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": ");
+    if (generatedValue == null) {
+      json.append("null");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedNullableStringField(json, indentLevel + 1, "strategy", generatedValue.strategy(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "generator", generatedValue.generator(), true);
+    appendIndentedStringArrayField(
+        json,
+        indentLevel + 1,
+        "evidence_ids",
+        generatedValue.evidenceIds(),
+        false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendVersion(
+      StringBuilder json,
+      JpaVersionFact version) {
+    indent(json, 6);
+    json.append("\"version\": ");
+    if (version == null) {
+      json.append("null,\n");
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedStringArrayField(json, 7, "evidence_ids", version.evidenceIds(), false);
+    indent(json, 6);
+    json.append("},\n");
   }
 
   private void appendIdentifierFields(
@@ -3178,6 +3309,8 @@ public final class SpringMvcEndpointOutputGenerator {
       appendIndentedStringField(json, 6, "java_type", identifierField.javaType(), true);
       appendIndentedStringField(json, 6, "declaring_class", identifierField.declaringClass(), true);
       appendIndentedStringField(json, 6, "source_kind", identifierField.sourceKind(), true);
+      appendIndentedStringField(json, 6, "identifier_kind", identifierField.identifierKind(), true);
+      appendGeneratedValue(json, 6, "generated_value", identifierField.generatedValue(), true);
       appendIndentedStringArrayField(json, 6, "evidence_ids", identifierField.evidenceIds(), false);
       json.append("          }");
       if (index < sortedIdentifierFields.size() - 1) {
@@ -3847,6 +3980,38 @@ public final class SpringMvcEndpointOutputGenerator {
       boolean trailingComma) {
     indent(json, indentLevel);
     json.append(jsonString(name)).append(": ").append(value);
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendIndentedNullableIntegerField(
+      StringBuilder json,
+      int indentLevel,
+      String name,
+      Integer value,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(name)).append(": ");
+    if (value == null) {
+      json.append("null");
+    } else {
+      json.append(value);
+    }
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendIndentedNullableBooleanField(
+      StringBuilder json,
+      int indentLevel,
+      String name,
+      Boolean value,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(name)).append(": ");
+    if (value == null) {
+      json.append("null");
+    } else {
+      json.append(value);
+    }
     appendLineEnding(json, trailingComma);
   }
 

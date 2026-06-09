@@ -177,47 +177,60 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 - Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectCustomer`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectCustomer:@Entity`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectCustomer:@Entity`)
 - Table: Detected none.
+- Field metadata: Detected none.
 - Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectCustomer` with source_kind `declared`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:22` (`ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectCustomer:@Id:field:id`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:28` (`ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectCustomer:@Id:field:id`)
 - Relationships: Detected none.
 
 ### `com.example.domain.ProjectOrder`
 
 - Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectOrder`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectOrder:@Entity`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:32` (`ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@Entity`)
 - Table: Detected `orders`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:27` (`ev:src/main/java/com/example/domain/ProjectEntities.java:27-27:com.example.domain.ProjectOrder:@Table`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:33` (`ev:src/main/java/com/example/domain/ProjectEntities.java:33-33:com.example.domain.ProjectOrder:@Table`)
+- Field metadata: Source-visible `id` (`Long`) role `simple_id` annotations `@GeneratedValue`
+  - Generated value attributes: Source-visible `strategy=GenerationType.IDENTITY`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:36` (`ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id`)
+- Field metadata: Source-visible `status` (`ProjectOrderStatus`) role `basic` annotations `@Column`, `@Enumerated`
+  - Column attributes: Source-visible `name=status`, `nullable=false`, `length=32`
+  - Enumerated value: Source-visible `EnumType.STRING`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:39` (`ev:src/main/java/com/example/domain/ProjectEntities.java:39-39:com.example.domain.ProjectOrder:@Column:field:status`), `src/main/java/com/example/domain/ProjectEntities.java:40` (`ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectOrder:@Enumerated:field:status`)
+- Field metadata: Source-visible `version` (`long`) role `version` annotations `@Version`
+  - Version: Source-visible `@Version` presence.
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:43` (`ev:src/main/java/com/example/domain/ProjectEntities.java:43-43:com.example.domain.ProjectOrder:@Version:field:version`)
 - Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectOrder` with source_kind `declared`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:29` (`ev:src/main/java/com/example/domain/ProjectEntities.java:29-29:com.example.domain.ProjectOrder:@Id:field:id`)
+  - Generated value attributes: Source-visible `strategy=GenerationType.IDENTITY`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:35` (`ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:36` (`ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectOrder:@GeneratedValue:field:id`)
 - Relationship: Uncertain target for `customer` `@ManyToOne` declared type `ProjectCustomer`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:32` (`ev:src/main/java/com/example/domain/ProjectEntities.java:32-32:com.example.domain.ProjectOrder:@ManyToOne:field:customer`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:46` (`ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectOrder:@ManyToOne:field:customer`)
 - Relationship: Uncertain target for `invoice` `@OneToOne` declared type `ProjectInvoice`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:38` (`ev:src/main/java/com/example/domain/ProjectEntities.java:38-38:com.example.domain.ProjectOrder:@OneToOne:field:invoice`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:52` (`ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@OneToOne:field:invoice`)
 - Relationship: Uncertain target for `lines` `@OneToMany` declared type `List<ProjectOrderLine>`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:35` (`ev:src/main/java/com/example/domain/ProjectEntities.java:35-35:com.example.domain.ProjectOrder:@OneToMany:field:lines`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:49` (`ev:src/main/java/com/example/domain/ProjectEntities.java:49-49:com.example.domain.ProjectOrder:@OneToMany:field:lines`)
 - Relationship: Uncertain target for `tags` `@ManyToMany` declared type `Set<ProjectTag>`
   - target_resolution: `declared_type_only`
   - uncertainty: `target_type_not_resolved`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:41` (`ev:src/main/java/com/example/domain/ProjectEntities.java:41-41:com.example.domain.ProjectOrder:@ManyToMany:field:tags`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:55` (`ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@ManyToMany:field:tags`)
 
 ### `com.example.domain.ProjectVisit`
 
 - Module: Detected `module:.` (path: `.`)
 - Entity: Detected `com.example.domain.ProjectVisit`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:45` (`ev:src/main/java/com/example/domain/ProjectEntities.java:45-45:com.example.domain.ProjectVisit:@Entity`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:59` (`ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectVisit:@Entity`)
 - Table: Detected `visits`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:46` (`ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectVisit:@Table`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:60` (`ev:src/main/java/com/example/domain/ProjectEntities.java:60-60:com.example.domain.ProjectVisit:@Table`)
+- Field metadata: Detected none.
 - Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectBaseEntity` with source_kind `mapped_superclass`
-  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:16` (`ev:src/main/java/com/example/domain/ProjectEntities.java:16-16:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:14` (`ev:src/main/java/com/example/domain/ProjectEntities.java:14-14:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:22` (`ev:src/main/java/com/example/domain/ProjectEntities.java:22-22:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:20` (`ev:src/main/java/com/example/domain/ProjectEntities.java:20-20:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
 - Relationships: Detected none.
 
 ## Detected Tests
@@ -246,6 +259,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: v0.3 build/config facts are direct local source observations only. Maven execution, effective POM reconstruction, profile activation, remote dependency resolution, config value interpretation, secret extraction, and default generated-source scanning are not performed.
 - Not analyzed: Spring Boot application signals do not prove executable packaging, active profiles, runtime auto-configuration, bean graphs, component scanning results, deployment behavior, or actual process entrypoint behavior.
 - Not analyzed: Spring Data repository interface signals do not prove runtime repository registration, query method behavior, database access, or repository-to-entity relations; `entity_relation_status: not_analyzed` is preserved for those inferred signals.
+- Not analyzed: JPA field metadata is limited to supported direct field-level source-visible annotations. It is not a complete persistent-property inventory, does not support getter/property access in this slice, and does not fill missing annotation attributes from JPA provider defaults.
 - Not analyzed: v0.5 transaction, scheduling, event listener, and messaging listener facts are annotation-presence change-surface signals only. Transaction propagation, scheduler registration, event delivery, message destinations, broker topology, consumer groups, and delivery semantics are not claimed.
 - Not analyzed: Security policy, endpoint protection state, authentication behavior, authorization behavior, filter-chain ordering, vulnerabilities, and correctness are not claimed. v0.5 Spring Security configuration warnings are bounded source-visible inspection hints only.
 
@@ -254,5 +268,5 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 1. Start with detected build, module, and layout facts in `pom.xml`, `src/main/resources/application.yml`, `src/main/java/com/example/Stage3Application.java`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/ProjectMapController.java`.
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/repositories/ProjectOrderRepository.java`, `src/main/java/com/example/web/ProjectMapController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat relationship targets as declared-type-only.
+4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
 5. For tests, inspect detected test files and inferred tested-subject evidence in `src/test/java/com/example/web/ProjectMapControllerTest.java`, `src/main/java/com/example/web/ProjectMapController.java`; do not treat inferred subjects as coverage proof.

@@ -118,10 +118,11 @@ Examples:
   `@EventListener`, and common Kafka/Rabbit listener annotation Spring application
   surface facts, plus Spring Security configuration warnings, where these observations
   support extracted facts or warning signals without runtime reconstruction.
-- Planned v0.6 source-visible JPA/domain annotations, including `@Column`,
-  `@JoinColumn`, `@JoinTable`, `@Enumerated`, `@GeneratedValue`, `@Version`,
-  `@Embedded`, `@Embeddable`, `@EmbeddedId`, and `@IdClass`, where these observations
-  support extracted source facts without database schema or runtime ORM claims.
+- v0.6 source-visible JPA/domain annotations. The current implementation emits direct
+  field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` evidence; later
+  v0.6 goals may add `@JoinColumn`, `@JoinTable`, `@Embedded`, `@Embeddable`,
+  `@EmbeddedId`, and `@IdClass`, where these observations support extracted source
+  facts without database schema or runtime ORM claims.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -511,9 +512,9 @@ Behavior, messaging, and security evidence:
 
 ### Planned v0.6 JPA And Domain Evidence
 
-The planned v0.6 JPA/domain model preserves the existing evidence field set and reuses
-existing evidence types. No new global evidence fields or database evidence types are
-introduced by the planned contract.
+The v0.6 JPA/domain model preserves the existing evidence field set and reuses existing
+evidence types. No new global evidence fields or database evidence types are introduced
+by the current field annotation slice or planned later v0.6 contract.
 
 Direct JPA annotation evidence:
 
@@ -522,10 +523,11 @@ Direct JPA annotation evidence:
   `javax.persistence.*` origin through an exact fully qualified annotation name or
   explicit single-type import, and that exact framework type is not declared by scanned
   source.
-- Planned annotation-backed facts include class-level `@Entity`, `@Table`,
-  `@Embeddable`, and `@IdClass`, plus field-level `@Id`, `@Column`, `@Enumerated`,
-  `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, `@ManyToOne`,
-  `@OneToMany`, `@OneToOne`, `@ManyToMany`, `@JoinColumn`, and `@JoinTable`.
+- Current annotation-backed facts include class-level `@Entity` and `@Table`, plus
+  field-level `@Id`, `@Column`, `@Enumerated`, `@GeneratedValue`, `@Version`,
+  `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Planned later v0.6 facts
+  include class-level `@Embeddable` and `@IdClass`, plus field-level `@Embedded`,
+  `@EmbeddedId`, `@JoinColumn`, and `@JoinTable`.
 - Field-level JPA annotation evidence keeps using the existing field discriminator in
   evidence IDs, such as `:field:<field_name>`, while preserving the global evidence
   field set.

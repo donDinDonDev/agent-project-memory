@@ -31,11 +31,19 @@ public final class JpaEntityAnalyzer {
   private static final String TABLE = "Table";
   private static final String ID = "Id";
   private static final String MAPPED_SUPERCLASS = "MappedSuperclass";
+  private static final String COLUMN = "Column";
+  private static final String ENUMERATED = "Enumerated";
+  private static final String GENERATED_VALUE = "GeneratedValue";
+  private static final String VERSION = "Version";
   private static final String HIGH_CONFIDENCE = "high";
   private static final String TARGET_RESOLUTION = "declared_type_only";
   private static final String UNCERTAINTY = "target_type_not_resolved";
   private static final String SOURCE_KIND_DECLARED = "declared";
   private static final String SOURCE_KIND_MAPPED_SUPERCLASS = "mapped_superclass";
+  private static final String IDENTIFIER_KIND_SIMPLE_ID = "simple_id";
+  private static final String PERSISTENCE_ROLE_BASIC = "basic";
+  private static final String PERSISTENCE_ROLE_SIMPLE_ID = "simple_id";
+  private static final String PERSISTENCE_ROLE_VERSION = "version";
   private static final Map<String, Set<String>> SUPPORTED_JPA_ANNOTATION_ORIGINS = Map.ofEntries(
       Map.entry(ENTITY, Set.of("jakarta.persistence.Entity", "javax.persistence.Entity")),
       Map.entry(TABLE, Set.of("jakarta.persistence.Table", "javax.persistence.Table")),
@@ -43,20 +51,42 @@ public final class JpaEntityAnalyzer {
       Map.entry(MAPPED_SUPERCLASS, Set.of(
           "jakarta.persistence.MappedSuperclass",
           "javax.persistence.MappedSuperclass")),
+      Map.entry(COLUMN, Set.of("jakarta.persistence.Column", "javax.persistence.Column")),
+      Map.entry(ENUMERATED, Set.of("jakarta.persistence.Enumerated", "javax.persistence.Enumerated")),
+      Map.entry(GENERATED_VALUE, Set.of(
+          "jakarta.persistence.GeneratedValue",
+          "javax.persistence.GeneratedValue")),
+      Map.entry(VERSION, Set.of("jakarta.persistence.Version", "javax.persistence.Version")),
       Map.entry("ManyToOne", Set.of("jakarta.persistence.ManyToOne", "javax.persistence.ManyToOne")),
       Map.entry("OneToMany", Set.of("jakarta.persistence.OneToMany", "javax.persistence.OneToMany")),
       Map.entry("OneToOne", Set.of("jakarta.persistence.OneToOne", "javax.persistence.OneToOne")),
       Map.entry("ManyToMany", Set.of("jakarta.persistence.ManyToMany", "javax.persistence.ManyToMany")));
+  private static final Map<String, Set<String>> SUPPORTED_ENUM_TYPE_ORIGINS = Map.of(
+      "EnumType", Set.of("jakarta.persistence.EnumType", "javax.persistence.EnumType"));
+  private static final Map<String, Set<String>> SUPPORTED_GENERATION_TYPE_ORIGINS = Map.of(
+      "GenerationType", Set.of("jakarta.persistence.GenerationType", "javax.persistence.GenerationType"));
+  private static final List<String> FIELD_ANNOTATION_ORDER = List.of(
+      "@Column",
+      "@Enumerated",
+      "@GeneratedValue",
+      "@Version");
   private static final List<String> RELATIONSHIP_ANNOTATIONS = List.of(
       "@ManyToOne",
       "@OneToMany",
       "@OneToOne",
       "@ManyToMany");
+  private static final Comparator<JpaEntityFieldFact> FIELD_ORDER = Comparator
+      .comparing(JpaEntityFieldFact::declaringClass)
+      .thenComparing(JpaEntityFieldFact::sourceKind)
+      .thenComparing(JpaEntityFieldFact::fieldName)
+      .thenComparing(JpaEntityFieldFact::javaType)
+      .thenComparing(JpaEntityFieldFact::persistenceRole);
   private static final Comparator<JpaIdentifierFieldFact> IDENTIFIER_FIELD_ORDER = Comparator
       .comparing(JpaIdentifierFieldFact::sourceKind)
       .thenComparing(JpaIdentifierFieldFact::declaringClass)
       .thenComparing(JpaIdentifierFieldFact::fieldName)
-      .thenComparing(JpaIdentifierFieldFact::javaType);
+      .thenComparing(JpaIdentifierFieldFact::javaType)
+      .thenComparing(JpaIdentifierFieldFact::identifierKind);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
       .thenComparing(JpaRelationshipFact::annotation)
@@ -206,6 +236,10 @@ public final class JpaEntityAnalyzer {
         mappedSuperclasses);
     identifierFields.addAll(mappedSuperclassTraversal.identifierFields());
     evidence.addAll(mappedSuperclassTraversal.evidence());
+    List<JpaEntityFieldFact> fields = fields(
+        javaType,
+        SOURCE_KIND_DECLARED,
+        evidence);
     List<JpaRelationshipFact> relationships = relationships(
         javaType.sourcePath(),
         javaType.className(),
@@ -219,6 +253,7 @@ public final class JpaEntityAnalyzer {
         "entity:" + javaType.className(),
         javaType.className(),
         tableName,
+        fields.stream().sorted(FIELD_ORDER).toList(),
         identifierFields.stream().sorted(IDENTIFIER_FIELD_ORDER).toList(),
         relationships.stream().sorted(RELATIONSHIP_ORDER).toList(),
         evidenceIds));
@@ -246,19 +281,210 @@ public final class JpaEntityAnalyzer {
             javaType.sourceLines(),
             "field:" + variable.getNameAsString());
         evidence.add(idEvidence);
+        Optional<AnnotationExpr> generatedValueAnnotation = findAnnotation(
+            javaType,
+            field.getAnnotations(),
+            GENERATED_VALUE);
+        JpaGeneratedValueFact generatedValue = generatedValueAnnotation
+            .map(annotation -> generatedValueFact(
+                javaType,
+                annotation,
+                variable.getNameAsString(),
+                evidence))
+            .orElse(null);
         List<String> evidenceIds = new ArrayList<>();
         evidenceIds.add(idEvidence.id());
+        if (generatedValue != null) {
+          evidenceIds.addAll(generatedValue.evidenceIds());
+        }
         evidenceIds.addAll(additionalEvidenceIds);
         identifierFields.add(new JpaIdentifierFieldFact(
             variable.getNameAsString(),
             variable.getType().asString(),
             javaType.className(),
             sourceKind,
+            IDENTIFIER_KIND_SIMPLE_ID,
+            generatedValue,
             evidenceIds));
       }
     }
 
     return identifierFields;
+  }
+
+  private List<JpaEntityFieldFact> fields(
+      JavaTypeSource javaType,
+      String sourceKind,
+      List<JpaEntityEvidence> evidence) {
+    List<JpaEntityFieldFact> fields = new ArrayList<>();
+
+    for (FieldDeclaration field : javaType.type().getFields()) {
+      Optional<AnnotationExpr> columnAnnotation = findAnnotation(javaType, field.getAnnotations(), COLUMN);
+      Optional<AnnotationExpr> enumeratedAnnotation = findAnnotation(javaType, field.getAnnotations(), ENUMERATED);
+      Optional<AnnotationExpr> generatedValueAnnotation = findAnnotation(
+          javaType,
+          field.getAnnotations(),
+          GENERATED_VALUE);
+      Optional<AnnotationExpr> versionAnnotation = findAnnotation(javaType, field.getAnnotations(), VERSION);
+      if (columnAnnotation.isEmpty()
+          && enumeratedAnnotation.isEmpty()
+          && generatedValueAnnotation.isEmpty()
+          && versionAnnotation.isEmpty()) {
+        continue;
+      }
+
+      boolean identifier = findAnnotation(javaType, field.getAnnotations(), ID).isPresent();
+      for (VariableDeclarator variable : field.getVariables()) {
+        String fieldName = variable.getNameAsString();
+        List<String> annotations = fieldAnnotations(
+            columnAnnotation,
+            enumeratedAnnotation,
+            generatedValueAnnotation,
+            versionAnnotation);
+        JpaColumnFact column = columnAnnotation
+            .map(annotation -> columnFact(javaType, annotation, fieldName, evidence))
+            .orElse(null);
+        JpaEnumeratedFact enumerated = enumeratedAnnotation
+            .map(annotation -> enumeratedFact(javaType, annotation, fieldName, evidence))
+            .orElse(null);
+        JpaGeneratedValueFact generatedValue = generatedValueAnnotation
+            .map(annotation -> generatedValueFact(javaType, annotation, fieldName, evidence))
+            .orElse(null);
+        JpaVersionFact version = versionAnnotation
+            .map(annotation -> versionFact(javaType, annotation, fieldName, evidence))
+            .orElse(null);
+        List<String> evidenceIds = new ArrayList<>();
+        if (column != null) {
+          evidenceIds.addAll(column.evidenceIds());
+        }
+        if (enumerated != null) {
+          evidenceIds.addAll(enumerated.evidenceIds());
+        }
+        if (generatedValue != null) {
+          evidenceIds.addAll(generatedValue.evidenceIds());
+        }
+        if (version != null) {
+          evidenceIds.addAll(version.evidenceIds());
+        }
+        fields.add(new JpaEntityFieldFact(
+            fieldName,
+            variable.getType().asString(),
+            javaType.className(),
+            sourceKind,
+            persistenceRole(identifier, version != null),
+            annotations,
+            column,
+            enumerated,
+            generatedValue,
+            version,
+            evidenceIds));
+      }
+    }
+
+    return fields;
+  }
+
+  private List<String> fieldAnnotations(
+      Optional<AnnotationExpr> columnAnnotation,
+      Optional<AnnotationExpr> enumeratedAnnotation,
+      Optional<AnnotationExpr> generatedValueAnnotation,
+      Optional<AnnotationExpr> versionAnnotation) {
+    List<String> annotations = new ArrayList<>();
+    if (columnAnnotation.isPresent()) {
+      annotations.add("@Column");
+    }
+    if (enumeratedAnnotation.isPresent()) {
+      annotations.add("@Enumerated");
+    }
+    if (generatedValueAnnotation.isPresent()) {
+      annotations.add("@GeneratedValue");
+    }
+    if (versionAnnotation.isPresent()) {
+      annotations.add("@Version");
+    }
+    return annotations.stream()
+        .sorted(Comparator.comparingInt(FIELD_ANNOTATION_ORDER::indexOf))
+        .toList();
+  }
+
+  private String persistenceRole(boolean identifier, boolean version) {
+    if (version) {
+      return PERSISTENCE_ROLE_VERSION;
+    }
+    if (identifier) {
+      return PERSISTENCE_ROLE_SIMPLE_ID;
+    }
+    return PERSISTENCE_ROLE_BASIC;
+  }
+
+  private JpaColumnFact columnFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence columnEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(columnEvidence);
+    return new JpaColumnFact(
+        annotationNamedValue(annotation, "name").flatMap(this::literalStringValue).orElse(null),
+        annotationNamedValue(annotation, "nullable").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "unique").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "length").flatMap(this::literalIntegerValue).orElse(null),
+        annotationNamedValue(annotation, "precision").flatMap(this::literalIntegerValue).orElse(null),
+        annotationNamedValue(annotation, "scale").flatMap(this::literalIntegerValue).orElse(null),
+        annotationNamedValue(annotation, "insertable").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "updatable").flatMap(this::literalBooleanValue).orElse(null),
+        List.of(columnEvidence.id()));
+  }
+
+  private JpaEnumeratedFact enumeratedFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence enumeratedEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(enumeratedEvidence);
+    return new JpaEnumeratedFact(
+        annotationValue(annotation)
+            .flatMap(value -> supportedJpaEnumValue(javaType, value, SUPPORTED_ENUM_TYPE_ORIGINS))
+            .orElse(null),
+        List.of(enumeratedEvidence.id()));
+  }
+
+  private JpaGeneratedValueFact generatedValueFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence generatedValueEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(generatedValueEvidence);
+    return new JpaGeneratedValueFact(
+        annotationNamedValue(annotation, "strategy")
+            .flatMap(value -> supportedJpaEnumValue(javaType, value, SUPPORTED_GENERATION_TYPE_ORIGINS))
+            .orElse(null),
+        annotationNamedValue(annotation, "generator").flatMap(this::literalStringValue).orElse(null),
+        List.of(generatedValueEvidence.id()));
+  }
+
+  private JpaVersionFact versionFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence versionEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(versionEvidence);
+    return new JpaVersionFact(List.of(versionEvidence.id()));
+  }
+
+  private JpaEntityEvidence fieldAnnotationEvidence(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName) {
+    return annotationEvidence(
+        javaType.sourcePath(),
+        javaType.className(),
+        annotation,
+        javaType.sourceLines(),
+        "field:" + fieldName);
   }
 
   private MappedSuperclassTraversal mappedSuperclassTraversal(
@@ -432,11 +658,66 @@ public final class JpaEntityAnalyzer {
         .flatMap(pair -> literalStringValue(pair.getValue()));
   }
 
+  private Optional<Expression> annotationValue(AnnotationExpr annotation) {
+    if (annotation.isSingleMemberAnnotationExpr()) {
+      return Optional.of(annotation.asSingleMemberAnnotationExpr().getMemberValue());
+    }
+    return annotationNamedValue(annotation, "value");
+  }
+
+  private Optional<Expression> annotationNamedValue(AnnotationExpr annotation, String name) {
+    if (!annotation.isNormalAnnotationExpr()) {
+      return Optional.empty();
+    }
+
+    return annotation.asNormalAnnotationExpr().getPairs().stream()
+        .filter(pair -> name.equals(pair.getNameAsString()))
+        .findFirst()
+        .map(pair -> pair.getValue());
+  }
+
   private Optional<String> literalStringValue(Expression expression) {
     if (expression.isStringLiteralExpr()) {
       return Optional.of(expression.asStringLiteralExpr().asString());
     }
     return Optional.empty();
+  }
+
+  private Optional<Boolean> literalBooleanValue(Expression expression) {
+    if (expression.isBooleanLiteralExpr()) {
+      return Optional.of(expression.asBooleanLiteralExpr().getValue());
+    }
+    return Optional.empty();
+  }
+
+  private Optional<Integer> literalIntegerValue(Expression expression) {
+    if (!expression.isIntegerLiteralExpr()) {
+      return Optional.empty();
+    }
+
+    try {
+      return Optional.of(Integer.parseInt(expression.asIntegerLiteralExpr().getValue().replace("_", "")));
+    } catch (NumberFormatException exception) {
+      return Optional.empty();
+    }
+  }
+
+  private Optional<String> supportedJpaEnumValue(
+      JavaTypeSource javaType,
+      Expression expression,
+      Map<String, Set<String>> supportedOrigins) {
+    if (!expression.isFieldAccessExpr()) {
+      return Optional.empty();
+    }
+
+    String scope = expression.asFieldAccessExpr().getScope().toString();
+    String value = expression.asFieldAccessExpr().getNameAsString();
+    return JavaSourceOrigins.supportedTypeSimpleName(
+            scope,
+            javaType.importsBySimpleName(),
+            supportedOrigins,
+            javaType.sourceDeclaredTypeNames())
+        .map(simpleName -> simpleName + "." + value);
   }
 
   private JpaEntityEvidence annotationEvidence(
