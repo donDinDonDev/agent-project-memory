@@ -321,28 +321,73 @@ final class JpaEntityAnalyzerTest {
   void manyToOneRelationshipIsDetectedWithUnresolvedTargetType() throws Exception {
     JpaRelationshipFact relationship = relationship(entity(analyzeFixture(), "Order"), "customer");
 
-    assertRelationship(relationship, "@ManyToOne", "Customer");
+    assertRelationship(relationship, "@ManyToOne", "many_to_one", "Customer");
+    JpaJoinColumnFact joinColumn = relationship.joinColumns().get(0);
+    assertAll(
+        () -> assertEquals("join_metadata_present", relationship.ownershipSignal()),
+        () -> assertEquals(false, relationship.optional()),
+        () -> assertEquals("FetchType.LAZY", relationship.fetch()),
+        () -> assertEquals(List.of("CascadeType.PERSIST", "CascadeType.MERGE"), relationship.cascade()),
+        () -> assertNull(relationship.orphanRemoval()),
+        () -> assertEquals("customer_id", joinColumn.name()),
+        () -> assertEquals("id", joinColumn.referencedColumnName()),
+        () -> assertEquals(false, joinColumn.nullable()),
+        () -> assertEquals(true, joinColumn.unique()),
+        () -> assertEquals(false, joinColumn.insertable()),
+        () -> assertEquals(true, joinColumn.updatable()));
   }
 
   @Test
   void oneToManyRelationshipIsDetectedWithUnresolvedTargetType() throws Exception {
     JpaRelationshipFact relationship = relationship(entity(analyzeFixture(), "Order"), "lines");
 
-    assertRelationship(relationship, "@OneToMany", "List<OrderLine>");
+    assertRelationship(relationship, "@OneToMany", "one_to_many", "List<OrderLine>");
+    assertAll(
+        () -> assertEquals("order", relationship.mappedBy()),
+        () -> assertEquals("mapped_by_present", relationship.ownershipSignal()),
+        () -> assertNull(relationship.optional()),
+        () -> assertNull(relationship.fetch()),
+        () -> assertEquals(List.of("CascadeType.ALL"), relationship.cascade()),
+        () -> assertEquals(true, relationship.orphanRemoval()),
+        () -> assertTrue(relationship.joinColumns().isEmpty()),
+        () -> assertNull(relationship.joinTable()));
   }
 
   @Test
   void oneToOneRelationshipIsDetectedWithUnresolvedTargetType() throws Exception {
     JpaRelationshipFact relationship = relationship(entity(analyzeFixture(), "Order"), "invoice");
 
-    assertRelationship(relationship, "@OneToOne", "Invoice");
+    assertRelationship(relationship, "@OneToOne", "one_to_one", "Invoice");
+    assertAll(
+        () -> assertEquals("join_metadata_present", relationship.ownershipSignal()),
+        () -> assertEquals(false, relationship.optional()),
+        () -> assertEquals("FetchType.LAZY", relationship.fetch()),
+        () -> assertTrue(relationship.cascade().isEmpty()),
+        () -> assertEquals(true, relationship.orphanRemoval()),
+        () -> assertEquals("invoice_id", relationship.joinColumns().get(0).name()),
+        () -> assertNull(relationship.joinColumns().get(0).referencedColumnName()));
   }
 
   @Test
   void manyToManyRelationshipIsDetectedWithUnresolvedTargetType() throws Exception {
     JpaRelationshipFact relationship = relationship(entity(analyzeFixture(), "Order"), "tags");
 
-    assertRelationship(relationship, "@ManyToMany", "Set<Tag>");
+    assertRelationship(relationship, "@ManyToMany", "many_to_many", "Set<Tag>");
+    JpaJoinTableFact joinTable = relationship.joinTable();
+    assertAll(
+        () -> assertEquals("join_metadata_present", relationship.ownershipSignal()),
+        () -> assertNull(relationship.optional()),
+        () -> assertEquals("FetchType.LAZY", relationship.fetch()),
+        () -> assertTrue(relationship.cascade().isEmpty()),
+        () -> assertNull(relationship.orphanRemoval()),
+        () -> assertNotNull(joinTable),
+        () -> assertEquals("order_tags", joinTable.name()),
+        () -> assertEquals("sales", joinTable.schema()),
+        () -> assertEquals("crm", joinTable.catalog()),
+        () -> assertEquals("order_id", joinTable.joinColumns().get(0).name()),
+        () -> assertEquals("id", joinTable.joinColumns().get(0).referencedColumnName()),
+        () -> assertEquals("tag_id", joinTable.inverseJoinColumns().get(0).name()),
+        () -> assertEquals(false, joinTable.inverseJoinColumns().get(0).nullable()));
   }
 
   @Test
@@ -432,6 +477,18 @@ final class JpaEntityAnalyzerTest {
       }
       for (JpaRelationshipFact relationship : entity.relationships()) {
         assertTrue(evidenceIds.containsAll(relationship.evidenceIds()));
+        for (JpaJoinColumnFact joinColumn : relationship.joinColumns()) {
+          assertTrue(evidenceIds.containsAll(joinColumn.evidenceIds()));
+        }
+        if (relationship.joinTable() != null) {
+          assertTrue(evidenceIds.containsAll(relationship.joinTable().evidenceIds()));
+          for (JpaJoinColumnFact joinColumn : relationship.joinTable().joinColumns()) {
+            assertTrue(evidenceIds.containsAll(joinColumn.evidenceIds()));
+          }
+          for (JpaJoinColumnFact joinColumn : relationship.joinTable().inverseJoinColumns()) {
+            assertTrue(evidenceIds.containsAll(joinColumn.evidenceIds()));
+          }
+        }
       }
     }
     for (JpaEmbeddableFact embeddable : analysis.embeddables()) {
@@ -471,13 +528,22 @@ final class JpaEntityAnalyzerTest {
   private void assertRelationship(
       JpaRelationshipFact relationship,
       String annotation,
+      String cardinality,
       String javaType) {
     assertAll(
         () -> assertEquals(annotation, relationship.annotation()),
+        () -> assertEquals(cardinality, relationship.cardinality()),
         () -> assertEquals(javaType, relationship.javaType()),
-        () -> assertEquals("declared_type_only", relationship.targetResolution()),
-        () -> assertEquals("target_type_not_resolved", relationship.uncertainty()),
-        () -> assertEquals(1, relationship.evidenceIds().size()));
+        () -> assertEquals(javaType, relationship.target().declaredType()),
+        () -> assertEquals("declared_type_only", relationship.target().targetResolution()),
+        () -> assertNull(relationship.target().targetEntityId()),
+        () -> assertNull(relationship.target().targetModuleId()),
+        () -> assertNull(relationship.target().targetClassName()),
+        () -> assertNull(relationship.target().supportType()),
+        () -> assertNull(relationship.target().confidence()),
+        () -> assertEquals("target_type_not_resolved", relationship.target().uncertainty()),
+        () -> assertTrue(relationship.target().evidenceIds().isEmpty()),
+        () -> assertTrue(relationship.evidenceIds().size() >= 1));
   }
 
   private JpaEntityAnalysis analyzeFixture() throws Exception {

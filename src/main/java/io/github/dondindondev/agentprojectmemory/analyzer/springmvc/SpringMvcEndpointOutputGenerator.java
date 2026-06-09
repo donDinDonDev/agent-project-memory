@@ -28,7 +28,10 @@ import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaColumnFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEnumeratedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaGeneratedValueFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaIdentifierFieldFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaJoinColumnFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaJoinTableFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaRelationshipTargetFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaVersionFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenDependencyAnalyzer;
@@ -261,6 +264,7 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparing(JpaIdentifierFieldFact::identifierKind);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
+      .thenComparing(JpaRelationshipFact::cardinality)
       .thenComparing(JpaRelationshipFact::annotation)
       .thenComparing(JpaRelationshipFact::javaType);
   private static final Comparator<JpaEntityFieldFact> ENTITY_FIELD_ORDER = Comparator
@@ -3465,9 +3469,17 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("          {\n");
       appendIndentedStringField(json, 6, "field_name", relationship.fieldName(), true);
       appendIndentedStringField(json, 6, "annotation", relationship.annotation(), true);
+      appendIndentedStringField(json, 6, "cardinality", relationship.cardinality(), true);
       appendIndentedStringField(json, 6, "java_type", relationship.javaType(), true);
-      appendIndentedStringField(json, 6, "target_resolution", relationship.targetResolution(), true);
-      appendIndentedStringField(json, 6, "uncertainty", relationship.uncertainty(), true);
+      appendRelationshipTarget(json, relationship.target(), 6);
+      appendIndentedNullableStringField(json, 6, "mapped_by", relationship.mappedBy(), true);
+      appendIndentedStringField(json, 6, "ownership_signal", relationship.ownershipSignal(), true);
+      appendIndentedNullableBooleanField(json, 6, "optional", relationship.optional(), true);
+      appendIndentedNullableStringField(json, 6, "fetch", relationship.fetch(), true);
+      appendIndentedStringArrayField(json, 6, "cascade", relationship.cascade(), true);
+      appendIndentedNullableBooleanField(json, 6, "orphan_removal", relationship.orphanRemoval(), true);
+      appendJoinColumns(json, 6, "join_columns", relationship.joinColumns(), true);
+      appendJoinTable(json, 6, relationship.joinTable(), true);
       appendIndentedStringArrayField(json, 6, "evidence_ids", relationship.evidenceIds(), false);
       json.append("          }");
       if (index < sortedRelationships.size() - 1) {
@@ -3476,6 +3488,100 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("\n");
     }
     json.append("        ],\n");
+  }
+
+  private void appendRelationshipTarget(
+      StringBuilder json,
+      JpaRelationshipTargetFact target,
+      int indentLevel) {
+    indent(json, indentLevel);
+    json.append("\"target\": {\n");
+    appendIndentedStringField(json, indentLevel + 1, "declared_type", target.declaredType(), true);
+    appendIndentedStringField(json, indentLevel + 1, "target_resolution", target.targetResolution(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "target_entity_id", target.targetEntityId(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "target_module_id", target.targetModuleId(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "target_class_name", target.targetClassName(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "support_type", target.supportType(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "confidence", target.confidence(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "uncertainty", target.uncertainty(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", target.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("},\n");
+  }
+
+  private void appendJoinColumns(
+      StringBuilder json,
+      int indentLevel,
+      String fieldName,
+      List<JpaJoinColumnFact> joinColumns,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(fieldName)).append(": [");
+    if (joinColumns.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < joinColumns.size(); index++) {
+      appendJoinColumn(json, indentLevel + 1, joinColumns.get(index), index < joinColumns.size() - 1);
+    }
+    indent(json, indentLevel);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendJoinColumn(
+      StringBuilder json,
+      int indentLevel,
+      JpaJoinColumnFact joinColumn,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("{\n");
+    appendIndentedNullableStringField(json, indentLevel + 1, "name", joinColumn.name(), true);
+    appendIndentedNullableStringField(
+        json,
+        indentLevel + 1,
+        "referenced_column_name",
+        joinColumn.referencedColumnName(),
+        true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "nullable", joinColumn.nullable(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "unique", joinColumn.unique(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "insertable", joinColumn.insertable(), true);
+    appendIndentedNullableBooleanField(json, indentLevel + 1, "updatable", joinColumn.updatable(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", joinColumn.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
+  }
+
+  private void appendJoinTable(
+      StringBuilder json,
+      int indentLevel,
+      JpaJoinTableFact joinTable,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append("\"join_table\": ");
+    if (joinTable == null) {
+      json.append("null");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("{\n");
+    appendIndentedNullableStringField(json, indentLevel + 1, "name", joinTable.name(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "schema", joinTable.schema(), true);
+    appendIndentedNullableStringField(json, indentLevel + 1, "catalog", joinTable.catalog(), true);
+    appendJoinColumns(json, indentLevel + 1, "join_columns", joinTable.joinColumns(), true);
+    appendJoinColumns(json, indentLevel + 1, "inverse_join_columns", joinTable.inverseJoinColumns(), true);
+    appendIndentedStringArrayField(json, indentLevel + 1, "evidence_ids", joinTable.evidenceIds(), false);
+    indent(json, indentLevel);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
   }
 
   private void appendTests(StringBuilder json, List<ModuleScopedTestFact> tests) {

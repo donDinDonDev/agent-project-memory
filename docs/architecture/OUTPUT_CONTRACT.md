@@ -31,9 +31,9 @@ mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current public
-contract is the v0.5 Spring application surface repository and configuration slices
-layered on top of the v0.4 API surface slice and the v0.3 module-aware Maven
-metadata, dependency, and plugin inventory contract.
+contract is the v0.6 JPA/domain model slice layered on top of the v0.5 Spring
+application surface slices, the v0.4 API surface slice, and the v0.3 module-aware
+Maven metadata, dependency, and plugin inventory contract.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -1807,12 +1807,15 @@ Deterministic sorting rules:
 
 ### v0.6 JPA And Domain Contract
 
-This section defines the v0.6 JPA/domain output contract. The current V060-G003
+This section defines the v0.6 JPA/domain output contract. The current V060-G004
 implementation emits `schema_version: "0.6"`, implements the bounded entity field
 annotation slice for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`,
 and `@Version`, and adds bounded embedded and identifier-model signals for direct
 `@Embeddable`, direct field-level `@Embedded` and `@EmbeddedId`, and direct class-level
-`@IdClass`. Later v0.6 goals may fill the planned table metadata, relationship metadata,
+`@IdClass`. It also deepens relationship metadata for direct field-level relationship
+annotations, direct string-literal `mappedBy`, bounded direct `@JoinColumn` and
+`@JoinTable` metadata, and selected directly visible relationship attributes. Later v0.6
+goals may fill the planned table metadata, source-visible relationship target links,
 and repository/entity relation portions described below.
 
 The v0.6 contract uses:
@@ -1832,7 +1835,7 @@ The v0.6 contract uses:
   Data repository interface signals. They are inferred relations, not extracted entity
   facts.
 
-Current V060-G003 implementation state:
+Current V060-G004 implementation state:
 
 - `schema_version` is `"0.6"`.
 - `entities.items[]` continues to emit existing entity, table compatibility,
@@ -1860,13 +1863,33 @@ Current V060-G003 implementation state:
   facts.
 - Missing annotation attributes remain `null`; generated output must not fill JPA
   runtime defaults.
-- `table_metadata`, relationship metadata deepening, and repository/entity relation
-  fields are planned for later v0.6 goals and are not emitted by V060-G003.
+- `relationships[]` now emits direct field-level relationship facts with `cardinality`,
+  a nested `target` object, direct source-visible relationship attributes,
+  `join_columns`, nullable `join_table`, conservative `ownership_signal`, and evidence
+  IDs for the direct relationship and join metadata annotations.
+- Relationship `target` currently preserves the declared type only with
+  `target_resolution: "declared_type_only"` and `uncertainty:
+  "target_type_not_resolved"`. Source-visible entity target matching is planned later
+  and is not emitted by V060-G004.
+- `relationship.mapped_by` records only direct string-literal `mappedBy` values.
+  Unsupported expressions are not converted to defaults.
+- Direct relationship `optional`, `fetch`, `cascade`, and `orphan_removal` values are
+  emitted only when directly source-visible and supported. Missing or unsupported
+  attributes remain `null` or empty arrays.
+- `relationship.join_columns[]` records bounded direct field-level `@JoinColumn`
+  metadata. `relationship.join_table` records bounded direct field-level `@JoinTable`
+  metadata and supported nested `@JoinColumn` values under `join_columns` and
+  `inverse_join_columns`.
+- Relationship metadata is source-visible orientation only. It must not claim ORM
+  ownership correctness, foreign keys, join tables, database constraints, fetch
+  behavior, cascade behavior, provider defaults, or runtime ORM behavior.
+- `table_metadata` and repository/entity relation fields are planned for later v0.6
+  goals and are not emitted by V060-G004.
 
 Full-track planned `project-map.json` excerpt. Unchanged v0.5 fields are omitted from
 some objects for focus, but remain required by their existing contracts when those
-objects are emitted. Fields explicitly listed as planned later are not current
-V060-G003 output until their implementation goals land:
+objects are emitted. Repository/entity relation fields and source-visible relationship
+target links shown below remain planned later until their implementation goals land:
 
 ```json
 {
@@ -2103,7 +2126,7 @@ v0.6 entity and embeddable rules:
   embeddable is used by any entity unless a separate `@Embedded` or `@EmbeddedId` fact
   supports that relation.
 
-Planned v0.6 relationship rules:
+Current V060-G004 relationship rules and planned target-link extension:
 
 - `entity.relationships[]` remains the relationship fact list for direct field-level
   `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations.
@@ -2111,20 +2134,21 @@ Planned v0.6 relationship rules:
   `"many_to_one"`, `"one_to_many"`, `"one_to_one"`, or `"many_to_many"`.
 - `relationship.java_type` preserves the declared Java field type string. It is not a
   database type, table name, or guaranteed entity target.
-- `relationship.target.target_resolution` is `"declared_type_only"` when only the
-  declared field type is preserved, `"source_visible_entity"` only when a unique
-  emitted entity fact is deterministically matched, and `"ambiguous"` when source-visible
-  candidates cannot be reduced to one target. Target links are inferred relation
-  support, not extracted annotation facts.
-- `relationship.target.support_type` is `"inferred"` only when
-  `target_resolution: "source_visible_entity"`; otherwise it is `null`.
+- `relationship.target.target_resolution` is currently `"declared_type_only"` because
+  V060-G004 preserves only the declared field type. Future relationship target-link
+  work may use `"source_visible_entity"` only when a unique emitted entity fact is
+  deterministically matched, and `"ambiguous"` when source-visible candidates cannot be
+  reduced to one target. Target links are inferred relation support, not extracted
+  annotation facts.
+- `relationship.target.support_type` is currently `null`. Future target-link work may
+  use `"inferred"` only when `target_resolution: "source_visible_entity"`.
 - `relationship.target.uncertainty` must preserve uncertainty values such as
   `"target_type_not_resolved"`, `"ambiguous_target_type"`, or
   `"unsupported_collection_type"` when a target link cannot be made conservatively.
 - `relationship.mapped_by` records only directly visible `mappedBy` string literals.
   Unsupported expressions or absent attributes must not be converted to runtime defaults.
 - `relationship.ownership_signal` is a source-visible orientation signal, not a runtime
-  ORM ownership guarantee. Allowed planned values include `"mapped_by_present"`,
+  ORM ownership guarantee. Allowed values include `"mapped_by_present"`,
   `"mapped_by_absent"`, `"join_metadata_present"`, and `"not_analyzed"`.
 - `relationship.optional`, `fetch`, `cascade`, and `orphan_removal` record only directly
   visible annotation attributes chosen by the implementation. Missing values remain
@@ -2444,9 +2468,10 @@ Content rules:
   Identifier entries should include `declaring_class` and `source_kind` when that context
   matters. Mapped-superclass identifiers must be described as direct source-visible
   mapped-superclass facts, not as full ORM inheritance reconstruction. Relationship
-  entries must preserve `target_resolution: declared_type_only` and `uncertainty:
-  target_type_not_resolved`, and should present relationship targets as `Uncertain`, not
-  resolved entity links.
+  entries must preserve `relationship.target.target_resolution: declared_type_only` and
+  `relationship.target.uncertainty: target_type_not_resolved` until a future target-link
+  implementation supports otherwise, and should present relationship targets as
+  `Uncertain`, not resolved entity links.
 - Test entries use `Detected` wording for test classes and directly visible framework
   signals. `tested_subjects` entries must use `Inferred` wording and show
   `support_type`, `confidence`, and `uncertainty` when present.

@@ -13,7 +13,11 @@ review, risk-based security assessment, and release-prep documentation completio
 The v0.6 JPA/domain release track is open; the current implementation extracts bounded
 source-visible entity field annotations for direct field-level `@Column`, `@Enumerated`,
 `@GeneratedValue`, and `@Version`, and emits partial embedded and identifier model
-signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`.
+signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`. It also
+extracts bounded source-visible relationship metadata for direct field-level
+relationship cardinality, `mappedBy`, `@JoinColumn`, `@JoinTable`, and direct
+relationship attributes while keeping relationship targets declared-type-only and
+uncertain.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -248,8 +252,8 @@ Implementation sequence:
 - Contract design for the planned v0.6 output and evidence semantics. (complete)
 - Entity field annotation extraction for direct field-level `@Column`, `@Enumerated`,
   `@GeneratedValue`, and `@Version`. (implemented)
-- Embedded and identifier model support. (current bounded slice implemented)
-- Relationship metadata deepening.
+- Embedded and identifier model support. (implemented)
+- Relationship metadata deepening. (current bounded slice implemented)
 - Repository-to-entity inferred relation support.
 - Guide rendering, fixtures, goldens, and real-project evaluation.
 

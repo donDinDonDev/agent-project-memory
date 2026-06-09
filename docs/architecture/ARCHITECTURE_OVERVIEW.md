@@ -90,13 +90,15 @@ components from `extends JpaRepository`, or reconstruct Spring component scannin
 lifecycle, bean names, scopes, autowiring, conditional configuration, or other runtime
 behavior.
 
-The basic JPA entity analyzer records only directly present class-level `@Entity`,
-class-level `@Table(name = "...")`, field-level `@Id`, and field-level relationship
-annotations `@ManyToOne`, `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relationship
-facts preserve the declared field type and explicitly mark target resolution as
-uncertain because no Java symbol solving or ORM runtime reconstruction is performed.
-It also attaches field-level `@Id` facts declared on a conservative source-visible
-superclass chain where each traversed superclass is annotated with direct
+The JPA entity analyzer records directly present class-level `@Entity`, class-level
+`@Table(name = "...")`, field-level `@Id`, bounded direct field metadata, embedded and
+identifier-model signals, and field-level relationship annotations `@ManyToOne`,
+`@OneToMany`, `@OneToOne`, and `@ManyToMany`. Relationship facts preserve the declared
+field type, direct source-visible metadata such as `mappedBy`, `@JoinColumn`,
+`@JoinTable`, and selected relationship attributes, and explicitly mark target
+resolution as uncertain because no Java symbol solving or ORM runtime reconstruction is
+performed. It also attaches field-level `@Id` facts declared on a conservative
+source-visible superclass chain where each traversed superclass is annotated with direct
 `@MappedSuperclass`. This traversal resolves only fully qualified names, explicit
 single-type imports, and same-package references; unresolved, ambiguous, cyclic, or
 non-source-visible hierarchy branches are skipped. It does not solve classpaths or claim

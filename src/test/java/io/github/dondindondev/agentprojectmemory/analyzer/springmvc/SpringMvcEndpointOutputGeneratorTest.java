@@ -76,7 +76,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
-        () -> assertEquals(74, projectMapEvidenceIds.size()),
+        () -> assertEquals(77, projectMapEvidenceIds.size()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
@@ -371,6 +371,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
     JsonNode shipmentIdIdentifier = objectWithText(shipmentEntity.path("identifier_fields"), "field_name", "id");
     JsonNode embeddables = projectMapJson.path("entities").path("embeddables").path("items");
     JsonNode projectAddress = objectWithText(embeddables, "class_name", "com.example.domain.ProjectAddress");
+    JsonNode customerRelationship = objectWithText(orderEntity.path("relationships"), "field_name", "customer");
+    JsonNode linesRelationship = objectWithText(orderEntity.path("relationships"), "field_name", "lines");
+    JsonNode tagsRelationship = objectWithText(orderEntity.path("relationships"), "field_name", "tags");
 
     assertAll(
         () -> assertTrue(projectMap.contains("\"entities\": {")),
@@ -441,8 +444,35 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(projectMap.contains("\"java_type\": \"List<ProjectOrderLine>\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@OneToOne\"")),
         () -> assertTrue(projectMap.contains("\"annotation\": \"@ManyToMany\"")),
-        () -> assertTrue(projectMap.contains("\"target_resolution\": \"declared_type_only\"")),
-        () -> assertTrue(projectMap.contains("\"uncertainty\": \"target_type_not_resolved\"")),
+        () -> assertEquals("many_to_one", customerRelationship.path("cardinality").asText()),
+        () -> assertEquals(
+            "declared_type_only",
+            customerRelationship.path("target").path("target_resolution").asText()),
+        () -> assertEquals(
+            "target_type_not_resolved",
+            customerRelationship.path("target").path("uncertainty").asText()),
+        () -> assertEquals("join_metadata_present", customerRelationship.path("ownership_signal").asText()),
+        () -> assertFalse(customerRelationship.path("optional").asBoolean()),
+        () -> assertEquals("FetchType.LAZY", customerRelationship.path("fetch").asText()),
+        () -> assertEquals(
+            List.of("CascadeType.PERSIST", "CascadeType.MERGE"),
+            stringValues(customerRelationship.path("cascade"))),
+        () -> assertEquals(
+            "customer_id",
+            customerRelationship.path("join_columns").get(0).path("name").asText()),
+        () -> assertEquals(
+            "id",
+            customerRelationship.path("join_columns").get(0).path("referenced_column_name").asText()),
+        () -> assertEquals("order", linesRelationship.path("mapped_by").asText()),
+        () -> assertEquals("mapped_by_present", linesRelationship.path("ownership_signal").asText()),
+        () -> assertEquals(true, linesRelationship.path("orphan_removal").asBoolean()),
+        () -> assertEquals("order_tags", tagsRelationship.path("join_table").path("name").asText()),
+        () -> assertEquals(
+            "order_id",
+            tagsRelationship.path("join_table").path("join_columns").get(0).path("name").asText()),
+        () -> assertEquals(
+            "tag_id",
+            tagsRelationship.path("join_table").path("inverse_join_columns").get(0).path("name").asText()),
         () -> assertTrue(projectMap.indexOf(
             "\"class_name\": \"com.example.domain.ProjectCustomer\"")
             < projectMap.indexOf("\"class_name\": \"com.example.domain.ProjectOrder\"")));

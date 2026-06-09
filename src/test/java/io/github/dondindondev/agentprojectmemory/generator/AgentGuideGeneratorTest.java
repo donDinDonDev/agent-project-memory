@@ -426,17 +426,17 @@ final class AgentGuideGeneratorTest {
   private void assertEvidenceIsAttachedToDetectedClaims(String guide) {
     assertTrue(guide.contains("""
         - Entity: Detected `com.example.domain.ProjectOrder`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:48` (`ev:src/main/java/com/example/domain/ProjectEntities.java:48-48:com.example.domain.ProjectOrder:@Entity`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:52` (`ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity`)
         - Table: Detected `orders`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:49` (`ev:src/main/java/com/example/domain/ProjectEntities.java:49-49:com.example.domain.ProjectOrder:@Table`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:53` (`ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table`)
         """));
     assertTrue(guide.contains("""
         - Identifier field: Detected `id` (`Long`) declared by `com.example.domain.ProjectBaseEntity` with source_kind `mapped_superclass` identifier_kind `simple_id`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:26` (`ev:src/main/java/com/example/domain/ProjectEntities.java:26-26:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:24` (`ev:src/main/java/com/example/domain/ProjectEntities.java:24-24:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:30` (`ev:src/main/java/com/example/domain/ProjectEntities.java:30-30:com.example.domain.ProjectBaseEntity:@Id:field:id`), `src/main/java/com/example/domain/ProjectEntities.java:28` (`ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectBaseEntity:@MappedSuperclass`)
         """));
     assertFalse(guide.contains("""
         - Table: Detected `orders`
-          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:48` (`ev:src/main/java/com/example/domain/ProjectEntities.java:48-48:com.example.domain.ProjectOrder:@Entity`)
+          - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:52` (`ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity`)
         """));
     assertTrue(guide.contains("""
         - Test class: Detected `com.example.web.ProjectMapControllerTest`

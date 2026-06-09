@@ -233,8 +233,8 @@ checksum assets after real-project evaluation and risk-based review completion. 
 connector/import work remains a later optional adapter track and is not started.
 The v0.6 JPA/domain release track is in development. The current checkout implements the
 first bounded v0.6 entity field annotation slice, embedded and identifier model signals,
-and emits `schema_version: "0.6"`; relationship metadata, repository/entity relation,
-and real-project evaluation work remains upcoming.
+relationship metadata deepening, and emits `schema_version: "0.6"`; repository/entity
+relation and real-project evaluation work remains upcoming.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
@@ -256,11 +256,14 @@ supported security annotations and `SecurityFilterChain` `@Bean` methods, determ
 direct source-visible JPA field annotation extraction for `@Column`, `@Enumerated`,
 `@GeneratedValue`, and `@Version`, deterministic partial embedded and identifier model
 signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`,
+deterministic direct source-visible relationship metadata extraction for relationship
+cardinality, direct `mappedBy`, bounded `@JoinColumn` and `@JoinTable` metadata, and
+direct relationship `optional`, `fetch`, `cascade`, and `orphanRemoval` attributes,
 deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
-surface guidance and bounded JPA field metadata and embedded/id guidance that keeps
-extracted facts, inferred signals, uncertain targets, not-analyzed statuses, and
-warnings separate.
+surface guidance and bounded JPA field metadata, embedded/id, and relationship metadata
+guidance that keeps extracted facts, inferred signals, uncertain targets, not-analyzed
+statuses, and warnings separate.
 
 Current limitations:
 
@@ -361,14 +364,23 @@ Current limitations:
   entity class. It records only bounded source-visible annotation attributes for
   `@Column`, `@Enumerated`, and `@GeneratedValue`, plus direct `@Version` presence, and
   does not fill runtime JPA defaults.
+- Entity relationship metadata is limited to supported direct field-level relationship
+  annotations and direct source-visible annotation attributes. It records cardinality
+  from the relationship annotation, direct string-literal `mappedBy`, bounded direct
+  `@JoinColumn` and `@JoinTable` metadata, and direct `optional`, `fetch`, `cascade`,
+  and `orphanRemoval` values when supported. Missing attributes remain `null` or empty
+  arrays, relationship targets remain declared-type-only and uncertain, and the output
+  does not claim ORM ownership correctness, foreign keys, join tables, database
+  constraints, fetch behavior, cascade behavior, provider defaults, or runtime ORM
+  behavior.
 - Entity embedded/id support is partial: it records direct `@Embeddable`,
   `@Embedded`, `@EmbeddedId`, and `@IdClass` source-visible signals, links embedded
   targets only when a unique local embeddable can be matched deterministically, and
   marks unresolved embedded targets and `@IdClass` semantic reconstruction explicitly.
 - Entity analysis does not implement getter/property-access mapping, full composite-key
-  semantic reconstruction, join-column or join-table details, repository/entity
-  relations, schema generation, transactional semantics, symbol solving, or ORM runtime
-  behavior.
+  semantic reconstruction, repository/entity relations, schema generation,
+  transactional semantics, symbol solving, relationship target resolution, or ORM
+  runtime behavior.
 - API surface spec discovery is limited to common local filenames such as
   `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
   `swagger.json`. It records normalized repository-relative paths, format, spec kind,
@@ -389,8 +401,8 @@ Current limitations:
   warnings record the normalized path only and do not read generated source contents.
   These warnings do not create endpoint facts, parse OpenAPI schemas, run Maven
   generation, scan `target/generated-sources` by default, or reconstruct generated APIs.
-- Relationship facts preserve the declared field type only and explicitly mark target
-  type resolution as uncertain.
+- Relationship facts preserve the declared field type and direct source-visible
+  relationship metadata only; target type resolution is explicitly marked uncertain.
 - Tests inventory is limited to test-like Java classes under supported standard Maven
   `src/test/java` roots; helper/support/configuration declarations without clear test
   naming or direct test-class marker annotations are omitted.

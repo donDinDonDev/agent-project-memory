@@ -1471,21 +1471,112 @@ public final class AgentGuideGenerator {
     }
 
     for (JsonNode relationship : relationships) {
+      JsonNode target = relationship.path("target");
+      String targetResolution = text(target, "target_resolution");
+      if (targetResolution.isBlank()) {
+        targetResolution = text(relationship, "target_resolution");
+      }
+      String uncertainty = nullableText(target, "uncertainty");
+      if (uncertainty == null) {
+        uncertainty = nullableText(relationship, "uncertainty");
+      }
       markdown.append("- Relationship: Uncertain target for ")
           .append(code(text(relationship, "field_name")))
           .append(" ")
           .append(code(text(relationship, "annotation")))
+          .append(" cardinality ")
+          .append(code(text(relationship, "cardinality")))
           .append(" declared type ")
           .append(code(text(relationship, "java_type")))
           .append("\n");
       markdown.append("  - target_resolution: ")
-          .append(code(text(relationship, "target_resolution")))
+          .append(code(targetResolution))
           .append("\n");
       markdown.append("  - uncertainty: ")
-          .append(code(text(relationship, "uncertainty")))
+          .append(code(nullDisplay(uncertainty)))
           .append("\n");
+      appendRelationshipAttributes(markdown, relationship);
+      appendRelationshipJoinColumns(markdown, relationship.path("join_columns"));
+      appendRelationshipJoinTable(markdown, relationship.path("join_table"));
       appendEvidenceLine(markdown, relationship.path("evidence_ids"), evidenceById);
     }
+  }
+
+  private void appendRelationshipAttributes(StringBuilder markdown, JsonNode relationship) {
+    List<String> attributes = new ArrayList<>();
+    addNullableAttribute(attributes, "mapped_by", nullableText(relationship, "mapped_by"));
+    addNullableAttribute(attributes, "ownership_signal", nullableText(relationship, "ownership_signal"));
+    addNullableAttribute(attributes, "optional", nullableText(relationship, "optional"));
+    addNullableAttribute(attributes, "fetch", nullableText(relationship, "fetch"));
+    List<String> cascade = stringValues(relationship.path("cascade"));
+    if (!cascade.isEmpty()) {
+      attributes.add("cascade=[" + String.join(", ", cascade) + "]");
+    }
+    addNullableAttribute(attributes, "orphan_removal", nullableText(relationship, "orphan_removal"));
+    if (!attributes.isEmpty()) {
+      markdown.append("  - Relationship attributes: Source-visible ")
+          .append(codeList(attributes))
+          .append("\n");
+    }
+  }
+
+  private void appendRelationshipJoinColumns(StringBuilder markdown, JsonNode joinColumns) {
+    if (!joinColumns.isArray() || joinColumns.isEmpty()) {
+      return;
+    }
+
+    for (JsonNode joinColumn : joinColumns) {
+      markdown.append("  - Join column: Source-visible ")
+          .append(codeList(joinColumnAttributes(joinColumn)))
+          .append("\n");
+    }
+  }
+
+  private void appendRelationshipJoinTable(StringBuilder markdown, JsonNode joinTable) {
+    if (!joinTable.isObject()) {
+      return;
+    }
+
+    List<String> attributes = new ArrayList<>();
+    addNullableAttribute(attributes, "name", nullableText(joinTable, "name"));
+    addNullableAttribute(attributes, "schema", nullableText(joinTable, "schema"));
+    addNullableAttribute(attributes, "catalog", nullableText(joinTable, "catalog"));
+    markdown.append("  - Join table: Source-visible ")
+        .append(codeList(attributes))
+        .append("\n");
+    appendJoinTableColumns(markdown, "join_columns", joinTable.path("join_columns"));
+    appendJoinTableColumns(markdown, "inverse_join_columns", joinTable.path("inverse_join_columns"));
+  }
+
+  private void appendJoinTableColumns(
+      StringBuilder markdown,
+      String label,
+      JsonNode joinColumns) {
+    if (!joinColumns.isArray() || joinColumns.isEmpty()) {
+      return;
+    }
+
+    for (JsonNode joinColumn : joinColumns) {
+      markdown.append("    - ")
+          .append(label)
+          .append(": Source-visible ")
+          .append(codeList(joinColumnAttributes(joinColumn)))
+          .append("\n");
+    }
+  }
+
+  private List<String> joinColumnAttributes(JsonNode joinColumn) {
+    List<String> attributes = new ArrayList<>();
+    addNullableAttribute(attributes, "name", nullableText(joinColumn, "name"));
+    addNullableAttribute(
+        attributes,
+        "referenced_column_name",
+        nullableText(joinColumn, "referenced_column_name"));
+    addNullableAttribute(attributes, "nullable", nullableText(joinColumn, "nullable"));
+    addNullableAttribute(attributes, "unique", nullableText(joinColumn, "unique"));
+    addNullableAttribute(attributes, "insertable", nullableText(joinColumn, "insertable"));
+    addNullableAttribute(attributes, "updatable", nullableText(joinColumn, "updatable"));
+    return attributes;
   }
 
   private void appendTests(
@@ -1583,6 +1674,11 @@ public final class AgentGuideGenerator {
     markdown.append("- Uncertain: JPA relationship targets preserve `target_resolution: ")
         .append("declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol ")
         .append("solving or ORM runtime behavior is claimed.\n");
+    markdown.append("- Source-visible: JPA relationship metadata such as `mappedBy`, ")
+        .append("`@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and ")
+        .append("`orphanRemoval` is reported only when direct annotation attributes are ")
+        .append("supported; foreign keys, join tables, ownership correctness, fetch behavior, ")
+        .append("cascade behavior, and database constraints are not claimed.\n");
     markdown.append("- Not analyzed: JPA mapped-superclass identifier support is limited to ")
         .append("conservative source-visible mapped-superclass chains; unresolved, ambiguous, ")
         .append("cyclic, or non-source-visible branches are skipped.\n");

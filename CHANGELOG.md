@@ -23,6 +23,12 @@ architecture documents.
   source-visible `@Embeddable` classes, direct field-level `@Embedded` and
   `@EmbeddedId` signals, and direct class-level `@IdClass` composite-id signals with
   explicit partial/not-analyzed semantics and evidence-backed output.
+- Added the v0.6 relationship metadata deepening slice for direct field-level
+  relationship cardinality, direct string-literal `mappedBy`, bounded direct
+  `@JoinColumn` and `@JoinTable` metadata, and direct source-visible relationship
+  `optional`, `fetch`, `cascade`, and `orphanRemoval` attributes without ORM runtime,
+  database, ownership-correctness, foreign-key, join-table-existence, fetch-behavior, or
+  cascade-behavior claims.
 
 ### Changed
 
@@ -34,6 +40,10 @@ architecture documents.
   `entities.embeddables`, nullable `entity.id_class`, nullable `field.embedded`, and
   `identifier_kind: "embedded_id"` while keeping embedded target links conservative and
   composite-id semantics not analyzed.
+- Expanded generated `project-map.json` relationship entries with `cardinality`, a
+  nested uncertain `target` object, `mapped_by`, `ownership_signal`, direct relationship
+  attribute fields, `join_columns`, and nullable `join_table`; relationship targets
+  remain declared-type-only and uncertain in this slice.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
 

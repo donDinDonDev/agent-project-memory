@@ -121,9 +121,9 @@ Examples:
 - v0.6 source-visible JPA/domain annotations. The current implementation emits direct
   field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and `@Version` evidence,
   direct class-level `@Embeddable` and `@IdClass` evidence, and direct field-level
-  `@Embedded` and `@EmbeddedId` evidence. Later v0.6 goals may add `@JoinColumn` and
-  `@JoinTable`, where these observations support extracted source facts without
-  database schema or runtime ORM claims.
+  `@Embedded`, `@EmbeddedId`, `@ManyToOne`, `@OneToMany`, `@OneToOne`, `@ManyToMany`,
+  `@JoinColumn`, and `@JoinTable` evidence where these observations support extracted
+  source facts without database schema or runtime ORM claims.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -527,8 +527,7 @@ Direct JPA annotation evidence:
 - Current annotation-backed facts include class-level `@Entity`, `@Table`,
   `@Embeddable`, and `@IdClass`, plus field-level `@Id`, `@Column`, `@Enumerated`,
   `@GeneratedValue`, `@Version`, `@Embedded`, `@EmbeddedId`, `@ManyToOne`,
-  `@OneToMany`, `@OneToOne`, and `@ManyToMany`. Planned later v0.6 facts include
-  field-level `@JoinColumn` and `@JoinTable`.
+  `@OneToMany`, `@OneToOne`, `@ManyToMany`, `@JoinColumn`, and `@JoinTable`.
 - Field-level JPA annotation evidence keeps using the existing field discriminator in
   evidence IDs, such as `:field:<field_name>`, while preserving the global evidence
   field set.
@@ -576,9 +575,11 @@ Relationship evidence:
 
 - Direct relationship annotations and relationship metadata annotations support
   extracted source-visible relationship facts.
-- A relationship target link to an emitted entity fact is inferred from source-visible
-  type observations and must be labeled as inferred. It must preserve evidence for the
-  relationship annotation and the target entity evidence that led to the link.
+- A future relationship target link to an emitted entity fact would be inferred from
+  source-visible type observations and must be labeled as inferred. It must preserve
+  evidence for the relationship annotation and the target entity evidence that led to
+  the link. The current V060-G004 implementation does not emit relationship target
+  links.
 - Ambiguous, unresolved, unsupported collection, wildcard, generated-source-only, or
   classpath-only relationship targets must remain uncertain rather than being emitted as
   resolved entity links.
@@ -712,16 +713,20 @@ Uncertain signals should be labeled with lower confidence and should not be used
 
 ### JPA Relationship Uncertainty
 
-v0.1 JPA relationship facts are extracted directly from field-level annotations.
-They preserve the declared Java field type in `java_type`, but they do not claim a
-resolved fully qualified target class. Every relationship fact therefore includes
-`target_resolution: "declared_type_only"` and
-`uncertainty: "target_type_not_resolved"`.
+JPA relationship facts are extracted directly from field-level annotations. They
+preserve the declared Java field type in `java_type`, but they do not claim a resolved
+fully qualified target class. In current v0.6 output, every relationship target
+therefore includes `target.target_resolution: "declared_type_only"` and
+`target.uncertainty: "target_type_not_resolved"` until a future relationship
+target-link implementation supports otherwise.
 
 This is an extracted annotation fact with an explicitly uncertain target, not a full ORM
-mapping. The analyzer does not interpret `mappedBy`, `@JoinColumn`, cascade, fetch,
-collection element types, runtime proxies, persistence provider behavior, or database
-schema semantics in this stage.
+mapping. Current v0.6 output may preserve direct source-visible `mappedBy`,
+`@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval`
+attributes, but those observations are metadata only. They do not prove relationship
+target resolution, collection element types, ORM ownership correctness, foreign keys,
+join tables, database constraints, runtime cascade behavior, lazy/eager loading
+behavior, runtime proxies, persistence provider behavior, or database schema semantics.
 
 ### v0.1 Test Evidence
 

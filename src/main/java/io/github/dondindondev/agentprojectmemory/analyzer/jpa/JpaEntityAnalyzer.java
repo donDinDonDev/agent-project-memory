@@ -39,6 +39,8 @@ public final class JpaEntityAnalyzer {
   private static final String EMBEDDED = "Embedded";
   private static final String EMBEDDED_ID = "EmbeddedId";
   private static final String ID_CLASS = "IdClass";
+  private static final String JOIN_COLUMN = "JoinColumn";
+  private static final String JOIN_TABLE = "JoinTable";
   private static final String HIGH_CONFIDENCE = "high";
   private static final String TARGET_RESOLUTION = "declared_type_only";
   private static final String UNCERTAINTY = "target_type_not_resolved";
@@ -56,6 +58,9 @@ public final class JpaEntityAnalyzer {
   private static final String SUPPORT_TYPE_INFERRED = "inferred";
   private static final String MEDIUM_CONFIDENCE = "medium";
   private static final String STATUS_NOT_ANALYZED = "not_analyzed";
+  private static final String OWNERSHIP_MAPPED_BY_PRESENT = "mapped_by_present";
+  private static final String OWNERSHIP_MAPPED_BY_ABSENT = "mapped_by_absent";
+  private static final String OWNERSHIP_JOIN_METADATA_PRESENT = "join_metadata_present";
   private static final Map<String, Set<String>> SUPPORTED_JPA_ANNOTATION_ORIGINS = Map.ofEntries(
       Map.entry(ENTITY, Set.of("jakarta.persistence.Entity", "javax.persistence.Entity")),
       Map.entry(TABLE, Set.of("jakarta.persistence.Table", "javax.persistence.Table")),
@@ -73,6 +78,8 @@ public final class JpaEntityAnalyzer {
       Map.entry(EMBEDDED, Set.of("jakarta.persistence.Embedded", "javax.persistence.Embedded")),
       Map.entry(EMBEDDED_ID, Set.of("jakarta.persistence.EmbeddedId", "javax.persistence.EmbeddedId")),
       Map.entry(ID_CLASS, Set.of("jakarta.persistence.IdClass", "javax.persistence.IdClass")),
+      Map.entry(JOIN_COLUMN, Set.of("jakarta.persistence.JoinColumn", "javax.persistence.JoinColumn")),
+      Map.entry(JOIN_TABLE, Set.of("jakarta.persistence.JoinTable", "javax.persistence.JoinTable")),
       Map.entry("ManyToOne", Set.of("jakarta.persistence.ManyToOne", "javax.persistence.ManyToOne")),
       Map.entry("OneToMany", Set.of("jakarta.persistence.OneToMany", "javax.persistence.OneToMany")),
       Map.entry("OneToOne", Set.of("jakarta.persistence.OneToOne", "javax.persistence.OneToOne")),
@@ -81,6 +88,10 @@ public final class JpaEntityAnalyzer {
       "EnumType", Set.of("jakarta.persistence.EnumType", "javax.persistence.EnumType"));
   private static final Map<String, Set<String>> SUPPORTED_GENERATION_TYPE_ORIGINS = Map.of(
       "GenerationType", Set.of("jakarta.persistence.GenerationType", "javax.persistence.GenerationType"));
+  private static final Map<String, Set<String>> SUPPORTED_FETCH_TYPE_ORIGINS = Map.of(
+      "FetchType", Set.of("jakarta.persistence.FetchType", "javax.persistence.FetchType"));
+  private static final Map<String, Set<String>> SUPPORTED_CASCADE_TYPE_ORIGINS = Map.of(
+      "CascadeType", Set.of("jakarta.persistence.CascadeType", "javax.persistence.CascadeType"));
   private static final List<String> FIELD_ANNOTATION_ORDER = List.of(
       "@Column",
       "@Enumerated",
@@ -107,6 +118,7 @@ public final class JpaEntityAnalyzer {
       .thenComparing(JpaIdentifierFieldFact::identifierKind);
   private static final Comparator<JpaRelationshipFact> RELATIONSHIP_ORDER = Comparator
       .comparing(JpaRelationshipFact::fieldName)
+      .thenComparing(JpaRelationshipFact::cardinality)
       .thenComparing(JpaRelationshipFact::annotation)
       .thenComparing(JpaRelationshipFact::javaType);
   private static final Comparator<JpaEntityFact> ENTITY_ORDER = Comparator
@@ -784,9 +796,33 @@ public final class JpaEntityAnalyzer {
       if (relationshipAnnotations.isEmpty()) {
         continue;
       }
+      Optional<AnnotationExpr> joinColumnAnnotation = findAnnotation(
+          javaType,
+          field.getAnnotations(),
+          JOIN_COLUMN);
+      Optional<AnnotationExpr> joinTableAnnotation = findAnnotation(
+          javaType,
+          field.getAnnotations(),
+          JOIN_TABLE);
 
       for (AnnotationExpr relationshipAnnotation : relationshipAnnotations) {
         String annotationSymbol = annotationSymbol(relationshipAnnotation);
+        Optional<Expression> mappedByValue = annotationNamedValue(relationshipAnnotation, "mappedBy");
+        String mappedBy = mappedByValue
+            .flatMap(this::literalStringValue)
+            .orElse(null);
+        Boolean optional = annotationNamedValue(relationshipAnnotation, "optional")
+            .flatMap(this::literalBooleanValue)
+            .orElse(null);
+        String fetch = annotationNamedValue(relationshipAnnotation, "fetch")
+            .flatMap(value -> supportedJpaEnumValue(javaType, value, SUPPORTED_FETCH_TYPE_ORIGINS))
+            .orElse(null);
+        List<String> cascade = annotationNamedValue(relationshipAnnotation, "cascade")
+            .map(value -> cascadeValues(javaType, value))
+            .orElse(List.of());
+        Boolean orphanRemoval = annotationNamedValue(relationshipAnnotation, "orphanRemoval")
+            .flatMap(this::literalBooleanValue)
+            .orElse(null);
         for (VariableDeclarator variable : field.getVariables()) {
           JpaEntityEvidence relationshipEvidence = annotationEvidence(
               sourcePath,
@@ -795,18 +831,188 @@ public final class JpaEntityAnalyzer {
               javaType.sourceLines(),
               "field:" + variable.getNameAsString());
           evidence.add(relationshipEvidence);
+          List<JpaJoinColumnFact> joinColumns = joinColumnAnnotation
+              .map(annotation -> List.of(joinColumnFact(
+                  javaType,
+                  annotation,
+                  variable.getNameAsString(),
+                  evidence)))
+              .orElse(List.of());
+          JpaJoinTableFact joinTable = joinTableAnnotation
+              .map(annotation -> joinTableFact(
+                  javaType,
+                  annotation,
+                  variable.getNameAsString(),
+                  evidence))
+              .orElse(null);
+          List<String> evidenceIds = new ArrayList<>();
+          evidenceIds.add(relationshipEvidence.id());
+          joinColumns.stream()
+              .flatMap(joinColumn -> joinColumn.evidenceIds().stream())
+              .forEach(evidenceIds::add);
+          if (joinTable != null) {
+            evidenceIds.addAll(joinTable.evidenceIds());
+          }
           relationships.add(new JpaRelationshipFact(
               variable.getNameAsString(),
               annotationSymbol,
+              cardinality(annotationSymbol),
               variable.getType().asString(),
-              TARGET_RESOLUTION,
-              UNCERTAINTY,
-              List.of(relationshipEvidence.id())));
+              relationshipTarget(variable),
+              mappedBy,
+              ownershipSignal(mappedBy, mappedByValue.isPresent(), !joinColumns.isEmpty() || joinTable != null),
+              optional,
+              fetch,
+              cascade,
+              orphanRemoval,
+              joinColumns,
+              joinTable,
+              evidenceIds));
         }
       }
     }
 
     return relationships;
+  }
+
+  private JpaRelationshipTargetFact relationshipTarget(VariableDeclarator variable) {
+    return new JpaRelationshipTargetFact(
+        variable.getType().asString(),
+        TARGET_RESOLUTION,
+        null,
+        null,
+        null,
+        null,
+        null,
+        UNCERTAINTY,
+        List.of());
+  }
+
+  private String cardinality(String annotationSymbol) {
+    return switch (annotationSymbol) {
+      case "@ManyToOne" -> "many_to_one";
+      case "@OneToMany" -> "one_to_many";
+      case "@OneToOne" -> "one_to_one";
+      case "@ManyToMany" -> "many_to_many";
+      default -> STATUS_NOT_ANALYZED;
+    };
+  }
+
+  private String ownershipSignal(
+      String mappedBy,
+      boolean mappedByAttributePresent,
+      boolean joinMetadataPresent) {
+    if (mappedBy != null) {
+      return OWNERSHIP_MAPPED_BY_PRESENT;
+    }
+    if (mappedByAttributePresent) {
+      return STATUS_NOT_ANALYZED;
+    }
+    if (joinMetadataPresent) {
+      return OWNERSHIP_JOIN_METADATA_PRESENT;
+    }
+    return OWNERSHIP_MAPPED_BY_ABSENT;
+  }
+
+  private List<String> cascadeValues(JavaTypeSource javaType, Expression expression) {
+    List<String> values = new ArrayList<>();
+    if (expression.isArrayInitializerExpr()) {
+      expression.asArrayInitializerExpr().getValues().stream()
+          .map(value -> supportedJpaEnumValue(javaType, value, SUPPORTED_CASCADE_TYPE_ORIGINS))
+          .flatMap(Optional::stream)
+          .forEach(value -> addDistinct(values, value));
+      return values;
+    }
+
+    supportedJpaEnumValue(javaType, expression, SUPPORTED_CASCADE_TYPE_ORIGINS)
+        .ifPresent(value -> addDistinct(values, value));
+    return values;
+  }
+
+  private void addDistinct(List<String> values, String value) {
+    if (!values.contains(value)) {
+      values.add(value);
+    }
+  }
+
+  private JpaJoinColumnFact joinColumnFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence joinColumnEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(joinColumnEvidence);
+    return joinColumnFact(annotation, List.of(joinColumnEvidence.id()));
+  }
+
+  private JpaJoinColumnFact joinColumnFact(
+      AnnotationExpr annotation,
+      List<String> evidenceIds) {
+    return new JpaJoinColumnFact(
+        annotationNamedValue(annotation, "name").flatMap(this::literalStringValue).orElse(null),
+        annotationNamedValue(annotation, "referencedColumnName").flatMap(this::literalStringValue).orElse(null),
+        annotationNamedValue(annotation, "nullable").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "unique").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "insertable").flatMap(this::literalBooleanValue).orElse(null),
+        annotationNamedValue(annotation, "updatable").flatMap(this::literalBooleanValue).orElse(null),
+        evidenceIds);
+  }
+
+  private JpaJoinTableFact joinTableFact(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      String fieldName,
+      List<JpaEntityEvidence> evidence) {
+    JpaEntityEvidence joinTableEvidence = fieldAnnotationEvidence(javaType, annotation, fieldName);
+    evidence.add(joinTableEvidence);
+    List<String> evidenceIds = List.of(joinTableEvidence.id());
+    return new JpaJoinTableFact(
+        annotationNamedValue(annotation, "name").flatMap(this::literalStringValue).orElse(null),
+        annotationNamedValue(annotation, "schema").flatMap(this::literalStringValue).orElse(null),
+        annotationNamedValue(annotation, "catalog").flatMap(this::literalStringValue).orElse(null),
+        joinTableJoinColumns(javaType, annotation, "joinColumns", evidenceIds),
+        joinTableJoinColumns(javaType, annotation, "inverseJoinColumns", evidenceIds),
+        evidenceIds);
+  }
+
+  private List<JpaJoinColumnFact> joinTableJoinColumns(
+      JavaTypeSource javaType,
+      AnnotationExpr joinTableAnnotation,
+      String attributeName,
+      List<String> evidenceIds) {
+    return annotationNamedValue(joinTableAnnotation, attributeName)
+        .map(value -> joinColumnValues(javaType, value, evidenceIds))
+        .orElse(List.of());
+  }
+
+  private List<JpaJoinColumnFact> joinColumnValues(
+      JavaTypeSource javaType,
+      Expression expression,
+      List<String> evidenceIds) {
+    if (expression.isAnnotationExpr()) {
+      return joinColumnValue(javaType, expression.asAnnotationExpr(), evidenceIds)
+          .map(List::of)
+          .orElse(List.of());
+    }
+    if (!expression.isArrayInitializerExpr()) {
+      return List.of();
+    }
+
+    return expression.asArrayInitializerExpr().getValues().stream()
+        .filter(Expression::isAnnotationExpr)
+        .map(Expression::asAnnotationExpr)
+        .map(annotation -> joinColumnValue(javaType, annotation, evidenceIds))
+        .flatMap(Optional::stream)
+        .toList();
+  }
+
+  private Optional<JpaJoinColumnFact> joinColumnValue(
+      JavaTypeSource javaType,
+      AnnotationExpr annotation,
+      List<String> evidenceIds) {
+    return supportedJpaAnnotationName(javaType, annotation)
+        .filter(JOIN_COLUMN::equals)
+        .map(ignored -> joinColumnFact(annotation, evidenceIds));
   }
 
   private List<AnnotationExpr> relationshipAnnotations(
