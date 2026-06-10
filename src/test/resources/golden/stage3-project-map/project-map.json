@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.6",
+  "schema_version": "0.7",
   "project": {
     "root": ".",
     "build": {
@@ -1286,10 +1286,12 @@
     "analysis_status": "analyzed",
     "items": [
       {
+        "id": "test:com.example.web.ProjectMapControllerTest",
         "module_id": "module:.",
         "class_name": "com.example.web.ProjectMapControllerTest",
         "source_path": "src/test/java/com/example/web/ProjectMapControllerTest.java",
         "framework_signals": [],
+        "methods": [],
         "tested_subjects": [
           {
             "class_name": "com.example.web.ProjectMapController",

@@ -23,6 +23,13 @@ repository/entity relations from supported source-visible Spring Data repository
 types only when exactly one emitted entity fact matches, supports safe JPA-only wildcard
 imports for the existing supported JPA annotation set, and omits noisy no-domain guide
 sections.
+The current implementation has started the v0.7 tests track with bounded source-visible
+test inventory refinement: generated output uses `schema_version: "0.7"`, test facts
+carry stable IDs and `module_id`, direct JUnit/Spring Test framework signals include a
+source-visible `signal_kind`, and supported JUnit Jupiter/JUnit 4 test method
+annotations are emitted as method inventory with evidence. Spring test slice facts,
+expanded tested-subject relation statuses, and test-gap/change-risk planning hints
+remain planned future v0.7 work.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -290,26 +297,32 @@ inferred tested-subject relations, uncertain test gaps, and warning/change-risk 
 Planned contract boundary:
 
 - Better test class inventory under supported standard Maven test roots, preserving the
-  existing helper/support/configuration filtering boundary.
+  existing helper/support/configuration filtering boundary. (implemented for the current
+  inventory refinement slice)
 - Bounded test method inventory only when a method has directly visible supported JUnit
   test annotations. Method inventory is source structure, not assertion understanding.
+  (implemented for supported JUnit Jupiter and JUnit 4 method annotations in the current
+  inventory refinement slice)
 - Directly visible framework and annotation signals for JUnit Jupiter, JUnit 4, and
   Spring Test where origin can be trusted from source-visible imports or fully qualified
-  annotation names.
+  annotation names. (implemented as direct framework signal classification in the
+  current inventory refinement slice)
 - Spring test slice signals such as `@SpringBootTest`, `@WebMvcTest`, and
   `@DataJpaTest`, recorded as source-visible annotations and not as runtime Spring
-  context behavior.
+  context behavior. (planned)
 - Conservative tested-subject inference from supported naming conventions and bounded
   source-visible Spring test slice class literals when they can be matched to emitted
-  production facts.
+  production facts. (naming-convention inference exists; slice-literal expansion is
+  planned)
 - Explicit tested-subject relation statuses such as inferred, not detected, ambiguous,
-  unsupported, and not analyzed.
+  unsupported, and not analyzed. (planned expansion)
 - Test-gap signals emitted only as inferred or uncertain planning hints when no supported
   tested-subject relation is inferred for selected source-visible change surfaces.
+  (planned)
 - Change-risk signals emitted only as warning-oriented or uncertain planning hints from
   existing deterministic facts such as endpoint, Spring application surface, security
   warning, messaging, transaction/scheduled, repository/entity, or JPA relationship
-  surfaces.
+  surfaces. (planned)
 
 Non-goals include coverage claims, mutation testing, behavioral assertion understanding,
 CI result claims, runtime test execution, runtime Spring context reconstruction, runtime
@@ -317,12 +330,15 @@ repository or database verification, and full call graph reconstruction.
 
 Implementation sequence:
 
-- Contract design for the planned v0.7 output and evidence semantics.
-- Test class, annotation, and method inventory refinement.
-- Spring test slice signal extraction.
-- Conservative tested-subject relation status support.
-- Test-gap and change-risk planning hints.
-- Guide rendering, fixtures, goldens, and real-project evaluation.
+- Contract design for the planned v0.7 output and evidence semantics. (complete)
+- Test class, annotation, and method inventory refinement. (implemented for the current
+  slice)
+- Spring test slice signal extraction. (planned)
+- Conservative tested-subject relation status support. (planned)
+- Test-gap and change-risk planning hints. (planned)
+- Guide rendering, fixtures, and goldens for the current test inventory refinement
+  slice. (implemented for the current slice)
+- Real-project evaluation and release readiness. (planned)
 
 ## v0.8.0: Local Markdown And Document Ingestion
 

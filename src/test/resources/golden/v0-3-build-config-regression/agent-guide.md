@@ -241,8 +241,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Test class: Detected `com.example.alpha.AlphaControllerTest`
   - Evidence: `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5` (`ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5-5:com.example.alpha.AlphaControllerTest:test_file`)
 - Source: Detected `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java`
-- Framework signal: Detected `JUnit Jupiter`
+- Framework signal: Detected `JUnit Jupiter` (signal_kind: `framework`)
   - Evidence: `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:3` (`ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:3-3:com.example.alpha.AlphaControllerTest:import:org.junit.jupiter.api.Test`), `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6` (`ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6-6:com.example.alpha.AlphaControllerTest#status:@Test`)
+- Test method: Detected `status` annotated with `@Test` (method_kind: `test`)
+  - Evidence: `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6` (`ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6-6:com.example.alpha.AlphaControllerTest#status:@Test`)
 - Inferred tested subject: `com.example.alpha.AlphaController` in target module `module:services/alpha` (path: `services/alpha`) (support_type: `inferred`, confidence: `medium`)
   - Evidence: `services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5` (`ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:5-5:com.example.alpha.AlphaControllerTest:test_file`), `services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:11` (`ev:services/alpha/src/main/java/com/example/alpha/AlphaApplication.java:11-11:com.example.alpha.AlphaController:code_symbol`)
 
@@ -252,8 +254,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Test class: Detected `com.example.zeta.ZetaControllerTest`
   - Evidence: `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5` (`ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5-5:com.example.zeta.ZetaControllerTest:test_file`)
 - Source: Detected `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java`
-- Framework signal: Detected `JUnit Jupiter`
+- Framework signal: Detected `JUnit Jupiter` (signal_kind: `framework`)
   - Evidence: `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:3` (`ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:3-3:com.example.zeta.ZetaControllerTest:import:org.junit.jupiter.api.Test`), `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6` (`ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6-6:com.example.zeta.ZetaControllerTest#create:@Test`)
+- Test method: Detected `create` annotated with `@Test` (method_kind: `test`)
+  - Evidence: `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6` (`ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6-6:com.example.zeta.ZetaControllerTest#create:@Test`)
 - Inferred tested subject: `com.example.zeta.ZetaController` in target module `module:services/zeta` (path: `services/zeta`) (support_type: `inferred`, confidence: `medium`)
   - Evidence: `services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5` (`ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:5-5:com.example.zeta.ZetaControllerTest:test_file`), `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:9` (`ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:9-9:com.example.zeta.ZetaController:code_symbol`)
 
@@ -280,7 +284,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
-- Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Inferred: tested-subject relations use naming conventions only. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.

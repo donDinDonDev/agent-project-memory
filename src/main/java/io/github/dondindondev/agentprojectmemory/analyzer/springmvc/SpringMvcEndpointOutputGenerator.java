@@ -86,6 +86,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestFrameworkSig
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestMethodFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestedSubjectFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningAnalyzer;
@@ -117,7 +118,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.6";
+  private static final String SCHEMA_VERSION = "0.7";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
@@ -3724,10 +3725,12 @@ public final class SpringMvcEndpointOutputGenerator {
       boolean trailingComma) {
     TestClassFact test = scopedTest.fact();
     json.append("      {\n");
+    appendIndentedStringField(json, 4, "id", testId(scopedTest.moduleId(), test), true);
     appendIndentedStringField(json, 4, "module_id", scopedTest.moduleId(), true);
     appendIndentedStringField(json, 4, "class_name", test.className(), true);
     appendIndentedStringField(json, 4, "source_path", test.sourcePath(), true);
     appendFrameworkSignals(json, test.frameworkSignals());
+    appendTestMethods(json, test.methods());
     appendTestedSubjects(json, scopedTest.moduleId(), test.testedSubjects());
     appendIndentedStringArrayField(json, 4, "evidence_ids", test.evidenceIds(), false);
     json.append("      }");
@@ -3754,9 +3757,37 @@ public final class SpringMvcEndpointOutputGenerator {
       TestFrameworkSignalFact signal = sortedSignals.get(index);
       json.append("          {\n");
       appendIndentedStringField(json, 6, "name", signal.name(), true);
+      appendIndentedStringField(json, 6, "signal_kind", signal.signalKind(), true);
       appendIndentedStringArrayField(json, 6, "evidence_ids", signal.evidenceIds(), false);
       json.append("          }");
       if (index < sortedSignals.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendTestMethods(
+      StringBuilder json,
+      List<TestMethodFact> methods) {
+    json.append("        \"methods\": [");
+    if (methods.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < methods.size(); index++) {
+      TestMethodFact method = methods.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "method_name", method.methodName(), true);
+      appendIndentedStringField(json, 6, "test_annotation", method.testAnnotation(), true);
+      appendIndentedStringField(json, 6, "method_kind", method.methodKind(), true);
+      appendIndentedNullableStringField(json, 6, "display_name", method.displayName(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", method.evidenceIds(), false);
+      json.append("          }");
+      if (index < methods.size() - 1) {
         json.append(",");
       }
       json.append("\n");
@@ -3801,6 +3832,13 @@ public final class SpringMvcEndpointOutputGenerator {
       return "endpoint:" + endpoint.controllerClass() + "#" + endpoint.handlerMethod();
     }
     return "endpoint:" + moduleId + ":" + endpoint.controllerClass() + "#" + endpoint.handlerMethod();
+  }
+
+  private static String testId(String moduleId, TestClassFact test) {
+    if (ROOT_MODULE_ID.equals(moduleId)) {
+      return "test:" + test.className();
+    }
+    return "test:" + moduleId + ":" + test.className();
   }
 
   private static String componentId(String moduleId, SpringComponentFact component) {

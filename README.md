@@ -119,7 +119,7 @@ inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, the
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.6"` and includes detected root `pom.xml` build metadata when
+`schema_version: "0.7"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -138,8 +138,9 @@ fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts with bounded source-visible
 field metadata, partial embedded/identifier signals, relationship metadata, and
-repository/entity relation statuses for the current v0.6 JPA/domain slice, a minimal
-tests inventory,
+repository/entity relation statuses for the current JPA/domain slice, a bounded
+source-visible tests inventory with stable test IDs, module ownership, direct framework
+signal classifications, and supported JUnit test method annotations,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
@@ -268,11 +269,14 @@ signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`,
 deterministic direct source-visible relationship metadata extraction for relationship
 cardinality, direct `mappedBy`, bounded `@JoinColumn` and `@JoinTable` metadata, and
 direct relationship `optional`, `fetch`, `cascade`, and `orphanRemoval` attributes,
-deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
-structured facts and evidence index, including module-grouped Spring application
-surface guidance and bounded JPA field metadata, embedded/id, and relationship metadata
-guidance that keeps extracted facts, inferred signals, uncertain targets, not-analyzed
-statuses, and warnings separate.
+deterministic bounded tests inventory refinement for direct JUnit Jupiter/JUnit 4 test
+method annotations and direct JUnit/Spring Test framework signals where source origin is
+trusted, deterministic `endpoints.md`, and deterministic `agent-guide.md` generation
+from the structured facts and evidence index, including module-grouped Spring
+application surface guidance, bounded JPA field metadata, embedded/id, relationship
+metadata guidance, and source-visible test method/framework guidance that keeps
+extracted facts, inferred signals, uncertain targets, not-analyzed statuses, and
+warnings separate.
 
 Current limitations:
 
@@ -416,11 +420,17 @@ Current limitations:
   relationship metadata only; target type resolution is explicitly marked uncertain.
 - Tests inventory is limited to test-like Java classes under supported standard Maven
   `src/test/java` roots; helper/support/configuration declarations without clear test
-  naming or direct test-class marker annotations are omitted.
+  naming or direct test-class marker annotations are omitted. Test method inventory is
+  limited to directly declared methods with supported directly visible JUnit Jupiter or
+  JUnit 4 test annotations resolved from a fully qualified annotation name or explicit
+  single-type import. Lifecycle, setup, teardown, helper, support, and configuration
+  methods are not counted as test methods.
 - Test framework signals are limited to directly visible imports and annotations for
-  JUnit Jupiter, JUnit 4, and Spring Test signals. Import evidence is attached only to
-  top-level emitted test classes; nested emitted test classes use their own class or
-  method annotation evidence.
+  JUnit Jupiter, JUnit 4, and Spring Test signals where the source origin is trusted.
+  Import evidence is attached only to top-level emitted test classes; nested emitted
+  test classes use their own class or method annotation evidence. These signals do not
+  prove test engine execution, CI behavior, assertion behavior, runtime Spring context
+  startup, or coverage.
 - Tested-subject relations are inferred only from test class naming conventions against
   production classes in the same supported module; ambiguous simple-name matches are
   marked with low confidence and explicit uncertainty.

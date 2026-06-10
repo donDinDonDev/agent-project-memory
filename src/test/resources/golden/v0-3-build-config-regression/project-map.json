@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.6",
+  "schema_version": "0.7",
   "project": {
     "root": ".",
     "build": {
@@ -1445,14 +1445,27 @@
     "analysis_status": "analyzed",
     "items": [
       {
+        "id": "test:module:services/alpha:com.example.alpha.AlphaControllerTest",
         "module_id": "module:services/alpha",
         "class_name": "com.example.alpha.AlphaControllerTest",
         "source_path": "services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java",
         "framework_signals": [
           {
             "name": "JUnit Jupiter",
+            "signal_kind": "framework",
             "evidence_ids": [
               "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:3-3:com.example.alpha.AlphaControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6-6:com.example.alpha.AlphaControllerTest#status:@Test"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "method_name": "status",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
               "ev:services/alpha/src/test/java/com/example/alpha/AlphaControllerTest.java:6-6:com.example.alpha.AlphaControllerTest#status:@Test"
             ]
           }
@@ -1475,14 +1488,27 @@
         ]
       },
       {
+        "id": "test:module:services/zeta:com.example.zeta.ZetaControllerTest",
         "module_id": "module:services/zeta",
         "class_name": "com.example.zeta.ZetaControllerTest",
         "source_path": "services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java",
         "framework_signals": [
           {
             "name": "JUnit Jupiter",
+            "signal_kind": "framework",
             "evidence_ids": [
               "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:3-3:com.example.zeta.ZetaControllerTest:import:org.junit.jupiter.api.Test",
+              "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6-6:com.example.zeta.ZetaControllerTest#create:@Test"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "method_name": "create",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
               "ev:services/zeta/src/test/java/com/example/zeta/ZetaControllerTest.java:6-6:com.example.zeta.ZetaControllerTest#create:@Test"
             ]
           }

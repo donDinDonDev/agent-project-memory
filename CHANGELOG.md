@@ -16,6 +16,17 @@ architecture documents.
   conservative tested-subject relation statuses, inferred/uncertain test-gap and
   change-risk planning hints, evidence semantics, and explicit non-goals for coverage,
   assertion, CI, runtime, and call-graph claims.
+- Added the first v0.7 tests inventory implementation slice, with stable test fact IDs,
+  module-owned source-visible test facts, bounded JUnit Jupiter/JUnit 4 test method
+  inventory for directly visible supported annotations, direct JUnit/Spring Test
+  framework signal classifications, and evidence-backed `agent-guide.md` rendering.
+
+### Changed
+
+- Updated generated `project-map.json` output to `schema_version: "0.7"` for the bounded
+  tests inventory refinement, including `tests.items[].id`,
+  `framework_signals[].signal_kind`, and `tests.items[].methods[]` while continuing to
+  avoid coverage, CI, assertion, runtime Spring context, and test execution claims.
 
 ### Fixed
 

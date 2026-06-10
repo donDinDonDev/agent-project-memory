@@ -65,10 +65,39 @@ final class TestInventoryAnalyzerTest {
 
     assertAll(
         () -> assertEquals("src/test/java/com/example/web/HealthSpec.java", test.sourcePath()),
+        () -> assertEquals(
+            List.of("healthIsAvailable", "healthParameterized", "healthRepeats"),
+            test.methods().stream().map(TestMethodFact::methodName).toList()),
         () -> assertTrue(junitJupiter.evidenceIds().stream()
             .map(evidenceId -> evidence(analysis, evidenceId))
             .anyMatch(record -> "@Test".equals(record.symbolName())
                 && "healthIsAvailable".equals(record.methodName()))));
+  }
+
+  @Test
+  void boundedTestMethodInventoryIncludesOnlySupportedDirectJUnitTestAnnotations() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact healthSpec = test(analysis, "com.example.web.HealthSpec");
+    TestClassFact legacyTest = test(analysis, "com.example.web.LegacyControllerTest");
+
+    assertAll(
+        () -> assertEquals(
+            List.of("@Test", "@ParameterizedTest", "@RepeatedTest"),
+            healthSpec.methods().stream().map(TestMethodFact::testAnnotation).toList()),
+        () -> assertTrue(healthSpec.methods().stream()
+            .allMatch(method -> "test".equals(method.methodKind()))),
+        () -> assertTrue(healthSpec.methods().stream()
+            .allMatch(method -> method.displayName() == null)),
+        () -> assertFalse(healthSpec.methods().stream()
+            .map(TestMethodFact::methodName)
+            .anyMatch("setUp"::equals)),
+        () -> assertEquals(
+            List.of("usesJUnitFour"),
+            legacyTest.methods().stream().map(TestMethodFact::methodName).toList()),
+        () -> assertEquals(
+            List.of("@Test"),
+            legacyTest.methods().stream().map(TestMethodFact::testAnnotation).toList()));
   }
 
   @Test
@@ -86,6 +115,9 @@ final class TestInventoryAnalyzerTest {
         "Spring Test");
 
     assertAll(
+        () -> assertEquals("framework", junitJupiter.signalKind()),
+        () -> assertEquals("framework", junitFour.signalKind()),
+        () -> assertEquals("framework", springTest.signalKind()),
         () -> assertSignalEvidenceResolves(analysis, junitJupiter),
         () -> assertSignalEvidenceResolves(analysis, junitFour),
         () -> assertSignalEvidenceResolves(analysis, springTest),
@@ -100,13 +132,18 @@ final class TestInventoryAnalyzerTest {
 
     TestClassFact sourceDeclared = test(analysis, "com.example.web.SourceDeclaredSpringBootTest");
     TestClassFact unresolvedSimple = test(analysis, "com.example.web.UnresolvedSimpleSpringTest");
+    TestClassFact sourceDeclaredJupiter = test(analysis, "com.example.web.SourceDeclaredJupiterTest");
 
     assertAll(
         () -> assertEquals("analyzed", analysis.analysisStatus()),
         () -> assertTrue(sourceDeclared.frameworkSignals().isEmpty()),
         () -> assertTrue(unresolvedSimple.frameworkSignals().isEmpty()),
+        () -> assertTrue(sourceDeclaredJupiter.frameworkSignals().isEmpty()),
+        () -> assertTrue(sourceDeclaredJupiter.methods().isEmpty()),
         () -> assertFalse(analysis.evidence().stream()
             .anyMatch(record -> "@SpringBootTest".equals(record.symbolName()))),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(record -> "@Test".equals(record.symbolName()))),
         () -> assertFalse(analysis.evidence().stream()
             .anyMatch(record -> record.symbolName().startsWith(
                 "import org.springframework.boot.test.context.SpringBootTest"))));
@@ -175,6 +212,10 @@ final class TestInventoryAnalyzerTest {
       for (TestFrameworkSignalFact signal : test.frameworkSignals()) {
         assertFalse(signal.evidenceIds().isEmpty());
         assertTrue(evidenceIds.containsAll(signal.evidenceIds()));
+      }
+      for (TestMethodFact method : test.methods()) {
+        assertFalse(method.evidenceIds().isEmpty());
+        assertTrue(evidenceIds.containsAll(method.evidenceIds()));
       }
       for (TestedSubjectFact subject : test.testedSubjects()) {
         assertFalse(subject.evidenceIds().isEmpty());

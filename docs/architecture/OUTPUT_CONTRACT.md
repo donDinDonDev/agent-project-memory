@@ -31,11 +31,12 @@ mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current implemented
-public contract is the v0.6 JPA/domain model slice layered on top of the v0.5 Spring
-application surface slices, the v0.4 API surface slice, and the v0.3 module-aware
-Maven metadata, dependency, and plugin inventory contract. This document also records
-the planned v0.7 tests, quality, and change-risk contract boundary before
-implementation begins.
+public contract is the v0.7 tests inventory refinement slice layered on top of the v0.6
+JPA/domain model slice, the v0.5 Spring application surface slices, the v0.4 API surface
+slice, and the v0.3 module-aware Maven metadata, dependency, and plugin inventory
+contract. Future v0.7 Spring test slice, expanded tested-subject relation status,
+quality, and change-risk contracts are recorded as planned boundaries only where
+explicitly marked future.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2223,30 +2224,27 @@ Planned v0.6 deterministic sorting rules:
 - Embeddables sort by module order, class name, source path, and ID.
 - Repository/entity relation status does not change repository item sort order.
 
-### Planned v0.7 Tests, Quality, And Change-Risk Contract
+### v0.7 Tests Inventory Refinement Contract
 
-This section defines the planned v0.7 tests, quality, and change-risk output contract.
-It is a design boundary for future implementation, not a statement of current emitted
-behavior. The planned v0.7 contract refines the existing top-level `tests` inventory and
-adds conservative `quality` planning hints while preserving the current four output
-files.
+This section defines the current v0.7 tests inventory refinement output contract. The
+current v0.7 implementation preserves the v0.6 module-aware build/config, API surface,
+Spring application surface, and JPA/domain contracts while deepening the top-level
+`tests` inventory. It does not emit a top-level `quality` object, `spring_test_slices`,
+test-gap signals, change-risk signals, expanded tested-subject relation statuses, or
+runtime test claims in this slice.
 
-The planned v0.7 contract uses:
+The v0.7 tests inventory refinement contract uses:
 
 - `schema_version: "0.7"` for an atomic public output state that preserves the v0.6
-  module-aware build/config, API surface, Spring application surface, and JPA/domain
-  contracts while deepening test inventory and planning hints.
+  contracts and adds bounded source-visible tests inventory refinement.
 - The same four output files under `.project-memory/`.
 - The existing top-level `tests` object as the owner of source-visible test class,
-  method, framework, Spring test slice, and tested-subject relation facts.
-- A planned top-level `quality` object as the owner of inferred or uncertain test-gap
-  and change-risk planning hints. These hints are not extracted code facts and must not
-  be presented as coverage, correctness, CI, runtime, or call-graph truth.
+  method, direct framework signal, and tested-subject relation facts.
 - Existing evidence fields and evidence types. Test class facts continue to use
-  `test_file` evidence. Test method, test annotation, Spring test slice, and production
-  subject observations reuse `annotation` and `code_symbol` evidence.
+  `test_file` evidence. Test method and framework signal observations reuse
+  `annotation` and `code_symbol` evidence.
 
-Planned `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
+Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
 
 ```json
 {
@@ -2268,17 +2266,6 @@ Planned `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
             ]
           }
         ],
-        "spring_test_slices": [
-          {
-            "annotation": "@WebMvcTest",
-            "slice_kind": "web_mvc",
-            "target_class_literals": ["com.example.orders.OrderController"],
-            "target_resolution_status": "inferred",
-            "evidence_ids": [
-              "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:10-10:com.example.orders.OrderControllerTest:@WebMvcTest"
-            ]
-          }
-        ],
         "methods": [
           {
             "method_name": "returnsOrder",
@@ -2292,15 +2279,13 @@ Planned `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
         ],
         "tested_subjects": [
           {
-            "relation_status": "inferred",
-            "relation_type": "spring_test_slice_class_literal",
             "class_name": "com.example.orders.OrderController",
             "target_module_id": "module:services/orders",
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,
             "evidence_ids": [
-              "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:10-10:com.example.orders.OrderControllerTest:@WebMvcTest",
+              "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:9-9:com.example.orders.OrderControllerTest:test_file",
               "ev:services/orders/src/main/java/com/example/orders/OrderController.java:18-18:com.example.orders.OrderController:@RestController"
             ]
           }
@@ -2310,50 +2295,13 @@ Planned `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
         ]
       }
     ]
-  },
-  "quality": {
-    "analysis_status": "analyzed",
-    "test_gap_signals": {
-      "analysis_status": "analyzed",
-      "items": [
-        {
-          "id": "test_gap:module:services/orders:endpoint:com.example.orders.OrderController#getOrder",
-          "module_id": "module:services/orders",
-          "signal": "no_inferred_test_subject_for_endpoint",
-          "subject_kind": "endpoint",
-          "subject_id": "endpoint:module:services/orders:com.example.orders.OrderController#getOrder",
-          "support_type": "inferred",
-          "confidence": "low",
-          "uncertainty": "bounded_test_inventory_only",
-          "evidence_ids": [
-            "ev:services/orders/src/main/java/com/example/orders/OrderController.java:20-20:com.example.orders.OrderController#getOrder:@GetMapping"
-          ]
-        }
-      ]
-    },
-    "change_risk_signals": {
-      "analysis_status": "analyzed",
-      "items": [
-        {
-          "id": "change_risk:module:services/orders:messaging_listener:com.example.orders.OrderEvents#consume",
-          "module_id": "module:services/orders",
-          "signal": "source_visible_messaging_listener_change_surface",
-          "subject_kind": "spring_application_surface.messaging.listener_signal",
-          "subject_id": "messaging_listener_signal:module:services/orders:com.example.orders.OrderEvents#consume",
-          "support_type": "uncertain",
-          "confidence": "low",
-          "uncertainty": "runtime_behavior_not_analyzed",
-          "evidence_ids": [
-            "ev:services/orders/src/main/java/com/example/orders/OrderEvents.java:24-24:com.example.orders.OrderEvents#consume:@KafkaListener"
-          ]
-        }
-      ]
-    }
   }
 }
 ```
 
-Planned v0.7 test inventory rules:
+Current v0.7 output has no top-level `quality` object.
+
+Current v0.7 test inventory rules:
 
 - `tests.analysis_status` remains `"analyzed"` when supported standard Maven test roots
   exist and the tests inventory analyzer runs. It remains `"not_detected"` when no
@@ -2366,116 +2314,74 @@ Planned v0.7 test inventory rules:
   where needed; child-module IDs include `module_id` following the existing v0.2
   module-aware fact-ID rule.
 - `test.methods[]` contains directly declared test methods only when a method has a
-  supported directly visible test method annotation. Planned initial method annotations
-  include JUnit Jupiter `@Test`, `@ParameterizedTest`, `@RepeatedTest`, `@TestFactory`,
-  and `@TestTemplate`, plus JUnit 4 `@Test`, when the origin is trusted from a fully
-  qualified annotation name or explicit single-type import.
+  supported directly visible JUnit test method annotation. Current supported method
+  annotations are JUnit Jupiter `@Test`, `@ParameterizedTest`, `@RepeatedTest`,
+  `@TestFactory`, and `@TestTemplate`, plus JUnit 4 `@Test`, when the origin is trusted
+  from a fully qualified annotation name or explicit single-type import.
 - Lifecycle methods such as `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`,
   `@Before`, and `@After` may be recorded later as setup/teardown signals only after a
   separate bounded contract update. They must not be counted as test methods.
 - `test.methods[].method_kind` is `"test"` for supported test method annotations in the
-  planned initial slice. It must not encode assertion behavior or execution status.
-- `test.methods[].display_name` records only a direct bounded string literal from a
-  supported display-name annotation if a future implementation explicitly supports it;
-  otherwise it is `null`.
-- `test.framework_signals[]` remains a direct source-visible signal list. Planned
-  framework families include `"JUnit Jupiter"`, `"JUnit 4"`, and `"Spring Test"`.
-  Framework signals do not prove runtime engine execution or CI behavior.
-- `test.framework_signals[].signal_kind` is `"framework"` for the planned v0.7 slice.
+  current slice. It must not encode assertion behavior or execution status.
+- `test.methods[].display_name` is currently `null`. Direct `@DisplayName` extraction is
+  not implemented in this slice.
+- `test.framework_signals[]` remains a direct source-visible signal list. Current
+  framework families include `"JUnit Jupiter"`, `"JUnit 4"`, and `"Spring Test"` where
+  the source-visible origin is trusted from a fully qualified annotation name or
+  explicit single-type import, and where the same fully qualified name is not declared by
+  scanned source. Framework signals do not prove runtime engine execution, Spring
+  context behavior, CI behavior, or assertion behavior.
+- `test.framework_signals[].signal_kind` is `"framework"` for the current v0.7 slice.
   It is a source-visible classification only and must not encode runtime engine
   execution, CI behavior, or assertion behavior.
-- `test.spring_test_slices[]` contains direct source-visible Spring test annotations
-  where the annotation origin is trusted. Planned initial slice annotations include
-  `@SpringBootTest`, `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`.
-  Additional Spring Boot test slices may be added only with focused tests and this
-  contract updated as needed.
-- `spring_test_slice.slice_kind` is a source-visible classification such as
-  `"spring_boot"`, `"web_mvc"`, `"data_jpa"`, or `"context_configuration"`. It is not a
-  runtime context bootstrap, bean graph, profile, database, web server, or MockMvc claim.
-- `spring_test_slice.target_class_literals[]` records bounded direct class literals from
-  supported slice annotations when extractable. Unsupported expressions, arrays with
-  unsupported elements, classpath-only targets, and generated-source-only targets do not
-  become target facts.
-- `spring_test_slice.target_resolution_status` is one of `"inferred"`,
-  `"not_detected"`, `"ambiguous"`, `"unsupported"`, or `"not_analyzed"`. `"inferred"`
-  requires that each supported source-visible class literal can be matched
-  deterministically to an emitted production fact. Non-inferred statuses keep target
-  identity fields null in tested-subject relations.
+- The current output does not emit `test.spring_test_slices[]`. Spring test slice facts
+  remain future v0.7 work and require a separate bounded contract update before they are
+  emitted.
 
-Planned v0.7 tested-subject relation rules:
+Current v0.7 tested-subject relation rules:
 
 - `test.tested_subjects[]` remains a bounded tested-subject relation/status list. It
   must never be described as coverage, execution, assertion, CI, runtime call graph, or
   complete subject mapping.
-- `tested_subject.relation_status` is one of `"inferred"`, `"not_detected"`,
-  `"ambiguous"`, `"unsupported"`, or `"not_analyzed"`.
-- `tested_subject.relation_type` identifies the bounded inference source, such as
-  `"naming_convention"` or `"spring_test_slice_class_literal"`.
-- `"inferred"` relations require evidence for the test-side source observation and the
+- Current emitted tested-subject rows are inferred naming-convention hints only.
+  Expanded `relation_status` and `relation_type` fields remain future work and are not
+  emitted in this slice.
+- Inferred relations require evidence for the test-side source observation and the
   matched production-side source observation. `support_type` is `"inferred"`.
 - `tested_subject.class_name` and `tested_subject.target_module_id` are populated only
-  when the relation target is inferred. Non-inferred statuses keep target identity
-  fields `null`.
+  when the relation target is inferred.
 - Naming-convention inference remains conservative: strip supported test suffixes such
   as `Test`, `Tests`, and `IT` from the test class simple name and match the candidate
   against emitted production classes in the same supported module first. Cross-module
   matches are allowed only when the source-visible candidate is unique and module
   ownership is deterministic.
-- Spring test slice class-literal inference may link a test class to a production class
-  only when the annotation contains a supported direct class literal and the target can
-  be matched to an emitted production fact. It remains an inferred tested-subject hint,
-  not proof that the test executes that subject or covers any behavior.
-- `"not_detected"` means the analyzer ran but found no supported relation input.
-  `"ambiguous"` means multiple source-visible candidates were found. `"unsupported"`
-  means the source-visible shape is outside the bounded relation parser. `"not_analyzed"`
-  is a compatibility value only when this relation analyzer did not run.
+- Future Spring test slice class-literal inference may link a test class to a production
+  class only when the annotation contains a supported direct class literal and the target
+  can be matched to an emitted production fact. It must remain an inferred
+  tested-subject hint, not proof that the test executes that subject or covers any
+  behavior.
+- Spring test slice class-literal inference and explicit non-inferred relation statuses
+  remain future v0.7 work and are not emitted in this slice.
 
-Planned v0.7 quality and change-risk rules:
+Future v0.7 quality and change-risk rules:
 
-- `quality.analysis_status` is `"analyzed"` only when the planned quality analyzer runs
-  over generated deterministic facts. It is `"not_analyzed"` when the quality analyzer
-  is not part of the current scan contract.
-- `quality.test_gap_signals.analysis_status` and
-  `quality.change_risk_signals.analysis_status` are `"analyzed"` when the respective
-  planned signal analyzer runs over generated deterministic facts, even if `items[]` is
-  empty. They are `"not_analyzed"` when the respective signal analyzer is not part of
-  the current scan contract.
-- `quality.test_gap_signals.items[]` contains inferred or uncertain planning hints such
-  as `"no_inferred_test_subject_for_endpoint"`,
-  `"no_inferred_test_subject_for_spring_surface"`,
-  `"no_inferred_test_subject_for_entity"`, and
-  `"ambiguous_tested_subject_relation"`.
-- Test-gap signals must use `support_type: "inferred"` or `"uncertain"` and `confidence`
-  no higher than `"low"` unless a later contract defines a stronger deterministic
-  relation. A no-inferred-test signal means only that the bounded analyzer did not infer
-  a supported relation in the generated test inventory.
-- `quality.change_risk_signals.items[]` contains warning-oriented or uncertain planning
-  hints for source-visible change surfaces such as security configuration warnings,
-  messaging listener signals, transaction or scheduled method signals, API endpoint/spec
-  boundaries, repository/entity inferred relations, and JPA relationship metadata.
-- Change-risk signals must use `support_type: "inferred"` or `"uncertain"` and
-  `confidence` no higher than `"low"` unless a later contract defines a stronger
-  deterministic relation. Warning-oriented wording is a presentation/category label, not
-  a new evidence type or `support_type` value.
-- Change-risk signals must not assign vulnerability severity, runtime blast radius,
-  production impact, correctness risk, or business priority. They are navigation hints
-  for human and agent inspection.
-- Gap and risk signal `evidence_ids` support the underlying deterministic source facts
-  that produced the hint. They are not evidence that tests are absent, failing, passing,
-  executed in CI, or behaviorally insufficient.
+- A future top-level `quality` object may own inferred or uncertain test-gap and
+  change-risk planning hints. It is not emitted by the current v0.7 tests inventory
+  refinement.
+- Future test-gap and change-risk signals must not be presented as coverage,
+  correctness, CI, runtime, call-graph, vulnerability, production impact, business
+  priority, or test execution truth.
 
-Planned v0.7 deterministic sorting rules:
+Current v0.7 deterministic sorting rules:
 
-- Test class items sort by module order, source path, class name, and ID.
+- Test class items sort by module order, class name, and source path.
 - Test methods sort by source order when line evidence is available, then by method name,
   method kind, annotation, and evidence discriminator.
 - Framework signals sort by signal name and evidence discriminator.
-- Spring test slices sort by source order when line evidence is available, then
-  annotation, slice kind, target resolution status, and evidence discriminator.
-- Tested-subject relations sort by relation status, relation type, target module ID,
-  class name, confidence, uncertainty, and evidence discriminator.
-- Test-gap and change-risk signals sort by module order, signal, subject kind,
-  subject ID, support type, confidence, uncertainty, and ID.
+- Tested-subject relations sort by class name, support type, confidence, uncertainty,
+  and evidence discriminator.
+- Spring test slices, test-gap signals, and change-risk signals are not emitted in the
+  current v0.7 tests inventory refinement slice.
 
 ## `evidence-index.jsonl`
 
@@ -2933,29 +2839,22 @@ Current v0.6 JPA/domain `agent-guide.md` behavior:
   reconstruction, JPQL semantic parsing, migration interpretation, complete ORM model
   reconstruction, or runtime repository/entity verification.
 
-Planned v0.7 tests, quality, and change-risk `agent-guide.md` behavior:
+Current v0.7 tests inventory `agent-guide.md` behavior:
 
-- The guide may expand `Detected Tests` or add a concise `Tests, Quality, And Change
-  Risk` section generated from structured `tests` and `quality` facts only.
+- The guide expands `Detected Tests` from structured `tests` facts only.
 - Test class and method entries must use `Detected` wording for direct source-visible
   test declarations and supported test annotations. Method entries must not describe
   assertions, expected behavior, execution status, pass/fail status, or coverage.
-- Spring test slice entries must use `Source-visible` wording and must not claim runtime
-  Spring context startup, bean graph contents, profiles, database access, web server
-  behavior, MockMvc behavior, or slice correctness.
-- Tested-subject rows must use `Inferred` wording for inferred rows and explicit status
-  wording for non-inferred rows. They must show `relation_status`, `relation_type`,
-  `support_type`, `confidence`, and `uncertainty` when present. Non-inferred statuses
-  such as `not_detected`, `ambiguous`, `unsupported`, and `not_analyzed` must be
-  rendered as explicit limits, not hidden.
-- Test-gap rows must be labeled as inferred or uncertain planning hints. They must not
-  be described as proof that no test exists or that coverage is missing.
-- Change-risk rows must be labeled as warning-oriented or uncertain planning hints. They
-  must not assign vulnerability severity, runtime blast radius, production impact,
-  business priority, or correctness claims.
-- The known-limits section should explicitly state that v0.7 test and quality facts do
-  not perform test execution, CI analysis, coverage analysis, mutation testing,
-  behavioral assertion understanding, runtime Spring context reconstruction, runtime
+- Framework signal entries render direct source-visible framework classifications with
+  `signal_kind` and evidence. They must not claim runtime engine execution, Spring
+  context startup, CI behavior, assertion behavior, or coverage.
+- Tested-subject rows use `Inferred` wording for existing naming-convention rows and
+  must continue to show `support_type`, `confidence`, and `uncertainty` when present.
+- Future Spring test slice, expanded relation-status, test-gap, and change-risk rows
+  must be added only after their structured output contract is implemented.
+- The known-limits section should explicitly state that current v0.7 test facts do not
+  perform test execution, CI analysis, coverage analysis, mutation testing, behavioral
+  assertion understanding, runtime Spring context reconstruction, runtime
   repository/database verification, or full call graph reconstruction.
 
 Markdown rendering safety:

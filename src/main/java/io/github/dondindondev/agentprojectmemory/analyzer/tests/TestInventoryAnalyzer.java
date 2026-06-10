@@ -35,14 +35,22 @@ public final class TestInventoryAnalyzer {
   private static final String MEDIUM_CONFIDENCE = "medium";
   private static final String LOW_CONFIDENCE = "low";
   private static final String SUPPORT_TYPE_INFERRED = "inferred";
+  private static final String SIGNAL_KIND_FRAMEWORK = "framework";
+  private static final String METHOD_KIND_TEST = "test";
   private static final String AMBIGUOUS_SUBJECT_NAME = "ambiguous_subject_name";
   private static final List<String> TEST_SUFFIXES = List.of("Test", "Tests", "IT");
-  private static final Set<String> JUNIT_TEST_METHOD_ANNOTATIONS = Set.of(
-      "Test",
-      "ParameterizedTest",
-      "RepeatedTest",
-      "TestFactory",
-      "TestTemplate");
+  private static final Map<String, Set<String>> JUNIT_TEST_METHOD_ANNOTATION_ORIGINS = Map.ofEntries(
+      Map.entry("Test", Set.of("org.junit.jupiter.api.Test", "org.junit.Test")),
+      Map.entry("ParameterizedTest", Set.of("org.junit.jupiter.params.ParameterizedTest")),
+      Map.entry("RepeatedTest", Set.of("org.junit.jupiter.api.RepeatedTest")),
+      Map.entry("TestFactory", Set.of("org.junit.jupiter.api.TestFactory")),
+      Map.entry("TestTemplate", Set.of("org.junit.jupiter.api.TestTemplate")));
+  private static final Map<String, Set<String>> JUNIT_NESTED_ANNOTATION_ORIGINS = Map.of(
+      "Nested",
+      Set.of("org.junit.jupiter.api.Nested"));
+  private static final Map<String, Set<String>> JUNIT_RUN_WITH_ANNOTATION_ORIGINS = Map.of(
+      "RunWith",
+      Set.of("org.junit.runner.RunWith"));
   private static final Set<String> SPRING_TEST_CLASS_MARKER_ANNOTATIONS = Set.of(
       "SpringBootTest",
       "WebMvcTest",
@@ -131,6 +139,8 @@ public final class TestInventoryAnalyzer {
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
     List<String> sourceLines = Files.readAllLines(javaFile, StandardCharsets.UTF_8);
     Map<String, ImportDeclaration> importsBySimpleName = importsBySimpleName(compilationUnit);
+    Map<String, String> singleTypeImportsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(
+        compilationUnit);
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
       if (type.isInterface()) {
@@ -145,6 +155,14 @@ public final class TestInventoryAnalyzer {
       TestInventoryEvidence classEvidence = testClassEvidence(sourcePath, className, type, sourceLines);
       evidence.putIfAbsent(classEvidence.id(), classEvidence);
 
+      List<TestMethodFact> testMethods = testMethods(
+          sourcePath,
+          className,
+          type,
+          singleTypeImportsBySimpleName,
+          sourceDeclaredTypeNames,
+          sourceLines,
+          evidence);
       List<FrameworkEvidence> frameworkEvidence = frameworkEvidence(
           sourcePath,
           className,
@@ -165,6 +183,7 @@ public final class TestInventoryAnalyzer {
           className,
           sourcePath,
           frameworkSignals(frameworkEvidence),
+          testMethods,
           testedSubjects,
           List.of(classEvidence.id())));
     }
@@ -196,6 +215,9 @@ public final class TestInventoryAnalyzer {
 
     if (includeImportEvidence) {
       for (ImportDeclaration importDeclaration : importsBySimpleName.values()) {
+        if (importDeclaration.isStatic() || importDeclaration.isAsterisk()) {
+          continue;
+        }
         frameworkName(Optional.of(importDeclaration.getNameAsString()), null, sourceDeclaredTypeNames)
             .ifPresent(frameworkName -> {
               TestInventoryEvidence importEvidence = importEvidence(
@@ -270,6 +292,9 @@ public final class TestInventoryAnalyzer {
     }
 
     String name = resolvedName.orElseThrow();
+    if (sourceDeclaredTypeNames.contains(name)) {
+      return Optional.empty();
+    }
     if (name.startsWith("org.junit.jupiter.")) {
       return Optional.of("JUnit Jupiter");
     }
@@ -328,27 +353,51 @@ public final class TestInventoryAnalyzer {
     Optional<String> resolvedName = resolvedAnnotationName(annotation, importsBySimpleName);
     String simpleName = simpleAnnotationName(annotation);
     if (annotationLocation.methodName() != null) {
-      return isJUnitTestMethodAnnotation(resolvedName, simpleName);
+      return isSupportedAnnotation(
+          annotation,
+          importsBySimpleName,
+          JUNIT_TEST_METHOD_ANNOTATION_ORIGINS,
+          sourceDeclaredTypeNames);
     }
 
-    return isJUnitNestedAnnotation(resolvedName, simpleName)
-        || isJUnitFourRunWithAnnotation(resolvedName, simpleName)
+    return isJUnitNestedAnnotation(annotation, importsBySimpleName, sourceDeclaredTypeNames)
+        || isJUnitFourRunWithAnnotation(annotation, importsBySimpleName, sourceDeclaredTypeNames)
         || isSpringTestClassMarkerAnnotation(resolvedName, simpleName, sourceDeclaredTypeNames);
   }
 
-  private boolean isJUnitTestMethodAnnotation(Optional<String> resolvedName, String simpleName) {
-    return JUNIT_TEST_METHOD_ANNOTATIONS.contains(simpleName)
-        && resolvedName.map(name -> name.startsWith("org.junit.")).orElse(false);
+  private boolean isSupportedAnnotation(
+      AnnotationExpr annotation,
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Map<String, Set<String>> supportedOrigins,
+      Set<String> sourceDeclaredTypeNames) {
+    return JavaSourceOrigins.supportedTypeSimpleName(
+            annotation.getNameAsString(),
+            singleTypeImportNames(importsBySimpleName),
+            supportedOrigins,
+            sourceDeclaredTypeNames)
+        .isPresent();
   }
 
-  private boolean isJUnitNestedAnnotation(Optional<String> resolvedName, String simpleName) {
-    return "Nested".equals(simpleName)
-        && resolvedName.map(name -> name.startsWith("org.junit.jupiter.")).orElse(false);
+  private boolean isJUnitNestedAnnotation(
+      AnnotationExpr annotation,
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
+    return isSupportedAnnotation(
+        annotation,
+        importsBySimpleName,
+        JUNIT_NESTED_ANNOTATION_ORIGINS,
+        sourceDeclaredTypeNames);
   }
 
-  private boolean isJUnitFourRunWithAnnotation(Optional<String> resolvedName, String simpleName) {
-    return "RunWith".equals(simpleName)
-        && resolvedName.map(name -> name.startsWith("org.junit.")).orElse(false);
+  private boolean isJUnitFourRunWithAnnotation(
+      AnnotationExpr annotation,
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
+    return isSupportedAnnotation(
+        annotation,
+        importsBySimpleName,
+        JUNIT_RUN_WITH_ANNOTATION_ORIGINS,
+        sourceDeclaredTypeNames);
   }
 
   private boolean isSpringTestClassMarkerAnnotation(
@@ -432,6 +481,55 @@ public final class TestInventoryAnalyzer {
         HIGH_CONFIDENCE);
   }
 
+  private List<TestMethodFact> testMethods(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<TestMethodFact> methods = new ArrayList<>();
+    for (MethodDeclaration method : type.getMethods()) {
+      Optional<AnnotationExpr> testAnnotation = supportedTestMethodAnnotation(
+          method,
+          singleTypeImportsBySimpleName,
+          sourceDeclaredTypeNames);
+      if (testAnnotation.isEmpty()) {
+        continue;
+      }
+
+      TestInventoryEvidence methodEvidence = annotationEvidence(
+          sourcePath,
+          className,
+          method.getNameAsString(),
+          testAnnotation.orElseThrow(),
+          sourceLines);
+      evidence.putIfAbsent(methodEvidence.id(), methodEvidence);
+      methods.add(new TestMethodFact(
+          method.getNameAsString(),
+          methodEvidence.symbolName(),
+          METHOD_KIND_TEST,
+          null,
+          List.of(methodEvidence.id())));
+    }
+    return List.copyOf(methods);
+  }
+
+  private Optional<AnnotationExpr> supportedTestMethodAnnotation(
+      MethodDeclaration method,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames) {
+    return method.getAnnotations().stream()
+        .filter(annotation -> JavaSourceOrigins.supportedTypeSimpleName(
+                annotation.getNameAsString(),
+                singleTypeImportsBySimpleName,
+                JUNIT_TEST_METHOD_ANNOTATION_ORIGINS,
+                sourceDeclaredTypeNames)
+            .isPresent())
+        .findFirst();
+  }
+
   private List<TestFrameworkSignalFact> frameworkSignals(List<FrameworkEvidence> evidence) {
     Map<String, List<String>> evidenceIdsByFramework = new LinkedHashMap<>();
     for (FrameworkEvidence record : evidence) {
@@ -443,6 +541,7 @@ public final class TestInventoryAnalyzer {
     return evidenceIdsByFramework.entrySet().stream()
         .map(entry -> new TestFrameworkSignalFact(
             entry.getKey(),
+            SIGNAL_KIND_FRAMEWORK,
             entry.getValue().stream().sorted().toList()))
         .sorted(FRAMEWORK_SIGNAL_ORDER)
         .toList();
@@ -635,6 +734,17 @@ public final class TestInventoryAnalyzer {
       return name.substring(lastDot + 1);
     }
     return name;
+  }
+
+  private Map<String, String> singleTypeImportNames(Map<String, ImportDeclaration> importsBySimpleName) {
+    Map<String, String> imports = new LinkedHashMap<>();
+    for (Map.Entry<String, ImportDeclaration> entry : importsBySimpleName.entrySet()) {
+      ImportDeclaration importDeclaration = entry.getValue();
+      if (!importDeclaration.isStatic() && !importDeclaration.isAsterisk()) {
+        imports.putIfAbsent(entry.getKey(), importDeclaration.getNameAsString());
+      }
+    }
+    return imports;
   }
 
   private String evidenceId(

@@ -105,6 +105,7 @@
         "framework_signals": [
           {
             "name": "JUnit Jupiter",
+            "signal_kind": "framework",
             "evidence_ids": [
               "ev:src/test/java/com/example/web/LargeControllerTest.java:5-5:com.example.web.LargeControllerTest:import:org.junit.jupiter.api.Test",
               "ev:src/test/java/com/example/web/LargeControllerTest.java:10-10:com.example.web.LargeControllerTest#testOne:@Test",
@@ -113,6 +114,71 @@
               "ev:src/test/java/com/example/web/LargeControllerTest.java:19-19:com.example.web.LargeControllerTest#testFour:@Test",
               "ev:src/test/java/com/example/web/LargeControllerTest.java:22-22:com.example.web.LargeControllerTest#testFive:@Test",
               "ev:src/test/java/com/example/web/LargeControllerTest.java:25-25:com.example.web.LargeControllerTest#testSix:@Test",
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:28-28:com.example.web.LargeControllerTest#testSeven:@Test"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "method_name": "testOne",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:10-10:com.example.web.LargeControllerTest#testOne:@Test"
+            ]
+          },
+          {
+            "method_name": "testTwo",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:13-13:com.example.web.LargeControllerTest#testTwo:@Test"
+            ]
+          },
+          {
+            "method_name": "testThree",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:16-16:com.example.web.LargeControllerTest#testThree:@Test"
+            ]
+          },
+          {
+            "method_name": "testFour",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:19-19:com.example.web.LargeControllerTest#testFour:@Test"
+            ]
+          },
+          {
+            "method_name": "testFive",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:22-22:com.example.web.LargeControllerTest#testFive:@Test"
+            ]
+          },
+          {
+            "method_name": "testSix",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/LargeControllerTest.java:25-25:com.example.web.LargeControllerTest#testSix:@Test"
+            ]
+          },
+          {
+            "method_name": "testSeven",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
               "ev:src/test/java/com/example/web/LargeControllerTest.java:28-28:com.example.web.LargeControllerTest#testSeven:@Test"
             ]
           }

@@ -249,8 +249,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Test class: Detected `com.example.shared.SharedControllerTest`
   - Evidence: `services/billing/src/test/java/com/example/shared/SharedControllerTest.java:5` (`ev:services/billing/src/test/java/com/example/shared/SharedControllerTest.java:5-5:com.example.shared.SharedControllerTest:test_file`)
 - Source: Detected `services/billing/src/test/java/com/example/shared/SharedControllerTest.java`
-- Framework signal: Detected `JUnit Jupiter`
+- Framework signal: Detected `JUnit Jupiter` (signal_kind: `framework`)
   - Evidence: `services/billing/src/test/java/com/example/shared/SharedControllerTest.java:3` (`ev:services/billing/src/test/java/com/example/shared/SharedControllerTest.java:3-3:com.example.shared.SharedControllerTest:import:org.junit.jupiter.api.Test`), `services/billing/src/test/java/com/example/shared/SharedControllerTest.java:6` (`ev:services/billing/src/test/java/com/example/shared/SharedControllerTest.java:6-6:com.example.shared.SharedControllerTest#health:@Test`)
+- Test method: Detected `health` annotated with `@Test` (method_kind: `test`)
+  - Evidence: `services/billing/src/test/java/com/example/shared/SharedControllerTest.java:6` (`ev:services/billing/src/test/java/com/example/shared/SharedControllerTest.java:6-6:com.example.shared.SharedControllerTest#health:@Test`)
 - Inferred tested subject: `com.example.shared.SharedController` in target module `module:services/billing` (path: `services/billing`) (support_type: `inferred`, confidence: `medium`)
   - Evidence: `services/billing/src/test/java/com/example/shared/SharedControllerTest.java:5` (`ev:services/billing/src/test/java/com/example/shared/SharedControllerTest.java:5-5:com.example.shared.SharedControllerTest:test_file`), `services/billing/src/main/java/com/example/shared/SharedController.java:5` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:5-5:com.example.shared.SharedController:code_symbol`)
 
@@ -260,8 +262,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Test class: Detected `com.example.shared.SharedControllerTest`
   - Evidence: `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5-5:com.example.shared.SharedControllerTest:test_file`)
 - Source: Detected `services/orders/src/test/java/com/example/shared/SharedControllerTest.java`
-- Framework signal: Detected `JUnit Jupiter`
+- Framework signal: Detected `JUnit Jupiter` (signal_kind: `framework`)
   - Evidence: `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:3` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:3-3:com.example.shared.SharedControllerTest:import:org.junit.jupiter.api.Test`), `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:6` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:6-6:com.example.shared.SharedControllerTest#health:@Test`)
+- Test method: Detected `health` annotated with `@Test` (method_kind: `test`)
+  - Evidence: `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:6` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:6-6:com.example.shared.SharedControllerTest#health:@Test`)
 - Inferred tested subject: `com.example.shared.SharedController` in target module `module:services/orders` (path: `services/orders`) (support_type: `inferred`, confidence: `medium`)
   - Evidence: `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5-5:com.example.shared.SharedControllerTest:test_file`), `services/orders/src/main/java/com/example/shared/SharedController.java:5` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:5-5:com.example.shared.SharedController:code_symbol`)
 
@@ -286,7 +290,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
-- Inferred: tested-subject relations use naming conventions only. Test execution, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Inferred: tested-subject relations use naming conventions only. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.

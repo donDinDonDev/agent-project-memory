@@ -1673,6 +1673,7 @@ public final class AgentGuideGenerator {
       appendEvidenceLine(markdown, test.path("evidence_ids"), evidenceById);
       markdown.append("- Source: Detected ").append(code(text(test, "source_path"))).append("\n");
       appendFrameworkSignals(markdown, test.path("framework_signals"), evidenceById);
+      appendTestMethods(markdown, test.path("methods"), evidenceById);
       appendTestedSubjects(markdown, test.path("tested_subjects"), moduleById, evidenceById);
       markdown.append("\n");
     }
@@ -1690,8 +1691,36 @@ public final class AgentGuideGenerator {
     for (JsonNode signal : frameworkSignals) {
       markdown.append("- Framework signal: Detected ")
           .append(code(text(signal, "name")))
+          .append(" (signal_kind: ")
+          .append(code(text(signal, "signal_kind")))
+          .append(")")
           .append("\n");
       appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
+    }
+  }
+
+  private void appendTestMethods(
+      StringBuilder markdown,
+      JsonNode methods,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!methods.isArray() || methods.isEmpty()) {
+      markdown.append("- Test methods: Detected none with supported direct JUnit test annotations.\n");
+      return;
+    }
+
+    for (JsonNode method : methods) {
+      markdown.append("- Test method: Detected ")
+          .append(code(text(method, "method_name")))
+          .append(" annotated with ")
+          .append(code(text(method, "test_annotation")))
+          .append(" (method_kind: ")
+          .append(code(text(method, "method_kind")));
+      String displayName = nullableText(method, "display_name");
+      if (displayName != null) {
+        markdown.append(", display_name: ").append(code(displayName));
+      }
+      markdown.append(")\n");
+      appendEvidenceLine(markdown, method.path("evidence_ids"), evidenceById);
     }
   }
 
@@ -1752,9 +1781,10 @@ public final class AgentGuideGenerator {
         .append("signals. Embedded targets are linked only when a unique local `@Embeddable` ")
         .append("can be matched; `@IdClass` field matching and composite-key semantics are ")
         .append("not analyzed.\n");
-    markdown.append("- Inferred: tested-subject relations use naming conventions only. Test execution, ")
-        .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
-        .append("analyzed.\n");
+    markdown.append("- Inferred: tested-subject relations use naming conventions only. Test method ")
+        .append("inventory records source-visible JUnit annotation structure only. Test execution, ")
+        .append("CI results, coverage, assertion behavior, call graphs, and complete subject ")
+        .append("mapping are not analyzed.\n");
     if (projectMap.path("project").path("modules").isObject()) {
       markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
           .append("Gradle/Kotlin support, Maven profiles, effective POM reconstruction, ")
