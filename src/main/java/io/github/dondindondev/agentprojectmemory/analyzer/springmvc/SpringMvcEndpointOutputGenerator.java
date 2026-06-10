@@ -16,6 +16,10 @@ import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigA
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryPolicy;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
@@ -121,7 +125,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.7";
+  private static final String SCHEMA_VERSION = "0.8";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
@@ -368,6 +372,7 @@ public final class SpringMvcEndpointOutputGenerator {
       new OpenApiSpecDiscoveryAnalyzer();
   private final OpenApiOperationAnalyzer openApiOperationAnalyzer =
       new OpenApiOperationAnalyzer();
+  private final DocumentDiscoveryAnalyzer documentDiscoveryAnalyzer = new DocumentDiscoveryAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -506,6 +511,9 @@ public final class SpringMvcEndpointOutputGenerator {
     OpenApiOperationAnalysis openApiOperationAnalysis = openApiOperationAnalyzer.analyze(
         normalizedRepositoryRoot,
         openApiSpecDiscoveryAnalysis.specFiles());
+    DocumentDiscoveryAnalysis documentDiscoveryAnalysis = documentDiscoveryAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        layout.modules().items());
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
@@ -515,8 +523,9 @@ public final class SpringMvcEndpointOutputGenerator {
         resourceConfigAnalysis,
         springBootApplicationAnalysis,
         openApiSpecDiscoveryAnalysis,
-        openApiOperationAnalysis)) {
-      return new Result(false, 0, 0, 0, 0, 0);
+        openApiOperationAnalysis,
+        documentDiscoveryAnalysis)) {
+      return new Result(false, 0, 0, 0, 0, 0, 0);
     }
 
     ModuleAwareScan scan = analyzeModules(
@@ -554,7 +563,8 @@ public final class SpringMvcEndpointOutputGenerator {
         resourceConfigAnalysis,
         springBootApplicationAnalysis,
         openApiSpecDiscoveryAnalysis,
-        openApiOperationAnalysis);
+        openApiOperationAnalysis,
+        documentDiscoveryAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -583,6 +593,7 @@ public final class SpringMvcEndpointOutputGenerator {
         scan.components().size(),
         scan.entities().size(),
         scan.tests().size(),
+        documentDiscoveryAnalysis.documents().size(),
         evidenceRecords.size());
   }
 
@@ -595,7 +606,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ResourceConfigAnalysis resourceConfigAnalysis,
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
-      OpenApiOperationAnalysis openApiOperationAnalysis) {
+      OpenApiOperationAnalysis openApiOperationAnalysis,
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
@@ -612,7 +624,8 @@ public final class SpringMvcEndpointOutputGenerator {
             .anyMatch(applications -> ANALYSIS_ANALYZED.equals(applications.analysisStatus()))
         || !openApiSpecDiscoveryAnalysis.specFiles().isEmpty()
         || !openApiOperationAnalysis.operations().isEmpty()
-        || !openApiOperationAnalysis.warnings().isEmpty();
+        || !openApiOperationAnalysis.warnings().isEmpty()
+        || !documentDiscoveryAnalysis.documents().isEmpty();
   }
 
   private ProjectLayout detectLayout(
@@ -1456,7 +1469,8 @@ public final class SpringMvcEndpointOutputGenerator {
       ResourceConfigAnalysis resourceConfigAnalysis,
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
-      OpenApiOperationAnalysis openApiOperationAnalysis) {
+      OpenApiOperationAnalysis openApiOperationAnalysis,
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -1512,9 +1526,76 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 2, "analysis_status", scan.testAnalysisStatus(), true);
     appendTests(json, scan.tests());
     json.append("  },\n");
+    appendDocuments(json, documentDiscoveryAnalysis, true);
     appendQuality(json, qualitySignals(scan));
     json.append("}\n");
     return json.toString();
+  }
+
+  private void appendDocuments(
+      StringBuilder json,
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      boolean trailingComma) {
+    json.append("  \"documents\": {\n");
+    appendIndentedStringField(
+        json,
+        2,
+        "analysis_status",
+        documentDiscoveryAnalysis.analysisStatus(),
+        true);
+    appendDocumentDiscovery(json, documentDiscoveryAnalysis.discoveryPolicy(), true);
+    appendDocumentItems(json, documentDiscoveryAnalysis.documents(), false);
+    json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentDiscovery(
+      StringBuilder json,
+      DocumentDiscoveryPolicy discoveryPolicy,
+      boolean trailingComma) {
+    json.append("    \"discovery\": {\n");
+    appendIndentedStringField(json, 3, "scope", discoveryPolicy.scope(), true);
+    appendIndentedStringField(json, 3, "path_policy", discoveryPolicy.pathPolicy(), true);
+    appendIndentedStringField(json, 3, "symlink_policy", discoveryPolicy.symlinkPolicy(), true);
+    appendIndentedStringArrayField(json, 3, "included_patterns", discoveryPolicy.includedPatterns(), true);
+    appendIndentedStringArrayField(json, 3, "excluded_patterns", discoveryPolicy.excludedPatterns(), false);
+    json.append("    }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentItems(StringBuilder json, List<DocumentFileFact> documents, boolean trailingComma) {
+    json.append("    \"items\": [");
+    if (documents.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < documents.size(); index++) {
+      appendDocument(json, documents.get(index), index < documents.size() - 1);
+    }
+    json.append("    ]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocument(StringBuilder json, DocumentFileFact document, boolean trailingComma) {
+    json.append("      {\n");
+    appendIndentedStringField(json, 4, "id", document.id(), true);
+    appendIndentedStringField(json, 4, "document_kind", document.documentKind(), true);
+    appendIndentedStringField(json, 4, "format", document.format(), true);
+    appendIndentedNullableStringField(json, 4, "module_id", document.moduleId(), true);
+    appendIndentedStringField(json, 4, "path", document.path(), true);
+    appendIndentedStringField(json, 4, "title", document.title(), true);
+    appendIndentedStringField(json, 4, "title_source", document.titleSource(), true);
+    appendIndentedStringField(json, 4, "discovery_source", document.discoverySource(), true);
+    appendIndentedStringArrayField(json, 4, "headings", document.headings(), true);
+    appendIndentedStringArrayField(json, 4, "chunks", document.chunks(), true);
+    appendIndentedStringArrayField(json, 4, "evidence_ids", document.evidenceIds(), false);
+    json.append("      }");
+    if (trailingComma) {
+      json.append(",");
+    }
+    json.append("\n");
   }
 
   private Map<String, MavenModuleMetadata> metadataByModuleId(MavenMetadataAnalysis metadataAnalysis) {
@@ -5296,6 +5377,7 @@ public final class SpringMvcEndpointOutputGenerator {
       int componentCount,
       int entityCount,
       int testCount,
+      int documentCount,
       int evidenceCount) {
   }
 

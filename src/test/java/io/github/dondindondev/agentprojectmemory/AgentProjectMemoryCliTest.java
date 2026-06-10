@@ -123,7 +123,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),
         () -> assertTrue(projectMap.contains("\"metadata\": {\n"
@@ -153,7 +153,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.contains("\"spring_application_surface\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"api_surface\": {")),
@@ -202,7 +202,7 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
-        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertFalse(rewrittenProjectMap.contains("stale generated content")));
   }
 

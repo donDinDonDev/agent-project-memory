@@ -17,6 +17,18 @@ architecture documents.
   reconciliation signal taxonomy, guide-rendering expectations, validation boundaries,
   and explicit non-goals for external docs, generic RAG, LLM-core, and document claims
   overriding code facts.
+- Added the first v0.8 local Markdown discovery implementation slice, with deterministic
+  default-scope document inventory, repository-relative in-root path normalization,
+  default exclusions for hidden/private/generated/dependency/output/maintainer-like
+  paths, and a default no-symlink-following policy.
+
+### Changed
+
+- Updated generated `project-map.json` output to `schema_version: "0.8"` for the
+  inventory-only local Markdown discovery slice, including top-level `documents`
+  discovery policy metadata and document inventory while keeping heading extraction,
+  chunk extraction, document evidence, code-doc reconciliation, and local documentation
+  guide rendering out of the current implementation.
 
 ### Fixed
 

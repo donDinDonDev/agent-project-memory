@@ -1,5 +1,5 @@
 {
-  "schema_version": "0.7",
+  "schema_version": "0.8",
   "project": {
     "root": ".",
     "build": {
@@ -1541,6 +1541,39 @@
         ]
       }
     ]
+  },
+  "documents": {
+    "analysis_status": "not_detected",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": []
   },
   "quality": {
     "analysis_status": "not_detected",

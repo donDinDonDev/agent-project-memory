@@ -101,6 +101,49 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void projectMapRendersDocumentInventoryOnlyWithoutDocumentEvidence() throws Exception {
+    Path projectPath = tempDir.resolve("document-inventory");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("README.md"), "# Root docs\n");
+    writeFile(projectPath.resolve("docs/guide.md"), "# Guide\n");
+    writeFile(projectPath.resolve("docs/private/secret.md"), "# FAKE_PRIVATE_MARKDOWN_SECRET\n");
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    JsonNode documents = JSON.readTree(projectMap).path("documents");
+    JsonNode items = documents.path("items");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(2, result.documentCount()),
+        () -> assertEquals("0.8", JSON.readTree(projectMap).path("schema_version").asText()),
+        () -> assertEquals("analyzed", documents.path("analysis_status").asText()),
+        () -> assertEquals("default_local_markdown", documents.path("discovery").path("scope").asText()),
+        () -> assertEquals("repository_relative_in_root",
+            documents.path("discovery").path("path_policy").asText()),
+        () -> assertEquals("skip_symlinks",
+            documents.path("discovery").path("symlink_policy").asText()),
+        () -> assertEquals(List.of("README.md", "docs/guide.md"), jsonTextValues(items, "path")),
+        () -> assertEquals(List.of("root_readme", "docs_tree"), jsonTextValues(items, "discovery_source")),
+        () -> assertTrue(items.get(0).path("module_id").isNull()),
+        () -> assertEquals("README", items.get(0).path("title").asText()),
+        () -> assertEquals("filename", items.get(0).path("title_source").asText()),
+        () -> assertEquals(0, items.get(0).path("headings").size()),
+        () -> assertEquals(0, items.get(0).path("chunks").size()),
+        () -> assertEquals(0, items.get(0).path("evidence_ids").size()),
+        () -> assertFalse(projectMap.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
+        () -> assertFalse(evidenceIndex.contains("\"source_type\":\"document\"")),
+        () -> assertFalse(agentGuide.contains("Local Project Documentation")));
+  }
+
+  @Test
   void springBootApplicationsAreModuleOwnedAndEvidenceBacked() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
@@ -965,7 +1008,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(0, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
         () -> assertEquals("analyzed", specFiles.path("analysis_status").asText()),
         () -> assertEquals(1, specFiles.path("items").size()),
@@ -1242,7 +1285,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.contains("\"api_surface_category\": \"source_visible_spring_mvc_endpoint\"")),
         () -> assertTrue(projectMap.contains("\"source_visible_spring_mvc_endpoints\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
@@ -1320,7 +1363,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -1390,7 +1433,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     assertAll(
         () -> assertTrue(result.generated()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
             < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
         () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
@@ -1879,7 +1922,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.7\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),

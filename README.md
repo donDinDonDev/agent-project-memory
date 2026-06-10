@@ -74,9 +74,9 @@ java -jar target/agent-project-memory-0.7.0.jar scan /path/to/java-spring-projec
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
 rewritten deterministically when supported Maven module roots, source-visible Maven
 metadata from module POMs, supported root source, test, or resource roots, supported
-config files, local OpenAPI/Swagger spec files, Spring repository signals, Spring
-configuration surface signals, Spring behavior or messaging listener signals, or Maven
-module warnings are detected.
+config files, local OpenAPI/Swagger spec files, safe default-scope local Markdown
+documents, Spring repository signals, Spring configuration surface signals, Spring
+behavior or messaging listener signals, or Maven module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
@@ -109,7 +109,9 @@ supported security annotations and `SecurityFilterChain` `@Bean` methods without
 security policy, endpoint protection, authentication, authorization, filter-chain
 ordering, vulnerability, or correctness claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
-inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, then writes:
+inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, and discovers
+safe default-scope local Markdown document inventory without heading, chunk, document
+evidence, reconciliation, or local-document guide rendering, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -119,7 +121,7 @@ inputs and extracts minimal spec-backed declared OpenAPI/Swagger operations, the
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.7"` and includes detected root `pom.xml` build metadata when
+`schema_version: "0.8"` and includes detected root `pom.xml` build metadata when
 present, Maven module inventory, module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -149,8 +151,10 @@ the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
 `spring_application_surface.behavior` transaction, scheduled, and event listener
 inventories, `spring_application_surface.messaging.listener_signals` inventories, and
-`spring_application_surface.security.configuration_warnings` warning-ID references, and
-evidence ID references. The current Spring application surface implementation emits
+`spring_application_surface.security.configuration_warnings` warning-ID references, a
+top-level `documents` object with deterministic default-scope local Markdown discovery
+policy metadata and document inventory, and evidence ID references. The current Spring
+application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
 current v0.6 JPA/domain implementation emits field metadata for direct field-level
@@ -287,7 +291,8 @@ source-visible `@MockBean` and `@SpyBean` annotation signals on emitted test cla
 conservative tested-subject relation/status rows from supported naming, exact
 production imports, direct field types, and direct Spring test slice class literals,
 conservative test-gap and change-risk planning hints from existing deterministic facts
-and inferred tested-subject relations,
+and inferred tested-subject relations, deterministic default-scope local Markdown
+document discovery and inventory with safe path exclusions and no symlink following,
 deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
@@ -467,16 +472,21 @@ Current limitations:
   coverage, test execution, assertion behavior, CI results, runtime behavior, production
   impact, vulnerability, correctness, business priority, or complete subject mapping.
 - `agent-guide.md` is generated from existing deterministic output facts only. It does not
-  ingest local documentation, summarize source files, infer architecture layers, or add
-  claims beyond extracted facts, explicit inferences, and known uncertainty labels.
-- Local Markdown/document ingestion is not implemented.
+  render local documentation content, summarize source files, infer architecture layers,
+  or add claims beyond extracted facts, explicit inferences, and known uncertainty
+  labels.
+- Local Markdown/document ingestion is limited to conservative default-scope document
+  inventory. It does not extract headings or chunks, emit document evidence, reconcile
+  code and docs, render local-document guide sections, read hidden/private/generated/
+  dependency/maintainer paths, follow symlinks, or summarize document content.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
   Boot application, Spring repository stereotype and interface signal, local
   OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, and tests inventory
-  evidence.
+  evidence. It does not emit `document` evidence records in the current inventory-only
+  slice.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

@@ -32,7 +32,7 @@ final class AgentGuideGeneratorTest {
   void noDomainGuideSkipsJpaSectionAndPersistenceInspectionHint() throws Exception {
     String projectMap = """
         {
-          "schema_version": "0.7",
+          "schema_version": "0.8",
           "project": {
             "build": {
               "system": "maven",
@@ -182,7 +182,7 @@ final class AgentGuideGeneratorTest {
   void springApplicationSurfaceGuideGroupsCategoriesByModule() throws Exception {
     String projectMap = """
         {
-          "schema_version": "0.7",
+          "schema_version": "0.8",
           "project": {
             "build": {
               "system": "maven",
@@ -453,7 +453,7 @@ final class AgentGuideGeneratorTest {
   void testGuideRendersSpringSliceAndMockSignalsWithoutRuntimeClaims() throws Exception {
     String projectMap = """
         {
-          "schema_version": "0.7",
+          "schema_version": "0.8",
           "project": {
             "build": {
               "system": "maven",

@@ -38,9 +38,9 @@ Evidence types defined by the model:
 - `path_signal`: a repository-relative file or directory path presence signal. This
   evidence type is emitted for v0.4 generated-source path warnings and is also available
   for other path-only signals that need evidence beyond a source file line.
-- `document`: a local project document such as Markdown. This evidence type is used by
-  the planned v0.8 local Markdown/document ingestion contract and is not emitted by the
-  current v0.7 implementation.
+- `document`: a local project document such as Markdown. This evidence type is reserved
+  by the v0.8 local Markdown/document ingestion contract. The current inventory-only
+  implementation does not emit `document` evidence records yet.
 
 ## Evidence Fields
 
@@ -78,9 +78,10 @@ a file path.
 Extracted facts are directly observed in source files or documents.
 
 In the current implementation, extracted facts come from root and child Maven build
-files, supported Java production source roots, and supported Java test roots. The
-planned v0.8 contract adds local Markdown document inventory, headings, and bounded
-chunk references as document-backed extracted facts after implementation.
+files, supported Java production source roots, supported Java test roots, and
+default-scope local Markdown document paths. Later v0.8 layers may add local Markdown
+headings and bounded chunk references as document-backed extracted facts after document
+evidence support is implemented.
 
 Examples:
 
@@ -132,10 +133,11 @@ Examples:
   annotation signals. None of these observations prove test execution, coverage,
   assertion behavior, CI behavior, runtime Spring context behavior, Mockito behavior, or
   slice correctness.
-- Planned v0.8 local Markdown document inventory, heading, and chunk references from the
-  documented default discovery scope. These document facts support document orientation
-  only and do not prove code structure, runtime behavior, API implementation, test
-  coverage, configuration semantics, or source/document agreement.
+- Current v0.8 local Markdown document inventory from the documented default discovery
+  scope. These document facts support document orientation only and do not prove code
+  structure, runtime behavior, API implementation, test coverage, configuration
+  semantics, or source/document agreement. Current inventory output does not read or
+  serialize document bodies and does not emit document evidence records yet.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -204,9 +206,9 @@ The v0.1 implementation emits these evidence records:
 - Hidden HTTP surface warning evidence described in the v0.1 Warning Evidence section
   below.
 
-The current v0.7 analyzer does not emit evidence records for local Markdown/documents,
-connectors, generated guidance, coverage data, test execution results, behavioral
-assertion analysis, or LLM output.
+The current v0.8 inventory-only analyzer does not emit evidence records for local
+Markdown/documents, connectors, generated guidance, coverage data, test execution
+results, behavioral assertion analysis, or LLM output.
 
 ### v0.2 Maven Module Evidence
 
@@ -921,9 +923,10 @@ Current quality and change-risk evidence:
 
 ### Planned v0.8 Document Evidence
 
-The planned v0.8 local Markdown/document ingestion contract uses the existing evidence
-field set and the `document` evidence type. It does not add global evidence fields in
-the design state.
+The planned v0.8 local Markdown/document evidence layer uses the existing evidence field
+set and the `document` evidence type. It does not add global evidence fields in the
+design state. The current inventory-only implementation does not emit these records;
+it leaves `documents.items[].evidence_ids` empty until document evidence is implemented.
 
 Document evidence scope:
 

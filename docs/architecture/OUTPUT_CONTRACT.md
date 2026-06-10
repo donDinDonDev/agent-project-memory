@@ -30,18 +30,21 @@ mapping reconstruction.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. The current implemented
-public contract is the v0.7 tests inventory refinement slice layered on top of the v0.6
-JPA/domain model slice, the v0.5 Spring application surface slices, the v0.4 API surface
-slice, and the v0.3 module-aware Maven metadata, dependency, and plugin inventory
-contract. The current v0.7 contract also emits direct Spring test slice and mock
-annotation signals and conservative tested-subject relation/status rows under the
-top-level `tests` inventory, plus conservative test-gap and change-risk planning hints
-under the top-level `quality` object.
-The planned v0.8 local Markdown/document ingestion contract below is a future atomic
-output boundary. The current implementation remains `schema_version: "0.7"` until the
-document discovery, parsing, evidence, reconciliation, guide rendering, tests, and
-goldens are implemented together in a valid v0.8 output state.
+`project-map.json` is the machine-readable project memory file. The current unreleased
+implemented public contract is the v0.8 local Markdown discovery inventory slice layered
+on top of the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model slice,
+the v0.5 Spring application surface slices, the v0.4 API surface slice, and the v0.3
+module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
+v0.7 contract also emits direct Spring test slice and mock annotation signals and
+conservative tested-subject relation/status rows under the top-level `tests` inventory,
+plus conservative test-gap and change-risk planning hints under the top-level `quality`
+object.
+The current unreleased v0.8 implementation starts the local Markdown/document ingestion
+boundary with deterministic default-scope Markdown discovery and document inventory
+only. It emits `schema_version: "0.8"` with a top-level `documents` inventory object.
+Heading extraction, chunk extraction, document evidence records, code-doc
+reconciliation signals, and local documentation guide rendering remain planned later
+v0.8 layers and are not emitted by the current inventory slice.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2618,27 +2621,33 @@ Current v0.7 deterministic sorting rules:
 
 ### v0.8 Local Markdown And Document Ingestion Contract
 
-This section defines the planned v0.8 public output boundary for local Markdown/project
-document ingestion. It is a contract design for a future implementation state, not a
-claim about the current v0.7 analyzer.
+This section defines the v0.8 public output boundary for local Markdown/project
+document ingestion. The current unreleased implementation includes the discovery and
+inventory subset only; later v0.8 layers may add document structure, document evidence,
+reconciliation signals, and guide rendering under the same documented safety rules.
 
 The v0.8 local document ingestion contract uses:
 
-- `schema_version: "0.8"` only for an atomic public output state that preserves the v0.7
-  contracts and adds deterministic local Markdown document inventory, document evidence,
-  document structure, conservative code-doc reconciliation signals, and guide rendering.
+- `schema_version: "0.8"` for output that preserves the v0.7 contracts and adds the
+  top-level `documents` owner. In the current implementation, `documents` contains
+  deterministic default-scope local Markdown discovery policy metadata and document
+  inventory only.
 - The same four output files under `.project-memory/`.
 - A top-level `documents` object as the owner of local Markdown document inventory,
-  discovered heading/chunk references, applied discovery policy metadata, and
-  document/code reconciliation signals.
-- Existing evidence fields plus the reserved `document` evidence type. v0.8 does not
-  add global evidence fields in this design.
+  applied discovery policy metadata, and later document structure and document/code
+  reconciliation signals.
+- Existing evidence fields plus the reserved `document` evidence type. The current
+  inventory-only implementation does not emit `document` evidence records; later
+  document evidence support must remain within the existing evidence field set unless
+  the output and evidence contracts are updated together.
 
-There is no valid partial `schema_version: "0.8"` state where document inventory is
-emitted without matching document evidence semantics, or where reconciliation signals
-are emitted without both output-contract and evidence-contract support.
+The current inventory-only `schema_version: "0.8"` state is valid only because it does
+not emit headings, chunks, document evidence, reconciliation signals, or guide-rendered
+local documentation. Future layers must update tests and contract text when they add
+those outputs.
 
-Planned `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
+Current inventory-only `project-map.json` excerpt. Unchanged v0.7 fields are omitted for
+focus:
 
 ```json
 {
@@ -2681,68 +2690,19 @@ Planned `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
         "format": "markdown",
         "module_id": null,
         "path": "README.md",
-        "title": "agent-project-memory",
-        "title_source": "first_heading",
+        "title": "README",
+        "title_source": "filename",
         "discovery_source": "root_readme",
-        "headings": [
-          {
-            "id": "document_heading:README.md:000001",
-            "level": 1,
-            "title": "agent-project-memory",
-            "anchor": "agent-project-memory",
-            "line_start": 1,
-            "line_end": 1,
-            "chunk_id": "document_chunk:README.md:000001",
-            "evidence_ids": [
-              "ev:README.md:1-1:document:heading:agent-project-memory:decl:000001"
-            ]
-          }
-        ],
-        "chunks": [
-          {
-            "id": "document_chunk:README.md:000001",
-            "ordinal": 1,
-            "heading_id": "document_heading:README.md:000001",
-            "line_start": 1,
-            "line_end": 42,
-            "content_status": "not_serialized",
-            "evidence_ids": [
-              "ev:README.md:1-42:document:chunk:000001"
-            ]
-          }
-        ],
-        "evidence_ids": [
-          "ev:README.md:1-1:document:file:README.md"
-        ]
+        "headings": [],
+        "chunks": [],
+        "evidence_ids": []
       }
-    ],
-    "reconciliation": {
-      "analysis_status": "analyzed",
-      "items": [
-        {
-          "id": "document_reconciliation:document_only_endpoint_mention:README.md:000001",
-          "signal": "document_only_endpoint_mention",
-          "status": "uncertain_signal",
-          "subject_kind": "endpoint_like_path",
-          "subject_name": "/legacy/orders",
-          "source_fact_kind": null,
-          "source_fact_id": null,
-          "document_id": "document:README.md",
-          "document_chunk_id": "document_chunk:README.md:000001",
-          "match_basis": "bounded_endpoint_like_path_token",
-          "confidence": "low",
-          "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
-          "evidence_ids": [
-            "ev:README.md:32-32:document:mention:%2Flegacy%2Forders:decl:000001"
-          ]
-        }
-      ]
-    }
+    ]
   }
 }
 ```
 
-Planned v0.8 document discovery rules:
+v0.8 document discovery rules:
 
 - Default discovery is conservative and local. It includes root `README.md` or
   `README.markdown`, README files directly under supported Maven module roots, root
@@ -2764,7 +2724,7 @@ Planned v0.8 document discovery rules:
   introduced, the generated output should record the applied policy and still enforce
   repository-relative path containment.
 
-Planned v0.8 document inventory rules:
+Current v0.8 document inventory rules:
 
 - `documents.analysis_status` is `"analyzed"` when local document discovery ran,
   `"not_detected"` when discovery ran and no default-scope document was found, and
@@ -2785,16 +2745,22 @@ Planned v0.8 document inventory rules:
   supported module root and can be assigned deterministically. Repository-level docs use
   `null`.
 - `document.path` is the normalized repository-relative document path.
-- `document.title` is derived from the first supported heading when present, otherwise
-  from the filename. It is document metadata, not a semantic summary.
-- `document.title_source` is `"first_heading"` or `"filename"`.
+- `document.title` is derived from the filename in the current inventory-only
+  implementation. Later heading extraction may derive it from the first supported
+  heading after that behavior is implemented and tested. It is document metadata, not a
+  semantic summary.
+- `document.title_source` is `"filename"` in the current inventory-only implementation.
+  `"first_heading"` is reserved for the later heading extraction layer.
 - `document.discovery_source` identifies the default-scope reason, such as
   `"root_readme"`, `"module_readme"`, `"docs_tree"`, `"adr_tree"`, or
   `"explicit_include"` if a future configuration contract adds explicit includes.
-- `document.headings[]` and `document.chunks[]` contain bounded structure references.
-  They must not serialize full document bodies, paragraphs, arbitrary lists, code
-  blocks, tables, or generated summaries.
-- `document.evidence_ids` references document evidence for the file-level observation.
+- `document.headings[]` and `document.chunks[]` are emitted as empty arrays in the
+  current inventory-only implementation. Later structure extraction may populate them
+  with bounded references. They must not serialize full document bodies, paragraphs,
+  arbitrary lists, code blocks, tables, or generated summaries.
+- `document.evidence_ids` is an empty array in the current inventory-only
+  implementation. Later document evidence support may reference document evidence for
+  the file-level observation after the evidence layer is implemented.
 
 Planned v0.8 heading and chunk rules:
 
