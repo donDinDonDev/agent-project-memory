@@ -32,6 +32,9 @@ architecture documents.
   including `no_obvious_test` test-gap signals for selected endpoint, repository, and
   entity surfaces, plus warning-oriented or uncertain change-risk signals for existing
   Spring application, security, repository/entity, and JPA relationship facts.
+- Added a v0.7 real-project evaluation summary for pinned Java/Spring Maven targets,
+  covering source-visible test inventory accuracy, tested-subject inference quality,
+  quality planning-hint noise, determinism, and evidence/reference consistency.
 
 ### Changed
 

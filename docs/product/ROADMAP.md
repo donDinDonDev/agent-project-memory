@@ -36,6 +36,8 @@ test slice class literals where deterministic. Conservative test-gap and change-
 planning hints are now emitted under the top-level `quality` object from existing
 deterministic facts and inferred tested-subject relations, without coverage, execution,
 assertion, CI, runtime, correctness, vulnerability, or business-priority claims.
+Real-project evaluation for the current v0.7 slices is complete on pinned Java/Spring
+Maven targets with meaningful tests; release readiness remains a separate planned step.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -352,7 +354,8 @@ Implementation sequence:
 - Test-gap and change-risk planning hints. (implemented for the current slice)
 - Guide rendering, fixtures, and goldens for the current test inventory refinement
   and quality/change-risk planning-hint slices. (implemented for the current slices)
-- Real-project evaluation and release readiness. (planned)
+- Real-project evaluation for the current slices. (complete)
+- Release readiness. (planned)
 
 ## v0.8.0: Local Markdown And Document Ingestion
 
