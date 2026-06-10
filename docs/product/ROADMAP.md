@@ -413,9 +413,9 @@ scanning should receive focused tests and risk-based review before release.
 Current unreleased implementation status: the first v0.8 slices implement deterministic
 default-scope local Markdown discovery, `project-map.json` document inventory,
 deterministic ATX heading references, and bounded chunk references with
-`content_status: "not_serialized"`. `document` evidence records, code-doc
-reconciliation signals, and local documentation guide rendering remain planned later
-layers.
+`content_status: "not_serialized"`, plus resolving `document` evidence records for
+accepted file, heading, and chunk observations. Code-doc reconciliation signals and
+local documentation guide rendering remain planned later layers.
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 

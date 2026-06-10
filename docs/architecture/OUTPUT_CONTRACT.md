@@ -41,11 +41,11 @@ plus conservative test-gap and change-risk planning hints under the top-level `q
 object.
 The current unreleased v0.8 implementation extends the local Markdown/document
 ingestion boundary with deterministic default-scope Markdown discovery, document
-inventory, ATX heading references, and bounded chunk references. It emits
-`schema_version: "0.8"` with a top-level `documents` object. Document evidence records,
-code-doc reconciliation signals, and local documentation guide rendering remain planned
-later v0.8 layers and are not emitted by the current local Markdown discovery and
-structure slice.
+inventory, ATX heading references, bounded chunk references, and resolving `document`
+evidence records for accepted file, heading, and chunk observations. It emits
+`schema_version: "0.8"` with a top-level `documents` object. Code-doc reconciliation
+signals and local documentation guide rendering remain planned later v0.8 layers and
+are not emitted by the current local Markdown discovery, structure, and evidence slice.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2624,8 +2624,8 @@ Current v0.7 deterministic sorting rules:
 
 This section defines the v0.8 public output boundary for local Markdown/project
 document ingestion. The current unreleased implementation includes the discovery,
-inventory, ATX heading, and bounded chunk subset; later v0.8 layers may add document
-evidence, reconciliation signals, and guide rendering under the same documented safety
+inventory, ATX heading, bounded chunk, and document evidence subset; later v0.8 layers
+may add reconciliation signals and guide rendering under the same documented safety
 rules.
 
 The v0.8 local document ingestion contract uses:
@@ -2639,15 +2639,14 @@ The v0.8 local document ingestion contract uses:
   applied discovery policy metadata, current document structure references, and later
   document/code reconciliation signals.
 - Existing evidence fields plus the reserved `document` evidence type. The current
-  heading/chunk implementation does not emit `document` evidence records; later
-  document evidence support must remain within the existing evidence field set unless
-  the output and evidence contracts are updated together.
+  implementation emits `document` evidence records for accepted file, heading, and
+  chunk observations within the existing evidence field set.
 
-The current `schema_version: "0.8"` state emits document inventory and bounded
-heading/chunk navigation references only. It does not emit document evidence,
-reconciliation signals, guide-rendered local documentation, document summaries, or
-serialized document bodies. Future layers must update tests and contract text when they
-add those outputs.
+The current `schema_version: "0.8"` state emits document inventory, bounded
+heading/chunk navigation references, and resolving `document` evidence for accepted
+file, heading, and chunk observations only. It does not emit reconciliation signals,
+guide-rendered local documentation, document summaries, or serialized document bodies.
+Future layers must update tests and contract text when they add those outputs.
 
 Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
 
@@ -2702,7 +2701,10 @@ Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
             "title": "Root docs",
             "anchor": "root-docs",
             "line_start": 1,
-            "line_end": 1
+            "line_end": 1,
+            "evidence_ids": [
+              "ev:README.md:1-1:document:heading:Root%20docs:decl:000001"
+            ]
           }
         ],
         "chunks": [
@@ -2711,10 +2713,15 @@ Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
             "heading_id": "document_heading:README.md:heading:Root%20docs:occ:000001",
             "line_start": 1,
             "line_end": 1,
-            "content_status": "not_serialized"
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:1-1:document:chunk:000001"
+            ]
           }
         ],
-        "evidence_ids": []
+        "evidence_ids": [
+          "ev:README.md:unknown:document:file:README.md"
+        ]
       }
     ]
   }
@@ -2774,9 +2781,8 @@ Current v0.8 document inventory rules:
 - `document.headings[]` and `document.chunks[]` contain bounded structure references for
   the accepted Markdown file. They must not serialize full document bodies, paragraphs,
   arbitrary lists, code blocks, tables, or generated summaries.
-- `document.evidence_ids` is an empty array in the current implementation. Later
-  document evidence support may reference document evidence for the file-level
-  observation after the evidence layer is implemented.
+- `document.evidence_ids` references the file-level `document` evidence for the accepted
+  Markdown file and must resolve to records in `evidence-index.jsonl`.
 
 Current v0.8 heading and chunk rules:
 
@@ -2795,12 +2801,19 @@ Current v0.8 heading and chunk rules:
 - `heading.line_start` and `heading.line_end` point to the heading line or range when
   available. The current implementation emits integer line ranges for every emitted
   heading.
+- `heading.evidence_ids` references the heading-line `document` evidence and must
+  resolve to records in `evidence-index.jsonl`. Heading evidence excerpts use the
+  normalized heading line only; they must not copy the following section body.
 - `chunk.id` is stable and path-scoped. Chunks are ordered by document order.
 - `chunk.heading_id` links the chunk to the nearest owning heading when present and is
   `null` for a no-heading fallback chunk.
 - `chunk.line_start` and `chunk.line_end` bound the chunk range when available.
 - `chunk.content_status` is `"not_serialized"` in the v0.8 design. The project map does
   not copy chunk text into generated JSON.
+- `chunk.evidence_ids` references the chunk-boundary `document` evidence and must
+  resolve to records in `evidence-index.jsonl`. Chunk evidence excerpts identify only
+  the chunk line range and owning heading, or `none` when no owning heading exists; they
+  must not copy chunk bodies or full paragraphs.
 - Chunk sizing must be bounded by deterministic line and byte limits. If a long section
   must be split, splits use deterministic document-order ordinals and do not depend on
   semantic summarization. Empty Markdown files may have no chunks when no stable
@@ -2991,11 +3004,12 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   `api_spec_symbol_key` uses the same percent-encoded ID-key rules as v0.4 spec and
   operation fact IDs. Duplicate evidence ID collisions must be resolved with a
   deterministic `decl:<zero-padded-ordinal>` suffix or degraded to warnings.
-- Planned v0.8 local document ingestion adds `document` evidence for default-scope local
-  Markdown file observations, headings, bounded chunk references, and document-side
-  reconciliation observations. Document evidence supports document inventory and
-  document-backed uncertain signals only. It must not be used as code, build, config,
-  test, API-spec, runtime, or generated-output evidence.
+- Current v0.8 local document ingestion emits `document` evidence for default-scope
+  local Markdown file observations, headings, and bounded chunk references. Planned
+  reconciliation layers may add document-side mention observations later. Document
+  evidence supports document inventory and document-backed uncertain signals only. It
+  must not be used as code, build, config, test, API-spec, runtime, or generated-output
+  evidence.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as

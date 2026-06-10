@@ -25,14 +25,20 @@ architecture documents.
   local Markdown documents, including bounded heading references, bounded chunk
   references, stable path-scoped IDs, line ranges, nearest owning heading links, and
   `content_status: "not_serialized"` without document body serialization.
+- Added v0.8 local Markdown `document` evidence records for accepted file, heading, and
+  chunk observations, with resolving `documents.items[].evidence_ids`,
+  `documents.items[].headings[].evidence_ids`, and
+  `documents.items[].chunks[].evidence_ids` while keeping excerpts bounded to path,
+  normalized heading, or chunk-boundary observations.
 
 ### Changed
 
 - Updated generated `project-map.json` output to `schema_version: "0.8"` for the
   local Markdown discovery and structure slice, including top-level `documents`
   discovery policy metadata, document inventory, ATX heading references, and bounded
-  chunk references while keeping document evidence, code-doc reconciliation, and local
-  documentation guide rendering out of the current implementation.
+  chunk references with resolving document evidence while keeping code-doc
+  reconciliation and local documentation guide rendering out of the current
+  implementation.
 
 ### Fixed
 

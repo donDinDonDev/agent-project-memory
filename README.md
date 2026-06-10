@@ -111,8 +111,9 @@ ordering, vulnerability, or correctness claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
 inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, and discovers
 safe default-scope local Markdown document inventory with deterministic ATX heading
-references and bounded chunk references, without document evidence, reconciliation, or
-local-document guide rendering, then writes:
+references and bounded chunk references, with resolving document evidence for file,
+heading, and chunk observations, without reconciliation or local-document guide
+rendering, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -480,18 +481,18 @@ Current limitations:
   labels.
 - Local Markdown/document ingestion is limited to conservative default-scope document
   inventory, deterministic ATX heading references, and bounded chunk references with
-  `content_status: "not_serialized"`. It does not emit document evidence, reconcile
-  code and docs, render local-document guide sections, read hidden/private/generated/
-  dependency/maintainer paths, follow symlinks, or summarize or serialize document
-  bodies.
+  `content_status: "not_serialized"` and resolving `document` evidence for file,
+  heading, and chunk observations. It does not reconcile code and docs, render
+  local-document guide sections, read hidden/private/generated/dependency/maintainer
+  paths, follow symlinks, or summarize or serialize document bodies.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
   Boot application, Spring repository stereotype and interface signal, local
-  OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, and tests inventory
-  evidence. It does not emit `document` evidence records in the current local Markdown
-  discovery and structure slice.
+  OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, tests inventory
+  evidence, and local Markdown `document` evidence for accepted file, heading, and chunk
+  observations.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

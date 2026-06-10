@@ -84,7 +84,8 @@ final class MarkdownDocumentStructureExtractor {
         title,
         anchor,
         lineNumber,
-        lineNumber);
+        lineNumber,
+        List.of());
   }
 
   private HeadingCandidate atxHeading(String line) {
@@ -282,7 +283,8 @@ final class MarkdownDocumentStructureExtractor {
           headingId,
           startLine,
           endLine,
-          CONTENT_STATUS_NOT_SERIALIZED));
+          CONTENT_STATUS_NOT_SERIALIZED,
+          List.of()));
       nextOrdinal++;
       startLine = 0;
       endLine = 0;

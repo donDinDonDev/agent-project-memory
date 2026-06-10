@@ -101,7 +101,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
-  void projectMapRendersDocumentHeadingsAndChunksWithoutDocumentEvidence() throws Exception {
+  void projectMapRendersDocumentHeadingsChunksAndResolvingDocumentEvidence() throws Exception {
     Path projectPath = tempDir.resolve("document-inventory");
     Path outputDirectory = projectPath.resolve(".project-memory");
     Files.createDirectories(outputDirectory);
@@ -123,6 +123,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
     JsonNode documents = JSON.readTree(projectMap).path("documents");
     JsonNode items = documents.path("items");
     JsonNode readme = items.get(0);
@@ -146,6 +148,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("first_heading", readme.path("title_source").asText()),
         () -> assertEquals(2, readmeHeadings.size()),
         () -> assertEquals(
+            List.of("ev:README.md:unknown:document:file:README.md"),
+            stringValues(readme.path("evidence_ids"))),
+        () -> assertEquals(
             "document_heading:README.md:heading:Root%20docs:occ:000001",
             readmeHeadings.get(0).path("id").asText()),
         () -> assertEquals(1, readmeHeadings.get(0).path("level").asInt()),
@@ -153,6 +158,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("root-docs", readmeHeadings.get(0).path("anchor").asText()),
         () -> assertEquals(2, readmeHeadings.get(0).path("line_start").asInt()),
         () -> assertEquals(2, readmeHeadings.get(0).path("line_end").asInt()),
+        () -> assertEquals(
+            List.of("ev:README.md:2-2:document:heading:Root%20docs:decl:000001"),
+            stringValues(readmeHeadings.get(0).path("evidence_ids"))),
         () -> assertEquals(3, readmeChunks.size()),
         () -> assertEquals("document_chunk:README.md:chunk:000001",
             readmeChunks.get(0).path("id").asText()),
@@ -163,11 +171,25 @@ final class SpringMvcEndpointOutputGeneratorTest {
             readmeHeadings.get(0).path("id").asText(),
             readmeChunks.get(1).path("heading_id").asText()),
         () -> assertEquals("not_serialized", readmeChunks.get(1).path("content_status").asText()),
-        () -> assertEquals(0, readme.path("evidence_ids").size()),
+        () -> assertEquals(
+            List.of("ev:README.md:2-3:document:chunk:000002"),
+            stringValues(readmeChunks.get(1).path("evidence_ids"))),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Every project-map evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertEquals(9, countOccurrences(evidenceIndex, "\"source_type\":\"document\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"excerpt\":\"markdown file detected: README.md\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"excerpt\":\"# Root docs\"")),
+        () -> assertTrue(evidenceIndex.contains(
+            "\"excerpt\":\"chunk lines 2-3; heading: Root docs\"")),
         () -> assertFalse(projectMap.contains("Body text that must not be serialized")),
         () -> assertFalse(projectMap.contains("More body text that must not be serialized")),
         () -> assertFalse(projectMap.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
-        () -> assertFalse(evidenceIndex.contains("\"source_type\":\"document\"")),
+        () -> assertFalse(evidenceIndex.contains("Body text that must not be serialized")),
+        () -> assertFalse(evidenceIndex.contains("More body text that must not be serialized")),
+        () -> assertFalse(evidenceIndex.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
         () -> assertFalse(agentGuide.contains("Local Project Documentation")));
   }
 
@@ -195,7 +217,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(2, result.documentCount()),
         () -> assertEquals(
             expected("v0-8-document-structure", "project-map.json"),
-            Files.readString(outputDirectory.resolve("project-map.json"))));
+            Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(
+            expected("v0-8-document-structure", "evidence-index.jsonl"),
+            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))));
   }
 
   @Test

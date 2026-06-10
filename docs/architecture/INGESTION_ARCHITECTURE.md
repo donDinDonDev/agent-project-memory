@@ -104,13 +104,15 @@ v0.1 does not support:
 
 ## Relationship To Evidence
 
-Future document ingestors may provide evidence, but document evidence must be identified
-as `document` evidence and kept separate from code evidence. The current local Markdown
-discovery and structure slice does not emit document evidence records.
+Document ingestors may provide evidence, but document evidence must be identified as
+`document` evidence and kept separate from code evidence. The current local Markdown
+discovery and structure slice emits document evidence records for accepted file,
+heading, and chunk observations only.
 
 When code and documents disagree, generated memory should prefer deterministic code facts and mark document-only claims as document-backed, not code-backed.
 
-The planned v0.8 document evidence layer follows that rule by emitting document evidence
-for file, heading, chunk, and bounded mention observations only. Document evidence
-should not become evidence for Java symbols, Spring annotations, build metadata, config
-values, tests, OpenAPI implementation, runtime behavior, or source/document agreement.
+The current v0.8 document evidence layer follows that rule by emitting document evidence
+for file, heading, and chunk observations only. Future bounded mention observations may
+be added for reconciliation. Document evidence should not become evidence for Java
+symbols, Spring annotations, build metadata, config values, tests, OpenAPI
+implementation, runtime behavior, or source/document agreement.

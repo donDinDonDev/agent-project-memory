@@ -163,7 +163,10 @@
             "title": "Root docs",
             "anchor": "root-docs",
             "line_start": 2,
-            "line_end": 2
+            "line_end": 2,
+            "evidence_ids": [
+              "ev:README.md:2-2:document:heading:Root%20docs:decl:000001"
+            ]
           },
           {
             "id": "document_heading:README.md:heading:API:occ:000001",
@@ -171,7 +174,10 @@
             "title": "API",
             "anchor": "api",
             "line_start": 4,
-            "line_end": 4
+            "line_end": 4,
+            "evidence_ids": [
+              "ev:README.md:4-4:document:heading:API:decl:000002"
+            ]
           }
         ],
         "chunks": [
@@ -180,24 +186,35 @@
             "heading_id": null,
             "line_start": 1,
             "line_end": 1,
-            "content_status": "not_serialized"
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:1-1:document:chunk:000001"
+            ]
           },
           {
             "id": "document_chunk:README.md:chunk:000002",
             "heading_id": "document_heading:README.md:heading:Root%20docs:occ:000001",
             "line_start": 2,
             "line_end": 3,
-            "content_status": "not_serialized"
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:2-3:document:chunk:000002"
+            ]
           },
           {
             "id": "document_chunk:README.md:chunk:000003",
             "heading_id": "document_heading:README.md:heading:API:occ:000001",
             "line_start": 4,
             "line_end": 5,
-            "content_status": "not_serialized"
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:4-5:document:chunk:000003"
+            ]
           }
         ],
-        "evidence_ids": []
+        "evidence_ids": [
+          "ev:README.md:unknown:document:file:README.md"
+        ]
       },
       {
         "id": "document:docs/guide.md",
@@ -215,7 +232,10 @@
             "title": "Guide",
             "anchor": "guide",
             "line_start": 1,
-            "line_end": 1
+            "line_end": 1,
+            "evidence_ids": [
+              "ev:docs/guide.md:1-1:document:heading:Guide:decl:000001"
+            ]
           }
         ],
         "chunks": [
@@ -224,10 +244,15 @@
             "heading_id": "document_heading:docs/guide.md:heading:Guide:occ:000001",
             "line_start": 1,
             "line_end": 1,
-            "content_status": "not_serialized"
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:docs/guide.md:1-1:document:chunk:000001"
+            ]
           }
         ],
-        "evidence_ids": []
+        "evidence_ids": [
+          "ev:docs/guide.md:unknown:document:file:guide.md"
+        ]
       }
     ]
   },

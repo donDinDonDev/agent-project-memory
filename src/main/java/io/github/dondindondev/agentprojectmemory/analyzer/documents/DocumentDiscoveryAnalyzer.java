@@ -52,6 +52,8 @@ public final class DocumentDiscoveryAnalyzer {
   private static final String MODULE_SUPPORTED = "supported";
   private static final String DOCUMENT_KIND_LOCAL_MARKDOWN = "local_markdown";
   private static final String FORMAT_MARKDOWN = "markdown";
+  private static final String DOCUMENT_SOURCE_TYPE = "document";
+  private static final String HIGH_CONFIDENCE = "high";
   private static final String TITLE_SOURCE_FILENAME = "filename";
   private static final String ROOT_README = "root_readme";
   private static final String MODULE_README = "module_readme";
@@ -89,6 +91,7 @@ public final class DocumentDiscoveryAnalyzer {
       return new DocumentDiscoveryAnalysis(
           ANALYSIS_NOT_DETECTED,
           DEFAULT_POLICY,
+          List.of(),
           List.of());
     }
 
@@ -159,14 +162,21 @@ public final class DocumentDiscoveryAnalyzer {
         ADR_TREE,
         supportedModuleRoots);
 
-    List<DocumentFileFact> documents = candidates.values().stream()
-        .map(this::documentFact)
-        .sorted(DOCUMENT_ORDER)
+    List<AnalyzedDocument> analyzedDocuments = candidates.values().stream()
+        .map(this::analyzedDocument)
+        .sorted(Comparator.comparing(AnalyzedDocument::document, DOCUMENT_ORDER))
+        .toList();
+    List<DocumentFileFact> documents = analyzedDocuments.stream()
+        .map(AnalyzedDocument::document)
+        .toList();
+    List<DocumentEvidence> evidence = analyzedDocuments.stream()
+        .flatMap(document -> document.evidence().stream())
         .toList();
     return new DocumentDiscoveryAnalysis(
         documents.isEmpty() ? ANALYSIS_NOT_DETECTED : ANALYSIS_ANALYZED,
         DEFAULT_POLICY,
-        documents);
+        documents,
+        evidence);
   }
 
   private void addReadmeCandidate(
@@ -367,18 +377,31 @@ public final class DocumentDiscoveryAnalyzer {
     return Optional.empty();
   }
 
-  private DocumentFileFact documentFact(CandidateDocument candidate) {
+  private AnalyzedDocument analyzedDocument(CandidateDocument candidate) {
     DocumentStructure structure = documentStructure(candidate);
+    List<DocumentEvidence> evidence = new ArrayList<>();
+    DocumentEvidence fileEvidence = fileEvidence(candidate);
+    evidence.add(fileEvidence);
+    List<DocumentHeadingFact> headings = headingsWithEvidence(
+        candidate.sourcePath(),
+        structure.headings(),
+        evidence);
+    List<DocumentChunkFact> chunks = chunksWithEvidence(
+        candidate.sourcePath(),
+        structure.chunks(),
+        headings,
+        evidence);
+
     String title = titleFromFilename(candidate.normalizedPath().getFileName().toString());
     String titleSource = TITLE_SOURCE_FILENAME;
-    Optional<DocumentHeadingFact> firstNonBlankHeading = structure.headings().stream()
+    Optional<DocumentHeadingFact> firstNonBlankHeading = headings.stream()
         .filter(heading -> !heading.title().isBlank())
         .findFirst();
     if (firstNonBlankHeading.isPresent()) {
       title = firstNonBlankHeading.get().title();
       titleSource = "first_heading";
     }
-    return new DocumentFileFact(
+    DocumentFileFact document = new DocumentFileFact(
         "document:" + idKey(candidate.sourcePath()),
         DOCUMENT_KIND_LOCAL_MARKDOWN,
         FORMAT_MARKDOWN,
@@ -388,9 +411,141 @@ public final class DocumentDiscoveryAnalyzer {
         title,
         titleSource,
         candidate.discoverySource(),
-        structure.headings(),
-        structure.chunks(),
-        List.of());
+        headings,
+        chunks,
+        List.of(fileEvidence.id()));
+    return new AnalyzedDocument(document, evidence);
+  }
+
+  private DocumentEvidence fileEvidence(CandidateDocument candidate) {
+    String fileName = candidate.normalizedPath().getFileName().toString();
+    return new DocumentEvidence(
+        "ev:"
+            + idKey(candidate.sourcePath())
+            + ":unknown:document:file:"
+            + idKey(fileName),
+        DOCUMENT_SOURCE_TYPE,
+        candidate.sourcePath(),
+        null,
+        null,
+        "file:" + fileName,
+        null,
+        null,
+        "markdown file detected: " + candidate.sourcePath(),
+        HIGH_CONFIDENCE);
+  }
+
+  private List<DocumentHeadingFact> headingsWithEvidence(
+      String sourcePath,
+      List<DocumentHeadingFact> headings,
+      List<DocumentEvidence> evidence) {
+    List<DocumentHeadingFact> updatedHeadings = new ArrayList<>();
+    for (int index = 0; index < headings.size(); index++) {
+      DocumentHeadingFact heading = headings.get(index);
+      String ordinal = zeroPadded(index + 1);
+      String titleKey = heading.title().isBlank() ? "untitled" : heading.title();
+      DocumentEvidence headingEvidence = new DocumentEvidence(
+          "ev:"
+              + idKey(sourcePath)
+              + ":"
+              + lineRangeKey(heading.lineStart(), heading.lineEnd())
+              + ":document:heading:"
+              + idKey(titleKey)
+              + ":decl:"
+              + ordinal,
+          DOCUMENT_SOURCE_TYPE,
+          sourcePath,
+          null,
+          null,
+          "heading:" + titleKey,
+          heading.lineStart(),
+          heading.lineEnd(),
+          normalizedHeadingLine(heading),
+          HIGH_CONFIDENCE);
+      evidence.add(headingEvidence);
+      updatedHeadings.add(new DocumentHeadingFact(
+          heading.id(),
+          heading.level(),
+          heading.title(),
+          heading.anchor(),
+          heading.lineStart(),
+          heading.lineEnd(),
+          List.of(headingEvidence.id())));
+    }
+    return updatedHeadings;
+  }
+
+  private List<DocumentChunkFact> chunksWithEvidence(
+      String sourcePath,
+      List<DocumentChunkFact> chunks,
+      List<DocumentHeadingFact> headings,
+      List<DocumentEvidence> evidence) {
+    Map<String, String> headingTitleById = new LinkedHashMap<>();
+    for (DocumentHeadingFact heading : headings) {
+      headingTitleById.put(heading.id(), heading.title().isBlank() ? "untitled" : heading.title());
+    }
+
+    List<DocumentChunkFact> updatedChunks = new ArrayList<>();
+    for (int index = 0; index < chunks.size(); index++) {
+      DocumentChunkFact chunk = chunks.get(index);
+      String ordinal = zeroPadded(index + 1);
+      DocumentEvidence chunkEvidence = new DocumentEvidence(
+          "ev:"
+              + idKey(sourcePath)
+              + ":"
+              + lineRangeKey(chunk.lineStart(), chunk.lineEnd())
+              + ":document:chunk:"
+              + ordinal,
+          DOCUMENT_SOURCE_TYPE,
+          sourcePath,
+          null,
+          null,
+          "chunk:" + ordinal,
+          chunk.lineStart(),
+          chunk.lineEnd(),
+          chunkExcerpt(chunk, headingTitleById),
+          HIGH_CONFIDENCE);
+      evidence.add(chunkEvidence);
+      updatedChunks.add(new DocumentChunkFact(
+          chunk.id(),
+          chunk.headingId(),
+          chunk.lineStart(),
+          chunk.lineEnd(),
+          chunk.contentStatus(),
+          List.of(chunkEvidence.id())));
+    }
+    return updatedChunks;
+  }
+
+  private String normalizedHeadingLine(DocumentHeadingFact heading) {
+    String marker = "#".repeat(heading.level());
+    if (heading.title().isBlank()) {
+      return marker;
+    }
+    return marker + " " + heading.title();
+  }
+
+  private String chunkExcerpt(DocumentChunkFact chunk, Map<String, String> headingTitleById) {
+    String owningHeading = chunk.headingId() == null
+        ? "none"
+        : headingTitleById.getOrDefault(chunk.headingId(), chunk.headingId());
+    return "chunk lines "
+        + chunk.lineStart()
+        + "-"
+        + chunk.lineEnd()
+        + "; heading: "
+        + owningHeading;
+  }
+
+  private String lineRangeKey(Integer lineStart, Integer lineEnd) {
+    if (lineStart == null || lineEnd == null) {
+      return "unknown";
+    }
+    return lineStart + "-" + lineEnd;
+  }
+
+  private String zeroPadded(int value) {
+    return String.format(Locale.ROOT, "%06d", value);
   }
 
   private DocumentStructure documentStructure(CandidateDocument candidate) {
@@ -450,6 +605,11 @@ public final class DocumentDiscoveryAnalyzer {
       String moduleId,
       int moduleOrder,
       String discoverySource) {
+  }
+
+  private record AnalyzedDocument(
+      DocumentFileFact document,
+      List<DocumentEvidence> evidence) {
   }
 
   private record SupportedModuleRoot(

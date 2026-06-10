@@ -20,6 +20,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDisc
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryPolicy;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentChunkFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentHeadingFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
@@ -547,6 +548,7 @@ public final class SpringMvcEndpointOutputGenerator {
         springBootApplicationAnalysis.evidence(),
         openApiSpecDiscoveryAnalysis.evidence(),
         openApiOperationAnalysis.evidence(),
+        documentDiscoveryAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.springRepositoryEvidence(),
@@ -1622,7 +1624,8 @@ public final class SpringMvcEndpointOutputGenerator {
       appendIndentedStringField(json, 6, "title", heading.title(), true);
       appendIndentedNullableStringField(json, 6, "anchor", heading.anchor(), true);
       appendIndentedIntegerField(json, 6, "line_start", heading.lineStart(), true);
-      appendIndentedIntegerField(json, 6, "line_end", heading.lineEnd(), false);
+      appendIndentedIntegerField(json, 6, "line_end", heading.lineEnd(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", heading.evidenceIds(), false);
       indent(json, 5);
       json.append("}");
       if (index < headings.size() - 1) {
@@ -1656,7 +1659,8 @@ public final class SpringMvcEndpointOutputGenerator {
       appendIndentedNullableStringField(json, 6, "heading_id", chunk.headingId(), true);
       appendIndentedIntegerField(json, 6, "line_start", chunk.lineStart(), true);
       appendIndentedIntegerField(json, 6, "line_end", chunk.lineEnd(), true);
-      appendIndentedStringField(json, 6, "content_status", chunk.contentStatus(), false);
+      appendIndentedStringField(json, 6, "content_status", chunk.contentStatus(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", chunk.evidenceIds(), false);
       indent(json, 5);
       json.append("}");
       if (index < chunks.size() - 1) {
@@ -4831,6 +4835,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<SpringBootApplicationEvidence> springBootApplicationEvidenceRecords,
       List<ApiSpecEvidence> apiSpecEvidenceRecords,
       List<ApiSpecEvidence> openApiOperationEvidenceRecords,
+      List<DocumentEvidence> documentEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<SpringRepositoryEvidence> springRepositoryEvidenceRecords,
@@ -4863,6 +4868,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     openApiOperationEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    documentEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()
@@ -4994,6 +5002,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(ApiSpecEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(DocumentEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),

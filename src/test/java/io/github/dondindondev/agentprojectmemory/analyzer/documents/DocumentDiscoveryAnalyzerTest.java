@@ -40,6 +40,15 @@ final class DocumentDiscoveryAnalyzerTest {
     List<DocumentFileFact> documents = analysis.documents();
     DocumentHeadingFact rootHeading = documents.get(1).headings().get(0);
     DocumentChunkFact rootChunk = documents.get(1).chunks().get(0);
+    DocumentEvidence rootFileEvidence = evidence(
+        analysis,
+        "ev:README.md:unknown:document:file:README.md");
+    DocumentEvidence rootHeadingEvidence = evidence(
+        analysis,
+        "ev:README.md:1-1:document:heading:Root:decl:000001");
+    DocumentEvidence rootChunkEvidence = evidence(
+        analysis,
+        "ev:README.md:1-1:document:chunk:000001");
 
     assertAll(
         () -> assertEquals("analyzed", analysis.analysisStatus()),
@@ -73,7 +82,21 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertEquals(1, rootChunk.lineStart()),
         () -> assertEquals(1, rootChunk.lineEnd()),
         () -> assertEquals("not_serialized", rootChunk.contentStatus()),
-        () -> assertEquals(List.of(), documents.get(1).evidenceIds()));
+        () -> assertEquals(List.of(rootFileEvidence.id()), documents.get(1).evidenceIds()),
+        () -> assertEquals(List.of(rootHeadingEvidence.id()), rootHeading.evidenceIds()),
+        () -> assertEquals(List.of(rootChunkEvidence.id()), rootChunk.evidenceIds()),
+        () -> assertEquals(18, analysis.evidence().size()),
+        () -> assertEquals("document", rootFileEvidence.sourceType()),
+        () -> assertEquals("README.md", rootFileEvidence.sourcePath()),
+        () -> assertEquals("file:README.md", rootFileEvidence.symbolName()),
+        () -> assertNull(rootFileEvidence.lineStart()),
+        () -> assertNull(rootFileEvidence.lineEnd()),
+        () -> assertEquals("markdown file detected: README.md", rootFileEvidence.excerpt()),
+        () -> assertEquals("high", rootFileEvidence.confidence()),
+        () -> assertEquals("heading:Root", rootHeadingEvidence.symbolName()),
+        () -> assertEquals("# Root", rootHeadingEvidence.excerpt()),
+        () -> assertEquals("chunk:000001", rootChunkEvidence.symbolName()),
+        () -> assertEquals("chunk lines 1-1; heading: Root", rootChunkEvidence.excerpt()));
   }
 
   @Test
@@ -183,12 +206,15 @@ final class DocumentDiscoveryAnalyzerTest {
 
   @Test
   void createsNoHeadingFallbackChunksWithoutSerializingContent() throws Exception {
-    DocumentFileFact document = readmeDocument(
-        "no-heading",
+    Path repositoryRoot = repository("no-heading");
+    writeFile(
+        repositoryRoot.resolve("README.md"),
         """
             Intro
             Body
             """);
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+    DocumentFileFact document = analysis.documents().get(0);
 
     assertAll(
         () -> assertEquals(List.of(), document.headings()),
@@ -196,7 +222,16 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertNull(document.chunks().get(0).headingId()),
         () -> assertEquals(1, document.chunks().get(0).lineStart()),
         () -> assertEquals(2, document.chunks().get(0).lineEnd()),
-        () -> assertEquals("not_serialized", document.chunks().get(0).contentStatus()));
+        () -> assertEquals("not_serialized", document.chunks().get(0).contentStatus()),
+        () -> assertEquals(
+            List.of("ev:README.md:1-2:document:chunk:000001"),
+            document.chunks().get(0).evidenceIds()),
+        () -> assertEquals(
+            "chunk lines 1-2; heading: none",
+            evidence(analysis, "ev:README.md:1-2:document:chunk:000001").excerpt()),
+        () -> assertFalse(analysis.evidence().stream()
+            .map(DocumentEvidence::excerpt)
+            .anyMatch(excerpt -> excerpt.contains("Intro") || excerpt.contains("Body"))));
   }
 
   @Test
@@ -385,5 +420,12 @@ final class DocumentDiscoveryAnalyzerTest {
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
     }
+  }
+
+  private DocumentEvidence evidence(DocumentDiscoveryAnalysis analysis, String id) {
+    return analysis.evidence().stream()
+        .filter(evidence -> id.equals(evidence.id()))
+        .findFirst()
+        .orElseThrow();
   }
 }

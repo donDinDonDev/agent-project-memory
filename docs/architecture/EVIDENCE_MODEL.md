@@ -38,9 +38,9 @@ Evidence types defined by the model:
 - `path_signal`: a repository-relative file or directory path presence signal. This
   evidence type is emitted for v0.4 generated-source path warnings and is also available
   for other path-only signals that need evidence beyond a source file line.
-- `document`: a local project document such as Markdown. This evidence type is reserved
-  by the v0.8 local Markdown/document ingestion contract. The current local Markdown
-  discovery and structure implementation does not emit `document` evidence records yet.
+- `document`: a local project document such as Markdown. This evidence type is emitted
+  by the v0.8 local Markdown/document ingestion contract for accepted file, heading, and
+  chunk observations.
 
 ## Evidence Fields
 
@@ -134,11 +134,11 @@ Examples:
   assertion behavior, CI behavior, runtime Spring context behavior, Mockito behavior, or
   slice correctness.
 - Current v0.8 local Markdown document inventory, deterministic ATX heading references,
-  and bounded chunk references from the documented default discovery scope. These
-  document facts support document orientation only and do not prove code structure,
-  runtime behavior, API implementation, test coverage, configuration semantics, or
-  source/document agreement. Current output does not serialize document bodies and does
-  not emit document evidence records yet.
+  bounded chunk references, and resolving `document` evidence from the documented
+  default discovery scope. These document facts support document orientation only and do
+  not prove code structure, runtime behavior, API implementation, test coverage,
+  configuration semantics, or source/document agreement. Current output does not
+  serialize document bodies.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -923,13 +923,12 @@ Current quality and change-risk evidence:
   test execution, CI status, runtime behavior, call graph reachability, production
   impact, vulnerability, business priority, correctness, or complete subject mapping.
 
-### Planned v0.8 Document Evidence
+### v0.8 Document Evidence
 
-The planned v0.8 local Markdown/document evidence layer uses the existing evidence field
-set and the `document` evidence type. It does not add global evidence fields in the
-design state. The current local Markdown discovery and structure implementation does not
-emit these records; it leaves `documents.items[].evidence_ids` empty until document
-evidence is implemented.
+The v0.8 local Markdown/document evidence layer uses the existing evidence field set and
+the `document` evidence type. It does not add global evidence fields. The current
+implementation emits file, heading, and chunk evidence for accepted default-scope local
+Markdown documents.
 
 Document evidence scope:
 
@@ -957,6 +956,9 @@ Document evidence IDs:
 - `<document_symbol_key>` identifies the bounded document observation, such as
   `file:<filename>`, `heading:<normalized-heading>`, `chunk:<zero-padded-ordinal>`, or
   `mention:<bounded-token-key>`.
+- Current heading evidence IDs include a deterministic `decl:<zero-padded-ordinal>`
+  discriminator based on heading document order to keep IDs path-scoped and
+  collision-safe.
 - If duplicate headings, chunks, or mention observations would otherwise collide, the
   evidence ID must add a deterministic `decl:<zero-padded-ordinal>` suffix.
 
@@ -969,7 +971,8 @@ Document evidence field semantics:
   must not contain full paragraphs or generated summaries.
 - `line_start` and `line_end` point to the file observation, heading line, chunk range,
   or document-side mention line when stable. They are `null` only when a stable line
-  location is unavailable.
+  location is unavailable. Current file-level path observations use the `unknown` line
+  range key and null line fields because file presence has no stable source line.
 - `confidence` is `"high"` for direct file, heading, and chunk observations from an
   accepted local Markdown file. It is `"low"` for document-side observations used only
   by uncertain reconciliation signals.
