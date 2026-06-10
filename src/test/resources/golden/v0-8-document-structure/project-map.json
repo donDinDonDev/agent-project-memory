@@ -1,0 +1,245 @@
+{
+  "schema_version": "0.8",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "not_detected",
+      "root_build_file": null,
+      "evidence_ids": []
+    },
+    "source_roots": [],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "not_detected",
+    "repositories": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "not_detected",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "not_detected",
+    "items": [],
+    "embeddables": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "documents": {
+    "analysis_status": "analyzed",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [
+      {
+        "id": "document:README.md",
+        "document_kind": "local_markdown",
+        "format": "markdown",
+        "module_id": null,
+        "path": "README.md",
+        "title": "Root docs",
+        "title_source": "first_heading",
+        "discovery_source": "root_readme",
+        "headings": [
+          {
+            "id": "document_heading:README.md:heading:Root%20docs:occ:000001",
+            "level": 1,
+            "title": "Root docs",
+            "anchor": "root-docs",
+            "line_start": 2,
+            "line_end": 2
+          },
+          {
+            "id": "document_heading:README.md:heading:API:occ:000001",
+            "level": 2,
+            "title": "API",
+            "anchor": "api",
+            "line_start": 4,
+            "line_end": 4
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:README.md:chunk:000001",
+            "heading_id": null,
+            "line_start": 1,
+            "line_end": 1,
+            "content_status": "not_serialized"
+          },
+          {
+            "id": "document_chunk:README.md:chunk:000002",
+            "heading_id": "document_heading:README.md:heading:Root%20docs:occ:000001",
+            "line_start": 2,
+            "line_end": 3,
+            "content_status": "not_serialized"
+          },
+          {
+            "id": "document_chunk:README.md:chunk:000003",
+            "heading_id": "document_heading:README.md:heading:API:occ:000001",
+            "line_start": 4,
+            "line_end": 5,
+            "content_status": "not_serialized"
+          }
+        ],
+        "evidence_ids": []
+      },
+      {
+        "id": "document:docs/guide.md",
+        "document_kind": "local_markdown",
+        "format": "markdown",
+        "module_id": null,
+        "path": "docs/guide.md",
+        "title": "Guide",
+        "title_source": "first_heading",
+        "discovery_source": "docs_tree",
+        "headings": [
+          {
+            "id": "document_heading:docs/guide.md:heading:Guide:occ:000001",
+            "level": 1,
+            "title": "Guide",
+            "anchor": "guide",
+            "line_start": 1,
+            "line_end": 1
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:docs/guide.md:chunk:000001",
+            "heading_id": "document_heading:docs/guide.md:heading:Guide:occ:000001",
+            "line_start": 1,
+            "line_end": 1,
+            "content_status": "not_serialized"
+          }
+        ],
+        "evidence_ids": []
+      }
+    ]
+  },
+  "quality": {
+    "analysis_status": "not_detected",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  }
+}

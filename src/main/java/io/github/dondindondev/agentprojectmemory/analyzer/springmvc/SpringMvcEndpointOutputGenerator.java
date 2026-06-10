@@ -19,7 +19,9 @@ import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFac
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryPolicy;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentChunkFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentFileFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentHeadingFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
@@ -1588,14 +1590,83 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 4, "title", document.title(), true);
     appendIndentedStringField(json, 4, "title_source", document.titleSource(), true);
     appendIndentedStringField(json, 4, "discovery_source", document.discoverySource(), true);
-    appendIndentedStringArrayField(json, 4, "headings", document.headings(), true);
-    appendIndentedStringArrayField(json, 4, "chunks", document.chunks(), true);
+    appendDocumentHeadings(json, document.headings(), true);
+    appendDocumentChunks(json, document.chunks(), true);
     appendIndentedStringArrayField(json, 4, "evidence_ids", document.evidenceIds(), false);
     json.append("      }");
     if (trailingComma) {
       json.append(",");
     }
     json.append("\n");
+  }
+
+  private void appendDocumentHeadings(
+      StringBuilder json,
+      List<DocumentHeadingFact> headings,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("\"headings\": [");
+    if (headings.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < headings.size(); index++) {
+      DocumentHeadingFact heading = headings.get(index);
+      indent(json, 5);
+      json.append("{\n");
+      appendIndentedStringField(json, 6, "id", heading.id(), true);
+      appendIndentedIntegerField(json, 6, "level", heading.level(), true);
+      appendIndentedStringField(json, 6, "title", heading.title(), true);
+      appendIndentedNullableStringField(json, 6, "anchor", heading.anchor(), true);
+      appendIndentedIntegerField(json, 6, "line_start", heading.lineStart(), true);
+      appendIndentedIntegerField(json, 6, "line_end", heading.lineEnd(), false);
+      indent(json, 5);
+      json.append("}");
+      if (index < headings.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 4);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentChunks(
+      StringBuilder json,
+      List<DocumentChunkFact> chunks,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("\"chunks\": [");
+    if (chunks.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < chunks.size(); index++) {
+      DocumentChunkFact chunk = chunks.get(index);
+      indent(json, 5);
+      json.append("{\n");
+      appendIndentedStringField(json, 6, "id", chunk.id(), true);
+      appendIndentedNullableStringField(json, 6, "heading_id", chunk.headingId(), true);
+      appendIndentedIntegerField(json, 6, "line_start", chunk.lineStart(), true);
+      appendIndentedIntegerField(json, 6, "line_end", chunk.lineEnd(), true);
+      appendIndentedStringField(json, 6, "content_status", chunk.contentStatus(), false);
+      indent(json, 5);
+      json.append("}");
+      if (index < chunks.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 4);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
   }
 
   private Map<String, MavenModuleMetadata> metadataByModuleId(MavenMetadataAnalysis metadataAnalysis) {

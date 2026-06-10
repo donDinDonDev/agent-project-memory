@@ -21,14 +21,18 @@ architecture documents.
   default-scope document inventory, repository-relative in-root path normalization,
   default exclusions for hidden/private/generated/dependency/output/maintainer-like
   paths, and a default no-symlink-following policy.
+- Added deterministic v0.8 ATX Markdown structure extraction for accepted default-scope
+  local Markdown documents, including bounded heading references, bounded chunk
+  references, stable path-scoped IDs, line ranges, nearest owning heading links, and
+  `content_status: "not_serialized"` without document body serialization.
 
 ### Changed
 
 - Updated generated `project-map.json` output to `schema_version: "0.8"` for the
-  inventory-only local Markdown discovery slice, including top-level `documents`
-  discovery policy metadata and document inventory while keeping heading extraction,
-  chunk extraction, document evidence, code-doc reconciliation, and local documentation
-  guide rendering out of the current implementation.
+  local Markdown discovery and structure slice, including top-level `documents`
+  discovery policy metadata, document inventory, ATX heading references, and bounded
+  chunk references while keeping document evidence, code-doc reconciliation, and local
+  documentation guide rendering out of the current implementation.
 
 ### Fixed
 

@@ -31,20 +31,21 @@ mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current unreleased
-implemented public contract is the v0.8 local Markdown discovery inventory slice layered
-on top of the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model slice,
-the v0.5 Spring application surface slices, the v0.4 API surface slice, and the v0.3
-module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
+implemented public contract is the v0.8 local Markdown discovery and structure slice
+layered on top of the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model
+slice, the v0.5 Spring application surface slices, the v0.4 API surface slice, and the
+v0.3 module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
 v0.7 contract also emits direct Spring test slice and mock annotation signals and
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current unreleased v0.8 implementation starts the local Markdown/document ingestion
-boundary with deterministic default-scope Markdown discovery and document inventory
-only. It emits `schema_version: "0.8"` with a top-level `documents` inventory object.
-Heading extraction, chunk extraction, document evidence records, code-doc
-reconciliation signals, and local documentation guide rendering remain planned later
-v0.8 layers and are not emitted by the current inventory slice.
+The current unreleased v0.8 implementation extends the local Markdown/document
+ingestion boundary with deterministic default-scope Markdown discovery, document
+inventory, ATX heading references, and bounded chunk references. It emits
+`schema_version: "0.8"` with a top-level `documents` object. Document evidence records,
+code-doc reconciliation signals, and local documentation guide rendering remain planned
+later v0.8 layers and are not emitted by the current local Markdown discovery and
+structure slice.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2622,32 +2623,33 @@ Current v0.7 deterministic sorting rules:
 ### v0.8 Local Markdown And Document Ingestion Contract
 
 This section defines the v0.8 public output boundary for local Markdown/project
-document ingestion. The current unreleased implementation includes the discovery and
-inventory subset only; later v0.8 layers may add document structure, document evidence,
-reconciliation signals, and guide rendering under the same documented safety rules.
+document ingestion. The current unreleased implementation includes the discovery,
+inventory, ATX heading, and bounded chunk subset; later v0.8 layers may add document
+evidence, reconciliation signals, and guide rendering under the same documented safety
+rules.
 
 The v0.8 local document ingestion contract uses:
 
 - `schema_version: "0.8"` for output that preserves the v0.7 contracts and adds the
   top-level `documents` owner. In the current implementation, `documents` contains
-  deterministic default-scope local Markdown discovery policy metadata and document
-  inventory only.
+  deterministic default-scope local Markdown discovery policy metadata, document
+  inventory, bounded ATX heading references, and bounded chunk references.
 - The same four output files under `.project-memory/`.
 - A top-level `documents` object as the owner of local Markdown document inventory,
-  applied discovery policy metadata, and later document structure and document/code
-  reconciliation signals.
+  applied discovery policy metadata, current document structure references, and later
+  document/code reconciliation signals.
 - Existing evidence fields plus the reserved `document` evidence type. The current
-  inventory-only implementation does not emit `document` evidence records; later
+  heading/chunk implementation does not emit `document` evidence records; later
   document evidence support must remain within the existing evidence field set unless
   the output and evidence contracts are updated together.
 
-The current inventory-only `schema_version: "0.8"` state is valid only because it does
-not emit headings, chunks, document evidence, reconciliation signals, or guide-rendered
-local documentation. Future layers must update tests and contract text when they add
-those outputs.
+The current `schema_version: "0.8"` state emits document inventory and bounded
+heading/chunk navigation references only. It does not emit document evidence,
+reconciliation signals, guide-rendered local documentation, document summaries, or
+serialized document bodies. Future layers must update tests and contract text when they
+add those outputs.
 
-Current inventory-only `project-map.json` excerpt. Unchanged v0.7 fields are omitted for
-focus:
+Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
 
 ```json
 {
@@ -2690,11 +2692,28 @@ focus:
         "format": "markdown",
         "module_id": null,
         "path": "README.md",
-        "title": "README",
-        "title_source": "filename",
+        "title": "Root docs",
+        "title_source": "first_heading",
         "discovery_source": "root_readme",
-        "headings": [],
-        "chunks": [],
+        "headings": [
+          {
+            "id": "document_heading:README.md:heading:Root%20docs:occ:000001",
+            "level": 1,
+            "title": "Root docs",
+            "anchor": "root-docs",
+            "line_start": 1,
+            "line_end": 1
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:README.md:chunk:000001",
+            "heading_id": "document_heading:README.md:heading:Root%20docs:occ:000001",
+            "line_start": 1,
+            "line_end": 1,
+            "content_status": "not_serialized"
+          }
+        ],
         "evidence_ids": []
       }
     ]
@@ -2732,9 +2751,9 @@ Current v0.8 document inventory rules:
   explicit mode or configuration.
 - `documents.discovery` records the effective high-level policy used for discovery. It is
   not evidence and does not prove that excluded files do or do not exist.
-- `documents.items[]` contains document inventory facts only. A document item is not a
-  code fact, API fact, module fact, test fact, configuration fact, or runtime behavior
-  claim.
+- `documents.items[]` contains document inventory facts and bounded document navigation
+  references only. A document item is not a code fact, API fact, module fact, test fact,
+  configuration fact, or runtime behavior claim.
 - `document.id` is stable within the scan and derived from the normalized
   repository-relative path using the same percent-encoded ID-key discipline used by
   existing path-backed facts.
@@ -2745,28 +2764,28 @@ Current v0.8 document inventory rules:
   supported module root and can be assigned deterministically. Repository-level docs use
   `null`.
 - `document.path` is the normalized repository-relative document path.
-- `document.title` is derived from the filename in the current inventory-only
-  implementation. Later heading extraction may derive it from the first supported
-  heading after that behavior is implemented and tested. It is document metadata, not a
-  semantic summary.
-- `document.title_source` is `"filename"` in the current inventory-only implementation.
-  `"first_heading"` is reserved for the later heading extraction layer.
+- `document.title` is derived from the first supported non-blank heading when present
+  and otherwise from the filename. It is document metadata, not a semantic summary.
+- `document.title_source` is `"first_heading"` when `document.title` is derived from the
+  first supported non-blank heading and `"filename"` otherwise.
 - `document.discovery_source` identifies the default-scope reason, such as
   `"root_readme"`, `"module_readme"`, `"docs_tree"`, `"adr_tree"`, or
   `"explicit_include"` if a future configuration contract adds explicit includes.
-- `document.headings[]` and `document.chunks[]` are emitted as empty arrays in the
-  current inventory-only implementation. Later structure extraction may populate them
-  with bounded references. They must not serialize full document bodies, paragraphs,
+- `document.headings[]` and `document.chunks[]` contain bounded structure references for
+  the accepted Markdown file. They must not serialize full document bodies, paragraphs,
   arbitrary lists, code blocks, tables, or generated summaries.
-- `document.evidence_ids` is an empty array in the current inventory-only
-  implementation. Later document evidence support may reference document evidence for
-  the file-level observation after the evidence layer is implemented.
+- `document.evidence_ids` is an empty array in the current implementation. Later
+  document evidence support may reference document evidence for the file-level
+  observation after the evidence layer is implemented.
 
-Planned v0.8 heading and chunk rules:
+Current v0.8 heading and chunk rules:
 
 - Supported headings are deterministic Markdown ATX headings with levels 1 through 6.
-  Future support for Setext headings or other Markdown constructs requires a contract
-  update if output semantics change.
+  Supported ATX heading lines may have up to three leading spaces, must use one to six
+  `#` characters, and must end the marker at end of line or with whitespace before the
+  heading text. Heading-like lines inside fenced code blocks are not emitted as
+  headings. Future support for Setext headings or other Markdown constructs requires a
+  contract update if output semantics change.
 - Heading IDs are stable and path-scoped. Duplicate heading text is disambiguated with a
   deterministic document-order ordinal.
 - `heading.title` is the normalized heading text. It must be bounded and Markdown-safe
@@ -2774,7 +2793,8 @@ Planned v0.8 heading and chunk rules:
 - `heading.anchor` is a deterministic local anchor when it can be computed safely. If a
   stable anchor cannot be computed, it should be `null` rather than guessed.
 - `heading.line_start` and `heading.line_end` point to the heading line or range when
-  available. They are `null` only when stable line mapping is unavailable.
+  available. The current implementation emits integer line ranges for every emitted
+  heading.
 - `chunk.id` is stable and path-scoped. Chunks are ordered by document order.
 - `chunk.heading_id` links the chunk to the nearest owning heading when present and is
   `null` for a no-heading fallback chunk.
@@ -2783,7 +2803,8 @@ Planned v0.8 heading and chunk rules:
   not copy chunk text into generated JSON.
 - Chunk sizing must be bounded by deterministic line and byte limits. If a long section
   must be split, splits use deterministic document-order ordinals and do not depend on
-  semantic summarization.
+  semantic summarization. Empty Markdown files may have no chunks when no stable
+  non-empty line range exists.
 
 Planned v0.8 reconciliation signal taxonomy:
 

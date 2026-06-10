@@ -12,8 +12,8 @@ public record DocumentFileFact(
     String title,
     String titleSource,
     String discoverySource,
-    List<String> headings,
-    List<String> chunks,
+    List<DocumentHeadingFact> headings,
+    List<DocumentChunkFact> chunks,
     List<String> evidenceIds) {
   public DocumentFileFact {
     headings = List.copyOf(headings);

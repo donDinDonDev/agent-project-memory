@@ -74,6 +74,8 @@ public final class DocumentDiscoveryAnalyzer {
       .comparingInt(DocumentFileFact::moduleOrder)
       .thenComparing(DocumentFileFact::path)
       .thenComparing(DocumentFileFact::id);
+  private final MarkdownDocumentStructureExtractor structureExtractor =
+      new MarkdownDocumentStructureExtractor();
 
   public DocumentDiscoveryAnalysis analyze(
       Path repositoryRoot,
@@ -366,6 +368,16 @@ public final class DocumentDiscoveryAnalyzer {
   }
 
   private DocumentFileFact documentFact(CandidateDocument candidate) {
+    DocumentStructure structure = documentStructure(candidate);
+    String title = titleFromFilename(candidate.normalizedPath().getFileName().toString());
+    String titleSource = TITLE_SOURCE_FILENAME;
+    Optional<DocumentHeadingFact> firstNonBlankHeading = structure.headings().stream()
+        .filter(heading -> !heading.title().isBlank())
+        .findFirst();
+    if (firstNonBlankHeading.isPresent()) {
+      title = firstNonBlankHeading.get().title();
+      titleSource = "first_heading";
+    }
     return new DocumentFileFact(
         "document:" + idKey(candidate.sourcePath()),
         DOCUMENT_KIND_LOCAL_MARKDOWN,
@@ -373,12 +385,20 @@ public final class DocumentDiscoveryAnalyzer {
         candidate.moduleId(),
         candidate.moduleOrder(),
         candidate.sourcePath(),
-        titleFromFilename(candidate.normalizedPath().getFileName().toString()),
-        TITLE_SOURCE_FILENAME,
+        title,
+        titleSource,
         candidate.discoverySource(),
-        List.of(),
-        List.of(),
+        structure.headings(),
+        structure.chunks(),
         List.of());
+  }
+
+  private DocumentStructure documentStructure(CandidateDocument candidate) {
+    try {
+      return structureExtractor.extract(candidate.normalizedPath(), candidate.sourcePath());
+    } catch (IOException exception) {
+      return DocumentStructure.empty();
+    }
   }
 
   private String titleFromFilename(String fileName) {

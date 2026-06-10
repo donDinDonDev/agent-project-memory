@@ -101,12 +101,18 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
-  void projectMapRendersDocumentInventoryOnlyWithoutDocumentEvidence() throws Exception {
+  void projectMapRendersDocumentHeadingsAndChunksWithoutDocumentEvidence() throws Exception {
     Path projectPath = tempDir.resolve("document-inventory");
     Path outputDirectory = projectPath.resolve(".project-memory");
     Files.createDirectories(outputDirectory);
 
-    writeFile(projectPath.resolve("README.md"), "# Root docs\n");
+    writeFile(projectPath.resolve("README.md"), """
+        Intro
+        # Root docs
+        Body text that must not be serialized
+        ## API
+        More body text that must not be serialized
+        """);
     writeFile(projectPath.resolve("docs/guide.md"), "# Guide\n");
     writeFile(projectPath.resolve("docs/private/secret.md"), "# FAKE_PRIVATE_MARKDOWN_SECRET\n");
 
@@ -119,6 +125,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
     JsonNode documents = JSON.readTree(projectMap).path("documents");
     JsonNode items = documents.path("items");
+    JsonNode readme = items.get(0);
+    JsonNode readmeHeadings = readme.path("headings");
+    JsonNode readmeChunks = readme.path("chunks");
 
     assertAll(
         () -> assertTrue(result.generated()),
@@ -132,15 +141,61 @@ final class SpringMvcEndpointOutputGeneratorTest {
             documents.path("discovery").path("symlink_policy").asText()),
         () -> assertEquals(List.of("README.md", "docs/guide.md"), jsonTextValues(items, "path")),
         () -> assertEquals(List.of("root_readme", "docs_tree"), jsonTextValues(items, "discovery_source")),
-        () -> assertTrue(items.get(0).path("module_id").isNull()),
-        () -> assertEquals("README", items.get(0).path("title").asText()),
-        () -> assertEquals("filename", items.get(0).path("title_source").asText()),
-        () -> assertEquals(0, items.get(0).path("headings").size()),
-        () -> assertEquals(0, items.get(0).path("chunks").size()),
-        () -> assertEquals(0, items.get(0).path("evidence_ids").size()),
+        () -> assertTrue(readme.path("module_id").isNull()),
+        () -> assertEquals("Root docs", readme.path("title").asText()),
+        () -> assertEquals("first_heading", readme.path("title_source").asText()),
+        () -> assertEquals(2, readmeHeadings.size()),
+        () -> assertEquals(
+            "document_heading:README.md:heading:Root%20docs:occ:000001",
+            readmeHeadings.get(0).path("id").asText()),
+        () -> assertEquals(1, readmeHeadings.get(0).path("level").asInt()),
+        () -> assertEquals("Root docs", readmeHeadings.get(0).path("title").asText()),
+        () -> assertEquals("root-docs", readmeHeadings.get(0).path("anchor").asText()),
+        () -> assertEquals(2, readmeHeadings.get(0).path("line_start").asInt()),
+        () -> assertEquals(2, readmeHeadings.get(0).path("line_end").asInt()),
+        () -> assertEquals(3, readmeChunks.size()),
+        () -> assertEquals("document_chunk:README.md:chunk:000001",
+            readmeChunks.get(0).path("id").asText()),
+        () -> assertTrue(readmeChunks.get(0).path("heading_id").isNull()),
+        () -> assertEquals(1, readmeChunks.get(0).path("line_start").asInt()),
+        () -> assertEquals(1, readmeChunks.get(0).path("line_end").asInt()),
+        () -> assertEquals(
+            readmeHeadings.get(0).path("id").asText(),
+            readmeChunks.get(1).path("heading_id").asText()),
+        () -> assertEquals("not_serialized", readmeChunks.get(1).path("content_status").asText()),
+        () -> assertEquals(0, readme.path("evidence_ids").size()),
+        () -> assertFalse(projectMap.contains("Body text that must not be serialized")),
+        () -> assertFalse(projectMap.contains("More body text that must not be serialized")),
         () -> assertFalse(projectMap.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
         () -> assertFalse(evidenceIndex.contains("\"source_type\":\"document\"")),
         () -> assertFalse(agentGuide.contains("Local Project Documentation")));
+  }
+
+  @Test
+  void documentStructureProjectMapMatchesFocusedGolden() throws Exception {
+    Path projectPath = tempDir.resolve("document-structure-golden");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("README.md"), """
+        Intro
+        # Root docs
+        Body text that must not be serialized
+        ## API
+        More body text that must not be serialized
+        """);
+    writeFile(projectPath.resolve("docs/guide.md"), "# Guide\n");
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(2, result.documentCount()),
+        () -> assertEquals(
+            expected("v0-8-document-structure", "project-map.json"),
+            Files.readString(outputDirectory.resolve("project-map.json"))));
   }
 
   @Test

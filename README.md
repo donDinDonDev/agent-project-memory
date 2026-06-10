@@ -110,8 +110,9 @@ security policy, endpoint protection, authentication, authorization, filter-chai
 ordering, vulnerability, or correctness claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
 inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, and discovers
-safe default-scope local Markdown document inventory without heading, chunk, document
-evidence, reconciliation, or local-document guide rendering, then writes:
+safe default-scope local Markdown document inventory with deterministic ATX heading
+references and bounded chunk references, without document evidence, reconciliation, or
+local-document guide rendering, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -153,7 +154,8 @@ configuration-properties, and bean method inventories,
 inventories, `spring_application_surface.messaging.listener_signals` inventories, and
 `spring_application_surface.security.configuration_warnings` warning-ID references, a
 top-level `documents` object with deterministic default-scope local Markdown discovery
-policy metadata and document inventory, and evidence ID references. The current Spring
+policy metadata, document inventory, ATX heading references, and bounded chunk
+references, and evidence ID references. The current Spring
 application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
@@ -292,8 +294,9 @@ conservative tested-subject relation/status rows from supported naming, exact
 production imports, direct field types, and direct Spring test slice class literals,
 conservative test-gap and change-risk planning hints from existing deterministic facts
 and inferred tested-subject relations, deterministic default-scope local Markdown
-document discovery and inventory with safe path exclusions and no symlink following,
-deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
+document discovery, inventory, ATX heading references, and bounded chunk references with
+safe path exclusions and no symlink following, deterministic `endpoints.md`, and
+deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
 guidance, source-visible test method/framework/slice/mock/tested-subject guidance, and
@@ -476,17 +479,19 @@ Current limitations:
   or add claims beyond extracted facts, explicit inferences, and known uncertainty
   labels.
 - Local Markdown/document ingestion is limited to conservative default-scope document
-  inventory. It does not extract headings or chunks, emit document evidence, reconcile
+  inventory, deterministic ATX heading references, and bounded chunk references with
+  `content_status: "not_serialized"`. It does not emit document evidence, reconcile
   code and docs, render local-document guide sections, read hidden/private/generated/
-  dependency/maintainer paths, follow symlinks, or summarize document content.
+  dependency/maintainer paths, follow symlinks, or summarize or serialize document
+  bodies.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
   Boot application, Spring repository stereotype and interface signal, local
   OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, and tests inventory
-  evidence. It does not emit `document` evidence records in the current inventory-only
-  slice.
+  evidence. It does not emit `document` evidence records in the current local Markdown
+  discovery and structure slice.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

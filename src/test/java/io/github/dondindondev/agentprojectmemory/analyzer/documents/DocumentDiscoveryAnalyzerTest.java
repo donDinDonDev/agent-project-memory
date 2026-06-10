@@ -22,7 +22,7 @@ final class DocumentDiscoveryAnalyzerTest {
   private final DocumentDiscoveryAnalyzer analyzer = new DocumentDiscoveryAnalyzer();
 
   @Test
-  void discoversDefaultScopeMarkdownWithDeterministicInventoryOnly() throws Exception {
+  void discoversDefaultScopeMarkdownWithDeterministicStructure() throws Exception {
     Path repositoryRoot = repository("default-scope");
     writeFile(repositoryRoot.resolve("README.md"), "# Root\n");
     writeFile(repositoryRoot.resolve("services/orders/README.markdown"), "# Orders\n");
@@ -38,6 +38,8 @@ final class DocumentDiscoveryAnalyzerTest {
             supportedModule("module:.", ".", "pom.xml")));
 
     List<DocumentFileFact> documents = analysis.documents();
+    DocumentHeadingFact rootHeading = documents.get(1).headings().get(0);
+    DocumentChunkFact rootChunk = documents.get(1).chunks().get(0);
 
     assertAll(
         () -> assertEquals("analyzed", analysis.analysisStatus()),
@@ -56,13 +58,179 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertEquals("root_readme", documents.get(1).discoverySource()),
         () -> assertEquals("adr_tree", documents.get(2).discoverySource()),
         () -> assertEquals("docs_tree", documents.get(4).discoverySource()),
-        () -> assertEquals("README", documents.get(1).title()),
-        () -> assertEquals("filename", documents.get(1).titleSource()),
+        () -> assertEquals("Root", documents.get(1).title()),
+        () -> assertEquals("first_heading", documents.get(1).titleSource()),
         () -> assertEquals("local_markdown", documents.get(1).documentKind()),
         () -> assertEquals("markdown", documents.get(1).format()),
-        () -> assertEquals(List.of(), documents.get(1).headings()),
-        () -> assertEquals(List.of(), documents.get(1).chunks()),
+        () -> assertEquals("document_heading:README.md:heading:Root:occ:000001", rootHeading.id()),
+        () -> assertEquals(1, rootHeading.level()),
+        () -> assertEquals("Root", rootHeading.title()),
+        () -> assertEquals("root", rootHeading.anchor()),
+        () -> assertEquals(1, rootHeading.lineStart()),
+        () -> assertEquals(1, rootHeading.lineEnd()),
+        () -> assertEquals("document_chunk:README.md:chunk:000001", rootChunk.id()),
+        () -> assertEquals(rootHeading.id(), rootChunk.headingId()),
+        () -> assertEquals(1, rootChunk.lineStart()),
+        () -> assertEquals(1, rootChunk.lineEnd()),
+        () -> assertEquals("not_serialized", rootChunk.contentStatus()),
         () -> assertEquals(List.of(), documents.get(1).evidenceIds()));
+  }
+
+  @Test
+  void extractsNestedDuplicateHeadingsAndNearestOwningChunks() throws Exception {
+    DocumentFileFact document = readmeDocument(
+        "nested-duplicate",
+        """
+            Intro
+            # Root
+            Root body
+            ## Child
+            Child body
+            ### Child
+            ```
+            # Not a heading in a fence
+            ```
+            # Root
+            Tail
+            """);
+
+    List<DocumentHeadingFact> headings = document.headings();
+    List<DocumentChunkFact> chunks = document.chunks();
+
+    assertAll(
+        () -> assertEquals("Root", document.title()),
+        () -> assertEquals("first_heading", document.titleSource()),
+        () -> assertEquals(4, headings.size()),
+        () -> assertEquals(List.of(1, 2, 3, 1), headings.stream().map(DocumentHeadingFact::level).toList()),
+        () -> assertEquals(List.of("Root", "Child", "Child", "Root"),
+            headings.stream().map(DocumentHeadingFact::title).toList()),
+        () -> assertEquals(List.of("root", "child", "child-2", "root-2"),
+            headings.stream().map(DocumentHeadingFact::anchor).toList()),
+        () -> assertEquals(4L, headings.stream().map(DocumentHeadingFact::id).distinct().count()),
+        () -> assertEquals(5, chunks.size()),
+        () -> assertNull(chunks.get(0).headingId()),
+        () -> assertEquals(1, chunks.get(0).lineStart()),
+        () -> assertEquals(1, chunks.get(0).lineEnd()),
+        () -> assertEquals(headings.get(0).id(), chunks.get(1).headingId()),
+        () -> assertEquals(2, chunks.get(1).lineStart()),
+        () -> assertEquals(3, chunks.get(1).lineEnd()),
+        () -> assertEquals(headings.get(2).id(), chunks.get(3).headingId()),
+        () -> assertEquals(6, chunks.get(3).lineStart()),
+        () -> assertEquals(9, chunks.get(3).lineEnd()),
+        () -> assertEquals(headings.get(3).id(), chunks.get(4).headingId()),
+        () -> assertEquals(10, chunks.get(4).lineStart()),
+        () -> assertEquals(11, chunks.get(4).lineEnd()));
+  }
+
+  @Test
+  void ignoresMalformedAtxHeadingLikeLines() throws Exception {
+    DocumentFileFact document = readmeDocument(
+        "malformed-headings",
+        """
+            #NoSpace
+            ####### Too deep
+                # Indented code
+            ### Valid ###
+            """);
+
+    assertAll(
+        () -> assertEquals(1, document.headings().size()),
+        () -> assertEquals(3, document.headings().get(0).level()),
+        () -> assertEquals("Valid", document.headings().get(0).title()),
+        () -> assertEquals(4, document.headings().get(0).lineStart()));
+  }
+
+  @Test
+  void keepsEmptyMarkdownDocumentBounded() throws Exception {
+    DocumentFileFact document = readmeDocument("empty-markdown", "");
+
+    assertAll(
+        () -> assertEquals("README", document.title()),
+        () -> assertEquals("filename", document.titleSource()),
+        () -> assertEquals(List.of(), document.headings()),
+        () -> assertEquals(List.of(), document.chunks()));
+  }
+
+  @Test
+  void usesFirstNonBlankHeadingAsDocumentTitle() throws Exception {
+    DocumentFileFact document = readmeDocument(
+        "blank-heading-before-title",
+        """
+            #
+            ## Visible title
+            """);
+
+    assertAll(
+        () -> assertEquals("Visible title", document.title()),
+        () -> assertEquals("first_heading", document.titleSource()),
+        () -> assertEquals(2, document.headings().size()),
+        () -> assertEquals("", document.headings().get(0).title()),
+        () -> assertNull(document.headings().get(0).anchor()));
+  }
+
+  @Test
+  void boundsLongHeadingTitlesAndAnchors() throws Exception {
+    String longHeading = "A".repeat(160);
+    DocumentFileFact document = readmeDocument("long-heading", "# " + longHeading + "\n");
+    DocumentHeadingFact heading = document.headings().get(0);
+
+    assertAll(
+        () -> assertEquals("A".repeat(120) + "...", heading.title()),
+        () -> assertEquals(123, heading.title().length()),
+        () -> assertEquals("a".repeat(120), heading.anchor()),
+        () -> assertTrue(heading.id().startsWith("document_heading:README.md:heading:")));
+  }
+
+  @Test
+  void createsNoHeadingFallbackChunksWithoutSerializingContent() throws Exception {
+    DocumentFileFact document = readmeDocument(
+        "no-heading",
+        """
+            Intro
+            Body
+            """);
+
+    assertAll(
+        () -> assertEquals(List.of(), document.headings()),
+        () -> assertEquals(1, document.chunks().size()),
+        () -> assertNull(document.chunks().get(0).headingId()),
+        () -> assertEquals(1, document.chunks().get(0).lineStart()),
+        () -> assertEquals(2, document.chunks().get(0).lineEnd()),
+        () -> assertEquals("not_serialized", document.chunks().get(0).contentStatus()));
+  }
+
+  @Test
+  void splitsLongChunksByDeterministicLineBounds() throws Exception {
+    StringBuilder content = new StringBuilder();
+    for (int index = 1; index <= 85; index++) {
+      content.append("Line ").append(index).append('\n');
+    }
+
+    DocumentFileFact document = readmeDocument("long-chunk", content.toString());
+
+    assertAll(
+        () -> assertEquals(2, document.chunks().size()),
+        () -> assertEquals(1, document.chunks().get(0).lineStart()),
+        () -> assertEquals(80, document.chunks().get(0).lineEnd()),
+        () -> assertEquals(81, document.chunks().get(1).lineStart()),
+        () -> assertEquals(85, document.chunks().get(1).lineEnd()),
+        () -> assertEquals("document_chunk:README.md:chunk:000001", document.chunks().get(0).id()),
+        () -> assertEquals("document_chunk:README.md:chunk:000002", document.chunks().get(1).id()));
+  }
+
+  @Test
+  void normalizesControlCharactersInHeadingTitles() throws Exception {
+    String bidirectionalOverride = "\u202E";
+    DocumentFileFact document = readmeDocument(
+        "control-heading",
+        "# Safe\u0000" + bidirectionalOverride + "\tTitle\n");
+    DocumentHeadingFact heading = document.headings().get(0);
+
+    assertAll(
+        () -> assertEquals("Safe\\u0000\\u202E Title", heading.title()),
+        () -> assertEquals("safe-u0000-u202e-title", heading.anchor()),
+        () -> assertFalse(heading.title().contains("\u0000")),
+        () -> assertFalse(heading.title().contains(bidirectionalOverride)));
   }
 
   @Test
@@ -183,6 +351,13 @@ final class DocumentDiscoveryAnalyzerTest {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);
     return repositoryRoot;
+  }
+
+  private DocumentFileFact readmeDocument(String repositoryName, String content) throws Exception {
+    Path repositoryRoot = repository(repositoryName);
+    writeFile(repositoryRoot.resolve("README.md"), content);
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+    return analysis.documents().get(0);
   }
 
   private void writeFile(Path path, String content) throws Exception {

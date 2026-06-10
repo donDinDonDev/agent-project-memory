@@ -410,9 +410,10 @@ Implementation work that touches Markdown parsing, repository path handling,
 include/exclude behavior, output rendering, evidence serialization, or document-content
 scanning should receive focused tests and risk-based review before release.
 
-Current unreleased implementation status: the first v0.8 slice implements deterministic
-default-scope local Markdown discovery and `project-map.json` document inventory only.
-Heading extraction, chunk extraction, `document` evidence records, code-doc
+Current unreleased implementation status: the first v0.8 slices implement deterministic
+default-scope local Markdown discovery, `project-map.json` document inventory,
+deterministic ATX heading references, and bounded chunk references with
+`content_status: "not_serialized"`. `document` evidence records, code-doc
 reconciliation signals, and local documentation guide rendering remain planned later
 layers.
 
