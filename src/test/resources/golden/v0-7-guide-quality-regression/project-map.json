@@ -1,0 +1,935 @@
+{
+  "schema_version": "0.7",
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [
+            "src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "v0-7-guide-quality-regression",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "endpoint:com.example.web.OrderController#getOrder",
+      "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "controller_class": "com.example.web.OrderController",
+      "handler_method": "getOrder",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/orders/{id}"
+      ],
+      "request_parameters": [],
+      "request_body_type": null,
+      "response_type": "String",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.OrderController",
+        "declaring_method": "getOrder",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/OrderController.java:8-8:com.example.web.OrderController#getOrder:@GetMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/OrderController.java:6-6:com.example.web.OrderController:@RestController",
+        "ev:src/main/java/com/example/web/OrderController.java:8-8:com.example.web.OrderController#getOrder:@GetMapping"
+      ]
+    }
+  ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:com.example.web.OrderController#getOrder"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_data_repository_interface_signal:module:.:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:.",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.MissingOrderRepository",
+          "source_path": "src/main/java/com/example/repositories/MissingOrderRepository.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "not_detected",
+          "entity_relation": null,
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-7:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-6:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:.:com.example.config.AppConfig",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.config.AppConfig",
+            "source_path": "src/main/java/com/example/config/AppConfig.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/AppConfig.java:6-6:com.example.config.AppConfig:@Configuration"
+            ]
+          }
+        ]
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_bean_method:module:.:com.example.config.AppConfig#orderBean:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.config.AppConfig",
+            "method_name": "orderBean",
+            "source_path": "src/main/java/com/example/config/AppConfig.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/config/AppConfig.java:8-8:com.example.config.AppConfig#orderBean:@Bean"
+            ]
+          },
+          {
+            "id": "spring_bean_method:module:.:com.example.security.SecurityConfig#appSecurity:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.security.SecurityConfig",
+            "method_name": "appSecurity",
+            "source_path": "src/main/java/com/example/security/SecurityConfig.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/security/SecurityConfig.java:9-9:com.example.security.SecurityConfig#appSecurity:@Bean"
+            ]
+          }
+        ]
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_transaction_boundary:module:.:com.example.service.OrderService#settleOrder:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_transaction_boundary",
+            "support_type": "extracted",
+            "class_name": "com.example.service.OrderService",
+            "method_name": "settleOrder",
+            "source_path": "src/main/java/com/example/service/OrderService.java",
+            "target_kind": "method",
+            "annotation_symbol": "@Transactional",
+            "transaction_signal": "direct_transactional_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/service/OrderService.java:8-8:com.example.service.OrderService#settleOrder:@Transactional"
+            ]
+          }
+        ]
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": [
+          "warning:spring_security:security_configuration_annotation:com.example.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "warning:spring_security:security_filter_chain_bean:com.example.security.SecurityConfig#appSecurity:decl:000001"
+        ]
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:spring_security:security_configuration_annotation:com.example.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+        "category": "spring_security",
+        "signal": "security_configuration_annotation",
+        "module_id": "module:.",
+        "message": "Spring Security configuration annotation detected as a source-visible inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecurityConfig.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecurityConfig.java:7-7:com.example.security.SecurityConfig:@EnableWebSecurity"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecurityConfig#appSecurity:decl:000001",
+        "category": "spring_security",
+        "signal": "security_filter_chain_bean",
+        "module_id": "module:.",
+        "message": "SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/security/SecurityConfig.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/security/SecurityConfig.java:9-9:com.example.security.SecurityConfig#appSecurity:@Bean",
+          "ev:src/main/java/com/example/security/SecurityConfig.java:10-10:com.example.security.SecurityConfig#appSecurity:return:SecurityFilterChain"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.config.AppConfig",
+        "module_id": "module:.",
+        "class_name": "com.example.config.AppConfig",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/config/AppConfig.java:6-6:com.example.config.AppConfig:@Configuration"
+        ]
+      },
+      {
+        "id": "component:com.example.service.OrderService",
+        "module_id": "module:.",
+        "class_name": "com.example.service.OrderService",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/service/OrderService.java:6-6:com.example.service.OrderService:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.web.OrderController",
+        "module_id": "module:.",
+        "class_name": "com.example.web.OrderController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/OrderController.java:6-6:com.example.web.OrderController:@RestController"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:com.example.domain.Customer",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.Customer",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.Customer",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/Order.java:9-9:com.example.domain.Customer:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/Order.java:7-7:com.example.domain.Customer:@Entity"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.Order",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.Order",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.Order",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/Order.java:15-15:com.example.domain.Order:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "cardinality": "many_to_one",
+            "java_type": "Customer",
+            "target": {
+              "declared_type": "Customer",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "mapped_by_absent",
+            "optional": null,
+            "fetch": null,
+            "cascade": [],
+            "orphan_removal": null,
+            "join_columns": [],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/Order.java:18-18:com.example.domain.Order:@ManyToOne:field:customer"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/Order.java:13-13:com.example.domain.Order:@Entity"
+        ]
+      }
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "test:com.example.alpha.DuplicateServiceTest",
+        "module_id": "module:.",
+        "class_name": "com.example.alpha.DuplicateServiceTest",
+        "source_path": "src/test/java/com/example/alpha/DuplicateServiceTest.java",
+        "framework_signals": [],
+        "spring_test_slices": [],
+        "mock_signals": [],
+        "methods": [],
+        "tested_subjects": [
+          {
+            "relation_status": "ambiguous",
+            "relation_type": "naming_convention",
+            "class_name": "com.example.alpha.DuplicateService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "low",
+            "uncertainty": "ambiguous_subject_name",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/alpha/DuplicateServiceTest.java:3-3:com.example.alpha.DuplicateServiceTest:test_file",
+              "ev:src/main/java/com/example/alpha/DuplicateService.java:3-3:com.example.alpha.DuplicateService:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "ambiguous",
+            "relation_type": "naming_convention",
+            "class_name": "com.example.beta.DuplicateService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "low",
+            "uncertainty": "ambiguous_subject_name",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/alpha/DuplicateServiceTest.java:3-3:com.example.alpha.DuplicateServiceTest:test_file",
+              "ev:src/main/java/com/example/beta/DuplicateService.java:3-3:com.example.beta.DuplicateService:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/alpha/DuplicateServiceTest.java:3-3:com.example.alpha.DuplicateServiceTest:test_file"
+        ]
+      },
+      {
+        "id": "test:com.example.web.MissingControllerTest",
+        "module_id": "module:.",
+        "class_name": "com.example.web.MissingControllerTest",
+        "source_path": "src/test/java/com/example/web/MissingControllerTest.java",
+        "framework_signals": [],
+        "spring_test_slices": [],
+        "mock_signals": [],
+        "methods": [],
+        "tested_subjects": [
+          {
+            "relation_status": "not_detected",
+            "relation_type": "naming_convention",
+            "class_name": null,
+            "target_module_id": null,
+            "candidate_reference": "MissingController",
+            "support_type": null,
+            "confidence": "low",
+            "uncertainty": "no_matching_production_class",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/MissingControllerTest.java:3-3:com.example.web.MissingControllerTest:test_file"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/MissingControllerTest.java:3-3:com.example.web.MissingControllerTest:test_file"
+        ]
+      },
+      {
+        "id": "test:com.example.web.OrderControllerTest",
+        "module_id": "module:.",
+        "class_name": "com.example.web.OrderControllerTest",
+        "source_path": "src/test/java/com/example/web/OrderControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "signal_kind": "framework",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:13-13:com.example.web.OrderControllerTest#returnsOrder:@Test",
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:4-4:com.example.web.OrderControllerTest:import:org.junit.jupiter.api.Test"
+            ]
+          },
+          {
+            "name": "Spring Test",
+            "signal_kind": "framework",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:5-5:com.example.web.OrderControllerTest:import:org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:6-6:com.example.web.OrderControllerTest:import:org.springframework.boot.test.mock.mockito.MockBean",
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:8-8:com.example.web.OrderControllerTest:@WebMvcTest"
+            ]
+          }
+        ],
+        "spring_test_slices": [
+          {
+            "annotation": "@WebMvcTest",
+            "slice_kind": "web_mvc_test",
+            "signal_kind": "spring_test_slice",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:8-8:com.example.web.OrderControllerTest:@WebMvcTest"
+            ]
+          }
+        ],
+        "mock_signals": [
+          {
+            "annotation": "@MockBean",
+            "mock_signal": "spring_boot_mockbean_annotation",
+            "signal_kind": "mock_annotation",
+            "target_kind": "field",
+            "target_name": "orderService",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:10-10:com.example.web.OrderControllerTest:field:orderService:@MockBean"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "method_name": "returnsOrder",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:13-13:com.example.web.OrderControllerTest#returnsOrder:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
+            "class_name": "com.example.web.OrderController",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:9-9:com.example.web.OrderControllerTest:test_file",
+              "ev:src/main/java/com/example/web/OrderController.java:7-7:com.example.web.OrderController:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "spring_test_slice_class_literal",
+            "class_name": "com.example.web.OrderController",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:8-8:com.example.web.OrderControllerTest:@WebMvcTest",
+              "ev:src/main/java/com/example/web/OrderController.java:7-7:com.example.web.OrderController:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "test_field_type",
+            "class_name": "com.example.service.OrderService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:11-11:com.example.web.OrderControllerTest:field:orderService:type:OrderService",
+              "ev:src/main/java/com/example/service/OrderService.java:7-7:com.example.service.OrderService:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "test_import",
+            "class_name": "com.example.service.OrderService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/OrderControllerTest.java:3-3:com.example.web.OrderControllerTest:import:com.example.service.OrderService",
+              "ev:src/main/java/com/example/service/OrderService.java:7-7:com.example.service.OrderService:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/OrderControllerTest.java:9-9:com.example.web.OrderControllerTest:test_file"
+        ]
+      },
+      {
+        "id": "test:com.example.web.UnsupportedFieldTypeTest",
+        "module_id": "module:.",
+        "class_name": "com.example.web.UnsupportedFieldTypeTest",
+        "source_path": "src/test/java/com/example/web/UnsupportedFieldTypeTest.java",
+        "framework_signals": [],
+        "spring_test_slices": [],
+        "mock_signals": [],
+        "methods": [],
+        "tested_subjects": [
+          {
+            "relation_status": "not_detected",
+            "relation_type": "naming_convention",
+            "class_name": null,
+            "target_module_id": null,
+            "candidate_reference": "UnsupportedFieldType",
+            "support_type": null,
+            "confidence": "low",
+            "uncertainty": "no_matching_production_class",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/UnsupportedFieldTypeTest.java:5-5:com.example.web.UnsupportedFieldTypeTest:test_file"
+            ]
+          },
+          {
+            "relation_status": "unsupported",
+            "relation_type": "test_field_type",
+            "class_name": null,
+            "target_module_id": null,
+            "candidate_reference": "List<OrderController>",
+            "support_type": null,
+            "confidence": "low",
+            "uncertainty": "unsupported_subject_reference",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/UnsupportedFieldTypeTest.java:6-6:com.example.web.UnsupportedFieldTypeTest:field:controllers:type:List<OrderController>"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/UnsupportedFieldTypeTest.java:5-5:com.example.web.UnsupportedFieldTypeTest:test_file"
+        ]
+      }
+    ]
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.Customer",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.Customer",
+          "subject_name": "com.example.domain.Customer",
+          "subject_class_name": "com.example.domain.Customer",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/Order.java:7-7:com.example.domain.Customer:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.Order",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.Order",
+          "subject_name": "com.example.domain.Order",
+          "subject_class_name": "com.example.domain.Order",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/Order.java:13-13:com.example.domain.Order:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:.:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:.:com.example.repositories.MissingOrderRepository",
+          "subject_name": "com.example.repositories.MissingOrderRepository",
+          "subject_class_name": "com.example.repositories.MissingOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-7:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-6:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.Order#relationship:customer",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.Order#relationship:customer",
+          "subject_name": "com.example.domain.Order#customer",
+          "subject_class_name": "com.example.domain.Order",
+          "subject_member_name": "customer",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/Order.java:18-18:com.example.domain.Order:@ManyToOne:field:customer"
+          ]
+        },
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:.:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:.:com.example.repositories.MissingOrderRepository",
+          "subject_name": "com.example.repositories.MissingOrderRepository",
+          "subject_class_name": "com.example.repositories.MissingOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_not_detected",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-7:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:src/main/java/com/example/repositories/MissingOrderRepository.java:6-6:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.config.AppConfig#orderBean:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.config.AppConfig#orderBean:decl:000001",
+          "subject_name": "com.example.config.AppConfig#orderBean",
+          "subject_class_name": "com.example.config.AppConfig",
+          "subject_member_name": "orderBean",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/AppConfig.java:8-8:com.example.config.AppConfig#orderBean:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.security.SecurityConfig#appSecurity:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.security.SecurityConfig#appSecurity:decl:000001",
+          "subject_name": "com.example.security.SecurityConfig#appSecurity",
+          "subject_class_name": "com.example.security.SecurityConfig",
+          "subject_member_name": "appSecurity",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecurityConfig.java:9-9:com.example.security.SecurityConfig#appSecurity:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.config.AppConfig",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.config.AppConfig",
+          "subject_name": "com.example.config.AppConfig",
+          "subject_class_name": "com.example.config.AppConfig",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/AppConfig.java:6-6:com.example.config.AppConfig:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_configuration_annotation:com.example.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_configuration_annotation:com.example.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "subject_name": "warning:spring_security:security_configuration_annotation:com.example.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecurityConfig.java:7-7:com.example.security.SecurityConfig:@EnableWebSecurity"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_filter_chain_bean:com.example.security.SecurityConfig#appSecurity:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecurityConfig#appSecurity:decl:000001",
+          "subject_name": "warning:spring_security:security_filter_chain_bean:com.example.security.SecurityConfig#appSecurity:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecurityConfig.java:9-9:com.example.security.SecurityConfig#appSecurity:@Bean",
+            "ev:src/main/java/com/example/security/SecurityConfig.java:10-10:com.example.security.SecurityConfig#appSecurity:return:SecurityFilterChain"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_service_change_surface:component:com.example.service.OrderService",
+          "module_id": "module:.",
+          "signal": "spring_service_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_service",
+          "subject_id": "component:com.example.service.OrderService",
+          "subject_name": "com.example.service.OrderService",
+          "subject_class_name": "com.example.service.OrderService",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_service_stereotype",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/service/OrderService.java:6-6:com.example.service.OrderService:@Service"
+          ]
+        },
+        {
+          "id": "quality:change_risk:transaction_boundary_change_surface:spring_transaction_boundary:module:.:com.example.service.OrderService#settleOrder:decl:000001",
+          "module_id": "module:.",
+          "signal": "transaction_boundary_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_transaction_boundary",
+          "subject_id": "spring_transaction_boundary:module:.:com.example.service.OrderService#settleOrder:decl:000001",
+          "subject_name": "com.example.service.OrderService#settleOrder",
+          "subject_class_name": "com.example.service.OrderService",
+          "subject_member_name": "settleOrder",
+          "risk_basis": "source_visible_transaction_boundary",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/service/OrderService.java:8-8:com.example.service.OrderService#settleOrder:@Transactional"
+          ]
+        }
+      ]
+    }
+  }
+}
