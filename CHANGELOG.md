@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-06-10
+
 ### Added
 
 - Added the v0.7 tests, quality, and change-risk contract design boundary,
@@ -54,11 +56,31 @@ architecture documents.
   evidence-backed quality planning hints while continuing to avoid coverage, test
   execution, assertion, CI, runtime, correctness, vulnerability, production-impact,
   business-priority, and complete subject-mapping claims.
+- Aligned release-prep README usage, roadmap status, release notes, changelog, and Maven
+  project version for `v0.7.0`.
 
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.6.0` as published with release
   assets and checksums.
+
+### Security
+
+- Completed the v0.7 real-project evaluation and read-only security/contract audit with
+  no release-blocking or bounded-fix findings.
+- Kept v0.7 tests, tested-subject, and quality/change-risk output local-first,
+  evidence-backed, source-visible/inferred/uncertain where appropriate, and without
+  coverage, runtime execution, CI status, assertion, correctness, vulnerability, or
+  production-impact claims.
+
+### Not Included
+
+- Coverage analysis, mutation testing, behavioral assertion understanding, CI result
+  claims, runtime test execution, runtime Spring test context reconstruction, runtime
+  repository or database verification, full call graph reconstruction, or complete
+  tested-subject mapping.
+- SaaS, connectors, repository chat, generic RAG, web UI, LLM calls in the core
+  analyzer, or automatic code modification.
 
 ## [0.6.0] - 2026-06-09
 
