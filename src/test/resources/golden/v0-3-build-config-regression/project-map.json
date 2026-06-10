@@ -1459,6 +1459,8 @@
             ]
           }
         ],
+        "spring_test_slices": [],
+        "mock_signals": [],
         "methods": [
           {
             "method_name": "status",
@@ -1502,6 +1504,8 @@
             ]
           }
         ],
+        "spring_test_slices": [],
+        "mock_signals": [],
         "methods": [
           {
             "method_name": "create",

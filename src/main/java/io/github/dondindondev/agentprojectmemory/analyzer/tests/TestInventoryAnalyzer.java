@@ -4,7 +4,9 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
+import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
@@ -36,7 +38,11 @@ public final class TestInventoryAnalyzer {
   private static final String LOW_CONFIDENCE = "low";
   private static final String SUPPORT_TYPE_INFERRED = "inferred";
   private static final String SIGNAL_KIND_FRAMEWORK = "framework";
+  private static final String SIGNAL_KIND_SPRING_TEST_SLICE = "spring_test_slice";
+  private static final String SIGNAL_KIND_MOCK_ANNOTATION = "mock_annotation";
   private static final String METHOD_KIND_TEST = "test";
+  private static final String TARGET_KIND_TYPE = "type";
+  private static final String TARGET_KIND_FIELD = "field";
   private static final String AMBIGUOUS_SUBJECT_NAME = "ambiguous_subject_name";
   private static final List<String> TEST_SUFFIXES = List.of("Test", "Tests", "IT");
   private static final Map<String, Set<String>> JUNIT_TEST_METHOD_ANNOTATION_ORIGINS = Map.ofEntries(
@@ -56,6 +62,24 @@ public final class TestInventoryAnalyzer {
       "WebMvcTest",
       "DataJpaTest",
       "ContextConfiguration");
+  private static final Map<String, Set<String>> SPRING_TEST_SLICE_ANNOTATION_ORIGINS = Map.ofEntries(
+      Map.entry("SpringBootTest", Set.of("org.springframework.boot.test.context.SpringBootTest")),
+      Map.entry("WebMvcTest", Set.of("org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest")),
+      Map.entry("DataJpaTest", Set.of("org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest")),
+      Map.entry("ContextConfiguration", Set.of("org.springframework.test.context.ContextConfiguration")));
+  private static final Map<String, String> SPRING_TEST_SLICE_KINDS = Map.of(
+      "SpringBootTest", "spring_boot_test",
+      "WebMvcTest", "web_mvc_test",
+      "DataJpaTest", "data_jpa_test",
+      "ContextConfiguration", "context_configuration");
+  private static final Map<String, Set<String>> SPRING_TEST_MOCK_ANNOTATION_ORIGINS = Map.of(
+      "MockBean",
+      Set.of("org.springframework.boot.test.mock.mockito.MockBean"),
+      "SpyBean",
+      Set.of("org.springframework.boot.test.mock.mockito.SpyBean"));
+  private static final Map<String, String> SPRING_TEST_MOCK_SIGNALS = Map.of(
+      "MockBean", "spring_boot_mockbean_annotation",
+      "SpyBean", "spring_boot_spybean_annotation");
   private static final Map<String, Set<String>> SPRING_TEST_ANNOTATION_ORIGINS = Map.ofEntries(
       Map.entry("SpringBootTest", Set.of("org.springframework.boot.test.context.SpringBootTest")),
       Map.entry("WebMvcTest", Set.of("org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest")),
@@ -65,6 +89,7 @@ public final class TestInventoryAnalyzer {
       Map.entry("DirtiesContext", Set.of("org.springframework.test.annotation.DirtiesContext")),
       Map.entry("Sql", Set.of("org.springframework.test.context.jdbc.Sql")),
       Map.entry("MockBean", Set.of("org.springframework.boot.test.mock.mockito.MockBean")),
+      Map.entry("SpyBean", Set.of("org.springframework.boot.test.mock.mockito.SpyBean")),
       Map.entry("TestConfiguration", Set.of("org.springframework.boot.test.context.TestConfiguration")));
   private static final Comparator<TestClassFact> TEST_CLASS_ORDER = Comparator
       .comparing(TestClassFact::className)
@@ -172,6 +197,22 @@ public final class TestInventoryAnalyzer {
           sourceDeclaredTypeNames,
           sourceLines);
       frameworkEvidence.forEach(record -> evidence.putIfAbsent(record.evidence().id(), record.evidence()));
+      List<TestSpringSliceFact> springTestSlices = springTestSlices(
+          sourcePath,
+          className,
+          type,
+          singleTypeImportsBySimpleName,
+          sourceDeclaredTypeNames,
+          sourceLines,
+          evidence);
+      List<TestMockSignalFact> mockSignals = mockSignals(
+          sourcePath,
+          className,
+          type,
+          singleTypeImportsBySimpleName,
+          sourceDeclaredTypeNames,
+          sourceLines,
+          evidence);
 
       List<TestedSubjectFact> testedSubjects = testedSubjects(
           type.getNameAsString(),
@@ -183,6 +224,8 @@ public final class TestInventoryAnalyzer {
           className,
           sourcePath,
           frameworkSignals(frameworkEvidence),
+          springTestSlices,
+          mockSignals,
           testMethods,
           testedSubjects,
           List.of(classEvidence.id())));
@@ -463,10 +506,22 @@ public final class TestInventoryAnalyzer {
       String methodName,
       AnnotationExpr annotation,
       List<String> sourceLines) {
+    return annotationEvidence(sourcePath, className, methodName, null, annotation, sourceLines);
+  }
+
+  private TestInventoryEvidence annotationEvidence(
+      String sourcePath,
+      String className,
+      String methodName,
+      String ownerDiscriminator,
+      AnnotationExpr annotation,
+      List<String> sourceLines) {
     String annotationSymbol = "@" + simpleAnnotationName(annotation);
     Integer lineStart = annotation.getRange().map(range -> range.begin.line).orElse(null);
     Integer lineEnd = annotation.getRange().map(range -> range.end.line).orElse(null);
-    String owner = methodName == null ? className : className + "#" + methodName;
+    String owner = ownerDiscriminator == null
+        ? methodName == null ? className : className + "#" + methodName
+        : className + ":" + ownerDiscriminator;
 
     return new TestInventoryEvidence(
         evidenceId(sourcePath, owner, annotationSymbol, lineStart, lineEnd),
@@ -514,6 +569,181 @@ public final class TestInventoryAnalyzer {
           List.of(methodEvidence.id())));
     }
     return List.copyOf(methods);
+  }
+
+  private List<TestSpringSliceFact> springTestSlices(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<TestSpringSliceFact> slices = new ArrayList<>();
+    for (AnnotationExpr annotation : type.getAnnotations()) {
+      Optional<String> supportedSimpleName = JavaSourceOrigins.supportedTypeSimpleName(
+          annotation.getNameAsString(),
+          singleTypeImportsBySimpleName,
+          SPRING_TEST_SLICE_ANNOTATION_ORIGINS,
+          sourceDeclaredTypeNames);
+      if (supportedSimpleName.isEmpty()) {
+        continue;
+      }
+
+      TestInventoryEvidence annotationEvidence = annotationEvidence(
+          sourcePath,
+          className,
+          null,
+          annotation,
+          sourceLines);
+      evidence.putIfAbsent(annotationEvidence.id(), annotationEvidence);
+      String simpleName = supportedSimpleName.orElseThrow();
+      slices.add(new TestSpringSliceFact(
+          annotationEvidence.symbolName(),
+          SPRING_TEST_SLICE_KINDS.get(simpleName),
+          SIGNAL_KIND_SPRING_TEST_SLICE,
+          List.of(annotationEvidence.id())));
+    }
+    return slices.stream()
+        .sorted(Comparator
+            .comparing(TestSpringSliceFact::sliceKind)
+            .thenComparing(TestSpringSliceFact::annotation)
+            .thenComparing(slice -> String.join("\n", slice.evidenceIds())))
+        .toList();
+  }
+
+  private List<TestMockSignalFact> mockSignals(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<TestMockSignalFact> mockSignals = new ArrayList<>();
+    mockSignals.addAll(typeLevelMockSignals(
+        sourcePath,
+        className,
+        type,
+        singleTypeImportsBySimpleName,
+        sourceDeclaredTypeNames,
+        sourceLines,
+        evidence));
+    mockSignals.addAll(fieldLevelMockSignals(
+        sourcePath,
+        className,
+        type,
+        singleTypeImportsBySimpleName,
+        sourceDeclaredTypeNames,
+        sourceLines,
+        evidence));
+    return mockSignals.stream()
+        .sorted(Comparator
+            .comparing(TestMockSignalFact::targetKind)
+            .thenComparing(TestMockSignalFact::targetName)
+            .thenComparing(TestMockSignalFact::mockSignal)
+            .thenComparing(TestMockSignalFact::annotation)
+            .thenComparing(signal -> String.join("\n", signal.evidenceIds())))
+        .toList();
+  }
+
+  private List<TestMockSignalFact> typeLevelMockSignals(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<TestMockSignalFact> mockSignals = new ArrayList<>();
+    for (AnnotationExpr annotation : type.getAnnotations()) {
+      mockSignal(
+          sourcePath,
+          className,
+          null,
+          null,
+          TARGET_KIND_TYPE,
+          className,
+          annotation,
+          singleTypeImportsBySimpleName,
+          sourceDeclaredTypeNames,
+          sourceLines,
+          evidence)
+          .ifPresent(mockSignals::add);
+    }
+    return mockSignals;
+  }
+
+  private List<TestMockSignalFact> fieldLevelMockSignals(
+      String sourcePath,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<TestMockSignalFact> mockSignals = new ArrayList<>();
+    for (FieldDeclaration field : type.getFields()) {
+      String targetName = field.getVariables().stream()
+          .findFirst()
+          .map(VariableDeclarator::getNameAsString)
+          .orElse("<unknown>");
+      for (AnnotationExpr annotation : field.getAnnotations()) {
+        mockSignal(
+            sourcePath,
+            className,
+            null,
+            "field:" + targetName,
+            TARGET_KIND_FIELD,
+            targetName,
+            annotation,
+            singleTypeImportsBySimpleName,
+            sourceDeclaredTypeNames,
+            sourceLines,
+            evidence)
+            .ifPresent(mockSignals::add);
+      }
+    }
+    return mockSignals;
+  }
+
+  private Optional<TestMockSignalFact> mockSignal(
+      String sourcePath,
+      String className,
+      String methodName,
+      String ownerDiscriminator,
+      String targetKind,
+      String targetName,
+      AnnotationExpr annotation,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      List<String> sourceLines,
+      Map<String, TestInventoryEvidence> evidence) {
+    Optional<String> supportedSimpleName = JavaSourceOrigins.supportedTypeSimpleName(
+        annotation.getNameAsString(),
+        singleTypeImportsBySimpleName,
+        SPRING_TEST_MOCK_ANNOTATION_ORIGINS,
+        sourceDeclaredTypeNames);
+    if (supportedSimpleName.isEmpty()) {
+      return Optional.empty();
+    }
+
+    TestInventoryEvidence annotationEvidence = annotationEvidence(
+        sourcePath,
+        className,
+        methodName,
+        ownerDiscriminator,
+        annotation,
+        sourceLines);
+    evidence.putIfAbsent(annotationEvidence.id(), annotationEvidence);
+    String simpleName = supportedSimpleName.orElseThrow();
+    return Optional.of(new TestMockSignalFact(
+        annotationEvidence.symbolName(),
+        SPRING_TEST_MOCK_SIGNALS.get(simpleName),
+        SIGNAL_KIND_MOCK_ANNOTATION,
+        targetKind,
+        targetName,
+        List.of(annotationEvidence.id())));
   }
 
   private Optional<AnnotationExpr> supportedTestMethodAnnotation(

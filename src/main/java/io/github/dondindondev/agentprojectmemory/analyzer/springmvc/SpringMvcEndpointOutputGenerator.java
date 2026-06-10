@@ -87,6 +87,8 @@ import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAna
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestInventoryEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestMethodFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestMockSignalFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestSpringSliceFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.tests.TestedSubjectFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningAnalyzer;
@@ -282,6 +284,16 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparing(test -> test.fact().sourcePath());
   private static final Comparator<TestFrameworkSignalFact> TEST_FRAMEWORK_SIGNAL_ORDER = Comparator
       .comparing(TestFrameworkSignalFact::name);
+  private static final Comparator<TestSpringSliceFact> TEST_SPRING_SLICE_ORDER = Comparator
+      .comparing(TestSpringSliceFact::sliceKind)
+      .thenComparing(TestSpringSliceFact::annotation)
+      .thenComparing(slice -> String.join("\n", slice.evidenceIds()));
+  private static final Comparator<TestMockSignalFact> TEST_MOCK_SIGNAL_ORDER = Comparator
+      .comparing(TestMockSignalFact::targetKind)
+      .thenComparing(TestMockSignalFact::targetName)
+      .thenComparing(TestMockSignalFact::mockSignal)
+      .thenComparing(TestMockSignalFact::annotation)
+      .thenComparing(signal -> String.join("\n", signal.evidenceIds()));
   private static final Comparator<TestedSubjectFact> TESTED_SUBJECT_ORDER = Comparator
       .comparing(TestedSubjectFact::className)
       .thenComparing(TestedSubjectFact::supportType)
@@ -3730,6 +3742,8 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 4, "class_name", test.className(), true);
     appendIndentedStringField(json, 4, "source_path", test.sourcePath(), true);
     appendFrameworkSignals(json, test.frameworkSignals());
+    appendSpringTestSlices(json, test.springTestSlices());
+    appendMockSignals(json, test.mockSignals());
     appendTestMethods(json, test.methods());
     appendTestedSubjects(json, scopedTest.moduleId(), test.testedSubjects());
     appendIndentedStringArrayField(json, 4, "evidence_ids", test.evidenceIds(), false);
@@ -3788,6 +3802,66 @@ public final class SpringMvcEndpointOutputGenerator {
       appendIndentedStringArrayField(json, 6, "evidence_ids", method.evidenceIds(), false);
       json.append("          }");
       if (index < methods.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendSpringTestSlices(
+      StringBuilder json,
+      List<TestSpringSliceFact> slices) {
+    json.append("        \"spring_test_slices\": [");
+    List<TestSpringSliceFact> sortedSlices = slices.stream()
+        .sorted(TEST_SPRING_SLICE_ORDER)
+        .toList();
+    if (sortedSlices.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedSlices.size(); index++) {
+      TestSpringSliceFact slice = sortedSlices.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "annotation", slice.annotation(), true);
+      appendIndentedStringField(json, 6, "slice_kind", slice.sliceKind(), true);
+      appendIndentedStringField(json, 6, "signal_kind", slice.signalKind(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", slice.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedSlices.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    json.append("        ],\n");
+  }
+
+  private void appendMockSignals(
+      StringBuilder json,
+      List<TestMockSignalFact> mockSignals) {
+    json.append("        \"mock_signals\": [");
+    List<TestMockSignalFact> sortedSignals = mockSignals.stream()
+        .sorted(TEST_MOCK_SIGNAL_ORDER)
+        .toList();
+    if (sortedSignals.isEmpty()) {
+      json.append("],\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sortedSignals.size(); index++) {
+      TestMockSignalFact signal = sortedSignals.get(index);
+      json.append("          {\n");
+      appendIndentedStringField(json, 6, "annotation", signal.annotation(), true);
+      appendIndentedStringField(json, 6, "mock_signal", signal.mockSignal(), true);
+      appendIndentedStringField(json, 6, "signal_kind", signal.signalKind(), true);
+      appendIndentedStringField(json, 6, "target_kind", signal.targetKind(), true);
+      appendIndentedStringField(json, 6, "target_name", signal.targetName(), true);
+      appendIndentedStringArrayField(json, 6, "evidence_ids", signal.evidenceIds(), false);
+      json.append("          }");
+      if (index < sortedSignals.size() - 1) {
         json.append(",");
       }
       json.append("\n");

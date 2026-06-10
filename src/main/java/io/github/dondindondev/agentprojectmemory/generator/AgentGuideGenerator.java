@@ -1673,6 +1673,8 @@ public final class AgentGuideGenerator {
       appendEvidenceLine(markdown, test.path("evidence_ids"), evidenceById);
       markdown.append("- Source: Detected ").append(code(text(test, "source_path"))).append("\n");
       appendFrameworkSignals(markdown, test.path("framework_signals"), evidenceById);
+      appendSpringTestSlices(markdown, test.path("spring_test_slices"), evidenceById);
+      appendMockSignals(markdown, test.path("mock_signals"), evidenceById);
       appendTestMethods(markdown, test.path("methods"), evidenceById);
       appendTestedSubjects(markdown, test.path("tested_subjects"), moduleById, evidenceById);
       markdown.append("\n");
@@ -1692,6 +1694,52 @@ public final class AgentGuideGenerator {
       markdown.append("- Framework signal: Detected ")
           .append(code(text(signal, "name")))
           .append(" (signal_kind: ")
+          .append(code(text(signal, "signal_kind")))
+          .append(")")
+          .append("\n");
+      appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
+    }
+  }
+
+  private void appendSpringTestSlices(
+      StringBuilder markdown,
+      JsonNode springTestSlices,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!springTestSlices.isArray() || springTestSlices.isEmpty()) {
+      return;
+    }
+
+    for (JsonNode slice : springTestSlices) {
+      markdown.append("- Spring test slice signal: Detected ")
+          .append(code(text(slice, "annotation")))
+          .append(" (slice_kind: ")
+          .append(code(text(slice, "slice_kind")))
+          .append(", signal_kind: ")
+          .append(code(text(slice, "signal_kind")))
+          .append(")")
+          .append("\n");
+      appendEvidenceLine(markdown, slice.path("evidence_ids"), evidenceById);
+    }
+  }
+
+  private void appendMockSignals(
+      StringBuilder markdown,
+      JsonNode mockSignals,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!mockSignals.isArray() || mockSignals.isEmpty()) {
+      return;
+    }
+
+    for (JsonNode signal : mockSignals) {
+      markdown.append("- Mock annotation signal: Detected ")
+          .append(code(text(signal, "annotation")))
+          .append(" on ")
+          .append(code(text(signal, "target_kind")))
+          .append(" ")
+          .append(code(text(signal, "target_name")))
+          .append(" (mock_signal: ")
+          .append(code(text(signal, "mock_signal")))
+          .append(", signal_kind: ")
           .append(code(text(signal, "signal_kind")))
           .append(")")
           .append("\n");
@@ -1785,6 +1833,12 @@ public final class AgentGuideGenerator {
         .append("inventory records source-visible JUnit annotation structure only. Test execution, ")
         .append("CI results, coverage, assertion behavior, call graphs, and complete subject ")
         .append("mapping are not analyzed.\n");
+    if (hasTestSliceOrMockSignals(projectMap)) {
+      markdown.append("- Source-visible: Spring test slice signals and mock annotation signals record ")
+          .append("direct annotation structure only. Runtime Spring context behavior, bean graph ")
+          .append("contents, MockMvc setup, database access, Mockito behavior, and slice ")
+          .append("correctness are not claimed.\n");
+    }
     if (projectMap.path("project").path("modules").isObject()) {
       markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
           .append("Gradle/Kotlin support, Maven profiles, effective POM reconstruction, ")
@@ -1885,7 +1939,12 @@ public final class AgentGuideGenerator {
     markdown.append(step++)
         .append(". For tests, inspect detected test files and inferred tested-subject evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("tests").path("items"), evidenceById));
-    markdown.append("; do not treat inferred subjects as coverage proof.\n");
+    markdown.append("; do not treat inferred subjects as coverage proof");
+    if (hasTestSliceOrMockSignals(projectMap)) {
+      markdown.append(", and do not treat Spring test slice or mock annotations as execution or ")
+          .append("runtime behavior proof");
+    }
+    markdown.append(".\n");
   }
 
   private boolean hasDomainGuideContent(JsonNode projectMap) {
@@ -1894,6 +1953,15 @@ public final class AgentGuideGenerator {
       return true;
     }
     return hasRepositoryEntityRelations(projectMap);
+  }
+
+  private boolean hasTestSliceOrMockSignals(JsonNode projectMap) {
+    for (JsonNode test : items(projectMap.path("tests"))) {
+      if (hasArrayEntries(test.path("spring_test_slices")) || hasArrayEntries(test.path("mock_signals"))) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private boolean hasRepositoryEntityRelations(JsonNode projectMap) {
@@ -1910,6 +1978,10 @@ public final class AgentGuideGenerator {
   private boolean hasItems(JsonNode section) {
     JsonNode items = section.path("items");
     return items.isArray() && !items.isEmpty();
+  }
+
+  private boolean hasArrayEntries(JsonNode values) {
+    return values.isArray() && !values.isEmpty();
   }
 
   private void appendWarnings(

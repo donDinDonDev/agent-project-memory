@@ -20,6 +20,10 @@ architecture documents.
   module-owned source-visible test facts, bounded JUnit Jupiter/JUnit 4 test method
   inventory for directly visible supported annotations, direct JUnit/Spring Test
   framework signal classifications, and evidence-backed `agent-guide.md` rendering.
+- Added source-visible Spring test slice and mock annotation signals to the v0.7 tests
+  inventory, including direct `@SpringBootTest`, `@WebMvcTest`, `@DataJpaTest`,
+  `@ContextConfiguration`, `@MockBean`, and `@SpyBean` observations with evidence-backed
+  `project-map.json` and `agent-guide.md` output.
 
 ### Changed
 
@@ -27,6 +31,10 @@ architecture documents.
   tests inventory refinement, including `tests.items[].id`,
   `framework_signals[].signal_kind`, and `tests.items[].methods[]` while continuing to
   avoid coverage, CI, assertion, runtime Spring context, and test execution claims.
+- Expanded generated v0.7 `tests.items[]` output with `spring_test_slices[]` and
+  `mock_signals[]` while continuing to avoid tested-subject inference from slice class
+  literals, runtime Spring test context reconstruction, Mockito behavior claims,
+  coverage, CI, assertion, and test execution claims.
 
 ### Fixed
 

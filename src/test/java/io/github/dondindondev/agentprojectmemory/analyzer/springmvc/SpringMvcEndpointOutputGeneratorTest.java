@@ -143,6 +143,81 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void projectMapRendersSpringTestSliceAndMockSignalsWithResolvingEvidence() throws Exception {
+    Path projectPath = tempDir.resolve("spring-test-slice-signals");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>spring-test-slice-signals</artifactId>
+          <version>1.0.0</version>
+        </project>
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/web/OrderController.java"), """
+        package com.example.web;
+
+        class OrderController {
+        }
+        """);
+    writeFile(projectPath.resolve("src/test/java/com/example/web/OrderControllerSlice.java"), """
+        package com.example.web;
+
+        import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+        import org.springframework.boot.test.mock.mockito.MockBean;
+        import org.springframework.boot.test.mock.mockito.SpyBean;
+
+        @WebMvcTest(OrderController.class)
+        @SpyBean(OrderController.class)
+        class OrderControllerSlice {
+          @MockBean
+          OrderController orderController;
+        }
+        """);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    JsonNode tests = JSON.readTree(projectMap).path("tests").path("items");
+    JsonNode test = objectWithText(tests, "class_name", "com.example.web.OrderControllerSlice");
+    JsonNode slice = test.path("spring_test_slices").get(0);
+    JsonNode fieldMockSignal = objectWithText(test.path("mock_signals"), "target_name", "orderController");
+    JsonNode typeMockSignal = objectWithText(
+        test.path("mock_signals"),
+        "target_name",
+        "com.example.web.OrderControllerSlice");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertEquals(1, test.path("spring_test_slices").size()),
+        () -> assertEquals("@WebMvcTest", slice.path("annotation").asText()),
+        () -> assertEquals("web_mvc_test", slice.path("slice_kind").asText()),
+        () -> assertEquals("spring_test_slice", slice.path("signal_kind").asText()),
+        () -> assertEquals("@MockBean", fieldMockSignal.path("annotation").asText()),
+        () -> assertEquals("spring_boot_mockbean_annotation", fieldMockSignal.path("mock_signal").asText()),
+        () -> assertEquals("field", fieldMockSignal.path("target_kind").asText()),
+        () -> assertEquals("@SpyBean", typeMockSignal.path("annotation").asText()),
+        () -> assertEquals("spring_boot_spybean_annotation", typeMockSignal.path("mock_signal").asText()),
+        () -> assertEquals("type", typeMockSignal.path("target_kind").asText()),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Every project-map evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertTrue(agentGuide.contains(
+            "- Spring test slice signal: Detected `@WebMvcTest` "
+                + "(slice_kind: `web_mvc_test`, signal_kind: `spring_test_slice`)")),
+        () -> assertTrue(agentGuide.contains(
+            "- Mock annotation signal: Detected `@MockBean` on `field` `orderController` "
+                + "(mock_signal: `spring_boot_mockbean_annotation`, signal_kind: `mock_annotation`)")),
+        () -> assertTrue(agentGuide.contains(
+            "do not treat Spring test slice or mock annotations as execution or runtime behavior proof")));
+  }
+
+  @Test
   void generatedEvidenceIndexBoundsOversizedEvidenceExcerpts() throws Exception {
     Path projectPath = tempDir.resolve("bounded-excerpts");
     Path outputDirectory = projectPath.resolve(".project-memory");

@@ -34,9 +34,10 @@ mapping reconstruction.
 public contract is the v0.7 tests inventory refinement slice layered on top of the v0.6
 JPA/domain model slice, the v0.5 Spring application surface slices, the v0.4 API surface
 slice, and the v0.3 module-aware Maven metadata, dependency, and plugin inventory
-contract. Future v0.7 Spring test slice, expanded tested-subject relation status,
-quality, and change-risk contracts are recorded as planned boundaries only where
-explicitly marked future.
+contract. The current v0.7 contract also emits direct Spring test slice and mock
+annotation signals under the top-level `tests` inventory. Expanded tested-subject
+relation status, quality, and change-risk contracts are recorded as planned boundaries
+only where explicitly marked future.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2226,12 +2227,12 @@ Planned v0.6 deterministic sorting rules:
 
 ### v0.7 Tests Inventory Refinement Contract
 
-This section defines the current v0.7 tests inventory refinement output contract. The
-current v0.7 implementation preserves the v0.6 module-aware build/config, API surface,
-Spring application surface, and JPA/domain contracts while deepening the top-level
-`tests` inventory. It does not emit a top-level `quality` object, `spring_test_slices`,
-test-gap signals, change-risk signals, expanded tested-subject relation statuses, or
-runtime test claims in this slice.
+This section defines the current v0.7 tests inventory refinement and Spring test
+slice/mock signal output contract. The current v0.7 implementation preserves the v0.6
+module-aware build/config, API surface, Spring application surface, and JPA/domain
+contracts while deepening the top-level `tests` inventory. It does not emit a top-level
+`quality` object, test-gap signals, change-risk signals, expanded tested-subject
+relation statuses, or runtime test claims in this slice.
 
 The v0.7 tests inventory refinement contract uses:
 
@@ -2239,10 +2240,11 @@ The v0.7 tests inventory refinement contract uses:
   contracts and adds bounded source-visible tests inventory refinement.
 - The same four output files under `.project-memory/`.
 - The existing top-level `tests` object as the owner of source-visible test class,
-  method, direct framework signal, and tested-subject relation facts.
+  method, direct framework signal, Spring test slice, mock annotation signal, and
+  tested-subject relation facts.
 - Existing evidence fields and evidence types. Test class facts continue to use
-  `test_file` evidence. Test method and framework signal observations reuse
-  `annotation` and `code_symbol` evidence.
+  `test_file` evidence. Test method, framework signal, Spring test slice, and mock
+  annotation signal observations reuse `annotation` and `code_symbol` evidence.
 
 Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
 
@@ -2263,6 +2265,28 @@ Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
             "signal_kind": "framework",
             "evidence_ids": [
               "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:3-3:com.example.orders.OrderControllerTest:import:org.junit.jupiter.api.Test"
+            ]
+          }
+        ],
+        "spring_test_slices": [
+          {
+            "annotation": "@WebMvcTest",
+            "slice_kind": "web_mvc_test",
+            "signal_kind": "spring_test_slice",
+            "evidence_ids": [
+              "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:8-8:com.example.orders.OrderControllerTest:@WebMvcTest"
+            ]
+          }
+        ],
+        "mock_signals": [
+          {
+            "annotation": "@MockBean",
+            "mock_signal": "spring_boot_mockbean_annotation",
+            "signal_kind": "mock_annotation",
+            "target_kind": "field",
+            "target_name": "orderService",
+            "evidence_ids": [
+              "ev:services/orders/src/test/java/com/example/orders/OrderControllerTest.java:12-12:com.example.orders.OrderControllerTest:field:orderService:@MockBean"
             ]
           }
         ],
@@ -2334,9 +2358,49 @@ Current v0.7 test inventory rules:
 - `test.framework_signals[].signal_kind` is `"framework"` for the current v0.7 slice.
   It is a source-visible classification only and must not encode runtime engine
   execution, CI behavior, or assertion behavior.
-- The current output does not emit `test.spring_test_slices[]`. Spring test slice facts
-  remain future v0.7 work and require a separate bounded contract update before they are
-  emitted.
+- `test.spring_test_slices[]` contains direct class-level supported Spring test slice or
+  context annotations on emitted test classes. Current supported annotations are
+  `@SpringBootTest`, `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`, when the
+  origin is trusted from a fully qualified annotation name or explicit single-type
+  import and the same fully qualified name is not declared by scanned source.
+- `test.spring_test_slices[].annotation` is the direct annotation symbol with `@`.
+- `test.spring_test_slices[].slice_kind` is one of `"spring_boot_test"`,
+  `"web_mvc_test"`, `"data_jpa_test"`, or `"context_configuration"`.
+- `test.spring_test_slices[].signal_kind` is `"spring_test_slice"`. It is a
+  source-visible annotation classification only and must not encode runtime Spring test
+  context startup, bean graph contents, active profiles, MockMvc setup, database access,
+  or slice correctness.
+- `test.spring_test_slices[].evidence_ids` references the direct annotation evidence and
+  must resolve to records in `evidence-index.jsonl`.
+- `test.mock_signals[]` contains direct supported mock-related annotations on emitted
+  test classes. Current supported annotations are `@MockBean` and `@SpyBean`, when the
+  origin is trusted from a fully qualified annotation name or explicit single-type
+  import and the same fully qualified name is not declared by scanned source. Mock
+  annotations are recorded as signals only; they are not test-class marker annotations
+  by themselves.
+- `test.mock_signals[].annotation` is the direct annotation symbol with `@`.
+- `test.mock_signals[].mock_signal` is one of `"spring_boot_mockbean_annotation"` or
+  `"spring_boot_spybean_annotation"`.
+- `test.mock_signals[].signal_kind` is `"mock_annotation"`. It is a source-visible
+  annotation classification only and must not encode runtime Spring bean override
+  behavior, Mockito behavior, bean graph contents, database access, or slice
+  correctness.
+- `test.mock_signals[].target_kind` is `"type"` or `"field"` for the current slice.
+- `test.mock_signals[].target_name` is the test class name for type-level annotations or
+  the declared field name for field-level annotations.
+- `test.mock_signals[].evidence_ids` references the direct annotation evidence and must
+  resolve to records in `evidence-index.jsonl`.
+- Spring test slice and mock annotation origins follow the same conservative external
+  origin rule as Spring Test framework signals. Unresolved simple-name annotations,
+  wildcard-import-only annotations, same-package/local fake annotations,
+  source-declared fake framework annotations, generated-source-only annotations,
+  classpath-only annotations, and static-import-only references are skipped rather than
+  emitted as slice or mock facts.
+- The current output does not parse or emit slice annotation class literals, properties,
+  active profiles, configuration classes, or mock target types as structured fields.
+  Such source text may appear only as bounded evidence excerpts. Slice/mock signals do
+  not create endpoint, entity, repository, bean, tested-subject, coverage, execution, CI,
+  assertion, or runtime behavior facts.
 
 Current v0.7 tested-subject relation rules:
 
@@ -2378,10 +2442,13 @@ Current v0.7 deterministic sorting rules:
 - Test methods sort by source order when line evidence is available, then by method name,
   method kind, annotation, and evidence discriminator.
 - Framework signals sort by signal name and evidence discriminator.
+- Spring test slices sort by `slice_kind`, annotation, and evidence discriminator.
+- Mock annotation signals sort by `target_kind`, `target_name`, `mock_signal`,
+  annotation, and evidence discriminator.
 - Tested-subject relations sort by class name, support type, confidence, uncertainty,
   and evidence discriminator.
-- Spring test slices, test-gap signals, and change-risk signals are not emitted in the
-  current v0.7 tests inventory refinement slice.
+- Test-gap signals and change-risk signals are not emitted in the current v0.7 tests
+  inventory refinement and Spring test slice/mock signal slice.
 
 ## `evidence-index.jsonl`
 
@@ -2848,14 +2915,22 @@ Current v0.7 tests inventory `agent-guide.md` behavior:
 - Framework signal entries render direct source-visible framework classifications with
   `signal_kind` and evidence. They must not claim runtime engine execution, Spring
   context startup, CI behavior, assertion behavior, or coverage.
+- Spring test slice entries render direct source-visible annotation classifications with
+  `slice_kind`, `signal_kind`, and evidence. They must not claim runtime Spring context
+  startup, bean graph contents, MockMvc setup, database access, or slice correctness.
+- Mock annotation signal entries render direct source-visible annotation classifications
+  with `mock_signal`, `signal_kind`, target kind/name, and evidence. They must not claim
+  runtime Spring bean override behavior, Mockito behavior, bean graph contents, database
+  access, or slice correctness.
 - Tested-subject rows use `Inferred` wording for existing naming-convention rows and
   must continue to show `support_type`, `confidence`, and `uncertainty` when present.
-- Future Spring test slice, expanded relation-status, test-gap, and change-risk rows
-  must be added only after their structured output contract is implemented.
+- Future expanded relation-status, test-gap, and change-risk rows must be added only
+  after their structured output contract is implemented.
 - The known-limits section should explicitly state that current v0.7 test facts do not
   perform test execution, CI analysis, coverage analysis, mutation testing, behavioral
   assertion understanding, runtime Spring context reconstruction, runtime
-  repository/database verification, or full call graph reconstruction.
+  repository/database verification, Mockito behavior analysis, slice correctness
+  analysis, or full call graph reconstruction.
 
 Markdown rendering safety:
 

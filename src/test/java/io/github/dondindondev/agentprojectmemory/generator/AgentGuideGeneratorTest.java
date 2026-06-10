@@ -450,6 +450,89 @@ final class AgentGuideGeneratorTest {
   }
 
   @Test
+  void testGuideRendersSpringSliceAndMockSignalsWithoutRuntimeClaims() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.7",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": ["src/test/java"]
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "analyzed",
+            "items": [
+              {
+                "id": "test:com.example.web.OrderControllerSlice",
+                "module_id": "module:.",
+                "class_name": "com.example.web.OrderControllerSlice",
+                "source_path": "src/test/java/com/example/web/OrderControllerSlice.java",
+                "framework_signals": [],
+                "spring_test_slices": [
+                  {
+                    "annotation": "@WebMvcTest",
+                    "slice_kind": "web_mvc_test",
+                    "signal_kind": "spring_test_slice",
+                    "evidence_ids": ["ev:webmvc"]
+                  }
+                ],
+                "mock_signals": [
+                  {
+                    "annotation": "@MockBean",
+                    "mock_signal": "spring_boot_mockbean_annotation",
+                    "signal_kind": "mock_annotation",
+                    "target_kind": "field",
+                    "target_name": "orderService",
+                    "evidence_ids": ["ev:mockbean"]
+                  }
+                ],
+                "methods": [],
+                "tested_subjects": [],
+                "evidence_ids": ["ev:test-file"]
+              }
+            ]
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:test-file","source_type":"test_file","path":"src/test/java/com/example/web/OrderControllerSlice.java","class_name":"com.example.web.OrderControllerSlice","method_name":null,"symbol_name":"com.example.web.OrderControllerSlice","line_start":6,"line_end":6,"excerpt":"class OrderControllerSlice","confidence":"high"}
+        {"id":"ev:webmvc","source_type":"annotation","path":"src/test/java/com/example/web/OrderControllerSlice.java","class_name":"com.example.web.OrderControllerSlice","method_name":null,"symbol_name":"@WebMvcTest","line_start":5,"line_end":5,"excerpt":"@WebMvcTest(OrderController.class)","confidence":"high"}
+        {"id":"ev:mockbean","source_type":"annotation","path":"src/test/java/com/example/web/OrderControllerSlice.java","class_name":"com.example.web.OrderControllerSlice","method_name":null,"symbol_name":"@MockBean","line_start":7,"line_end":7,"excerpt":"@MockBean","confidence":"high"}
+        """;
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains(
+        "- Spring test slice signal: Detected `@WebMvcTest` "
+            + "(slice_kind: `web_mvc_test`, signal_kind: `spring_test_slice`)"));
+    assertTrue(guide.contains(
+        "- Mock annotation signal: Detected `@MockBean` on `field` `orderService` "
+            + "(mock_signal: `spring_boot_mockbean_annotation`, signal_kind: `mock_annotation`)"));
+    assertTrue(guide.contains(
+        "Runtime Spring context behavior, bean graph contents, MockMvc setup, database access, "
+            + "Mockito behavior, and slice correctness are not claimed."));
+    assertTrue(guide.contains(
+        "do not treat Spring test slice or mock annotations as execution or runtime behavior proof"));
+  }
+
+  @Test
   void evidenceClassificationUsesResolvedSymbolNameOnly() throws Exception {
     String misleadingEntityEvidenceId =
         "ev:src/main/java/com/example/:@Table/Entity.java:1-1:com.example.TableNameSpoof:@Entity";

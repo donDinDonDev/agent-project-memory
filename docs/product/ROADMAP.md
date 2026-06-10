@@ -27,9 +27,11 @@ The current implementation has started the v0.7 tests track with bounded source-
 test inventory refinement: generated output uses `schema_version: "0.7"`, test facts
 carry stable IDs and `module_id`, direct JUnit/Spring Test framework signals include a
 source-visible `signal_kind`, and supported JUnit Jupiter/JUnit 4 test method
-annotations are emitted as method inventory with evidence. Spring test slice facts,
-expanded tested-subject relation statuses, and test-gap/change-risk planning hints
-remain planned future v0.7 work.
+annotations are emitted as method inventory with evidence. Direct source-visible Spring
+test slice annotations and conservative mock annotation signals are now emitted under
+module-owned test facts without runtime Spring context, Mockito behavior, or slice
+correctness claims. Expanded tested-subject relation statuses and test-gap/change-risk
+planning hints remain planned future v0.7 work.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -309,7 +311,12 @@ Planned contract boundary:
   current inventory refinement slice)
 - Spring test slice signals such as `@SpringBootTest`, `@WebMvcTest`, and
   `@DataJpaTest`, recorded as source-visible annotations and not as runtime Spring
-  context behavior. (planned)
+  context behavior. (implemented for direct class-level `@SpringBootTest`,
+  `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration` in the current slice)
+- Conservative mock annotation signals such as direct source-visible `@MockBean` and
+  `@SpyBean` on emitted test classes, recorded as annotation-presence signals and not
+  as runtime Spring override, Mockito, bean graph, or slice-correctness behavior.
+  (implemented for the current slice)
 - Conservative tested-subject inference from supported naming conventions and bounded
   source-visible Spring test slice class literals when they can be matched to emitted
   production facts. (naming-convention inference exists; slice-literal expansion is
@@ -333,7 +340,8 @@ Implementation sequence:
 - Contract design for the planned v0.7 output and evidence semantics. (complete)
 - Test class, annotation, and method inventory refinement. (implemented for the current
   slice)
-- Spring test slice signal extraction. (planned)
+- Spring test slice and mock annotation signal extraction. (implemented for the current
+  slice)
 - Conservative tested-subject relation status support. (planned)
 - Test-gap and change-risk planning hints. (planned)
 - Guide rendering, fixtures, and goldens for the current test inventory refinement

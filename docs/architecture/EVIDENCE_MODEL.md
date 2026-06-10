@@ -125,11 +125,11 @@ Examples:
   `@JoinColumn`, and `@JoinTable` evidence where these observations support extracted
   source facts without database schema or runtime ORM claims.
 - v0.7 source-visible test structure, including emitted test class declarations,
-  supported directly visible test method annotations, and direct JUnit/Spring Test
-  framework signal observations. Future Spring test slice annotations may support
-  separate source-visible test slice facts only after a bounded contract update. None of
-  these observations prove test execution, coverage, assertion behavior, CI behavior, or
-  runtime Spring context behavior.
+  supported directly visible test method annotations, direct JUnit/Spring Test framework
+  signal observations, direct Spring test slice annotation facts, and conservative mock
+  annotation signals. None of these observations prove test execution, coverage,
+  assertion behavior, CI behavior, runtime Spring context behavior, Mockito behavior, or
+  slice correctness.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -796,8 +796,9 @@ execution, code coverage, assertion behavior, or runtime verification.
 
 ### v0.7 Tests Inventory Evidence
 
-The current v0.7 tests inventory refinement preserves the existing evidence field set.
-No new global evidence fields or evidence types are introduced by this slice.
+The current v0.7 tests inventory refinement and Spring test slice/mock signal support
+preserve the existing evidence field set. No new global evidence fields or evidence
+types are introduced by this slice.
 
 Test class and method evidence:
 
@@ -832,23 +833,37 @@ Direct framework signal evidence:
   Spring context startup, bean graph contents, active profiles, MockMvc setup, database
   access, repository behavior, or slice correctness.
 
-Future Spring test slice evidence:
+Spring test slice and mock annotation evidence:
 
 - Supported Spring test slice annotations use `source_type: "annotation"` only when the
   annotation origin is visible as a supported `org.springframework.test.*` or
   `org.springframework.boot.test.*` type and that exact framework type is not declared
   by scanned source.
-- Future Spring test slice annotations may include `@SpringBootTest`,
+- Current supported Spring test slice annotations are `@SpringBootTest`,
   `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`. Additional Spring test
   annotations may be added only with focused tests and a synchronized output/evidence
   contract update if semantics change.
+- Supported mock annotation signals use `source_type: "annotation"` only when the
+  annotation origin is visible as supported `org.springframework.boot.test.mock.mockito`
+  `@MockBean` or `@SpyBean` and that exact framework type is not declared by scanned
+  source.
 - Bounded class-literal observations from supported Spring test slice annotations may be
   preserved in annotation evidence excerpts or referenced by a separate `code_symbol`
   observation when needed, but excerpts must remain short and must not serialize
   arbitrary annotation payloads, property values, profiles, environment values, or test
   configuration contents.
-- Spring test slice facts are not emitted in the current v0.7 tests inventory
-  refinement. This subsection constrains future work only.
+- Mock annotation target type declarations, mock reset settings, names, answers, and
+  other attributes are not parsed into structured output in this slice. Such source text
+  may appear only as bounded evidence excerpts.
+- Spring test slice and mock annotation evidence proves only direct source-visible
+  annotation presence. It does not prove runtime Spring context startup, bean graph
+  contents, active profiles, MockMvc setup, database access, Spring bean override
+  behavior, Mockito behavior, or slice correctness.
+- Unresolved simple-name annotations, wildcard-import-only annotations,
+  same-package/local fake annotations, source-declared fake framework annotations,
+  generated-source-only annotations, classpath-only annotations, and static-import-only
+  references do not produce high-confidence Spring test slice or mock annotation
+  evidence.
 
 Current tested-subject relation evidence:
 

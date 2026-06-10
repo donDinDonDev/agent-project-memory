@@ -127,21 +127,92 @@ final class TestInventoryAnalyzerTest {
   }
 
   @Test
+  void springTestSliceSignalsAreDetectedAsSourceVisibleAnnotations() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact springBootSlice = test(analysis, "com.example.web.SpringSlice");
+    TestClassFact webMvcSlice = test(analysis, "com.example.web.WebControllerSlice");
+    TestClassFact dataJpaSlice = test(analysis, "com.example.web.DataRepositorySlice");
+
+    assertAll(
+        () -> assertEquals(
+            List.of("@SpringBootTest"),
+            springBootSlice.springTestSlices().stream().map(TestSpringSliceFact::annotation).toList()),
+        () -> assertEquals(
+            List.of("spring_boot_test"),
+            springBootSlice.springTestSlices().stream().map(TestSpringSliceFact::sliceKind).toList()),
+        () -> assertEquals(
+            List.of("@WebMvcTest"),
+            webMvcSlice.springTestSlices().stream().map(TestSpringSliceFact::annotation).toList()),
+        () -> assertEquals(
+            List.of("web_mvc_test"),
+            webMvcSlice.springTestSlices().stream().map(TestSpringSliceFact::sliceKind).toList()),
+        () -> assertEquals(
+            List.of("@DataJpaTest"),
+            dataJpaSlice.springTestSlices().stream().map(TestSpringSliceFact::annotation).toList()),
+        () -> assertEquals(
+            List.of("data_jpa_test"),
+            dataJpaSlice.springTestSlices().stream().map(TestSpringSliceFact::sliceKind).toList()),
+        () -> assertTrue(springBootSlice.springTestSlices().stream()
+            .allMatch(slice -> "spring_test_slice".equals(slice.signalKind()))),
+        () -> assertTrue(webMvcSlice.springTestSlices().stream()
+            .flatMap(slice -> slice.evidenceIds().stream())
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "@WebMvcTest".equals(record.symbolName()))));
+  }
+
+  @Test
+  void mockSignalsAreDetectedAsConservativeAnnotationSignals() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact springBootSlice = test(analysis, "com.example.web.SpringSlice");
+    TestClassFact webMvcSlice = test(analysis, "com.example.web.WebControllerSlice");
+
+    assertAll(
+        () -> assertEquals(
+            List.of("@MockBean"),
+            springBootSlice.mockSignals().stream().map(TestMockSignalFact::annotation).toList()),
+        () -> assertEquals(
+            List.of("projectMapController"),
+            springBootSlice.mockSignals().stream().map(TestMockSignalFact::targetName).toList()),
+        () -> assertEquals(
+            List.of("@MockBean", "@SpyBean"),
+            webMvcSlice.mockSignals().stream().map(TestMockSignalFact::annotation).toList()),
+        () -> assertEquals(
+            List.of("controller", "spyController"),
+            webMvcSlice.mockSignals().stream().map(TestMockSignalFact::targetName).toList()),
+        () -> assertTrue(webMvcSlice.mockSignals().stream()
+            .allMatch(signal -> "mock_annotation".equals(signal.signalKind()))),
+        () -> assertTrue(webMvcSlice.mockSignals().stream()
+            .allMatch(signal -> "field".equals(signal.targetKind()))),
+        () -> assertTrue(webMvcSlice.mockSignals().stream()
+            .flatMap(signal -> signal.evidenceIds().stream())
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "@SpyBean".equals(record.symbolName()))));
+  }
+
+  @Test
   void springTestSignalsRequireResolvedExternalOrigin() throws Exception {
     TestInventoryAnalysis analysis = analyzeSpoofedOriginsFixture();
 
     TestClassFact sourceDeclared = test(analysis, "com.example.web.SourceDeclaredSpringBootTest");
     TestClassFact unresolvedSimple = test(analysis, "com.example.web.UnresolvedSimpleSpringTest");
     TestClassFact sourceDeclaredJupiter = test(analysis, "com.example.web.SourceDeclaredJupiterTest");
+    TestClassFact sourceDeclaredMockBean = test(analysis, "com.example.web.SourceDeclaredMockBeanTest");
 
     assertAll(
         () -> assertEquals("analyzed", analysis.analysisStatus()),
         () -> assertTrue(sourceDeclared.frameworkSignals().isEmpty()),
         () -> assertTrue(unresolvedSimple.frameworkSignals().isEmpty()),
         () -> assertTrue(sourceDeclaredJupiter.frameworkSignals().isEmpty()),
+        () -> assertTrue(sourceDeclared.springTestSlices().isEmpty()),
+        () -> assertTrue(unresolvedSimple.springTestSlices().isEmpty()),
+        () -> assertTrue(sourceDeclaredMockBean.mockSignals().isEmpty()),
         () -> assertTrue(sourceDeclaredJupiter.methods().isEmpty()),
         () -> assertFalse(analysis.evidence().stream()
             .anyMatch(record -> "@SpringBootTest".equals(record.symbolName()))),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(record -> "@MockBean".equals(record.symbolName()))),
         () -> assertFalse(analysis.evidence().stream()
             .anyMatch(record -> "@Test".equals(record.symbolName()))),
         () -> assertFalse(analysis.evidence().stream()
@@ -210,6 +281,14 @@ final class TestInventoryAnalyzerTest {
     for (TestClassFact test : analysis.tests()) {
       assertTrue(evidenceIds.containsAll(test.evidenceIds()));
       for (TestFrameworkSignalFact signal : test.frameworkSignals()) {
+        assertFalse(signal.evidenceIds().isEmpty());
+        assertTrue(evidenceIds.containsAll(signal.evidenceIds()));
+      }
+      for (TestSpringSliceFact slice : test.springTestSlices()) {
+        assertFalse(slice.evidenceIds().isEmpty());
+        assertTrue(evidenceIds.containsAll(slice.evidenceIds()));
+      }
+      for (TestMockSignalFact signal : test.mockSignals()) {
         assertFalse(signal.evidenceIds().isEmpty());
         assertTrue(evidenceIds.containsAll(signal.evidenceIds()));
       }

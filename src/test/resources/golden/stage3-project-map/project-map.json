@@ -1291,6 +1291,8 @@
         "class_name": "com.example.web.ProjectMapControllerTest",
         "source_path": "src/test/java/com/example/web/ProjectMapControllerTest.java",
         "framework_signals": [],
+        "spring_test_slices": [],
+        "mock_signals": [],
         "methods": [],
         "tested_subjects": [
           {
