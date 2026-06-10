@@ -1315,5 +1315,253 @@
         ]
       }
     ]
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectCustomer",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectCustomer",
+          "subject_name": "com.example.domain.ProjectCustomer",
+          "subject_class_name": "com.example.domain.ProjectCustomer",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectLegacyOrder",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectLegacyOrder",
+          "subject_name": "com.example.domain.ProjectLegacyOrder",
+          "subject_class_name": "com.example.domain.ProjectLegacyOrder",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectOrder",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectOrder",
+          "subject_name": "com.example.domain.ProjectOrder",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectShipment",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectShipment",
+          "subject_name": "com.example.domain.ProjectShipment",
+          "subject_class_name": "com.example.domain.ProjectShipment",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectVisit",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectVisit",
+          "subject_name": "com.example.domain.ProjectVisit",
+          "subject_class_name": "com.example.domain.ProjectVisit",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+          "subject_name": "com.example.components.InventoryRepository",
+          "subject_class_name": "com.example.components.InventoryRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+          "subject_name": "com.example.repositories.ProjectOrderRepository",
+          "subject_class_name": "com.example.repositories.ProjectOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:customer",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:customer",
+          "subject_name": "com.example.domain.ProjectOrder#customer",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "customer",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:66-66:com.example.domain.ProjectOrder:@ManyToOne:field:customer",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:67-73:com.example.domain.ProjectOrder:@JoinColumn:field:customer"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:invoice",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:invoice",
+          "subject_name": "com.example.domain.ProjectOrder#invoice",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "invoice",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:79-79:com.example.domain.ProjectOrder:@OneToOne:field:invoice",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectOrder:@JoinColumn:field:invoice"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:lines",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:lines",
+          "subject_name": "com.example.domain.ProjectOrder#lines",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "lines",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:76-76:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:tags",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:tags",
+          "subject_name": "com.example.domain.ProjectOrder#tags",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "tags",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectOrder:@ManyToMany:field:tags",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.components.AppConfiguration",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.components.AppConfiguration",
+          "subject_name": "com.example.components.AppConfiguration",
+          "subject_class_name": "com.example.components.AppConfiguration",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_service_change_surface:component:com.example.components.InventoryService",
+          "module_id": "module:.",
+          "signal": "spring_service_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_service",
+          "subject_id": "component:com.example.components.InventoryService",
+          "subject_name": "com.example.components.InventoryService",
+          "subject_class_name": "com.example.components.InventoryService",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_service_stereotype",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service"
+          ]
+        }
+      ]
+    }
   }
 }

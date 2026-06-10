@@ -103,6 +103,48 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Analysis status: `not_detected`
 - Not analyzed: no supported test root was detected.
 
+## Quality And Change-Risk Signals
+
+- Quality analysis status: `analyzed`
+- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.
+- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.
+
+### Test-Gap Signals
+
+- Analysis status: `not_detected`
+- Test-gap signals: none recorded.
+
+### Change-Risk Signals
+
+- Analysis status: `analyzed`
+- Change-risk signal: `spring_bean_method_change_surface` for `spring_bean_method` `com.example.security.SecuritySurface#applicationSecurity` (status: `planning_hint`, risk_basis: `source_visible_bean_method`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_bean_method:module:.:com.example.security.SecuritySurface#applicationSecurity:decl:000001`
+  - Subject source hint: class `com.example.security.SecuritySurface`, member `applicationSecurity`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:11` (`ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean`)
+- Change-risk signal: `spring_bean_method_change_surface` for `spring_bean_method` `com.example.security.SecuritySurface#managementSecurity` (status: `planning_hint`, risk_basis: `source_visible_bean_method`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_bean_method:module:.:com.example.security.SecuritySurface#managementSecurity:decl:000002`
+  - Subject source hint: class `com.example.security.SecuritySurface`, member `managementSecurity`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:16` (`ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean`)
+- Change-risk signal: `spring_security_warning_change_surface` for `spring_security_warning` `warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002` (status: `warning_oriented_planning_hint`, risk_basis: `source_visible_spring_security_warning`, confidence: `low`, uncertainty: `warning_signal_only_not_vulnerability_or_correctness`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:9` (`ev:src/main/java/com/example/security/SecuritySurface.java:9-9:com.example.security.SecuritySurface:@EnableMethodSecurity`)
+- Change-risk signal: `spring_security_warning_change_surface` for `spring_security_warning` `warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001` (status: `warning_oriented_planning_hint`, risk_basis: `source_visible_spring_security_warning`, confidence: `low`, uncertainty: `warning_signal_only_not_vulnerability_or_correctness`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:8` (`ev:src/main/java/com/example/security/SecuritySurface.java:8-8:com.example.security.SecuritySurface:@EnableWebSecurity`)
+- Change-risk signal: `spring_security_warning_change_surface` for `spring_security_warning` `warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001` (status: `warning_oriented_planning_hint`, risk_basis: `source_visible_spring_security_warning`, confidence: `low`, uncertainty: `warning_signal_only_not_vulnerability_or_correctness`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:11` (`ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean`), `src/main/java/com/example/security/SecuritySurface.java:12` (`ev:src/main/java/com/example/security/SecuritySurface.java:12-12:com.example.security.SecuritySurface#applicationSecurity:return:SecurityFilterChain`)
+- Change-risk signal: `spring_security_warning_change_surface` for `spring_security_warning` `warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002` (status: `warning_oriented_planning_hint`, risk_basis: `source_visible_spring_security_warning`, confidence: `low`, uncertainty: `warning_signal_only_not_vulnerability_or_correctness`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002`
+  - Evidence: `src/main/java/com/example/security/SecuritySurface.java:16` (`ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean`), `src/main/java/com/example/security/SecuritySurface.java:17` (`ev:src/main/java/com/example/security/SecuritySurface.java:17-17:com.example.security.SecuritySurface#managementSecurity:return:SecurityFilterChain`)
+
+
 ## Known Uncertainty And Limits
 
 - Warning: `spring_security` signal `security_configuration_annotation` for module `module:.` (path: `.`) at `src/main/java/com/example/security/SecuritySurface.java`. Spring Security configuration annotation detected as a source-visible inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.
@@ -119,6 +161,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred/statused: tested-subject rows are conservative source-visible hints from supported naming, import, field-type, and Spring test slice class-literal signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and `unsupported` do not claim coverage or execution. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Planning hints: quality test-gap and change-risk signals are conservative derived hints from existing deterministic facts and inferred tested-subject relations. They do not claim coverage, test execution, assertion behavior, runtime behavior, production impact, vulnerability, correctness, business priority, or complete subject mapping.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
@@ -138,3 +181,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/security/SecuritySurface.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+5. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/security/SecuritySurface.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

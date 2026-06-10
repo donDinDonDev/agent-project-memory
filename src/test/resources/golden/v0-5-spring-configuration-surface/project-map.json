@@ -315,5 +315,119 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClient:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClient:decl:000001",
+          "subject_name": "com.example.config.InventoryConfiguration#inventoryClient",
+          "subject_class_name": "com.example.config.InventoryConfiguration",
+          "subject_member_name": "inventoryClient",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:9-9:com.example.config.InventoryConfiguration#inventoryClient:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClock:decl:000002",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.config.InventoryConfiguration#inventoryClock:decl:000002",
+          "subject_name": "com.example.config.InventoryConfiguration#inventoryClock",
+          "subject_class_name": "com.example.config.InventoryConfiguration",
+          "subject_member_name": "inventoryClock",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:14-14:com.example.config.InventoryConfiguration#inventoryClock:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.config.SecondaryBeanFactory#secondaryBean:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.config.SecondaryBeanFactory#secondaryBean:decl:000001",
+          "subject_name": "com.example.config.SecondaryBeanFactory#secondaryBean",
+          "subject_class_name": "com.example.config.SecondaryBeanFactory",
+          "subject_member_name": "secondaryBean",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:25-25:com.example.config.SecondaryBeanFactory#secondaryBean:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.config.InventoryConfiguration",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.config.InventoryConfiguration",
+          "subject_name": "com.example.config.InventoryConfiguration",
+          "subject_class_name": "com.example.config.InventoryConfiguration",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:7-7:com.example.config.InventoryConfiguration:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_properties_change_surface:spring_configuration_properties_type:module:.:com.example.config.CatalogProperties",
+          "module_id": "module:.",
+          "signal": "spring_configuration_properties_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_properties",
+          "subject_id": "spring_configuration_properties_type:module:.:com.example.config.CatalogProperties",
+          "subject_name": "com.example.config.CatalogProperties",
+          "subject_class_name": "com.example.config.CatalogProperties",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_configuration_properties",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:37-37:com.example.config.CatalogProperties:@ConfigurationProperties"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_properties_change_surface:spring_configuration_properties_type:module:.:com.example.config.InventoryProperties",
+          "module_id": "module:.",
+          "signal": "spring_configuration_properties_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_properties",
+          "subject_id": "spring_configuration_properties_type:module:.:com.example.config.InventoryProperties",
+          "subject_name": "com.example.config.InventoryProperties",
+          "subject_class_name": "com.example.config.InventoryProperties",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_configuration_properties",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/config/ConfigurationSurface.java:20-20:com.example.config.InventoryProperties:@ConfigurationProperties"
+          ]
+        }
+      ]
+    }
   }
 }

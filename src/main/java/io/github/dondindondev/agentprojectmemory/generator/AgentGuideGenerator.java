@@ -45,6 +45,7 @@ public final class AgentGuideGenerator {
     appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
     appendEntities(markdown, projectMap, moduleById, evidenceById);
     appendTests(markdown, projectMap.path("tests"), moduleById, evidenceById);
+    appendQuality(markdown, projectMap.path("quality"), moduleById, evidenceById);
     appendKnownLimits(markdown, projectMap, moduleById, evidenceById);
     appendInspectionOrder(markdown, projectMap, evidenceById);
 
@@ -1839,6 +1840,122 @@ public final class AgentGuideGenerator {
     }
   }
 
+  private void appendQuality(
+      StringBuilder markdown,
+      JsonNode quality,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!quality.isObject() || !hasQualitySignals(quality)) {
+      return;
+    }
+
+    markdown.append("## Quality And Change-Risk Signals\n\n");
+    markdown.append("- Quality analysis status: ")
+        .append(code(text(quality, "analysis_status")))
+        .append("\n");
+    markdown.append("- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.\n");
+    markdown.append("- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.\n\n");
+
+    appendTestGapSignals(markdown, quality.path("test_gap_signals"), moduleById, evidenceById);
+    appendChangeRiskSignals(markdown, quality.path("change_risk_signals"), moduleById, evidenceById);
+    markdown.append("\n");
+  }
+
+  private void appendTestGapSignals(
+      StringBuilder markdown,
+      JsonNode testGapSignals,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("### Test-Gap Signals\n\n");
+    markdown.append("- Analysis status: ")
+        .append(code(text(testGapSignals, "analysis_status")))
+        .append("\n");
+    JsonNode items = testGapSignals.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Test-gap signals: none recorded.\n\n");
+      return;
+    }
+
+    for (JsonNode signal : items) {
+      markdown.append("- Test-gap signal: ")
+          .append(code(text(signal, "signal")))
+          .append(" for ")
+          .append(code(text(signal, "subject_kind")))
+          .append(" ")
+          .append(code(text(signal, "subject_name")))
+          .append(" (status: ")
+          .append(code(text(signal, "status")))
+          .append(", inference_basis: ")
+          .append(code(text(signal, "inference_basis")))
+          .append(", confidence: ")
+          .append(code(text(signal, "confidence")))
+          .append(", uncertainty: ")
+          .append(code(text(signal, "uncertainty")))
+          .append("). No coverage, execution, assertion, CI, or runtime relation is claimed.\n");
+      appendQualitySignalDetails(markdown, signal, moduleById, evidenceById);
+    }
+    markdown.append("\n");
+  }
+
+  private void appendChangeRiskSignals(
+      StringBuilder markdown,
+      JsonNode changeRiskSignals,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("### Change-Risk Signals\n\n");
+    markdown.append("- Analysis status: ")
+        .append(code(text(changeRiskSignals, "analysis_status")))
+        .append("\n");
+    JsonNode items = changeRiskSignals.path("items");
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("- Change-risk signals: none recorded.\n\n");
+      return;
+    }
+
+    for (JsonNode signal : items) {
+      markdown.append("- Change-risk signal: ")
+          .append(code(text(signal, "signal")))
+          .append(" for ")
+          .append(code(text(signal, "subject_kind")))
+          .append(" ")
+          .append(code(text(signal, "subject_name")))
+          .append(" (status: ")
+          .append(code(text(signal, "status")))
+          .append(", risk_basis: ")
+          .append(code(text(signal, "risk_basis")))
+          .append(", confidence: ")
+          .append(code(text(signal, "confidence")))
+          .append(", uncertainty: ")
+          .append(code(text(signal, "uncertainty")))
+          .append("). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.\n");
+      appendQualitySignalDetails(markdown, signal, moduleById, evidenceById);
+    }
+    markdown.append("\n");
+  }
+
+  private void appendQualitySignalDetails(
+      StringBuilder markdown,
+      JsonNode signal,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    markdown.append("  - Module: ")
+        .append(moduleLabel(text(signal, "module_id"), moduleById))
+        .append("\n");
+    markdown.append("  - Subject ID: ")
+        .append(code(text(signal, "subject_id")))
+        .append("\n");
+    String subjectClassName = nullableText(signal, "subject_class_name");
+    String subjectMemberName = nullableText(signal, "subject_member_name");
+    if (subjectClassName != null || subjectMemberName != null) {
+      markdown.append("  - Subject source hint: class ")
+          .append(code(subjectClassName == null ? "not recorded" : subjectClassName))
+          .append(", member ")
+          .append(code(subjectMemberName == null ? "not recorded" : subjectMemberName))
+          .append("\n");
+    }
+    appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
+  }
+
   private void appendKnownLimits(
       StringBuilder markdown,
       JsonNode projectMap,
@@ -1872,6 +1989,13 @@ public final class AgentGuideGenerator {
         .append("source-visible JUnit annotation structure only. Test execution, CI results, ")
         .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
         .append("analyzed.\n");
+    if (hasQualitySignals(projectMap.path("quality"))) {
+      markdown.append("- Planning hints: quality test-gap and change-risk signals are conservative ")
+          .append("derived hints from existing deterministic facts and inferred tested-subject ")
+          .append("relations. They do not claim coverage, test execution, assertion behavior, ")
+          .append("runtime behavior, production impact, vulnerability, correctness, business ")
+          .append("priority, or complete subject mapping.\n");
+    }
     if (hasTestSliceOrMockSignals(projectMap)) {
       markdown.append("- Source-visible: Spring test slice signals and mock annotation signals record ")
           .append("direct annotation structure only. Runtime Spring context behavior, bean graph ")
@@ -1984,6 +2108,14 @@ public final class AgentGuideGenerator {
           .append("runtime behavior proof");
     }
     markdown.append(".\n");
+    if (hasQualitySignals(projectMap.path("quality"))) {
+      markdown.append(step++)
+          .append(". For quality and change-risk planning, inspect quality signal evidence");
+      appendPathHint(markdown, evidencePaths(projectMap.path("quality"), evidenceById));
+      markdown.append(" and treat `no_obvious_test`, warning-oriented, and uncertain statuses as ")
+          .append("planning hints only, not coverage, runtime, correctness, vulnerability, or ")
+          .append("business-priority claims.\n");
+    }
   }
 
   private boolean hasDomainGuideContent(JsonNode projectMap) {
@@ -2001,6 +2133,11 @@ public final class AgentGuideGenerator {
       }
     }
     return false;
+  }
+
+  private boolean hasQualitySignals(JsonNode quality) {
+    return hasArrayEntries(quality.path("test_gap_signals").path("items"))
+        || hasArrayEntries(quality.path("change_risk_signals").path("items"));
   }
 
   private boolean hasRepositoryEntityRelations(JsonNode projectMap) {

@@ -32,8 +32,10 @@ test slice annotations and conservative mock annotation signals are now emitted 
 module-owned test facts without runtime Spring context, Mockito behavior, or slice
 correctness claims. Conservative tested-subject relation/status rows are now emitted
 from supported naming, exact production imports, direct field types, and direct Spring
-test slice class literals where deterministic. Test-gap/change-risk planning hints
-remain planned future v0.7 work.
+test slice class literals where deterministic. Conservative test-gap and change-risk
+planning hints are now emitted under the top-level `quality` object from existing
+deterministic facts and inferred tested-subject relations, without coverage, execution,
+assertion, CI, runtime, correctness, vulnerability, or business-priority claims.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -328,11 +330,11 @@ Planned contract boundary:
   `not_analyzed` remains a reserved compatibility value)
 - Test-gap signals emitted only as inferred or uncertain planning hints when no supported
   tested-subject relation is inferred for selected source-visible change surfaces.
-  (planned)
+  (implemented for the current planning-hint slice)
 - Change-risk signals emitted only as warning-oriented or uncertain planning hints from
   existing deterministic facts such as endpoint, Spring application surface, security
   warning, messaging, transaction/scheduled, repository/entity, or JPA relationship
-  surfaces. (planned)
+  surfaces. (implemented for the current planning-hint slice)
 
 Non-goals include coverage claims, mutation testing, behavioral assertion understanding,
 CI result claims, runtime test execution, runtime Spring context reconstruction, runtime
@@ -347,9 +349,9 @@ Implementation sequence:
   slice)
 - Conservative tested-subject relation status support. (implemented for the current
   slice)
-- Test-gap and change-risk planning hints. (planned)
+- Test-gap and change-risk planning hints. (implemented for the current slice)
 - Guide rendering, fixtures, and goldens for the current test inventory refinement
-  slice. (implemented for the current slice)
+  and quality/change-risk planning-hint slices. (implemented for the current slices)
 - Real-project evaluation and release readiness. (planned)
 
 ## v0.8.0: Local Markdown And Document Ingestion

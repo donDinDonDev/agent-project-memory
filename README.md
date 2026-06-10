@@ -142,7 +142,8 @@ repository/entity relation statuses for the current JPA/domain slice, a bounded
 source-visible tests inventory with stable test IDs, module ownership, direct framework
 signal classifications, supported JUnit test method annotations, direct Spring test
 slice annotations, conservative mock annotation signals, and conservative
-tested-subject relation/status rows,
+tested-subject relation/status rows, a top-level `quality` object with conservative
+test-gap and change-risk planning hints,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
@@ -278,10 +279,13 @@ trusted, direct Spring test slice annotation extraction for `@SpringBootTest`,
 source-visible `@MockBean` and `@SpyBean` annotation signals on emitted test classes,
 conservative tested-subject relation/status rows from supported naming, exact
 production imports, direct field types, and direct Spring test slice class literals,
+conservative test-gap and change-risk planning hints from existing deterministic facts
+and inferred tested-subject relations,
 deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
-guidance, and source-visible test method/framework/slice/mock/tested-subject guidance
+guidance, source-visible test method/framework/slice/mock/tested-subject guidance, and
+quality/change-risk planning guidance
 that keeps extracted facts, inferred signals, relation statuses, uncertain targets,
 not-analyzed statuses, and warnings separate.
 
@@ -451,6 +455,10 @@ Current limitations:
   runtime claims.
 - Tests inventory does not claim code coverage, test execution results, behavioral
   assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
+- Quality test-gap and change-risk signals are conservative planning hints derived from
+  existing deterministic facts and inferred tested-subject relations. They do not claim
+  coverage, test execution, assertion behavior, CI results, runtime behavior, production
+  impact, vulnerability, correctness, business priority, or complete subject mapping.
 - `agent-guide.md` is generated from existing deterministic output facts only. It does not
   ingest local documentation, summarize source files, infer architecture layers, or add
   claims beyond extracted facts, explicit inferences, and known uncertainty labels.

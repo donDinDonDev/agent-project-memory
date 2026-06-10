@@ -887,27 +887,31 @@ Current tested-subject relation evidence:
   calls, dependency injection, request routing, repository behavior, database access, or
   CI execution.
 
-Future quality and change-risk evidence:
+Current quality and change-risk evidence:
 
 - Test-gap and change-risk signals are inferred or uncertain planning hints derived from
-  deterministic facts. Their evidence IDs must point to the underlying source-visible
+  deterministic facts and inferred tested-subject relations. They are emitted under the
+  top-level `quality` object and reuse evidence IDs from the underlying source-visible
   facts that produced the hint, such as endpoint annotations, Spring application surface
-  annotations, JPA annotations, warning signals, test class evidence, or tested-subject
-  relation evidence.
-- Absence-sensitive hints, such as a planned
-  `no_inferred_test_subject_for_endpoint` signal, do not have direct absence evidence.
-  Their evidence supports the subject fact being considered; the signal uncertainty
-  must state that it is limited to the bounded generated test inventory and supported
-  relation rules.
+  annotations, JPA annotations, warning signals, repository/entity relation facts, and
+  tested-subject relation evidence. They do not introduce a new evidence type.
+- Absence-sensitive hints, such as an `endpoint_without_obvious_test`,
+  `repository_without_obvious_test`, or `entity_without_obvious_test` signal, do not
+  have direct absence evidence. Their evidence supports the subject fact being
+  considered; the signal uncertainty states that it is limited to the bounded generated
+  test inventory and supported relation rules.
 - Quality and change-risk evidence must not include test execution logs, CI provider
   output, coverage reports, mutation testing reports, runtime application traces,
   database inspection output, or LLM-generated summaries unless a future contract adds a
   separate non-core evidence source. Such external or runtime material is not evidence
-  for future v0.7 deterministic quality or change-risk facts.
+  for current deterministic quality or change-risk facts.
 - A change-risk hint must not be treated as vulnerability evidence, production impact
   evidence, business priority evidence, or correctness evidence.
-- Quality and change-risk signals are not emitted in the current v0.7 tests inventory
-  refinement. This subsection constrains future work only.
+- Quality and change-risk signals must preserve cautious wording such as
+  `no_obvious_test`, `planning_hint`, `uncertain_planning_hint`, or
+  `warning_oriented_planning_hint`. They do not prove coverage, assertion behavior,
+  test execution, CI status, runtime behavior, call graph reachability, production
+  impact, vulnerability, business priority, correctness, or complete subject mapping.
 
 ## Evidence Discipline
 

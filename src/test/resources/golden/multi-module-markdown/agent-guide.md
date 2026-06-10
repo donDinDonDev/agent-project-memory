@@ -269,6 +269,41 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Inferred tested subject: `com.example.shared.SharedController` in target module `module:services/orders` (path: `services/orders`) (relation_status: `inferred`, relation_type: `naming_convention`, support_type: `inferred`, confidence: `medium`).
   - Evidence: `services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5` (`ev:services/orders/src/test/java/com/example/shared/SharedControllerTest.java:5-5:com.example.shared.SharedControllerTest:test_file`), `services/orders/src/main/java/com/example/shared/SharedController.java:5` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:5-5:com.example.shared.SharedController:code_symbol`)
 
+## Quality And Change-Risk Signals
+
+- Quality analysis status: `analyzed`
+- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.
+- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.
+
+### Test-Gap Signals
+
+- Analysis status: `analyzed`
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.shared.SharedEntity` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:services/billing` (path: `services/billing`)
+  - Subject ID: `entity:module:services/billing:com.example.shared.SharedEntity`
+  - Subject source hint: class `com.example.shared.SharedEntity`, member `not recorded`
+  - Evidence: `services/billing/src/main/java/com/example/shared/SharedController.java:16` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:16-16:com.example.shared.SharedEntity:@Entity`)
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.shared.SharedEntity` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:services/orders` (path: `services/orders`)
+  - Subject ID: `entity:module:services/orders:com.example.shared.SharedEntity`
+  - Subject source hint: class `com.example.shared.SharedEntity`, member `not recorded`
+  - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:16` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:16-16:com.example.shared.SharedEntity:@Entity`)
+
+### Change-Risk Signals
+
+- Analysis status: `analyzed`
+- Change-risk signal: `spring_service_change_surface` for `spring_service` `com.example.shared.SharedService` (status: `planning_hint`, risk_basis: `source_visible_service_stereotype`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:services/billing` (path: `services/billing`)
+  - Subject ID: `component:module:services/billing:com.example.shared.SharedService`
+  - Subject source hint: class `com.example.shared.SharedService`, member `not recorded`
+  - Evidence: `services/billing/src/main/java/com/example/shared/SharedController.java:12` (`ev:services/billing/src/main/java/com/example/shared/SharedController.java:12-12:com.example.shared.SharedService:@Service`)
+- Change-risk signal: `spring_service_change_surface` for `spring_service` `com.example.shared.SharedService` (status: `planning_hint`, risk_basis: `source_visible_service_stereotype`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:services/orders` (path: `services/orders`)
+  - Subject ID: `component:module:services/orders:com.example.shared.SharedService`
+  - Subject source hint: class `com.example.shared.SharedService`, member `not recorded`
+  - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:12` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:12-12:com.example.shared.SharedService:@Service`)
+
+
 ## Known Uncertainty And Limits
 
 - Warning: `generated_source` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, scan generated sources by default, or create endpoint/API facts from this build signal.
@@ -291,6 +326,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred/statused: tested-subject rows are conservative source-visible hints from supported naming, import, field-type, and Spring test slice class-literal signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and `unsupported` do not claim coverage or execution. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Planning hints: quality test-gap and change-risk signals are conservative derived hints from existing deterministic facts and inferred tested-subject relations. They do not claim coverage, test execution, assertion behavior, runtime behavior, production impact, vulnerability, correctness, business priority, or complete subject mapping.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
@@ -308,3 +344,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For persistence changes, inspect detected entity evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
 5. For tests, inspect detected test files and tested-subject relation/status evidence in `services/billing/src/test/java/com/example/shared/SharedControllerTest.java`, `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/test/java/com/example/shared/SharedControllerTest.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`; do not treat inferred or statused subjects as coverage proof.
+6. For quality and change-risk planning, inspect quality signal evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

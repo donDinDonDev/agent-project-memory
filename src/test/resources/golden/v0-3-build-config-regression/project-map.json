@@ -1541,5 +1541,16 @@
         ]
       }
     ]
+  },
+  "quality": {
+    "analysis_status": "not_detected",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   }
 }

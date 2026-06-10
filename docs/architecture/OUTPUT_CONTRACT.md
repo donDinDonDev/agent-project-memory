@@ -36,8 +36,8 @@ JPA/domain model slice, the v0.5 Spring application surface slices, the v0.4 API
 slice, and the v0.3 module-aware Maven metadata, dependency, and plugin inventory
 contract. The current v0.7 contract also emits direct Spring test slice and mock
 annotation signals and conservative tested-subject relation/status rows under the
-top-level `tests` inventory. Quality and change-risk contracts are recorded as planned
-boundaries only where explicitly marked future.
+top-level `tests` inventory, plus conservative test-gap and change-risk planning hints
+under the top-level `quality` object.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2227,24 +2227,31 @@ Planned v0.6 deterministic sorting rules:
 
 ### v0.7 Tests Inventory Refinement Contract
 
-This section defines the current v0.7 tests inventory refinement and Spring test
-slice/mock signal output contract. The current v0.7 implementation preserves the v0.6
-module-aware build/config, API surface, Spring application surface, and JPA/domain
-contracts while deepening the top-level `tests` inventory. It does not emit a top-level
-`quality` object, test-gap signals, change-risk signals, or runtime test claims in this
-slice.
+This section defines the current v0.7 tests inventory refinement, Spring test
+slice/mock signal, tested-subject relation/status, and quality planning-hint output
+contract. The current v0.7 implementation preserves the v0.6 module-aware build/config,
+API surface, Spring application surface, and JPA/domain contracts while deepening the
+top-level `tests` inventory and adding a top-level `quality` object. It does not emit
+coverage, test execution, assertion, CI, runtime, correctness, vulnerability,
+production-impact, business-priority, or complete subject-mapping claims.
 
 The v0.7 tests inventory refinement contract uses:
 
 - `schema_version: "0.7"` for an atomic public output state that preserves the v0.6
-  contracts and adds bounded source-visible tests inventory refinement.
+  contracts and adds bounded source-visible tests inventory refinement plus conservative
+  quality/change-risk planning hints.
 - The same four output files under `.project-memory/`.
 - The existing top-level `tests` object as the owner of source-visible test class,
   method, direct framework signal, Spring test slice, mock annotation signal, and
   tested-subject relation/status facts.
+- A top-level `quality` object as the owner of conservative test-gap and change-risk
+  planning hints derived from existing deterministic facts and inferred tested-subject
+  relations.
 - Existing evidence fields and evidence types. Test class facts continue to use
   `test_file` evidence. Test method, framework signal, Spring test slice, and mock
-  annotation signal observations reuse `annotation` and `code_symbol` evidence.
+  annotation signal observations reuse `annotation` and `code_symbol` evidence. Quality
+  signals reuse evidence IDs from the underlying subject facts; they do not introduce a
+  new evidence type.
 
 Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
 
@@ -2322,11 +2329,59 @@ Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
         ]
       }
     ]
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:services/orders:com.example.orders.OrderRepository",
+          "module_id": "module:services/orders",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:services/orders:com.example.orders.OrderRepository",
+          "subject_name": "com.example.orders.OrderRepository",
+          "subject_class_name": "com.example.orders.OrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/OrderRepository.java:6-6:com.example.orders.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:spring_service_change_surface:component:module:services/orders:com.example.orders.OrderService",
+          "module_id": "module:services/orders",
+          "signal": "spring_service_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_service",
+          "subject_id": "component:module:services/orders:com.example.orders.OrderService",
+          "subject_name": "com.example.orders.OrderService",
+          "subject_class_name": "com.example.orders.OrderService",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_service_stereotype",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:services/orders/src/main/java/com/example/orders/OrderService.java:8-8:com.example.orders.OrderService:@Service"
+          ]
+        }
+      ]
+    }
   }
 }
 ```
 
-Current v0.7 output has no top-level `quality` object.
+Current v0.7 output includes a top-level `quality` object.
 
 Current v0.7 test inventory rules:
 
@@ -2468,14 +2523,79 @@ Current v0.7 tested-subject relation rules:
   tested-subject hint, not proof that the test executes that subject or covers any
   behavior.
 
-Future v0.7 quality and change-risk rules:
+Current v0.7 quality and change-risk rules:
 
-- A future top-level `quality` object may own inferred or uncertain test-gap and
-  change-risk planning hints. It is not emitted by the current v0.7 tests inventory
-  refinement.
-- Future test-gap and change-risk signals must not be presented as coverage,
-  correctness, CI, runtime, call-graph, vulnerability, production impact, business
-  priority, or test execution truth.
+- `quality.analysis_status` is `"analyzed"` when at least one test-gap or change-risk
+  planning hint is emitted. It is `"not_detected"` when no quality planning hints are
+  emitted.
+- `quality.test_gap_signals.analysis_status` and
+  `quality.change_risk_signals.analysis_status` are `"analyzed"` when their respective
+  `items[]` arrays are non-empty and `"not_detected"` otherwise.
+- `quality.test_gap_signals.items[]` contains conservative absence-sensitive planning
+  hints for selected source-visible change surfaces when no inferred tested-subject
+  relation matches the subject class in the same target module.
+- Current test-gap signals include:
+  - `"endpoint_without_obvious_test"` for Spring MVC endpoint handler facts whose
+    controller class has no inferred tested-subject relation in the same module.
+  - `"repository_without_obvious_test"` for Spring repository surface facts whose class
+    has no inferred tested-subject relation in the same module.
+  - `"entity_without_obvious_test"` for JPA entity facts whose class has no inferred
+    tested-subject relation in the same module.
+- Test-gap signal `status` is `"no_obvious_test"`. This status means no matching
+  inferred tested-subject relation was found in the bounded generated test inventory. It
+  must not be rendered or interpreted as proof that no tests exist, no behavior is
+  covered, or no assertions exercise the subject.
+- Test-gap signal `inference_basis` is
+  `"no_inferred_tested_subject_relation_for_subject_class"` when supported test roots
+  were analyzed and `"bounded_test_inventory_not_available"` when supported test roots
+  were not detected.
+- Test-gap signal `confidence` is `"low"`. `uncertainty` is
+  `"bounded_test_inventory_supported_relations_only"` when supported test roots were
+  analyzed and `"supported_test_roots_not_detected"` otherwise.
+- `quality.change_risk_signals.items[]` contains warning-oriented or uncertain planning
+  hints from existing deterministic facts. Current signals include:
+  - `"spring_service_change_surface"` for source-visible `@Service` component facts.
+  - `"spring_configuration_change_surface"` for source-visible Spring configuration
+    class facts.
+  - `"spring_configuration_properties_change_surface"` for source-visible
+    `@ConfigurationProperties` facts.
+  - `"spring_bean_method_change_surface"` for source-visible `@Bean` method facts.
+  - `"transaction_boundary_change_surface"` for source-visible transaction-boundary
+    facts.
+  - `"scheduled_method_change_surface"` for source-visible scheduled-method facts.
+  - `"event_listener_change_surface"` for source-visible event-listener facts.
+  - `"messaging_listener_change_surface"` for source-visible messaging-listener facts.
+  - `"repository_entity_relation_uncertain"` for Spring Data repository facts whose
+    repository/entity relation status is not `"inferred"`.
+  - `"jpa_relationship_change_surface"` for source-visible JPA relationship metadata.
+  - `"spring_security_warning_change_surface"` for Spring Security configuration warning
+    facts.
+- Change-risk signal `status` is one of `"planning_hint"`,
+  `"warning_oriented_planning_hint"`, or `"uncertain_planning_hint"`.
+- Change-risk signal `risk_basis` records the deterministic fact family that produced
+  the hint. Current values include `"source_visible_service_stereotype"`,
+  `"source_visible_spring_configuration"`, `"source_visible_configuration_properties"`,
+  `"source_visible_bean_method"`, `"source_visible_transaction_boundary"`,
+  `"source_visible_scheduled_method"`, `"source_visible_event_listener"`,
+  `"source_visible_messaging_listener"`,
+  `"repository_entity_relation_status_<status>"`,
+  `"source_visible_jpa_relationship_metadata"`, and
+  `"source_visible_spring_security_warning"`.
+- Change-risk signal `confidence` is `"low"`. Current `uncertainty` values include
+  `"source_visible_change_surface_only"`, `"bounded_repository_entity_relation_rules_only"`,
+  `"relationship_target_declared_type_only"`, and
+  `"warning_signal_only_not_vulnerability_or_correctness"`.
+- Quality signal common fields are `id`, `module_id`, `signal`, `status`,
+  `subject_kind`, `subject_id`, `subject_name`, nullable `subject_class_name`, nullable
+  `subject_member_name`, `confidence`, `uncertainty`, and `evidence_ids`. Test-gap
+  signals also include `inference_basis` and `related_test_ids`; current
+  `related_test_ids` is an empty array. Change-risk signals include `risk_basis`.
+- Quality signal evidence IDs point to the underlying source-visible fact or warning
+  evidence that produced the hint. Absence-sensitive test-gap signals do not fabricate
+  absence evidence; their evidence supports the subject fact being considered.
+- Test-gap and change-risk signals must not be presented as coverage, correctness, CI,
+  runtime, call-graph, vulnerability, production impact, business priority, assertion
+  analysis, or test execution truth.
 
 Current v0.7 deterministic sorting rules:
 
@@ -2488,8 +2608,9 @@ Current v0.7 deterministic sorting rules:
   annotation, and evidence discriminator.
 - Tested-subject rows sort by relation status, relation type, class name, candidate
   reference, support type, confidence, uncertainty, and evidence discriminator.
-- Test-gap signals and change-risk signals are not emitted in the current v0.7 tests
-  inventory refinement and Spring test slice/mock signal slice.
+- Test-gap signals sort by module order, subject kind, subject name, and subject ID.
+- Change-risk signals sort by module order, signal, subject kind, subject name, and
+  subject ID.
 
 ## `evidence-index.jsonl`
 
@@ -2971,8 +3092,11 @@ Current v0.7 tests inventory `agent-guide.md` behavior:
   or runtime relation is claimed.
 - Tested-subject guide rows must show `relation_status`, `relation_type`,
   `support_type`, `confidence`, `candidate_reference`, and `uncertainty` when present.
-- Future test-gap and change-risk rows must be added only after their structured output
-  contract is implemented.
+- Quality test-gap and change-risk rows render as conservative planning hints with
+  status, basis, confidence, uncertainty, subject, module, and evidence. They must not
+  claim coverage, execution, assertion behavior, CI status, runtime behavior,
+  correctness, vulnerability, production impact, business priority, or complete subject
+  mapping.
 - The known-limits section should explicitly state that current v0.7 test facts do not
   perform test execution, CI analysis, coverage analysis, mutation testing, behavioral
   assertion understanding, runtime Spring context reconstruction, runtime

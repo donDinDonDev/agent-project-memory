@@ -11,7 +11,7 @@ architecture documents.
 
 ### Added
 
-- Added the planned v0.7 tests, quality, and change-risk contract design boundary,
+- Added the v0.7 tests, quality, and change-risk contract design boundary,
   including source-visible test class and method inventory, Spring test slice signals,
   conservative tested-subject relation statuses, inferred/uncertain test-gap and
   change-risk planning hints, evidence semantics, and explicit non-goals for coverage,
@@ -28,6 +28,10 @@ architecture documents.
   conventions, exact production imports, direct test field types, and direct Spring test
   slice class literals, with explicit inferred, not-detected, ambiguous, and unsupported
   statuses.
+- Added conservative v0.7 quality planning hints under the top-level `quality` object,
+  including `no_obvious_test` test-gap signals for selected endpoint, repository, and
+  entity surfaces, plus warning-oriented or uncertain change-risk signals for existing
+  Spring application, security, repository/entity, and JPA relationship facts.
 
 ### Changed
 
@@ -43,6 +47,10 @@ architecture documents.
   `relation_status`, `relation_type`, nullable target/candidate fields, confidence, and
   uncertainty while continuing to avoid coverage, CI, assertion, runtime execution, full
   call graph, and complete subject-mapping claims.
+- Expanded generated v0.7 `project-map.json` and `agent-guide.md` output with
+  evidence-backed quality planning hints while continuing to avoid coverage, test
+  execution, assertion, CI, runtime, correctness, vulnerability, production-impact,
+  business-priority, and complete subject-mapping claims.
 
 ### Fixed
 

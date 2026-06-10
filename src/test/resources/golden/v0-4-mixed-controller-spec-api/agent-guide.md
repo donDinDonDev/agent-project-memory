@@ -106,6 +106,27 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Analysis status: `not_detected`
 - Not analyzed: no supported test root was detected.
 
+## Quality And Change-Risk Signals
+
+- Quality analysis status: `analyzed`
+- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.
+- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.
+
+### Test-Gap Signals
+
+- Analysis status: `analyzed`
+- Test-gap signal: `endpoint_without_obvious_test` for `spring_mvc_endpoint` `com.example.mixed.OrderController#getOrder` (status: `no_obvious_test`, inference_basis: `bounded_test_inventory_not_available`, confidence: `low`, uncertainty: `supported_test_roots_not_detected`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `endpoint:com.example.mixed.OrderController#getOrder`
+  - Subject source hint: class `com.example.mixed.OrderController`, member `getOrder`
+  - Evidence: `src/main/java/com/example/mixed/OrderController.java:6` (`ev:src/main/java/com/example/mixed/OrderController.java:6-6:com.example.mixed.OrderController:@RestController`), `src/main/java/com/example/mixed/OrderController.java:8` (`ev:src/main/java/com/example/mixed/OrderController.java:8-8:com.example.mixed.OrderController#getOrder:@GetMapping`)
+
+### Change-Risk Signals
+
+- Analysis status: `not_detected`
+- Change-risk signals: none recorded.
+
+
 ## Known Uncertainty And Limits
 
 - Warning: `hidden_http_surface` signal `openapi_spec_file` for module `module:.` (path: `.`) at `src/main/resources/openapi.yml`. OpenAPI/Swagger spec file detected by filename; declared operations, when supported, are reported separately under api\_surface.openapi.operations, and this warning does not reconstruct generated APIs.
@@ -116,6 +137,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred/statused: tested-subject rows are conservative source-visible hints from supported naming, import, field-type, and Spring test slice class-literal signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and `unsupported` do not claim coverage or execution. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Planning hints: quality test-gap and change-risk signals are conservative derived hints from existing deterministic facts and inferred tested-subject relations. They do not claim coverage, test execution, assertion behavior, runtime behavior, production impact, vulnerability, correctness, business priority, or complete subject mapping.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
@@ -134,3 +156,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/mixed/OrderController.java`, `src/main/resources/openapi.yml`.
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/mixed/OrderController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+5. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/mixed/OrderController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

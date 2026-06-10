@@ -312,6 +312,86 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Inferred tested subject: `com.example.web.ProjectMapController` in target module `module:.` (path: `.`) (relation_status: `inferred`, relation_type: `naming_convention`, support_type: `inferred`, confidence: `medium`).
   - Evidence: `src/test/java/com/example/web/ProjectMapControllerTest.java:3` (`ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file`), `src/main/java/com/example/web/ProjectMapController.java:13` (`ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol`)
 
+## Quality And Change-Risk Signals
+
+- Quality analysis status: `analyzed`
+- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.
+- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.
+
+### Test-Gap Signals
+
+- Analysis status: `analyzed`
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.domain.ProjectCustomer` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectCustomer`
+  - Subject source hint: class `com.example.domain.ProjectCustomer`, member `not recorded`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:34` (`ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity`)
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.domain.ProjectLegacyOrder` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectLegacyOrder`
+  - Subject source hint: class `com.example.domain.ProjectLegacyOrder`, member `not recorded`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:107` (`ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity`), `src/main/java/com/example/domain/ProjectEntities.java:108` (`ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass`)
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.domain.ProjectOrder` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectOrder`
+  - Subject source hint: class `com.example.domain.ProjectOrder`, member `not recorded`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:52` (`ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity`), `src/main/java/com/example/domain/ProjectEntities.java:53` (`ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table`)
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.domain.ProjectShipment` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectShipment`
+  - Subject source hint: class `com.example.domain.ProjectShipment`, member `not recorded`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:95` (`ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity`)
+- Test-gap signal: `entity_without_obvious_test` for `jpa_entity` `com.example.domain.ProjectVisit` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectVisit`
+  - Subject source hint: class `com.example.domain.ProjectVisit`, member `not recorded`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:122` (`ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity`), `src/main/java/com/example/domain/ProjectEntities.java:123` (`ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table`)
+- Test-gap signal: `repository_without_obvious_test` for `spring_repository` `com.example.components.InventoryRepository` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_repository_stereotype:module:.:com.example.components.InventoryRepository`
+  - Subject source hint: class `com.example.components.InventoryRepository`, member `not recorded`
+  - Evidence: `src/main/java/com/example/components/InventoryComponents.java:16` (`ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository`)
+- Test-gap signal: `repository_without_obvious_test` for `spring_repository` `com.example.repositories.ProjectOrderRepository` (status: `no_obvious_test`, inference_basis: `no_inferred_tested_subject_relation_for_subject_class`, confidence: `low`, uncertainty: `bounded_test_inventory_supported_relations_only`). No coverage, execution, assertion, CI, or runtime relation is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository`
+  - Subject source hint: class `com.example.repositories.ProjectOrderRepository`, member `not recorded`
+  - Evidence: `src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository`), `src/main/java/com/example/repositories/ProjectOrderRepository.java:6` (`ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
+
+### Change-Risk Signals
+
+- Analysis status: `analyzed`
+- Change-risk signal: `jpa_relationship_change_surface` for `jpa_relationship` `com.example.domain.ProjectOrder#customer` (status: `uncertain_planning_hint`, risk_basis: `source_visible_jpa_relationship_metadata`, confidence: `low`, uncertainty: `relationship_target_declared_type_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectOrder#relationship:customer`
+  - Subject source hint: class `com.example.domain.ProjectOrder`, member `customer`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:66` (`ev:src/main/java/com/example/domain/ProjectEntities.java:66-66:com.example.domain.ProjectOrder:@ManyToOne:field:customer`), `src/main/java/com/example/domain/ProjectEntities.java:67-73` (`ev:src/main/java/com/example/domain/ProjectEntities.java:67-73:com.example.domain.ProjectOrder:@JoinColumn:field:customer`)
+- Change-risk signal: `jpa_relationship_change_surface` for `jpa_relationship` `com.example.domain.ProjectOrder#invoice` (status: `uncertain_planning_hint`, risk_basis: `source_visible_jpa_relationship_metadata`, confidence: `low`, uncertainty: `relationship_target_declared_type_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectOrder#relationship:invoice`
+  - Subject source hint: class `com.example.domain.ProjectOrder`, member `invoice`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:79` (`ev:src/main/java/com/example/domain/ProjectEntities.java:79-79:com.example.domain.ProjectOrder:@OneToOne:field:invoice`), `src/main/java/com/example/domain/ProjectEntities.java:80` (`ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectOrder:@JoinColumn:field:invoice`)
+- Change-risk signal: `jpa_relationship_change_surface` for `jpa_relationship` `com.example.domain.ProjectOrder#lines` (status: `uncertain_planning_hint`, risk_basis: `source_visible_jpa_relationship_metadata`, confidence: `low`, uncertainty: `relationship_target_declared_type_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectOrder#relationship:lines`
+  - Subject source hint: class `com.example.domain.ProjectOrder`, member `lines`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:76` (`ev:src/main/java/com/example/domain/ProjectEntities.java:76-76:com.example.domain.ProjectOrder:@OneToMany:field:lines`)
+- Change-risk signal: `jpa_relationship_change_surface` for `jpa_relationship` `com.example.domain.ProjectOrder#tags` (status: `uncertain_planning_hint`, risk_basis: `source_visible_jpa_relationship_metadata`, confidence: `low`, uncertainty: `relationship_target_declared_type_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `entity:com.example.domain.ProjectOrder#relationship:tags`
+  - Subject source hint: class `com.example.domain.ProjectOrder`, member `tags`
+  - Evidence: `src/main/java/com/example/domain/ProjectEntities.java:83` (`ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectOrder:@ManyToMany:field:tags`), `src/main/java/com/example/domain/ProjectEntities.java:84-91` (`ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags`)
+- Change-risk signal: `spring_configuration_change_surface` for `spring_configuration_class` `com.example.components.AppConfiguration` (status: `planning_hint`, risk_basis: `source_visible_spring_configuration`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_configuration_class:module:.:com.example.components.AppConfiguration`
+  - Subject source hint: class `com.example.components.AppConfiguration`, member `not recorded`
+  - Evidence: `src/main/java/com/example/components/InventoryComponents.java:20` (`ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration`)
+- Change-risk signal: `spring_service_change_surface` for `spring_service` `com.example.components.InventoryService` (status: `planning_hint`, risk_basis: `source_visible_service_stereotype`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `component:com.example.components.InventoryService`
+  - Subject source hint: class `com.example.components.InventoryService`, member `not recorded`
+  - Evidence: `src/main/java/com/example/components/InventoryComponents.java:12` (`ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service`)
+
+
 ## Known Uncertainty And Limits
 
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
@@ -320,6 +400,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred/statused: tested-subject rows are conservative source-visible hints from supported naming, import, field-type, and Spring test slice class-literal signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and `unsupported` do not claim coverage or execution. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Planning hints: quality test-gap and change-risk signals are conservative derived hints from existing deterministic facts and inferred tested-subject relations. They do not claim coverage, test execution, assertion behavior, runtime behavior, production impact, vulnerability, correctness, business priority, or complete subject mapping.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
@@ -337,3 +418,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/repositories/ProjectOrderRepository.java`, `src/main/java/com/example/domain/ProjectEntities.java`, `src/main/java/com/example/web/ProjectMapController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For persistence changes, inspect detected entity evidence in `src/main/java/com/example/domain/ProjectEntities.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
 5. For tests, inspect detected test files and tested-subject relation/status evidence in `src/test/java/com/example/web/ProjectMapControllerTest.java`, `src/main/java/com/example/web/ProjectMapController.java`; do not treat inferred or statused subjects as coverage proof.
+6. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/domain/ProjectEntities.java`, `src/main/java/com/example/components/InventoryComponents.java`, `src/main/java/com/example/repositories/ProjectOrderRepository.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

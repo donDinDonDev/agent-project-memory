@@ -234,6 +234,199 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void projectMapRendersConservativeQualitySignalsWithoutCoverageClaims() throws Exception {
+    Path projectPath = tempDir.resolve("quality-signals");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>quality-signals</artifactId>
+          <version>1.0.0</version>
+        </project>
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/web/OrderController.java"), """
+        package com.example.web;
+
+        import org.springframework.web.bind.annotation.GetMapping;
+        import org.springframework.web.bind.annotation.RestController;
+
+        @RestController
+        class OrderController {
+          @GetMapping("/orders")
+          String listOrders() {
+            return "ok";
+          }
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/domain/Order.java"), """
+        package com.example.domain;
+
+        import jakarta.persistence.Entity;
+        import jakarta.persistence.Id;
+        import jakarta.persistence.ManyToOne;
+
+        @Entity
+        class Customer {
+          @Id
+          Long id;
+        }
+
+        @Entity
+        class Order {
+          @Id
+          Long id;
+
+          @ManyToOne
+          Customer customer;
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/repositories/OrderRepository.java"), """
+        package com.example.repositories;
+
+        import com.example.domain.Order;
+        import org.springframework.data.jpa.repository.JpaRepository;
+
+        interface OrderRepository extends JpaRepository<Order, Long> {
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/service/OrderService.java"), """
+        package com.example.service;
+
+        import org.springframework.kafka.annotation.KafkaListener;
+        import org.springframework.scheduling.annotation.Scheduled;
+        import org.springframework.stereotype.Service;
+        import org.springframework.transaction.annotation.Transactional;
+
+        @Service
+        class OrderService {
+          @Transactional
+          void settleOrder() {
+          }
+
+          @Scheduled(fixedDelayString = "${orders.delay}")
+          void refreshOrders() {
+          }
+
+          @KafkaListener(topics = "orders")
+          void onOrder(String payload) {
+          }
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/config/AppConfig.java"), """
+        package com.example.config;
+
+        import org.springframework.context.annotation.Bean;
+        import org.springframework.context.annotation.Configuration;
+
+        @Configuration
+        class AppConfig {
+          @Bean
+          Object orderBean() {
+            return new Object();
+          }
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/security/SecurityConfig.java"), """
+        package com.example.security;
+
+        import org.springframework.context.annotation.Bean;
+        import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+        import org.springframework.security.web.SecurityFilterChain;
+
+        @EnableWebSecurity
+        class SecurityConfig {
+          @Bean
+          SecurityFilterChain appSecurity() {
+            return null;
+          }
+        }
+        """);
+    writeFile(projectPath.resolve("src/test/java/com/example/web/OrderControllerTest.java"), """
+        package com.example.web;
+
+        class OrderControllerTest {
+        }
+        """);
+
+    generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode quality = root.path("quality");
+    JsonNode testGapItems = quality.path("test_gap_signals").path("items");
+    JsonNode changeRiskItems = quality.path("change_risk_signals").path("items");
+    JsonNode repositoryGap = signalWithSubject(
+        testGapItems,
+        "repository_without_obvious_test",
+        "com.example.repositories.OrderRepository");
+    JsonNode entityGap = signalWithSubject(
+        testGapItems,
+        "entity_without_obvious_test",
+        "com.example.domain.Order");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertEquals("analyzed", quality.path("analysis_status").asText()),
+        () -> assertFalse(hasSignalWithSubject(
+            testGapItems,
+            "endpoint_without_obvious_test",
+            "com.example.web.OrderController#listOrders")),
+        () -> assertEquals("no_obvious_test", repositoryGap.path("status").asText()),
+        () -> assertEquals(
+            "no_inferred_tested_subject_relation_for_subject_class",
+            repositoryGap.path("inference_basis").asText()),
+        () -> assertEquals(
+            "bounded_test_inventory_supported_relations_only",
+            repositoryGap.path("uncertainty").asText()),
+        () -> assertEquals("no_obvious_test", entityGap.path("status").asText()),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "spring_service_change_surface",
+            "com.example.service.OrderService")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "spring_configuration_change_surface",
+            "com.example.config.AppConfig")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "spring_bean_method_change_surface",
+            "com.example.config.AppConfig#orderBean")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "transaction_boundary_change_surface",
+            "com.example.service.OrderService#settleOrder")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "scheduled_method_change_surface",
+            "com.example.service.OrderService#refreshOrders")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "messaging_listener_change_surface",
+            "com.example.service.OrderService#onOrder")),
+        () -> assertTrue(hasSignalWithSubject(
+            changeRiskItems,
+            "jpa_relationship_change_surface",
+            "com.example.domain.Order#customer")),
+        () -> assertTrue(hasSignal(
+            changeRiskItems,
+            "spring_security_warning_change_surface")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Quality signal evidence_ids must resolve in evidence-index.jsonl"),
+        () -> assertTrue(agentGuide.contains("## Quality And Change-Risk Signals")),
+        () -> assertTrue(agentGuide.contains(
+            "No coverage, execution, assertion, CI, or runtime relation is claimed")),
+        () -> assertTrue(agentGuide.contains(
+            "No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed")));
+  }
+
+  @Test
   void generatedEvidenceIndexBoundsOversizedEvidenceExcerpts() throws Exception {
     Path projectPath = tempDir.resolve("bounded-excerpts");
     Path outputDirectory = projectPath.resolve(".project-memory");
@@ -1815,6 +2008,44 @@ final class SpringMvcEndpointOutputGeneratorTest {
       }
     }
     throw new AssertionError("Missing object with " + fieldName + "=" + value);
+  }
+
+  private JsonNode signalWithSubject(JsonNode items, String signal, String subjectName) {
+    if (!items.isArray()) {
+      throw new AssertionError("Expected array of signal objects");
+    }
+    for (JsonNode item : items) {
+      if (signal.equals(item.path("signal").asText())
+          && subjectName.equals(item.path("subject_name").asText())) {
+        return item;
+      }
+    }
+    throw new AssertionError("Missing signal " + signal + " for " + subjectName);
+  }
+
+  private boolean hasSignalWithSubject(JsonNode items, String signal, String subjectName) {
+    if (!items.isArray()) {
+      return false;
+    }
+    for (JsonNode item : items) {
+      if (signal.equals(item.path("signal").asText())
+          && subjectName.equals(item.path("subject_name").asText())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasSignal(JsonNode items, String signal) {
+    if (!items.isArray()) {
+      return false;
+    }
+    for (JsonNode item : items) {
+      if (signal.equals(item.path("signal").asText())) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private List<String> jsonTextValues(JsonNode items, String fieldName) {

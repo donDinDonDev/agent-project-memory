@@ -332,5 +332,136 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:event_listener_change_surface:spring_event_listener:module:.:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:decl:000001",
+          "module_id": "module:.",
+          "signal": "event_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_event_listener",
+          "subject_id": "spring_event_listener:module:.:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:decl:000001",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface#onInvoicePaid",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": "onInvoicePaid",
+          "risk_basis": "source_visible_event_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20-20:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:@EventListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:messaging_listener_change_surface:messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface:annotation:rabbit_listener:decl:000001",
+          "module_id": "module:.",
+          "signal": "messaging_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_messaging_listener",
+          "subject_id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface:annotation:rabbit_listener:decl:000001",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_messaging_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10-10:com.example.behavior.BehaviorMessagingSurface:@RabbitListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:messaging_listener_change_surface:messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:annotation:kafka_listener:decl:000001",
+          "module_id": "module:.",
+          "signal": "messaging_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_messaging_listener",
+          "subject_id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:annotation:kafka_listener:decl:000001",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface#onKafkaEvent",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": "onKafkaEvent",
+          "risk_basis": "source_visible_messaging_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24-24:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:@KafkaListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:messaging_listener_change_surface:messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:annotation:rabbit_listener:decl:000002",
+          "module_id": "module:.",
+          "signal": "messaging_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_messaging_listener",
+          "subject_id": "messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:annotation:rabbit_listener:decl:000002",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface#onRabbitRetry",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": "onRabbitRetry",
+          "risk_basis": "source_visible_messaging_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28-28:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:@RabbitListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:scheduled_method_change_surface:spring_scheduled_method:module:.:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:decl:000001",
+          "module_id": "module:.",
+          "signal": "scheduled_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_scheduled_method",
+          "subject_id": "spring_scheduled_method:module:.:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:decl:000001",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface#refreshInvoices",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": "refreshInvoices",
+          "risk_basis": "source_visible_scheduled_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16-16:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:@Scheduled"
+          ]
+        },
+        {
+          "id": "quality:change_risk:transaction_boundary_change_surface:spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface:type",
+          "module_id": "module:.",
+          "signal": "transaction_boundary_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_transaction_boundary",
+          "subject_id": "spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface:type",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_transaction_boundary",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9-9:com.example.behavior.BehaviorMessagingSurface:@Transactional"
+          ]
+        },
+        {
+          "id": "quality:change_risk:transaction_boundary_change_surface:spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface#settleInvoice:decl:000001",
+          "module_id": "module:.",
+          "signal": "transaction_boundary_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_transaction_boundary",
+          "subject_id": "spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface#settleInvoice:decl:000001",
+          "subject_name": "com.example.behavior.BehaviorMessagingSurface#settleInvoice",
+          "subject_class_name": "com.example.behavior.BehaviorMessagingSurface",
+          "subject_member_name": "settleInvoice",
+          "risk_basis": "source_visible_transaction_boundary",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12-12:com.example.behavior.BehaviorMessagingSurface#settleInvoice:@Transactional"
+          ]
+        }
+      ]
+    }
   }
 }

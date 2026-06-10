@@ -101,6 +101,57 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Analysis status: `not_detected`
 - Not analyzed: no supported test root was detected.
 
+## Quality And Change-Risk Signals
+
+- Quality analysis status: `analyzed`
+- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.
+- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.
+
+### Test-Gap Signals
+
+- Analysis status: `not_detected`
+- Test-gap signals: none recorded.
+
+### Change-Risk Signals
+
+- Analysis status: `analyzed`
+- Change-risk signal: `event_listener_change_surface` for `spring_event_listener` `com.example.behavior.BehaviorMessagingSurface#onInvoicePaid` (status: `planning_hint`, risk_basis: `source_visible_event_listener`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_event_listener:module:.:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:decl:000001`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `onInvoicePaid`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:20-20:com.example.behavior.BehaviorMessagingSurface#onInvoicePaid:@EventListener`)
+- Change-risk signal: `messaging_listener_change_surface` for `spring_messaging_listener` `com.example.behavior.BehaviorMessagingSurface` (status: `planning_hint`, risk_basis: `source_visible_messaging_listener`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface:annotation:rabbit_listener:decl:000001`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `not recorded`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:10-10:com.example.behavior.BehaviorMessagingSurface:@RabbitListener`)
+- Change-risk signal: `messaging_listener_change_surface` for `spring_messaging_listener` `com.example.behavior.BehaviorMessagingSurface#onKafkaEvent` (status: `planning_hint`, risk_basis: `source_visible_messaging_listener`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:annotation:kafka_listener:decl:000001`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `onKafkaEvent`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:24-24:com.example.behavior.BehaviorMessagingSurface#onKafkaEvent:@KafkaListener`)
+- Change-risk signal: `messaging_listener_change_surface` for `spring_messaging_listener` `com.example.behavior.BehaviorMessagingSurface#onRabbitRetry` (status: `planning_hint`, risk_basis: `source_visible_messaging_listener`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `messaging_listener_signal:module:.:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:annotation:rabbit_listener:decl:000002`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `onRabbitRetry`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:28-28:com.example.behavior.BehaviorMessagingSurface#onRabbitRetry:@RabbitListener`)
+- Change-risk signal: `scheduled_method_change_surface` for `spring_scheduled_method` `com.example.behavior.BehaviorMessagingSurface#refreshInvoices` (status: `planning_hint`, risk_basis: `source_visible_scheduled_method`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_scheduled_method:module:.:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:decl:000001`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `refreshInvoices`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:16-16:com.example.behavior.BehaviorMessagingSurface#refreshInvoices:@Scheduled`)
+- Change-risk signal: `transaction_boundary_change_surface` for `spring_transaction_boundary` `com.example.behavior.BehaviorMessagingSurface` (status: `planning_hint`, risk_basis: `source_visible_transaction_boundary`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface:type`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `not recorded`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:9-9:com.example.behavior.BehaviorMessagingSurface:@Transactional`)
+- Change-risk signal: `transaction_boundary_change_surface` for `spring_transaction_boundary` `com.example.behavior.BehaviorMessagingSurface#settleInvoice` (status: `planning_hint`, risk_basis: `source_visible_transaction_boundary`, confidence: `low`, uncertainty: `source_visible_change_surface_only`). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.
+  - Module: `module:.` (path: `.`)
+  - Subject ID: `spring_transaction_boundary:module:.:com.example.behavior.BehaviorMessagingSurface#settleInvoice:decl:000001`
+  - Subject source hint: class `com.example.behavior.BehaviorMessagingSurface`, member `settleInvoice`
+  - Evidence: `src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12` (`ev:src/main/java/com/example/behavior/BehaviorMessagingSurface.java:12-12:com.example.behavior.BehaviorMessagingSurface#settleInvoice:@Transactional`)
+
+
 ## Known Uncertainty And Limits
 
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
@@ -109,6 +160,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA mapped-superclass identifier support is limited to conservative source-visible mapped-superclass chains; unresolved, ambiguous, cyclic, or non-source-visible branches are skipped.
 - Partial: JPA embedded and composite identifier support is limited to direct source-visible `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass` signals. Embedded targets are linked only when a unique local `@Embeddable` can be matched; `@IdClass` field matching and composite-key semantics are not analyzed.
 - Inferred/statused: tested-subject rows are conservative source-visible hints from supported naming, import, field-type, and Spring test slice class-literal signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and `unsupported` do not claim coverage or execution. Test method inventory records source-visible JUnit annotation structure only. Test execution, CI results, coverage, assertion behavior, call graphs, and complete subject mapping are not analyzed.
+- Planning hints: quality test-gap and change-risk signals are conservative derived hints from existing deterministic facts and inferred tested-subject relations. They do not claim coverage, test execution, assertion behavior, runtime behavior, production impact, vulnerability, correctness, business priority, or complete subject mapping.
 - Not analyzed: connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven modules are outside this guide.
 - Not analyzed: generated sources, generated API reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings are outside the source-visible interface endpoint support.
 - Not analyzed: OpenAPI operation facts are spec-backed declared operations only; runtime implementation matching, source/spec agreement, generated source contents, and client SDK reconstruction are not claimed.
@@ -128,3 +180,4 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
 3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/behavior/BehaviorMessagingSurface.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+5. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/behavior/BehaviorMessagingSurface.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

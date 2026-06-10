@@ -647,5 +647,295 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:module:domain-a:com.example.domain.SharedOrder",
+          "module_id": "module:domain-a",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:module:domain-a:com.example.domain.SharedOrder",
+          "subject_name": "com.example.domain.SharedOrder",
+          "subject_class_name": "com.example.domain.SharedOrder",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:domain-a/src/main/java/com/example/domain/SharedOrder.java:6-6:com.example.domain.SharedOrder:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:module:domain-a:com.example.unique.UniqueOrder",
+          "module_id": "module:domain-a",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:module:domain-a:com.example.unique.UniqueOrder",
+          "subject_name": "com.example.unique.UniqueOrder",
+          "subject_class_name": "com.example.unique.UniqueOrder",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:domain-a/src/main/java/com/example/unique/UniqueOrder.java:6-6:com.example.unique.UniqueOrder:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:module:domain-b:com.example.domain.SharedOrder",
+          "module_id": "module:domain-b",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:module:domain-b:com.example.domain.SharedOrder",
+          "subject_name": "com.example.domain.SharedOrder",
+          "subject_class_name": "com.example.domain.SharedOrder",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:domain-b/src/main/java/com/example/domain/SharedOrder.java:6-6:com.example.domain.SharedOrder:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.AmbiguousSharedOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_name": "com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_class_name": "com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-19:com.example.repositories.AmbiguousSharedOrderRepository:com.example.repositories.AmbiguousSharedOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-18:com.example.repositories.AmbiguousSharedOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.FqcnUniqueOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.FqcnUniqueOrderRepository",
+          "subject_name": "com.example.repositories.FqcnUniqueOrderRepository",
+          "subject_class_name": "com.example.repositories.FqcnUniqueOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:12-13:com.example.repositories.FqcnUniqueOrderRepository:com.example.repositories.FqcnUniqueOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:12-12:com.example.repositories.FqcnUniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.MissingOrderRepository",
+          "subject_name": "com.example.repositories.MissingOrderRepository",
+          "subject_class_name": "com.example.repositories.MissingOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-16:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-15:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.NestedGenericOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.NestedGenericOrderRepository",
+          "subject_name": "com.example.repositories.NestedGenericOrderRepository",
+          "subject_class_name": "com.example.repositories.NestedGenericOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-22:com.example.repositories.NestedGenericOrderRepository:com.example.repositories.NestedGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-21:com.example.repositories.NestedGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.RawOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.RawOrderRepository",
+          "subject_name": "com.example.repositories.RawOrderRepository",
+          "subject_class_name": "com.example.repositories.RawOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-28:com.example.repositories.RawOrderRepository:com.example.repositories.RawOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-27:com.example.repositories.RawOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.UniqueOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.UniqueOrderRepository",
+          "subject_name": "com.example.repositories.UniqueOrderRepository",
+          "subject_class_name": "com.example.repositories.UniqueOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:9-10:com.example.repositories.UniqueOrderRepository:com.example.repositories.UniqueOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:9-9:com.example.repositories.UniqueOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:repositories:com.example.repositories.WildcardGenericOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.WildcardGenericOrderRepository",
+          "subject_name": "com.example.repositories.WildcardGenericOrderRepository",
+          "subject_class_name": "com.example.repositories.WildcardGenericOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25:com.example.repositories.WildcardGenericOrderRepository:com.example.repositories.WildcardGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-24:com.example.repositories.WildcardGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:repositories:com.example.repositories.AmbiguousSharedOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_name": "com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_class_name": "com.example.repositories.AmbiguousSharedOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_ambiguous",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-19:com.example.repositories.AmbiguousSharedOrderRepository:com.example.repositories.AmbiguousSharedOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:18-18:com.example.repositories.AmbiguousSharedOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:repositories:com.example.repositories.MissingOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.MissingOrderRepository",
+          "subject_name": "com.example.repositories.MissingOrderRepository",
+          "subject_class_name": "com.example.repositories.MissingOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_not_detected",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-16:com.example.repositories.MissingOrderRepository:com.example.repositories.MissingOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:15-15:com.example.repositories.MissingOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:repositories:com.example.repositories.NestedGenericOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.NestedGenericOrderRepository",
+          "subject_name": "com.example.repositories.NestedGenericOrderRepository",
+          "subject_class_name": "com.example.repositories.NestedGenericOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_unsupported",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-22:com.example.repositories.NestedGenericOrderRepository:com.example.repositories.NestedGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:21-21:com.example.repositories.NestedGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:repositories:com.example.repositories.RawOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.RawOrderRepository",
+          "subject_name": "com.example.repositories.RawOrderRepository",
+          "subject_class_name": "com.example.repositories.RawOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_unsupported",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-28:com.example.repositories.RawOrderRepository:com.example.repositories.RawOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:27-27:com.example.repositories.RawOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:change_risk:repository_entity_relation_uncertain:spring_data_repository_interface_signal:module:repositories:com.example.repositories.WildcardGenericOrderRepository",
+          "module_id": "module:repositories",
+          "signal": "repository_entity_relation_uncertain",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "spring_data_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:repositories:com.example.repositories.WildcardGenericOrderRepository",
+          "subject_name": "com.example.repositories.WildcardGenericOrderRepository",
+          "subject_class_name": "com.example.repositories.WildcardGenericOrderRepository",
+          "subject_member_name": null,
+          "risk_basis": "repository_entity_relation_status_unsupported",
+          "confidence": "low",
+          "uncertainty": "bounded_repository_entity_relation_rules_only",
+          "evidence_ids": [
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25:com.example.repositories.WildcardGenericOrderRepository:com.example.repositories.WildcardGenericOrderRepository",
+            "ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-24:com.example.repositories.WildcardGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    }
   }
 }

@@ -124,6 +124,10 @@ v0.1 is acceptable when:
   naming-convention relation uses evidence for both the test class and candidate
   production class; current v0.7 output also supports bounded import, field-type, and
   Spring test slice class-literal relation/status rows when deterministic.
+- Current v0.7 `quality` output emits conservative test-gap and change-risk planning
+  hints from existing deterministic facts and inferred tested-subject relations. These
+  hints are not coverage, execution, assertion, CI, runtime, correctness, vulnerability,
+  business-priority, or complete subject-mapping claims.
 - Minimal tests inventory does not claim full test coverage, test execution results,
   behavioral assertion analysis, CI results, call graph resolution, symbol solving, or
   complete tested-subject mapping.

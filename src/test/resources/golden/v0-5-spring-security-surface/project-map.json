@@ -301,5 +301,121 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "subject_name": "com.example.security.SecuritySurface#applicationSecurity",
+          "subject_class_name": "com.example.security.SecuritySurface",
+          "subject_member_name": "applicationSecurity",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+          "subject_name": "com.example.security.SecuritySurface#managementSecurity",
+          "subject_class_name": "com.example.security.SecuritySurface",
+          "subject_member_name": "managementSecurity",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002",
+          "subject_name": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_method_security:decl:000002",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:9-9:com.example.security.SecuritySurface:@EnableMethodSecurity"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001",
+          "subject_name": "warning:spring_security:security_configuration_annotation:com.example.security.SecuritySurface:annotation:enable_web_security:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:8-8:com.example.security.SecuritySurface:@EnableWebSecurity"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "subject_name": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#applicationSecurity:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean",
+            "ev:src/main/java/com/example/security/SecuritySurface.java:12-12:com.example.security.SecuritySurface#applicationSecurity:return:SecurityFilterChain"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+          "subject_name": "warning:spring_security:security_filter_chain_bean:com.example.security.SecuritySurface#managementSecurity:decl:000002",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean",
+            "ev:src/main/java/com/example/security/SecuritySurface.java:17-17:com.example.security.SecuritySurface#managementSecurity:return:SecurityFilterChain"
+          ]
+        }
+      ]
+    }
   }
 }

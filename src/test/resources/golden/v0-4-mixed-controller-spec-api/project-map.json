@@ -330,5 +330,36 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.mixed.OrderController#getOrder",
+          "module_id": "module:.",
+          "signal": "endpoint_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_mvc_endpoint",
+          "subject_id": "endpoint:com.example.mixed.OrderController#getOrder",
+          "subject_name": "com.example.mixed.OrderController#getOrder",
+          "subject_class_name": "com.example.mixed.OrderController",
+          "subject_member_name": "getOrder",
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/mixed/OrderController.java:6-6:com.example.mixed.OrderController:@RestController",
+            "ev:src/main/java/com/example/mixed/OrderController.java:8-8:com.example.mixed.OrderController#getOrder:@GetMapping"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   }
 }

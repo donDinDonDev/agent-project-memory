@@ -112,6 +112,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.StringJoiner;
 
 public final class SpringMvcEndpointOutputGenerator {
@@ -127,6 +128,18 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MODULE_ANALYSIS_NOT_DETECTED = "not_detected";
   private static final String MODULE_SUPPORTED = "supported";
   private static final String ROOT_MODULE_ID = "module:.";
+  private static final String QUALITY_STATUS_NO_OBVIOUS_TEST = "no_obvious_test";
+  private static final String QUALITY_STATUS_PLANNING_HINT = "planning_hint";
+  private static final String QUALITY_STATUS_WARNING_ORIENTED_PLANNING_HINT =
+      "warning_oriented_planning_hint";
+  private static final String QUALITY_STATUS_UNCERTAIN_PLANNING_HINT =
+      "uncertain_planning_hint";
+  private static final String QUALITY_UNCERTAINTY_BOUNDED_TEST_INVENTORY =
+      "bounded_test_inventory_supported_relations_only";
+  private static final String QUALITY_UNCERTAINTY_TEST_ROOTS_NOT_DETECTED =
+      "supported_test_roots_not_detected";
+  private static final String QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY =
+      "source_visible_change_surface_only";
   private static final String PROJECT_MAP_FILE_NAME = "project-map.json";
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
@@ -308,6 +321,17 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparingInt(ModuleScopedWarningFact::moduleOrder)
       .thenComparing(ModuleScopedWarningFact::sourcePath)
       .thenComparing(ModuleScopedWarningFact::id);
+  private static final Comparator<TestGapSignal> TEST_GAP_SIGNAL_ORDER = Comparator
+      .comparingInt(TestGapSignal::moduleOrder)
+      .thenComparing(TestGapSignal::subjectKind)
+      .thenComparing(TestGapSignal::subjectName)
+      .thenComparing(TestGapSignal::subjectId);
+  private static final Comparator<ChangeRiskSignal> CHANGE_RISK_SIGNAL_ORDER = Comparator
+      .comparingInt(ChangeRiskSignal::moduleOrder)
+      .thenComparing(ChangeRiskSignal::signal)
+      .thenComparing(ChangeRiskSignal::subjectKind)
+      .thenComparing(ChangeRiskSignal::subjectName)
+      .thenComparing(ChangeRiskSignal::subjectId);
   private static final Comparator<ResourceRootFact> RESOURCE_ROOT_ORDER = Comparator
       .comparing(ResourceRootFact::scope)
       .thenComparing(ResourceRootFact::path)
@@ -1487,7 +1511,8 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("  \"tests\": {\n");
     appendIndentedStringField(json, 2, "analysis_status", scan.testAnalysisStatus(), true);
     appendTests(json, scan.tests());
-    json.append("  }\n");
+    json.append("  },\n");
+    appendQuality(json, qualitySignals(scan));
     json.append("}\n");
     return json.toString();
   }
@@ -3914,6 +3939,531 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("        ],\n");
   }
 
+  private QualitySignals qualitySignals(ModuleAwareScan scan) {
+    List<TestGapSignal> testGapSignals = testGapSignals(scan).stream()
+        .sorted(TEST_GAP_SIGNAL_ORDER)
+        .toList();
+    List<ChangeRiskSignal> changeRiskSignals = changeRiskSignals(scan).stream()
+        .sorted(CHANGE_RISK_SIGNAL_ORDER)
+        .toList();
+    String analysisStatus = testGapSignals.isEmpty() && changeRiskSignals.isEmpty()
+        ? ANALYSIS_NOT_DETECTED
+        : ANALYSIS_ANALYZED;
+    return new QualitySignals(analysisStatus, testGapSignals, changeRiskSignals);
+  }
+
+  private List<TestGapSignal> testGapSignals(ModuleAwareScan scan) {
+    Set<SubjectKey> inferredSubjects = inferredSubjectKeys(scan.tests());
+    List<TestGapSignal> signals = new ArrayList<>();
+    for (ModuleScopedEndpointFact scopedEndpoint : scan.endpoints()) {
+      SpringMvcEndpointFact endpoint = scopedEndpoint.fact();
+      if (hasInferredSubject(inferredSubjects, scopedEndpoint.moduleId(), endpoint.controllerClass())) {
+        continue;
+      }
+      String subjectId = endpointId(scopedEndpoint.moduleId(), endpoint);
+      signals.add(testGapSignal(
+          scopedEndpoint.moduleId(),
+          scopedEndpoint.moduleOrder(),
+          "endpoint_without_obvious_test",
+          "spring_mvc_endpoint",
+          subjectId,
+          endpoint.controllerClass() + "#" + endpoint.handlerMethod(),
+          endpoint.controllerClass(),
+          endpoint.handlerMethod(),
+          gapInferenceBasis(scan),
+          gapUncertainty(scan),
+          endpoint.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringRepositoryFact scopedRepository : scan.springRepositories()) {
+      SpringRepositoryFact repository = scopedRepository.fact();
+      if (hasInferredSubject(inferredSubjects, scopedRepository.moduleId(), repository.className())) {
+        continue;
+      }
+      String subjectId = springRepositoryId(scopedRepository.moduleId(), repository);
+      signals.add(testGapSignal(
+          scopedRepository.moduleId(),
+          scopedRepository.moduleOrder(),
+          "repository_without_obvious_test",
+          "spring_repository",
+          subjectId,
+          repository.className(),
+          repository.className(),
+          null,
+          gapInferenceBasis(scan),
+          gapUncertainty(scan),
+          repository.evidenceIds()));
+    }
+
+    for (ModuleScopedEntityFact scopedEntity : scan.entities()) {
+      JpaEntityFact entity = scopedEntity.fact();
+      if (hasInferredSubject(inferredSubjects, scopedEntity.moduleId(), entity.className())) {
+        continue;
+      }
+      String subjectId = entityId(scopedEntity.moduleId(), entity);
+      signals.add(testGapSignal(
+          scopedEntity.moduleId(),
+          scopedEntity.moduleOrder(),
+          "entity_without_obvious_test",
+          "jpa_entity",
+          subjectId,
+          entity.className(),
+          entity.className(),
+          null,
+          gapInferenceBasis(scan),
+          gapUncertainty(scan),
+          entity.evidenceIds()));
+    }
+    return signals;
+  }
+
+  private TestGapSignal testGapSignal(
+      String moduleId,
+      int moduleOrder,
+      String signal,
+      String subjectKind,
+      String subjectId,
+      String subjectName,
+      String subjectClassName,
+      String subjectMemberName,
+      String inferenceBasis,
+      String uncertainty,
+      List<String> evidenceIds) {
+    return new TestGapSignal(
+        "quality:test_gap:" + signal + ":" + subjectId,
+        moduleId,
+        moduleOrder,
+        signal,
+        QUALITY_STATUS_NO_OBVIOUS_TEST,
+        subjectKind,
+        subjectId,
+        subjectName,
+        subjectClassName,
+        subjectMemberName,
+        inferenceBasis,
+        "low",
+        uncertainty,
+        List.of(),
+        evidenceIds);
+  }
+
+  private String gapInferenceBasis(ModuleAwareScan scan) {
+    if (ANALYSIS_ANALYZED.equals(scan.testAnalysisStatus())) {
+      return "no_inferred_tested_subject_relation_for_subject_class";
+    }
+    return "bounded_test_inventory_not_available";
+  }
+
+  private String gapUncertainty(ModuleAwareScan scan) {
+    if (ANALYSIS_ANALYZED.equals(scan.testAnalysisStatus())) {
+      return QUALITY_UNCERTAINTY_BOUNDED_TEST_INVENTORY;
+    }
+    return QUALITY_UNCERTAINTY_TEST_ROOTS_NOT_DETECTED;
+  }
+
+  private Set<SubjectKey> inferredSubjectKeys(List<ModuleScopedTestFact> tests) {
+    Set<SubjectKey> subjects = new LinkedHashSet<>();
+    for (ModuleScopedTestFact scopedTest : tests) {
+      for (TestedSubjectFact subject : scopedTest.fact().testedSubjects()) {
+        if (!"inferred".equals(subject.relationStatus()) || subject.className() == null) {
+          continue;
+        }
+        String targetModuleId = subject.targetModuleId() == null
+            ? scopedTest.moduleId()
+            : subject.targetModuleId();
+        subjects.add(new SubjectKey(targetModuleId, subject.className()));
+      }
+    }
+    return subjects;
+  }
+
+  private boolean hasInferredSubject(Set<SubjectKey> inferredSubjects, String moduleId, String className) {
+    return inferredSubjects.contains(new SubjectKey(moduleId, className));
+  }
+
+  private List<ChangeRiskSignal> changeRiskSignals(ModuleAwareScan scan) {
+    List<ChangeRiskSignal> signals = new ArrayList<>();
+    for (ModuleScopedComponentFact scopedComponent : scan.components()) {
+      SpringComponentFact component = scopedComponent.fact();
+      if (!component.stereotypes().contains("@Service")) {
+        continue;
+      }
+      String subjectId = componentId(scopedComponent.moduleId(), component);
+      signals.add(changeRiskSignal(
+          scopedComponent.moduleId(),
+          scopedComponent.moduleOrder(),
+          "spring_service_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_service",
+          subjectId,
+          component.className(),
+          component.className(),
+          null,
+          "source_visible_service_stereotype",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          component.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringConfigurationClassFact scopedConfiguration : scan.springConfigurationClasses()) {
+      SpringConfigurationClassFact configuration = scopedConfiguration.fact();
+      String subjectId = springConfigurationClassId(scopedConfiguration.moduleId(), configuration);
+      signals.add(changeRiskSignal(
+          scopedConfiguration.moduleId(),
+          scopedConfiguration.moduleOrder(),
+          "spring_configuration_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_configuration_class",
+          subjectId,
+          configuration.className(),
+          configuration.className(),
+          null,
+          "source_visible_spring_configuration",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          configuration.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringConfigurationPropertiesFact scopedProperties
+        : scan.springConfigurationProperties()) {
+      SpringConfigurationPropertiesFact properties = scopedProperties.fact();
+      String subjectId = springConfigurationPropertiesId(scopedProperties.moduleId(), properties);
+      signals.add(changeRiskSignal(
+          scopedProperties.moduleId(),
+          scopedProperties.moduleOrder(),
+          "spring_configuration_properties_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_configuration_properties",
+          subjectId,
+          properties.className(),
+          properties.className(),
+          null,
+          "source_visible_configuration_properties",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          properties.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringBeanMethodFact scopedBeanMethod : scan.springBeanMethods()) {
+      SpringBeanMethodFact beanMethod = scopedBeanMethod.fact();
+      String subjectId = springBeanMethodId(scopedBeanMethod.moduleId(), beanMethod);
+      signals.add(changeRiskSignal(
+          scopedBeanMethod.moduleId(),
+          scopedBeanMethod.moduleOrder(),
+          "spring_bean_method_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_bean_method",
+          subjectId,
+          beanMethod.className() + "#" + beanMethod.methodName(),
+          beanMethod.className(),
+          beanMethod.methodName(),
+          "source_visible_bean_method",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          beanMethod.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringTransactionBoundaryFact scopedBoundary
+        : scan.springTransactionBoundaries()) {
+      SpringTransactionBoundaryFact boundary = scopedBoundary.fact();
+      String subjectId = springTransactionBoundaryId(scopedBoundary.moduleId(), boundary);
+      signals.add(changeRiskSignal(
+          scopedBoundary.moduleId(),
+          scopedBoundary.moduleOrder(),
+          "transaction_boundary_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_transaction_boundary",
+          subjectId,
+          behaviorSubjectName(boundary.className(), boundary.methodName()),
+          boundary.className(),
+          boundary.methodName(),
+          "source_visible_transaction_boundary",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          boundary.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringScheduledMethodFact scopedScheduledMethod : scan.springScheduledMethods()) {
+      SpringScheduledMethodFact scheduledMethod = scopedScheduledMethod.fact();
+      String subjectId = springScheduledMethodId(scopedScheduledMethod.moduleId(), scheduledMethod);
+      signals.add(changeRiskSignal(
+          scopedScheduledMethod.moduleId(),
+          scopedScheduledMethod.moduleOrder(),
+          "scheduled_method_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_scheduled_method",
+          subjectId,
+          scheduledMethod.className() + "#" + scheduledMethod.methodName(),
+          scheduledMethod.className(),
+          scheduledMethod.methodName(),
+          "source_visible_scheduled_method",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          scheduledMethod.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringEventListenerFact scopedEventListener : scan.springEventListeners()) {
+      SpringEventListenerFact eventListener = scopedEventListener.fact();
+      String subjectId = springEventListenerId(scopedEventListener.moduleId(), eventListener);
+      signals.add(changeRiskSignal(
+          scopedEventListener.moduleId(),
+          scopedEventListener.moduleOrder(),
+          "event_listener_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_event_listener",
+          subjectId,
+          eventListener.className() + "#" + eventListener.methodName(),
+          eventListener.className(),
+          eventListener.methodName(),
+          "source_visible_event_listener",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          eventListener.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringMessagingListenerFact scopedListener : scan.springMessagingListeners()) {
+      SpringMessagingListenerFact listener = scopedListener.fact();
+      String subjectId = springMessagingListenerId(scopedListener.moduleId(), listener);
+      signals.add(changeRiskSignal(
+          scopedListener.moduleId(),
+          scopedListener.moduleOrder(),
+          "messaging_listener_change_surface",
+          QUALITY_STATUS_PLANNING_HINT,
+          "spring_messaging_listener",
+          subjectId,
+          behaviorSubjectName(listener.className(), listener.methodName()),
+          listener.className(),
+          listener.methodName(),
+          "source_visible_messaging_listener",
+          QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY,
+          listener.evidenceIds()));
+    }
+
+    for (ModuleScopedSpringRepositoryFact scopedRepository : scan.springRepositories()) {
+      SpringRepositoryFact repository = scopedRepository.fact();
+      if (!SpringRepositoryAnalyzer.SURFACE_CATEGORY_SPRING_DATA_INTERFACE.equals(
+          repository.surfaceCategory())
+          || "inferred".equals(repository.entityRelationStatus())) {
+        continue;
+      }
+      String subjectId = springRepositoryId(scopedRepository.moduleId(), repository);
+      signals.add(changeRiskSignal(
+          scopedRepository.moduleId(),
+          scopedRepository.moduleOrder(),
+          "repository_entity_relation_uncertain",
+          QUALITY_STATUS_UNCERTAIN_PLANNING_HINT,
+          "spring_data_repository",
+          subjectId,
+          repository.className(),
+          repository.className(),
+          null,
+          "repository_entity_relation_status_" + repository.entityRelationStatus(),
+          "bounded_repository_entity_relation_rules_only",
+          repository.evidenceIds()));
+    }
+
+    for (ModuleScopedEntityFact scopedEntity : scan.entities()) {
+      JpaEntityFact entity = scopedEntity.fact();
+      for (JpaRelationshipFact relationship : entity.relationships()) {
+        String subjectId = entityId(scopedEntity.moduleId(), entity)
+            + "#relationship:"
+            + relationship.fieldName();
+        signals.add(changeRiskSignal(
+            scopedEntity.moduleId(),
+            scopedEntity.moduleOrder(),
+            "jpa_relationship_change_surface",
+            QUALITY_STATUS_UNCERTAIN_PLANNING_HINT,
+            "jpa_relationship",
+            subjectId,
+            entity.className() + "#" + relationship.fieldName(),
+            entity.className(),
+            relationship.fieldName(),
+            "source_visible_jpa_relationship_metadata",
+            "relationship_target_declared_type_only",
+            relationship.evidenceIds()));
+      }
+    }
+
+    for (ModuleScopedWarningFact warning : scan.warnings()) {
+      if (!WARNING_CATEGORY_SPRING_SECURITY.equals(warning.category())) {
+        continue;
+      }
+      signals.add(changeRiskSignal(
+          warning.moduleId(),
+          warning.moduleOrder(),
+          "spring_security_warning_change_surface",
+          QUALITY_STATUS_WARNING_ORIENTED_PLANNING_HINT,
+          "spring_security_warning",
+          warning.id(),
+          warning.id(),
+          null,
+          null,
+          "source_visible_spring_security_warning",
+          "warning_signal_only_not_vulnerability_or_correctness",
+          warning.evidenceIds()));
+    }
+    return signals;
+  }
+
+  private ChangeRiskSignal changeRiskSignal(
+      String moduleId,
+      int moduleOrder,
+      String signal,
+      String status,
+      String subjectKind,
+      String subjectId,
+      String subjectName,
+      String subjectClassName,
+      String subjectMemberName,
+      String riskBasis,
+      String uncertainty,
+      List<String> evidenceIds) {
+    return new ChangeRiskSignal(
+        "quality:change_risk:" + signal + ":" + subjectId,
+        moduleId,
+        moduleOrder,
+        signal,
+        status,
+        subjectKind,
+        subjectId,
+        subjectName,
+        subjectClassName,
+        subjectMemberName,
+        riskBasis,
+        "low",
+        uncertainty,
+        evidenceIds);
+  }
+
+  private String behaviorSubjectName(String className, String methodName) {
+    if (methodName == null || methodName.isBlank()) {
+      return className;
+    }
+    return className + "#" + methodName;
+  }
+
+  private void appendQuality(StringBuilder json, QualitySignals qualitySignals) {
+    json.append("  \"quality\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", qualitySignals.analysisStatus(), true);
+    appendTestGapSignals(json, qualitySignals.testGapSignals(), true);
+    appendChangeRiskSignals(json, qualitySignals.changeRiskSignals(), false);
+    json.append("  }\n");
+  }
+
+  private void appendTestGapSignals(
+      StringBuilder json,
+      List<TestGapSignal> signals,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"test_gap_signals\": {\n");
+    appendIndentedStringField(
+        json,
+        3,
+        "analysis_status",
+        signals.isEmpty() ? ANALYSIS_NOT_DETECTED : ANALYSIS_ANALYZED,
+        true);
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (signals.isEmpty()) {
+      json.append("]\n");
+      indent(json, 2);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < signals.size(); index++) {
+      appendTestGapSignal(json, signals.get(index), index < signals.size() - 1);
+    }
+    indent(json, 3);
+    json.append("]\n");
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendTestGapSignal(
+      StringBuilder json,
+      TestGapSignal signal,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("{\n");
+    appendQualitySignalCore(json, signal);
+    appendIndentedStringField(json, 5, "inference_basis", signal.inferenceBasis(), true);
+    appendIndentedStringField(json, 5, "confidence", signal.confidence(), true);
+    appendIndentedStringField(json, 5, "uncertainty", signal.uncertainty(), true);
+    appendIndentedStringArrayField(json, 5, "related_test_ids", signal.relatedTestIds(), true);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", signal.evidenceIds(), false);
+    indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendChangeRiskSignals(
+      StringBuilder json,
+      List<ChangeRiskSignal> signals,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"change_risk_signals\": {\n");
+    appendIndentedStringField(
+        json,
+        3,
+        "analysis_status",
+        signals.isEmpty() ? ANALYSIS_NOT_DETECTED : ANALYSIS_ANALYZED,
+        true);
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (signals.isEmpty()) {
+      json.append("]\n");
+      indent(json, 2);
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < signals.size(); index++) {
+      appendChangeRiskSignal(json, signals.get(index), index < signals.size() - 1);
+    }
+    indent(json, 3);
+    json.append("]\n");
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendChangeRiskSignal(
+      StringBuilder json,
+      ChangeRiskSignal signal,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("{\n");
+    appendQualitySignalCore(json, signal);
+    appendIndentedStringField(json, 5, "risk_basis", signal.riskBasis(), true);
+    appendIndentedStringField(json, 5, "confidence", signal.confidence(), true);
+    appendIndentedStringField(json, 5, "uncertainty", signal.uncertainty(), true);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", signal.evidenceIds(), false);
+    indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendQualitySignalCore(StringBuilder json, QualitySignal signal) {
+    appendIndentedStringField(json, 5, "id", signal.id(), true);
+    appendIndentedStringField(json, 5, "module_id", signal.moduleId(), true);
+    appendIndentedStringField(json, 5, "signal", signal.signal(), true);
+    appendIndentedStringField(json, 5, "status", signal.status(), true);
+    appendIndentedStringField(json, 5, "subject_kind", signal.subjectKind(), true);
+    appendIndentedStringField(json, 5, "subject_id", signal.subjectId(), true);
+    appendIndentedStringField(json, 5, "subject_name", signal.subjectName(), true);
+    appendIndentedNullableStringField(
+        json,
+        5,
+        "subject_class_name",
+        signal.subjectClassName(),
+        true);
+    appendIndentedNullableStringField(
+        json,
+        5,
+        "subject_member_name",
+        signal.subjectMemberName(),
+        true);
+  }
+
   private static String endpointId(String moduleId, SpringMvcEndpointFact endpoint) {
     if (ROOT_MODULE_ID.equals(moduleId)) {
       return "endpoint:" + endpoint.controllerClass() + "#" + endpoint.handlerMethod();
@@ -4750,6 +5300,83 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private record GeneratedOutputFile(String fileName, String content) {
+  }
+
+  private interface QualitySignal {
+    String id();
+
+    String moduleId();
+
+    int moduleOrder();
+
+    String signal();
+
+    String status();
+
+    String subjectKind();
+
+    String subjectId();
+
+    String subjectName();
+
+    String subjectClassName();
+
+    String subjectMemberName();
+  }
+
+  private record QualitySignals(
+      String analysisStatus,
+      List<TestGapSignal> testGapSignals,
+      List<ChangeRiskSignal> changeRiskSignals) {
+    private QualitySignals {
+      testGapSignals = List.copyOf(testGapSignals);
+      changeRiskSignals = List.copyOf(changeRiskSignals);
+    }
+  }
+
+  private record TestGapSignal(
+      String id,
+      String moduleId,
+      int moduleOrder,
+      String signal,
+      String status,
+      String subjectKind,
+      String subjectId,
+      String subjectName,
+      String subjectClassName,
+      String subjectMemberName,
+      String inferenceBasis,
+      String confidence,
+      String uncertainty,
+      List<String> relatedTestIds,
+      List<String> evidenceIds) implements QualitySignal {
+    private TestGapSignal {
+      relatedTestIds = List.copyOf(relatedTestIds);
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record ChangeRiskSignal(
+      String id,
+      String moduleId,
+      int moduleOrder,
+      String signal,
+      String status,
+      String subjectKind,
+      String subjectId,
+      String subjectName,
+      String subjectClassName,
+      String subjectMemberName,
+      String riskBasis,
+      String confidence,
+      String uncertainty,
+      List<String> evidenceIds) implements QualitySignal {
+    private ChangeRiskSignal {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record SubjectKey(String moduleId, String className) {
   }
 
   private record EndpointRow(

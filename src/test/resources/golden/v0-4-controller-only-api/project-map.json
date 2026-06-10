@@ -309,5 +309,57 @@
   "tests": {
     "analysis_status": "not_detected",
     "items": []
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.api.InventoryController#createInventory",
+          "module_id": "module:.",
+          "signal": "endpoint_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_mvc_endpoint",
+          "subject_id": "endpoint:com.example.api.InventoryController#createInventory",
+          "subject_name": "com.example.api.InventoryController#createInventory",
+          "subject_class_name": "com.example.api.InventoryController",
+          "subject_member_name": "createInventory",
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
+            "ev:src/main/java/com/example/api/InventoryController.java:11-11:com.example.api.InventoryController#createInventory:@PostMapping",
+            "ev:src/main/java/com/example/api/InventoryController.java:12-12:com.example.api.InventoryController#createInventory:@RequestBody:parameter:0:request"
+          ]
+        },
+        {
+          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.api.InventoryController#getInventory",
+          "module_id": "module:.",
+          "signal": "endpoint_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_mvc_endpoint",
+          "subject_id": "endpoint:com.example.api.InventoryController#getInventory",
+          "subject_name": "com.example.api.InventoryController#getInventory",
+          "subject_class_name": "com.example.api.InventoryController",
+          "subject_member_name": "getInventory",
+          "inference_basis": "bounded_test_inventory_not_available",
+          "confidence": "low",
+          "uncertainty": "supported_test_roots_not_detected",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
+            "ev:src/main/java/com/example/api/InventoryController.java:16-16:com.example.api.InventoryController#getInventory:@GetMapping",
+            "ev:src/main/java/com/example/api/InventoryController.java:17-17:com.example.api.InventoryController#getInventory:@RequestParam:parameter:0:includeDetails"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   }
 }
