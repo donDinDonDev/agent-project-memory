@@ -16,7 +16,7 @@ Evidence may point to:
 - a Maven build file,
 - a Spring configuration file,
 - a test file,
-- a local Markdown document from future document ingestion,
+- a local Markdown document from planned local document ingestion,
 - another explicit source reference.
 
 ## Evidence Types
@@ -38,8 +38,9 @@ Evidence types defined by the model:
 - `path_signal`: a repository-relative file or directory path presence signal. This
   evidence type is emitted for v0.4 generated-source path warnings and is also available
   for other path-only signals that need evidence beyond a source file line.
-- `document`: a local project document such as Markdown. This evidence type is reserved
-  for future document ingestion and is not emitted by the current implementation.
+- `document`: a local project document such as Markdown. This evidence type is used by
+  the planned v0.8 local Markdown/document ingestion contract and is not emitted by the
+  current v0.7 implementation.
 
 ## Evidence Fields
 
@@ -77,8 +78,9 @@ a file path.
 Extracted facts are directly observed in source files or documents.
 
 In the current implementation, extracted facts come from root and child Maven build
-files, supported Java production source roots, and supported Java test roots. Local
-Markdown or document ingestion is future work.
+files, supported Java production source roots, and supported Java test roots. The
+planned v0.8 contract adds local Markdown document inventory, headings, and bounded
+chunk references as document-backed extracted facts after implementation.
 
 Examples:
 
@@ -130,6 +132,10 @@ Examples:
   annotation signals. None of these observations prove test execution, coverage,
   assertion behavior, CI behavior, runtime Spring context behavior, Mockito behavior, or
   slice correctness.
+- Planned v0.8 local Markdown document inventory, heading, and chunk references from the
+  documented default discovery scope. These document facts support document orientation
+  only and do not prove code structure, runtime behavior, API implementation, test
+  coverage, configuration semantics, or source/document agreement.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -198,9 +204,9 @@ The v0.1 implementation emits these evidence records:
 - Hidden HTTP surface warning evidence described in the v0.1 Warning Evidence section
   below.
 
-The analyzer does not emit evidence records for local Markdown/documents, connectors,
-generated guidance, coverage data, test execution results, behavioral assertion
-analysis, or LLM output.
+The current v0.7 analyzer does not emit evidence records for local Markdown/documents,
+connectors, generated guidance, coverage data, test execution results, behavioral
+assertion analysis, or LLM output.
 
 ### v0.2 Maven Module Evidence
 
@@ -912,6 +918,86 @@ Current quality and change-risk evidence:
   `warning_oriented_planning_hint`. They do not prove coverage, assertion behavior,
   test execution, CI status, runtime behavior, call graph reachability, production
   impact, vulnerability, business priority, correctness, or complete subject mapping.
+
+### Planned v0.8 Document Evidence
+
+The planned v0.8 local Markdown/document ingestion contract uses the existing evidence
+field set and the `document` evidence type. It does not add global evidence fields in
+the design state.
+
+Document evidence scope:
+
+- `document` evidence is emitted only for local Markdown files accepted by the
+  documented default discovery policy or by a future explicit include policy that
+  preserves repository-root containment.
+- Evidence paths must be normalized repository-relative paths. They must not be
+  absolute, must not start with `./`, must use slash separators, and must not escape the
+  scanned repository root after normalization.
+- Default document discovery does not follow symlinked Markdown files or symlinked
+  directories. A symlink path is not document evidence unless a future explicit,
+  non-default contract defines safe symlink handling.
+- `.project-memory/`, generated output paths, hidden paths, dependency directories,
+  build outputs, maintainer-only paths, private/internal paths, and secret-like path
+  segments are not default document evidence sources.
+
+Document evidence IDs:
+
+- Document evidence IDs use
+  `ev:<document_path_key>:<line_range_key>:document:<document_symbol_key>`.
+- `<document_path_key>` uses the same percent-encoded repository-relative path key rules
+  as path-backed API-spec evidence.
+- `<line_range_key>` is `<line_start>-<line_end>` when stable line mapping is available
+  and `unknown` when it is not.
+- `<document_symbol_key>` identifies the bounded document observation, such as
+  `file:<filename>`, `heading:<normalized-heading>`, `chunk:<zero-padded-ordinal>`, or
+  `mention:<bounded-token-key>`.
+- If duplicate headings, chunks, or mention observations would otherwise collide, the
+  evidence ID must add a deterministic `decl:<zero-padded-ordinal>` suffix.
+
+Document evidence field semantics:
+
+- `source_type` is `"document"`.
+- `path` is the normalized repository-relative Markdown path.
+- `class_name` and `method_name` are `null`.
+- `symbol_name` identifies the bounded file, heading, chunk, or mention observation. It
+  must not contain full paragraphs or generated summaries.
+- `line_start` and `line_end` point to the file observation, heading line, chunk range,
+  or document-side mention line when stable. They are `null` only when a stable line
+  location is unavailable.
+- `confidence` is `"high"` for direct file, heading, and chunk observations from an
+  accepted local Markdown file. It is `"low"` for document-side observations used only
+  by uncertain reconciliation signals.
+- `excerpt` must be bounded. File evidence may use a path observation such as
+  `markdown file detected: README.md`. Heading evidence may use the normalized heading
+  line. Chunk evidence should identify the chunk boundary or owning heading and should
+  not copy the chunk body. Reconciliation mention evidence may contain the bounded
+  matched token, such as an endpoint-like path or module-like token, but not the
+  surrounding paragraph.
+
+Document evidence does not support code facts:
+
+- Document evidence supports document inventory, heading/chunk navigation, and
+  document-backed reconciliation observations only.
+- Document evidence must not be used as `code_symbol`, `annotation`, `build_file`,
+  `config_file`, `test_file`, `api_spec`, or `path_signal` evidence.
+- A document mention of an endpoint path, module name, entity name, repository name, or
+  test subject does not create a source-backed project fact.
+- Document evidence does not prove runtime behavior, Spring MVC routing, OpenAPI
+  implementation, Maven behavior, configuration values, database schema, ORM behavior,
+  test coverage, CI results, assertion behavior, security correctness, vulnerability,
+  business priority, or source/document agreement.
+
+Document reconciliation evidence:
+
+- Document-only reconciliation signals preserve document evidence for the observed
+  token and keep `confidence: "low"`.
+- Source-only reconciliation signals reuse evidence from the source-backed fact being
+  considered. They do not fabricate absence evidence for missing document mentions.
+- Any reconciliation signal that compares a document observation with a source-backed
+  fact must preserve evidence from both sides when both sides exist.
+- Reconciliation evidence supports uncertain inspection hints only. It must not be
+  treated as stale-document proof, completeness proof, documentation-quality scoring, or
+  implementation truth.
 
 ## Evidence Discipline
 

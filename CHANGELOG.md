@@ -9,6 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added the planned v0.8 local Markdown/document ingestion contract design boundary,
+  including conservative default discovery scope, path and symlink rules, document
+  inventory shape, heading and chunk references, `document` evidence semantics,
+  reconciliation signal taxonomy, guide-rendering expectations, validation boundaries,
+  and explicit non-goals for external docs, generic RAG, LLM-core, and document claims
+  overriding code facts.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.7.0` as published with release

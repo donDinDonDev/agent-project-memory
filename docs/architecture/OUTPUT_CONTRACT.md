@@ -38,6 +38,10 @@ contract. The current v0.7 contract also emits direct Spring test slice and mock
 annotation signals and conservative tested-subject relation/status rows under the
 top-level `tests` inventory, plus conservative test-gap and change-risk planning hints
 under the top-level `quality` object.
+The planned v0.8 local Markdown/document ingestion contract below is a future atomic
+output boundary. The current implementation remains `schema_version: "0.7"` until the
+document discovery, parsing, evidence, reconciliation, guide rendering, tests, and
+goldens are implemented together in a valid v0.8 output state.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2612,6 +2616,261 @@ Current v0.7 deterministic sorting rules:
 - Change-risk signals sort by module order, signal, subject kind, subject name, and
   subject ID.
 
+### v0.8 Local Markdown And Document Ingestion Contract
+
+This section defines the planned v0.8 public output boundary for local Markdown/project
+document ingestion. It is a contract design for a future implementation state, not a
+claim about the current v0.7 analyzer.
+
+The v0.8 local document ingestion contract uses:
+
+- `schema_version: "0.8"` only for an atomic public output state that preserves the v0.7
+  contracts and adds deterministic local Markdown document inventory, document evidence,
+  document structure, conservative code-doc reconciliation signals, and guide rendering.
+- The same four output files under `.project-memory/`.
+- A top-level `documents` object as the owner of local Markdown document inventory,
+  discovered heading/chunk references, applied discovery policy metadata, and
+  document/code reconciliation signals.
+- Existing evidence fields plus the reserved `document` evidence type. v0.8 does not
+  add global evidence fields in this design.
+
+There is no valid partial `schema_version: "0.8"` state where document inventory is
+emitted without matching document evidence semantics, or where reconciliation signals
+are emitted without both output-contract and evidence-contract support.
+
+Planned `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
+
+```json
+{
+  "schema_version": "0.8",
+  "documents": {
+    "analysis_status": "analyzed",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [
+      {
+        "id": "document:README.md",
+        "document_kind": "local_markdown",
+        "format": "markdown",
+        "module_id": null,
+        "path": "README.md",
+        "title": "agent-project-memory",
+        "title_source": "first_heading",
+        "discovery_source": "root_readme",
+        "headings": [
+          {
+            "id": "document_heading:README.md:000001",
+            "level": 1,
+            "title": "agent-project-memory",
+            "anchor": "agent-project-memory",
+            "line_start": 1,
+            "line_end": 1,
+            "chunk_id": "document_chunk:README.md:000001",
+            "evidence_ids": [
+              "ev:README.md:1-1:document:heading:agent-project-memory:decl:000001"
+            ]
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:README.md:000001",
+            "ordinal": 1,
+            "heading_id": "document_heading:README.md:000001",
+            "line_start": 1,
+            "line_end": 42,
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:1-42:document:chunk:000001"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:README.md:1-1:document:file:README.md"
+        ]
+      }
+    ],
+    "reconciliation": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "document_reconciliation:document_only_endpoint_mention:README.md:000001",
+          "signal": "document_only_endpoint_mention",
+          "status": "uncertain_signal",
+          "subject_kind": "endpoint_like_path",
+          "subject_name": "/legacy/orders",
+          "source_fact_kind": null,
+          "source_fact_id": null,
+          "document_id": "document:README.md",
+          "document_chunk_id": "document_chunk:README.md:000001",
+          "match_basis": "bounded_endpoint_like_path_token",
+          "confidence": "low",
+          "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
+          "evidence_ids": [
+            "ev:README.md:32-32:document:mention:%2Flegacy%2Forders:decl:000001"
+          ]
+        }
+      ]
+    }
+  }
+}
+```
+
+Planned v0.8 document discovery rules:
+
+- Default discovery is conservative and local. It includes root `README.md` or
+  `README.markdown`, README files directly under supported Maven module roots, root
+  `docs/**/*.md`, and root `adr/**/*.md` or `adrs/**/*.md`.
+- Runbooks, local notes, private/internal docs, hidden paths, generated outputs,
+  dependency directories, and maintainer-only paths are not included by default. They may
+  be considered later only through an explicit include/exclude design that preserves the
+  repository-root boundary and output safety rules.
+- All emitted document paths are normalized repository-relative paths. They must not be
+  absolute, must not start with `./`, must use slash separators, and must not escape the
+  scanned repository root after normalization.
+- The default symlink policy is `skip_symlinks`. The scanner must not follow symlinked
+  Markdown files or symlinked directories during default document discovery. Any future
+  symlink-following mode must be explicit, non-default, and separately documented.
+- `.project-memory/` and generated output files are excluded so scans do not ingest their
+  own generated memory. `.git/`, hidden path segments, build output directories, and
+  dependency cache directories are excluded by default.
+- Include/exclude policy changes must be compatibility-aware. If user configuration is
+  introduced, the generated output should record the applied policy and still enforce
+  repository-relative path containment.
+
+Planned v0.8 document inventory rules:
+
+- `documents.analysis_status` is `"analyzed"` when local document discovery ran,
+  `"not_detected"` when discovery ran and no default-scope document was found, and
+  `"not_analyzed"` only when document discovery is intentionally disabled by a future
+  explicit mode or configuration.
+- `documents.discovery` records the effective high-level policy used for discovery. It is
+  not evidence and does not prove that excluded files do or do not exist.
+- `documents.items[]` contains document inventory facts only. A document item is not a
+  code fact, API fact, module fact, test fact, configuration fact, or runtime behavior
+  claim.
+- `document.id` is stable within the scan and derived from the normalized
+  repository-relative path using the same percent-encoded ID-key discipline used by
+  existing path-backed facts.
+- `document.document_kind` is `"local_markdown"` for the v0.8 local Markdown slice.
+- `document.format` is `"markdown"` for Markdown files accepted by the v0.8 default
+  discovery policy.
+- `document.module_id` is the owning module ID only when the document is inside a
+  supported module root and can be assigned deterministically. Repository-level docs use
+  `null`.
+- `document.path` is the normalized repository-relative document path.
+- `document.title` is derived from the first supported heading when present, otherwise
+  from the filename. It is document metadata, not a semantic summary.
+- `document.title_source` is `"first_heading"` or `"filename"`.
+- `document.discovery_source` identifies the default-scope reason, such as
+  `"root_readme"`, `"module_readme"`, `"docs_tree"`, `"adr_tree"`, or
+  `"explicit_include"` if a future configuration contract adds explicit includes.
+- `document.headings[]` and `document.chunks[]` contain bounded structure references.
+  They must not serialize full document bodies, paragraphs, arbitrary lists, code
+  blocks, tables, or generated summaries.
+- `document.evidence_ids` references document evidence for the file-level observation.
+
+Planned v0.8 heading and chunk rules:
+
+- Supported headings are deterministic Markdown ATX headings with levels 1 through 6.
+  Future support for Setext headings or other Markdown constructs requires a contract
+  update if output semantics change.
+- Heading IDs are stable and path-scoped. Duplicate heading text is disambiguated with a
+  deterministic document-order ordinal.
+- `heading.title` is the normalized heading text. It must be bounded and Markdown-safe
+  when rendered. It is not a summary of the following section.
+- `heading.anchor` is a deterministic local anchor when it can be computed safely. If a
+  stable anchor cannot be computed, it should be `null` rather than guessed.
+- `heading.line_start` and `heading.line_end` point to the heading line or range when
+  available. They are `null` only when stable line mapping is unavailable.
+- `chunk.id` is stable and path-scoped. Chunks are ordered by document order.
+- `chunk.heading_id` links the chunk to the nearest owning heading when present and is
+  `null` for a no-heading fallback chunk.
+- `chunk.line_start` and `chunk.line_end` bound the chunk range when available.
+- `chunk.content_status` is `"not_serialized"` in the v0.8 design. The project map does
+  not copy chunk text into generated JSON.
+- Chunk sizing must be bounded by deterministic line and byte limits. If a long section
+  must be split, splits use deterministic document-order ordinals and do not depend on
+  semantic summarization.
+
+Planned v0.8 reconciliation signal taxonomy:
+
+- Reconciliation lives under `documents.reconciliation`. It compares bounded document
+  observations against existing generated source-backed facts and remains separate from
+  code-backed project facts.
+- `documents.reconciliation.analysis_status` is `"analyzed"` when bounded
+  reconciliation rules run against at least one default-scope document. It is
+  `"not_detected"` when document discovery ran but no default-scope document or no
+  eligible bounded reconciliation input exists. It is `"not_analyzed"` only when
+  reconciliation is intentionally disabled by a future explicit mode or configuration.
+- Every reconciliation item uses `status: "uncertain_signal"` and `confidence: "low"`
+  unless a later contract defines a stronger evidence-backed relation type.
+- `document_only_endpoint_mention`: a default-scope document contains an endpoint-like
+  path token that does not match any emitted source-visible endpoint fact or declared
+  OpenAPI operation fact under the bounded matching rules.
+- `source_api_without_document_mention`: an emitted source-visible endpoint fact or
+  declared OpenAPI operation fact has no obvious matching mention in default-scope local
+  Markdown under the bounded matching rules.
+- `document_only_module_reference`: a default-scope document contains a module-like path
+  or module-name token that does not match an emitted module fact under the bounded
+  matching rules.
+- `module_without_document_mention`: an emitted module fact has no obvious matching
+  mention in default-scope local Markdown under the bounded matching rules.
+- Source-only missing-document signals are emitted only when at least one default-scope
+  document was accepted for the scan. A scan with no accepted local Markdown documents
+  must not create one source-only reconciliation row per source fact.
+- For document-only signals, `source_fact_kind` and `source_fact_id` are `null`. For
+  source-only signals, `document_id` and `document_chunk_id` are `null`. Signals that
+  compare both sides populate both source and document references when both sides exist.
+- Reconciliation `match_basis` values identify deterministic token rules, such as
+  `"bounded_endpoint_like_path_token"`, `"bounded_source_api_path_token"`,
+  `"bounded_module_path_token"`, or `"bounded_module_name_token"`.
+- Reconciliation `uncertainty` values should explain the boundary, such as
+  `"document_mention_not_matched_to_source_backed_api_fact"`,
+  `"source_api_fact_not_matched_to_default_scope_document"`,
+  `"document_module_reference_not_matched_to_module_fact"`, or
+  `"module_fact_not_matched_to_default_scope_document"`.
+- Document-only signals reference document evidence for the observed token. Source-only
+  signals reference evidence for the source-backed fact being considered. Missing
+  document mentions do not fabricate absence evidence.
+- Reconciliation signals must not be presented as stale-doc truth, completeness checks,
+  coverage, implementation proof, runtime routing proof, documentation-quality scores,
+  business priority, correctness, vulnerability, or production-impact claims.
+
+Planned v0.8 deterministic sorting rules:
+
+- Document items sort by module order, document path, and ID.
+- Headings sort by document order, then level, title, and ID.
+- Chunks sort by document order, then ordinal and ID.
+- Reconciliation signals sort by signal, module order when a source module is available,
+  subject kind, subject name, document path, and ID.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
@@ -2745,6 +3004,11 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   `api_spec_symbol_key` uses the same percent-encoded ID-key rules as v0.4 spec and
   operation fact IDs. Duplicate evidence ID collisions must be resolved with a
   deterministic `decl:<zero-padded-ordinal>` suffix or degraded to warnings.
+- Planned v0.8 local document ingestion adds `document` evidence for default-scope local
+  Markdown file observations, headings, bounded chunk references, and document-side
+  reconciliation observations. Document evidence supports document inventory and
+  document-backed uncertain signals only. It must not be used as code, build, config,
+  test, API-spec, runtime, or generated-output evidence.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
@@ -3102,6 +3366,32 @@ Current v0.7 tests inventory `agent-guide.md` behavior:
   assertion understanding, runtime Spring context reconstruction, runtime
   repository/database verification, Mockito behavior analysis, slice correctness
   analysis, or full call graph reconstruction.
+
+Planned v0.8 local documentation `agent-guide.md` behavior:
+
+- The guide adds a `Local Project Documentation` section generated from structured
+  `documents` facts and resolving `document` evidence only after the v0.8 document
+  ingestion implementation exists.
+- The section summarizes deterministic document inventory, such as document path, module
+  ownership when available, title source, heading count, chunk count, and evidence
+  references. It must not summarize document prose, rewrite document content, or create
+  AI-generated documentation summaries.
+- Heading entries may show bounded heading titles and locations. Chunk entries should be
+  used as navigation references and must not print chunk bodies or long document
+  excerpts.
+- Reconciliation rows render as uncertain inspection hints with signal, status,
+  confidence, uncertainty, subject, document path when applicable, source fact when
+  applicable, and evidence. They must not say that documentation is stale, complete,
+  authoritative, correct, vulnerable, business-critical, or implemented unless a future
+  deterministic contract separately proves that claim.
+- The known-limits section should explicitly state that local documentation is
+  default-scope Markdown only, that hidden/private/generated/maintainer paths are
+  excluded by default, that symlinks are not followed by default, and that external docs,
+  PDFs, Word documents, connectors, generic RAG, repository chat, and LLM summaries are
+  not part of the core analyzer.
+- The practical inspection order may use document paths, headings, chunks, and
+  reconciliation hints as navigation aids. It must still prefer code-backed facts for
+  implementation truth and must not promote document-only mentions to code facts.
 
 Markdown rendering safety:
 

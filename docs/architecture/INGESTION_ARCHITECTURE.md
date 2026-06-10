@@ -1,8 +1,10 @@
 # Ingestion Architecture
 
-The v0.1 product focuses on local repository Java/Spring source files, a root Maven
-build file when present, and standard Maven test roots. Local Markdown/document ingestion
-is not implemented in the current v0.1 slice.
+The current product focuses on local repository Java/Spring source files, Maven build
+files, standard Maven source/test/resource roots, bounded local OpenAPI/Swagger spec
+inputs, and deterministic generated project-memory output. Local Markdown/document
+ingestion is planned for the v0.8 contract but is not implemented in the current v0.7
+analyzer.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 
@@ -36,6 +38,47 @@ They should not:
 - become required for local repository scanning,
 - add network dependencies to the core Java/Spring analyzer.
 
+## v0.8 Local Markdown Ingestion Boundary
+
+The planned v0.8 local document ingestor is a deterministic local Markdown ingestor, not
+a generic document search system and not an AI documentation layer.
+
+Default discovery should be conservative:
+
+- root `README.md` or `README.markdown`;
+- README files directly under supported Maven module roots;
+- root `docs/**/*.md`;
+- root `adr/**/*.md` or `adrs/**/*.md`.
+
+Default discovery should exclude:
+
+- `.project-memory/` generated outputs;
+- `.git/` and hidden path segments;
+- build, generated, dependency, and cache directories such as `target/`, `build/`,
+  `out/`, `dist/`, `node_modules/`, and generated-source-like paths;
+- maintainer-only, private/internal, and secret-like paths such as directories named
+  `maintainer`, `internal`, `private`, or `secrets`;
+- symlinked Markdown files and symlinked directories.
+
+All emitted document paths must be normalized repository-relative paths. The ingestor
+must not emit absolute paths, paths that start with `./`, paths that escape the scanned
+repository root, or paths reached only by following symlinks.
+
+Runbooks, local notes, broad repository-wide `*.md` discovery, hidden/private docs, and
+generated documentation should remain outside the default scope unless a future explicit
+include/exclude contract makes them safe and reviewable.
+
+The v0.8 ingestor should normalize accepted Markdown files into document inventory,
+heading references, bounded chunk references, and `document` evidence records. It should
+not store full document bodies, perform semantic summarization, run embeddings, build a
+vector index, call an LLM, fetch external links, or read external documentation sources.
+
+Code-doc reconciliation should be implemented only as conservative uncertain signals
+derived from bounded deterministic token rules. Document-backed observations must remain
+separate from code-backed facts. When code and documents disagree, generated memory
+should prefer deterministic code facts and label document-side observations as
+document-backed signals.
+
 ## v0.1 Ingestion Scope
 
 v0.1 supports:
@@ -60,3 +103,8 @@ Future document ingestors may provide evidence, but document evidence must be id
 as `document` evidence and kept separate from code evidence.
 
 When code and documents disagree, generated memory should prefer deterministic code facts and mark document-only claims as document-backed, not code-backed.
+
+The planned v0.8 local Markdown ingestor follows that rule by emitting document evidence
+for file, heading, chunk, and bounded mention observations only. Document evidence should
+not become evidence for Java symbols, Spring annotations, build metadata, config values,
+tests, OpenAPI implementation, runtime behavior, or source/document agreement.
