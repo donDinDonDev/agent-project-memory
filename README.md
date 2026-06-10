@@ -249,8 +249,8 @@ and risk-based review/compliance gates. It includes bounded v0.6 entity field an
 metadata, embedded and identifier model signals, relationship metadata deepening,
 conservative repository/entity inferred relations, safe JPA wildcard import support,
 quieter no-domain guide rendering, and `schema_version: "0.6"`.
-The v0.7 tests, quality, and change-risk release candidate is prepared for maintainer
-approval after implementation, regression coverage, real-project evaluation,
+The v0.7 tests, quality, and change-risk release is published with packaged jar and
+checksum assets after implementation, regression coverage, real-project evaluation,
 release-prep validation, and a read-only security/contract audit. It moves normal
 generated output to `schema_version: "0.7"` with bounded source-visible test method,
 framework, Spring test slice, mock annotation, tested-subject relation/status, and

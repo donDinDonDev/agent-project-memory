@@ -23,9 +23,9 @@ repository/entity relations from supported source-visible Spring Data repository
 types only when exactly one emitted entity fact matches, supports safe JPA-only wildcard
 imports for the existing supported JPA annotation set, and omits noisy no-domain guide
 sections.
-The v0.7 tests, quality, and change-risk release candidate is prepared for maintainer
-approval. Generated output uses `schema_version: "0.7"`, test facts carry stable IDs
-and `module_id`, direct JUnit/Spring Test framework signals include a source-visible
+The v0.7 tests, quality, and change-risk release is published with packaged jar and
+checksum assets. Generated output uses `schema_version: "0.7"`, test facts carry stable
+IDs and `module_id`, direct JUnit/Spring Test framework signals include a source-visible
 `signal_kind`, and supported JUnit Jupiter/JUnit 4 test method annotations are emitted
 as method inventory with evidence. Direct source-visible Spring test slice annotations
 and conservative mock annotation signals are emitted under module-owned test facts
@@ -37,8 +37,7 @@ emitted under the top-level `quality` object from existing deterministic facts a
 inferred tested-subject relations, without coverage, execution, assertion, CI, runtime,
 correctness, vulnerability, production-impact, or business-priority claims. Real-project
 evaluation for the current v0.7 slices and the read-only security/contract audit are
-complete with no release-blocking findings. Tag, publication, artifact upload, and
-checksum publication remain manual release actions.
+complete with no release-blocking findings.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -356,8 +355,7 @@ Implementation sequence:
 - Guide rendering, fixtures, and goldens for the current test inventory refinement
   and quality/change-risk planning-hint slices. (implemented for the current slices)
 - Real-project evaluation for the current slices. (complete)
-- Release readiness. (complete for release-prep; awaiting maintainer tag/publish
-  approval)
+- Release readiness and publication. (complete)
 
 Release readiness notes:
 
@@ -368,8 +366,8 @@ Release readiness notes:
 - Release notes exist in [V0_7_RELEASE_NOTES.md](V0_7_RELEASE_NOTES.md).
 - Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
   `git diff --check`.
-- Tag, GitHub release, artifact upload, and checksum publication are not performed in
-  this release-prep state.
+- The `v0.7.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 ## v0.8.0: Local Markdown And Document Ingestion
 
