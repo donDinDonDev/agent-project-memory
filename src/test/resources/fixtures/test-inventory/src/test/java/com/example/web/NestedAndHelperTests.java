@@ -1,5 +1,6 @@
 package com.example.web;
 
+import com.example.subject.ImportedSubject;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.TestConfiguration;

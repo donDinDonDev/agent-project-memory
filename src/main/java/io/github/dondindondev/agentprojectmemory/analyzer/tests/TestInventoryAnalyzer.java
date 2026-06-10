@@ -8,6 +8,9 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.body.VariableDeclarator;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.ClassExpr;
+import com.github.javaparser.ast.type.ClassOrInterfaceType;
+import com.github.javaparser.ast.type.Type;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
@@ -37,6 +40,16 @@ public final class TestInventoryAnalyzer {
   private static final String MEDIUM_CONFIDENCE = "medium";
   private static final String LOW_CONFIDENCE = "low";
   private static final String SUPPORT_TYPE_INFERRED = "inferred";
+  private static final String RELATION_STATUS_INFERRED = "inferred";
+  private static final String RELATION_STATUS_NOT_DETECTED = "not_detected";
+  private static final String RELATION_STATUS_AMBIGUOUS = "ambiguous";
+  private static final String RELATION_STATUS_UNSUPPORTED = "unsupported";
+  private static final String RELATION_TYPE_NAMING_CONVENTION = "naming_convention";
+  private static final String RELATION_TYPE_TEST_IMPORT = "test_import";
+  private static final String RELATION_TYPE_TEST_FIELD_TYPE = "test_field_type";
+  private static final String RELATION_TYPE_SPRING_SLICE_CLASS_LITERAL =
+      "spring_test_slice_class_literal";
+  private static final String RELATION_TYPE_NOT_DETECTED = "not_detected";
   private static final String SIGNAL_KIND_FRAMEWORK = "framework";
   private static final String SIGNAL_KIND_SPRING_TEST_SLICE = "spring_test_slice";
   private static final String SIGNAL_KIND_MOCK_ANNOTATION = "mock_annotation";
@@ -44,7 +57,31 @@ public final class TestInventoryAnalyzer {
   private static final String TARGET_KIND_TYPE = "type";
   private static final String TARGET_KIND_FIELD = "field";
   private static final String AMBIGUOUS_SUBJECT_NAME = "ambiguous_subject_name";
+  private static final String NO_MATCHING_PRODUCTION_CLASS = "no_matching_production_class";
+  private static final String UNSUPPORTED_SUBJECT_REFERENCE = "unsupported_subject_reference";
+  private static final String NO_SUPPORTED_SUBJECT_SIGNAL = "no_supported_subject_signal";
   private static final List<String> TEST_SUFFIXES = List.of("Test", "Tests", "IT");
+  private static final Set<String> JAVA_LANG_SIMPLE_TYPES = Set.of(
+      "Boolean",
+      "Byte",
+      "Character",
+      "CharSequence",
+      "Class",
+      "Double",
+      "Enum",
+      "Exception",
+      "Float",
+      "Integer",
+      "Long",
+      "Number",
+      "Object",
+      "RuntimeException",
+      "Short",
+      "String",
+      "StringBuilder",
+      "StringBuffer",
+      "Throwable",
+      "Void");
   private static final Map<String, Set<String>> JUNIT_TEST_METHOD_ANNOTATION_ORIGINS = Map.ofEntries(
       Map.entry("Test", Set.of("org.junit.jupiter.api.Test", "org.junit.Test")),
       Map.entry("ParameterizedTest", Set.of("org.junit.jupiter.params.ParameterizedTest")),
@@ -97,8 +134,11 @@ public final class TestInventoryAnalyzer {
   private static final Comparator<TestFrameworkSignalFact> FRAMEWORK_SIGNAL_ORDER = Comparator
       .comparing(TestFrameworkSignalFact::name);
   private static final Comparator<TestedSubjectFact> TESTED_SUBJECT_ORDER = Comparator
-      .comparing(TestedSubjectFact::className)
-      .thenComparing(TestedSubjectFact::supportType)
+      .comparing(TestedSubjectFact::relationStatus)
+      .thenComparing(TestedSubjectFact::relationType)
+      .thenComparing(subject -> subject.className() == null ? "" : subject.className())
+      .thenComparing(subject -> subject.candidateReference() == null ? "" : subject.candidateReference())
+      .thenComparing(subject -> subject.supportType() == null ? "" : subject.supportType())
       .thenComparing(TestedSubjectFact::confidence)
       .thenComparing(subject -> subject.uncertainty() == null ? "" : subject.uncertainty());
 
@@ -120,7 +160,7 @@ public final class TestInventoryAnalyzer {
       return new TestInventoryAnalysis(NOT_DETECTED, List.of(), List.of());
     }
 
-    Map<String, List<ProductionClass>> productionClassesBySimpleName = productionClassesBySimpleName(
+    ProductionClassIndex productionClassIndex = productionClassIndex(
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         productionSourceRoots);
@@ -137,7 +177,7 @@ public final class TestInventoryAnalyzer {
         analyzeTestFile(
             normalizedRepositoryRoot,
             javaFile,
-            productionClassesBySimpleName,
+            productionClassIndex,
             sourceDeclaredTypeNames,
             tests,
             evidence);
@@ -153,7 +193,7 @@ public final class TestInventoryAnalyzer {
   private void analyzeTestFile(
       Path repositoryRoot,
       Path javaFile,
-      Map<String, List<ProductionClass>> productionClassesBySimpleName,
+      ProductionClassIndex productionClassIndex,
       Set<String> sourceDeclaredTypeNames,
       List<TestClassFact> tests,
       Map<String, TestInventoryEvidence> evidence) throws IOException {
@@ -188,11 +228,12 @@ public final class TestInventoryAnalyzer {
           sourceDeclaredTypeNames,
           sourceLines,
           evidence);
+      boolean nestedClass = isNestedClass(type);
       List<FrameworkEvidence> frameworkEvidence = frameworkEvidence(
           sourcePath,
           className,
           type,
-          !isNestedClass(type),
+          !nestedClass,
           importsBySimpleName,
           sourceDeclaredTypeNames,
           sourceLines);
@@ -215,9 +256,18 @@ public final class TestInventoryAnalyzer {
           evidence);
 
       List<TestedSubjectFact> testedSubjects = testedSubjects(
+          sourcePath,
+          packageName,
+          className,
           type.getNameAsString(),
+          type,
+          importsBySimpleName,
+          singleTypeImportsBySimpleName,
+          !nestedClass,
+          sourceDeclaredTypeNames,
           classEvidence,
-          productionClassesBySimpleName,
+          productionClassIndex,
+          sourceLines,
           evidence);
 
       tests.add(new TestClassFact(
@@ -778,34 +828,447 @@ public final class TestInventoryAnalyzer {
   }
 
   private List<TestedSubjectFact> testedSubjects(
+      String sourcePath,
+      String packageName,
+      String className,
       String testSimpleName,
+      ClassOrInterfaceDeclaration type,
+      Map<String, ImportDeclaration> importsBySimpleName,
+      Map<String, String> singleTypeImportsBySimpleName,
+      boolean includeImportSubjectReferences,
+      Set<String> sourceDeclaredTypeNames,
       TestInventoryEvidence testClassEvidence,
-      Map<String, List<ProductionClass>> productionClassesBySimpleName,
+      ProductionClassIndex productionClassIndex,
+      List<String> sourceLines,
       Map<String, TestInventoryEvidence> evidence) {
+    Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects = new LinkedHashMap<>();
     Optional<String> subjectSimpleName = subjectSimpleName(testSimpleName);
-    if (subjectSimpleName.isEmpty()) {
-      return List.of();
+    subjectSimpleName.ifPresent(candidate -> addSubjectReference(
+        testedSubjects,
+        RELATION_TYPE_NAMING_CONVENTION,
+        candidate,
+        List.of(testClassEvidence.id()),
+        productionClassIndex,
+        evidence));
+
+    if (includeImportSubjectReferences) {
+      addImportSubjectReferences(
+          sourcePath,
+          className,
+          importsBySimpleName,
+          productionClassIndex,
+          sourceLines,
+          testedSubjects,
+          evidence);
+    }
+    addFieldTypeSubjectReferences(
+        sourcePath,
+        packageName,
+        className,
+        type,
+        singleTypeImportsBySimpleName,
+        productionClassIndex,
+        sourceLines,
+        testedSubjects,
+        evidence);
+    addSpringSliceClassLiteralSubjectReferences(
+        sourcePath,
+        packageName,
+        className,
+        type,
+        singleTypeImportsBySimpleName,
+        sourceDeclaredTypeNames,
+        productionClassIndex,
+        sourceLines,
+        testedSubjects,
+        evidence);
+
+    if (testedSubjects.isEmpty()) {
+      addStatusOnlySubject(
+          testedSubjects,
+          RELATION_STATUS_NOT_DETECTED,
+          RELATION_TYPE_NOT_DETECTED,
+          null,
+          LOW_CONFIDENCE,
+          NO_SUPPORTED_SUBJECT_SIGNAL,
+          List.of(testClassEvidence.id()));
     }
 
-    List<ProductionClass> candidates = productionClassesBySimpleName.getOrDefault(
-        subjectSimpleName.orElseThrow(),
-        List.of());
+    return testedSubjects.values().stream()
+        .map(TestedSubjectAccumulator::toFact)
+        .sorted(TESTED_SUBJECT_ORDER)
+        .toList();
+  }
+
+  private void addImportSubjectReferences(
+      String sourcePath,
+      String className,
+      Map<String, ImportDeclaration> importsBySimpleName,
+      ProductionClassIndex productionClassIndex,
+      List<String> sourceLines,
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      Map<String, TestInventoryEvidence> evidence) {
+    Set<String> seenImports = new LinkedHashSet<>();
+    for (ImportDeclaration importDeclaration : importsBySimpleName.values()) {
+      if (importDeclaration.isStatic() || importDeclaration.isAsterisk()) {
+        continue;
+      }
+      String importName = importDeclaration.getNameAsString();
+      if (!seenImports.add(importName)
+          || !productionClassIndex.byClassName().containsKey(importName)) {
+        continue;
+      }
+
+      TestInventoryEvidence importEvidence = importEvidence(
+          sourcePath,
+          className,
+          importDeclaration,
+          sourceLines);
+      evidence.putIfAbsent(importEvidence.id(), importEvidence);
+      addSubjectReference(
+          testedSubjects,
+          RELATION_TYPE_TEST_IMPORT,
+          importName,
+          List.of(importEvidence.id()),
+          productionClassIndex,
+          evidence);
+    }
+  }
+
+  private void addFieldTypeSubjectReferences(
+      String sourcePath,
+      String packageName,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      ProductionClassIndex productionClassIndex,
+      List<String> sourceLines,
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      Map<String, TestInventoryEvidence> evidence) {
+    for (FieldDeclaration field : type.getFields()) {
+      for (VariableDeclarator variable : field.getVariables()) {
+        TestInventoryEvidence fieldTypeEvidence = fieldTypeEvidence(
+            sourcePath,
+            className,
+            variable,
+            sourceLines);
+        SubjectReference fieldReference = subjectReference(
+            packageName,
+            singleTypeImportsBySimpleName,
+            variable.getType(),
+            productionClassIndex,
+            true);
+        if (fieldReference.status().equals(SubjectReferenceStatus.NOT_CANDIDATE)) {
+          continue;
+        }
+
+        evidence.putIfAbsent(fieldTypeEvidence.id(), fieldTypeEvidence);
+        if (fieldReference.status().equals(SubjectReferenceStatus.UNSUPPORTED)) {
+          addStatusOnlySubject(
+              testedSubjects,
+              RELATION_STATUS_UNSUPPORTED,
+              RELATION_TYPE_TEST_FIELD_TYPE,
+              fieldReference.referenceName(),
+              LOW_CONFIDENCE,
+              UNSUPPORTED_SUBJECT_REFERENCE,
+              List.of(fieldTypeEvidence.id()));
+          continue;
+        }
+
+        addSubjectReference(
+            testedSubjects,
+            RELATION_TYPE_TEST_FIELD_TYPE,
+            fieldReference.referenceName(),
+            List.of(fieldTypeEvidence.id()),
+            productionClassIndex,
+            evidence);
+      }
+    }
+  }
+
+  private void addSpringSliceClassLiteralSubjectReferences(
+      String sourcePath,
+      String packageName,
+      String className,
+      ClassOrInterfaceDeclaration type,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Set<String> sourceDeclaredTypeNames,
+      ProductionClassIndex productionClassIndex,
+      List<String> sourceLines,
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      Map<String, TestInventoryEvidence> evidence) {
+    for (AnnotationExpr annotation : type.getAnnotations()) {
+      Optional<String> supportedSimpleName = JavaSourceOrigins.supportedTypeSimpleName(
+          annotation.getNameAsString(),
+          singleTypeImportsBySimpleName,
+          SPRING_TEST_SLICE_ANNOTATION_ORIGINS,
+          sourceDeclaredTypeNames);
+      if (supportedSimpleName.isEmpty()) {
+        continue;
+      }
+
+      List<ClassExpr> classExpressions = annotation.findAll(ClassExpr.class);
+      if (classExpressions.isEmpty()) {
+        continue;
+      }
+
+      TestInventoryEvidence annotationEvidence = annotationEvidence(
+          sourcePath,
+          className,
+          null,
+          annotation,
+          sourceLines);
+      evidence.putIfAbsent(annotationEvidence.id(), annotationEvidence);
+      for (ClassExpr classExpression : classExpressions) {
+        SubjectReference classLiteralReference = subjectReference(
+            packageName,
+            singleTypeImportsBySimpleName,
+            classExpression.getType(),
+            productionClassIndex,
+            true);
+        if (classLiteralReference.status().equals(SubjectReferenceStatus.NOT_CANDIDATE)) {
+          continue;
+        }
+        if (classLiteralReference.status().equals(SubjectReferenceStatus.UNSUPPORTED)) {
+          addStatusOnlySubject(
+              testedSubjects,
+              RELATION_STATUS_UNSUPPORTED,
+              RELATION_TYPE_SPRING_SLICE_CLASS_LITERAL,
+              classLiteralReference.referenceName(),
+              LOW_CONFIDENCE,
+              UNSUPPORTED_SUBJECT_REFERENCE,
+              List.of(annotationEvidence.id()));
+          continue;
+        }
+
+        addSubjectReference(
+            testedSubjects,
+            RELATION_TYPE_SPRING_SLICE_CLASS_LITERAL,
+            classLiteralReference.referenceName(),
+            List.of(annotationEvidence.id()),
+            productionClassIndex,
+            evidence);
+      }
+    }
+  }
+
+  private SubjectReference subjectReference(
+      String packageName,
+      Map<String, String> singleTypeImportsBySimpleName,
+      Type type,
+      ProductionClassIndex productionClassIndex,
+      boolean allowSamePackageNoMatch) {
+    if (type.isArrayType()) {
+      Type componentType = type.asArrayType().getComponentType();
+      if (containsPotentialProductionReference(componentType, productionClassIndex)) {
+        return new SubjectReference(
+            SubjectReferenceStatus.UNSUPPORTED,
+            type.toString());
+      }
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+    if (!type.isClassOrInterfaceType()) {
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+
+    ClassOrInterfaceType classType = type.asClassOrInterfaceType();
+    if (classType.getTypeArguments().isPresent()
+        && !classType.getTypeArguments().orElseThrow().isEmpty()) {
+      if (containsPotentialProductionReference(type, productionClassIndex)) {
+        return new SubjectReference(
+            SubjectReferenceStatus.UNSUPPORTED,
+            type.toString());
+      }
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+
+    String referenceName = classType.getNameWithScope();
+    String simpleName = JavaSourceOrigins.simpleName(referenceName);
+    if (!isPotentialSubjectSimpleName(simpleName)) {
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+    if (referenceName.contains(".")) {
+      if (productionClassIndex.byClassName().containsKey(referenceName)) {
+        return new SubjectReference(SubjectReferenceStatus.SUPPORTED, referenceName);
+      }
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+
+    String importedQualifiedName = singleTypeImportsBySimpleName.get(simpleName);
+    if (importedQualifiedName != null) {
+      if (productionClassIndex.byClassName().containsKey(importedQualifiedName)) {
+        return new SubjectReference(SubjectReferenceStatus.SUPPORTED, importedQualifiedName);
+      }
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+
+    if (!allowSamePackageNoMatch) {
+      return new SubjectReference(SubjectReferenceStatus.NOT_CANDIDATE, null);
+    }
+    return new SubjectReference(
+        SubjectReferenceStatus.SUPPORTED,
+        packageName.isBlank() ? simpleName : packageName + "." + simpleName);
+  }
+
+  private boolean containsPotentialProductionReference(
+      Type type,
+      ProductionClassIndex productionClassIndex) {
+    if (type.isArrayType()) {
+      return containsPotentialProductionReference(
+          type.asArrayType().getComponentType(),
+          productionClassIndex);
+    }
+    if (!type.isClassOrInterfaceType()) {
+      return false;
+    }
+
+    ClassOrInterfaceType classType = type.asClassOrInterfaceType();
+    String referenceName = classType.getNameWithScope();
+    String simpleName = JavaSourceOrigins.simpleName(referenceName);
+    if (isPotentialSubjectSimpleName(simpleName)
+        && productionClassIndex.bySimpleName().containsKey(simpleName)) {
+      return true;
+    }
+    return classType.getTypeArguments()
+        .map(arguments -> arguments.stream()
+            .anyMatch(argument -> containsPotentialProductionReference(argument, productionClassIndex)))
+        .orElse(false);
+  }
+
+  private boolean isPotentialSubjectSimpleName(String simpleName) {
+    return !simpleName.isBlank()
+        && Character.isUpperCase(simpleName.charAt(0))
+        && !JAVA_LANG_SIMPLE_TYPES.contains(simpleName);
+  }
+
+  private void addSubjectReference(
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      String relationType,
+      String candidateReference,
+      List<String> sourceEvidenceIds,
+      ProductionClassIndex productionClassIndex,
+      Map<String, TestInventoryEvidence> evidence) {
+    List<ProductionClass> candidates = candidateReference.contains(".")
+        ? productionClassIndex.byClassName().getOrDefault(candidateReference, List.of())
+        : productionClassIndex.bySimpleName().getOrDefault(candidateReference, List.of());
     if (candidates.isEmpty()) {
-      return List.of();
+      addStatusOnlySubject(
+          testedSubjects,
+          RELATION_STATUS_NOT_DETECTED,
+          relationType,
+          candidateReference,
+          LOW_CONFIDENCE,
+          NO_MATCHING_PRODUCTION_CLASS,
+          sourceEvidenceIds);
+      return;
     }
 
     boolean ambiguous = candidates.size() > 1;
-    List<TestedSubjectFact> testedSubjects = new ArrayList<>();
     for (ProductionClass candidate : candidates) {
       evidence.putIfAbsent(candidate.evidence().id(), candidate.evidence());
-      testedSubjects.add(new TestedSubjectFact(
+      List<String> relationEvidenceIds = new ArrayList<>(sourceEvidenceIds);
+      relationEvidenceIds.add(candidate.evidence().id());
+      addSubject(
+          testedSubjects,
+          ambiguous ? RELATION_STATUS_AMBIGUOUS : RELATION_STATUS_INFERRED,
+          relationType,
           candidate.className(),
+          null,
+          null,
           SUPPORT_TYPE_INFERRED,
           ambiguous ? LOW_CONFIDENCE : MEDIUM_CONFIDENCE,
           ambiguous ? AMBIGUOUS_SUBJECT_NAME : null,
-          List.of(testClassEvidence.id(), candidate.evidence().id())));
+          relationEvidenceIds);
     }
-    return testedSubjects.stream().sorted(TESTED_SUBJECT_ORDER).toList();
+  }
+
+  private void addStatusOnlySubject(
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      String relationStatus,
+      String relationType,
+      String candidateReference,
+      String confidence,
+      String uncertainty,
+      List<String> evidenceIds) {
+    addSubject(
+        testedSubjects,
+        relationStatus,
+        relationType,
+        null,
+        null,
+        candidateReference,
+        null,
+        confidence,
+        uncertainty,
+        evidenceIds);
+  }
+
+  private void addSubject(
+      Map<TestedSubjectKey, TestedSubjectAccumulator> testedSubjects,
+      String relationStatus,
+      String relationType,
+      String className,
+      String targetModuleId,
+      String candidateReference,
+      String supportType,
+      String confidence,
+      String uncertainty,
+      List<String> evidenceIds) {
+    TestedSubjectKey key = new TestedSubjectKey(
+        relationStatus,
+        relationType,
+        className,
+        targetModuleId,
+        candidateReference,
+        supportType,
+        confidence,
+        uncertainty);
+    testedSubjects
+        .computeIfAbsent(
+            key,
+            ignored -> new TestedSubjectAccumulator(
+                relationStatus,
+                relationType,
+                className,
+                targetModuleId,
+                candidateReference,
+                supportType,
+                confidence,
+                uncertainty))
+        .addEvidenceIds(evidenceIds);
+  }
+
+  private TestInventoryEvidence fieldTypeEvidence(
+      String sourcePath,
+      String className,
+      VariableDeclarator variable,
+      List<String> sourceLines) {
+    Type type = variable.getType();
+    Integer lineStart = type.getRange()
+        .or(() -> variable.getRange())
+        .map(range -> range.begin.line)
+        .orElse(null);
+    Integer lineEnd = type.getRange()
+        .or(() -> variable.getRange())
+        .map(range -> range.end.line)
+        .orElse(null);
+    String symbolName = type.toString();
+    return new TestInventoryEvidence(
+        evidenceId(
+            sourcePath,
+            className + ":field:" + variable.getNameAsString(),
+            "type:" + symbolName,
+            lineStart,
+            lineEnd),
+        CODE_SYMBOL_SOURCE_TYPE,
+        sourcePath,
+        className,
+        null,
+        symbolName,
+        lineStart,
+        lineEnd,
+        singleLineExcerpt(variable, sourceLines, lineStart),
+        HIGH_CONFIDENCE);
   }
 
   private Optional<String> subjectSimpleName(String testSimpleName) {
@@ -817,11 +1280,12 @@ public final class TestInventoryAnalyzer {
     return Optional.empty();
   }
 
-  private Map<String, List<ProductionClass>> productionClassesBySimpleName(
+  private ProductionClassIndex productionClassIndex(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       List<Path> productionSourceRoots) throws IOException {
     Map<String, List<ProductionClass>> classesBySimpleName = new LinkedHashMap<>();
+    Map<String, List<ProductionClass>> classesByClassName = new LinkedHashMap<>();
     for (Path sourceRoot : existingRoots(
         repositoryRoot,
         canonicalRepositoryRoot,
@@ -831,6 +1295,9 @@ public final class TestInventoryAnalyzer {
           classesBySimpleName
               .computeIfAbsent(productionClass.simpleName(), ignored -> new ArrayList<>())
               .add(productionClass);
+          classesByClassName
+              .computeIfAbsent(productionClass.className(), ignored -> new ArrayList<>())
+              .add(productionClass);
         }
       }
     }
@@ -838,7 +1305,10 @@ public final class TestInventoryAnalyzer {
     classesBySimpleName.replaceAll((ignored, productionClasses) -> productionClasses.stream()
         .sorted(Comparator.comparing(ProductionClass::className))
         .toList());
-    return classesBySimpleName;
+    classesByClassName.replaceAll((ignored, productionClasses) -> productionClasses.stream()
+        .sorted(Comparator.comparing(ProductionClass::className))
+        .toList());
+    return new ProductionClassIndex(classesBySimpleName, classesByClassName);
   }
 
   private Set<String> sourceDeclaredTypeNames(
@@ -1008,6 +1478,79 @@ public final class TestInventoryAnalyzer {
   }
 
   private record FrameworkEvidence(String frameworkName, TestInventoryEvidence evidence) {
+  }
+
+  private record SubjectReference(SubjectReferenceStatus status, String referenceName) {
+  }
+
+  private enum SubjectReferenceStatus {
+    SUPPORTED,
+    UNSUPPORTED,
+    NOT_CANDIDATE
+  }
+
+  private record TestedSubjectKey(
+      String relationStatus,
+      String relationType,
+      String className,
+      String targetModuleId,
+      String candidateReference,
+      String supportType,
+      String confidence,
+      String uncertainty) {
+  }
+
+  private static final class TestedSubjectAccumulator {
+    private final String relationStatus;
+    private final String relationType;
+    private final String className;
+    private final String targetModuleId;
+    private final String candidateReference;
+    private final String supportType;
+    private final String confidence;
+    private final String uncertainty;
+    private final LinkedHashSet<String> evidenceIds = new LinkedHashSet<>();
+
+    private TestedSubjectAccumulator(
+        String relationStatus,
+        String relationType,
+        String className,
+        String targetModuleId,
+        String candidateReference,
+        String supportType,
+        String confidence,
+        String uncertainty) {
+      this.relationStatus = relationStatus;
+      this.relationType = relationType;
+      this.className = className;
+      this.targetModuleId = targetModuleId;
+      this.candidateReference = candidateReference;
+      this.supportType = supportType;
+      this.confidence = confidence;
+      this.uncertainty = uncertainty;
+    }
+
+    private void addEvidenceIds(List<String> evidenceIds) {
+      this.evidenceIds.addAll(evidenceIds);
+    }
+
+    private TestedSubjectFact toFact() {
+      return new TestedSubjectFact(
+          relationStatus,
+          relationType,
+          className,
+          targetModuleId,
+          candidateReference,
+          supportType,
+          confidence,
+          uncertainty,
+          List.copyOf(evidenceIds));
+    }
+  }
+
+  private record ProductionClassIndex(
+      Map<String, List<ProductionClass>> bySimpleName,
+      Map<String, List<ProductionClass>> byClassName) {
   }
 
   private record ProductionClass(

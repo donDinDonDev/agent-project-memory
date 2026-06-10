@@ -1474,8 +1474,11 @@
         ],
         "tested_subjects": [
           {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
             "class_name": "com.example.alpha.AlphaController",
             "target_module_id": "module:services/alpha",
+            "candidate_reference": null,
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,
@@ -1519,8 +1522,11 @@
         ],
         "tested_subjects": [
           {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
             "class_name": "com.example.zeta.ZetaController",
             "target_module_id": "module:services/zeta",
+            "candidate_reference": null,
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,

@@ -711,13 +711,13 @@ Examples:
   likely repository signal, not a direct runtime repository fact.
 
 Inferred relations must be marked as inferred and must preserve the evidence that led to the relation.
-The v0.1 tests inventory uses only naming-convention inferred relations for
-`tested_subjects`; it does not use call graphs, assertions, runtime execution, or coverage
-data.
-A future v0.7 tests contract may also infer tested-subject relations from bounded
-source-visible Spring test slice class literals when the test-side annotation and the
-production-side source fact can both be evidenced. Such relations remain tested-subject
-orientation hints, not coverage or runtime execution evidence.
+The v0.1 tests inventory used only naming-convention inferred relations for
+`tested_subjects`; it did not use call graphs, assertions, runtime execution, or
+coverage data. Current v0.7 tested-subject rows may also use bounded source-visible
+imports, field types, and Spring test slice class literals when the test-side
+observation and production-side source fact can both be evidenced. Such rows remain
+tested-subject orientation hints or explicit statuses, not coverage or runtime execution
+evidence.
 
 ### Uncertain Signals
 
@@ -869,13 +869,20 @@ Current tested-subject relation evidence:
 
 - Naming-convention tested-subject relations continue to preserve evidence for the test
   class declaration and the candidate production class declaration.
-- Spring test slice class-literal tested-subject relations remain future work. When
-  implemented, they must preserve evidence for the test-side slice annotation and the
-  production-side source fact that matched the class literal.
+- Import-based tested-subject relations preserve `code_symbol` evidence for the
+  explicit non-static single-type production import and the matched production class
+  declaration.
+- Field-type tested-subject relations preserve `code_symbol` evidence for the direct
+  test field type observation and the matched production class declaration.
+- Spring test slice class-literal tested-subject relations preserve evidence for the
+  test-side slice annotation and the production-side source fact that matched the class
+  literal.
 - Ambiguous, unsupported, unresolved, generated-source-only, classpath-only, or
-  otherwise non-source-visible target shapes must use explicit relation statuses or
-  uncertainty instead of an inferred relation object when expanded relation-status output
-  is implemented.
+  otherwise non-source-visible target shapes use explicit relation statuses or
+  uncertainty instead of being presented as unique inferred relations.
+- Status-only tested-subject rows such as no matching production class, unsupported
+  field type, or no supported subject signal preserve the source-side evidence that led
+  to the status. They do not fabricate absence evidence for missing source facts.
 - Tested-subject relation evidence does not prove coverage, assertion behavior, runtime
   calls, dependency injection, request routing, repository behavior, database access, or
   CI execution.

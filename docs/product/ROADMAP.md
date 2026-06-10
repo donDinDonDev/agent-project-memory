@@ -30,8 +30,10 @@ source-visible `signal_kind`, and supported JUnit Jupiter/JUnit 4 test method
 annotations are emitted as method inventory with evidence. Direct source-visible Spring
 test slice annotations and conservative mock annotation signals are now emitted under
 module-owned test facts without runtime Spring context, Mockito behavior, or slice
-correctness claims. Expanded tested-subject relation statuses and test-gap/change-risk
-planning hints remain planned future v0.7 work.
+correctness claims. Conservative tested-subject relation/status rows are now emitted
+from supported naming, exact production imports, direct field types, and direct Spring
+test slice class literals where deterministic. Test-gap/change-risk planning hints
+remain planned future v0.7 work.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -319,10 +321,11 @@ Planned contract boundary:
   (implemented for the current slice)
 - Conservative tested-subject inference from supported naming conventions and bounded
   source-visible Spring test slice class literals when they can be matched to emitted
-  production facts. (naming-convention inference exists; slice-literal expansion is
-  planned)
+  production facts, plus bounded exact production imports and direct field types.
+  (implemented for the current relation/status slice)
 - Explicit tested-subject relation statuses such as inferred, not detected, ambiguous,
-  unsupported, and not analyzed. (planned expansion)
+  unsupported, and not analyzed. (implemented for the current relation/status slice;
+  `not_analyzed` remains a reserved compatibility value)
 - Test-gap signals emitted only as inferred or uncertain planning hints when no supported
   tested-subject relation is inferred for selected source-visible change surfaces.
   (planned)
@@ -342,7 +345,8 @@ Implementation sequence:
   slice)
 - Spring test slice and mock annotation signal extraction. (implemented for the current
   slice)
-- Conservative tested-subject relation status support. (planned)
+- Conservative tested-subject relation status support. (implemented for the current
+  slice)
 - Test-gap and change-risk planning hints. (planned)
 - Guide rendering, fixtures, and goldens for the current test inventory refinement
   slice. (implemented for the current slice)

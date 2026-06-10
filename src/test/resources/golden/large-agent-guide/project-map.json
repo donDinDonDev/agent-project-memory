@@ -185,7 +185,11 @@
         ],
         "tested_subjects": [
           {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
             "class_name": "com.example.web.LargeController",
+            "target_module_id": null,
+            "candidate_reference": null,
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,

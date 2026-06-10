@@ -173,7 +173,7 @@ final class AgentGuideGeneratorTest {
     assertTrue(guide.contains(
         "... and 2 more evidence paths in `evidence-index.jsonl`"));
     assertTrue(guide.contains("""
-        - Inferred tested subject: `com.example.web.LargeController` (support_type: `inferred`, confidence: `medium`)
+        - Inferred tested subject: `com.example.web.LargeController` (relation_status: `inferred`, relation_type: `naming_convention`, support_type: `inferred`, confidence: `medium`).
           - Evidence: `src/test/java/com/example/web/LargeControllerTest.java:3` (`ev:src/test/java/com/example/web/LargeControllerTest.java:3-3:com.example.web.LargeControllerTest:test_file`), `src/main/java/com/example/web/LargeController.java:8` (`ev:src/main/java/com/example/web/LargeController.java:8-8:com.example.web.LargeController:code_symbol`)
         """));
   }

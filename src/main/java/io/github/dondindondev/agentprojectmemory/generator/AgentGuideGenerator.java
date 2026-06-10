@@ -1783,22 +1783,58 @@ public final class AgentGuideGenerator {
     }
 
     for (JsonNode subject : testedSubjects) {
-      markdown.append("- Inferred tested subject: ")
-          .append(code(text(subject, "class_name")));
-      String targetModuleId = nullableText(subject, "target_module_id");
-      if (targetModuleId != null && !targetModuleId.isBlank()) {
-        markdown.append(" in target module ")
-            .append(moduleLabel(targetModuleId, moduleById));
+      String relationStatus = text(subject, "relation_status");
+      if (relationStatus.isBlank() && nullableText(subject, "support_type") != null) {
+        relationStatus = "inferred";
       }
-      markdown.append(" (support_type: ")
-          .append(code(text(subject, "support_type")))
+      String relationType = text(subject, "relation_type");
+      if (relationType.isBlank()) {
+        relationType = "naming_convention";
+      }
+      String className = nullableText(subject, "class_name");
+      if ("inferred".equals(relationStatus)) {
+        markdown.append("- Inferred tested subject: ")
+            .append(code(className == null ? "unknown" : className));
+        String targetModuleId = nullableText(subject, "target_module_id");
+        if (targetModuleId != null && !targetModuleId.isBlank()) {
+          markdown.append(" in target module ")
+              .append(moduleLabel(targetModuleId, moduleById));
+        }
+      } else if ("ambiguous".equals(relationStatus) && className != null) {
+        markdown.append("- Ambiguous tested subject candidate: ")
+            .append(code(className));
+        String targetModuleId = nullableText(subject, "target_module_id");
+        if (targetModuleId != null && !targetModuleId.isBlank()) {
+          markdown.append(" in target module ")
+              .append(moduleLabel(targetModuleId, moduleById));
+        }
+      } else {
+        markdown.append("- Tested-subject status: ")
+            .append(code(relationStatus));
+      }
+      markdown.append(" (relation_status: ")
+          .append(code(relationStatus))
+          .append(", relation_type: ")
+          .append(code(relationType))
+          .append(", support_type: ")
+          .append(code(nullableText(subject, "support_type") == null
+              ? "null"
+              : nullableText(subject, "support_type")))
           .append(", confidence: ")
           .append(code(text(subject, "confidence")));
+      String candidateReference = nullableText(subject, "candidate_reference");
+      if (candidateReference != null) {
+        markdown.append(", candidate_reference: ").append(code(candidateReference));
+      }
       String uncertainty = nullableText(subject, "uncertainty");
       if (uncertainty != null) {
         markdown.append(", uncertainty: ").append(code(uncertainty));
       }
-      markdown.append(")\n");
+      markdown.append(")");
+      if (!"inferred".equals(relationStatus)) {
+        markdown.append("; no tested-subject coverage or runtime execution relation is claimed");
+      }
+      markdown.append(".\n");
       appendEvidenceLine(markdown, subject.path("evidence_ids"), evidenceById);
     }
   }
@@ -1829,10 +1865,13 @@ public final class AgentGuideGenerator {
         .append("signals. Embedded targets are linked only when a unique local `@Embeddable` ")
         .append("can be matched; `@IdClass` field matching and composite-key semantics are ")
         .append("not analyzed.\n");
-    markdown.append("- Inferred: tested-subject relations use naming conventions only. Test method ")
-        .append("inventory records source-visible JUnit annotation structure only. Test execution, ")
-        .append("CI results, coverage, assertion behavior, call graphs, and complete subject ")
-        .append("mapping are not analyzed.\n");
+    markdown.append("- Inferred/statused: tested-subject rows are conservative source-visible hints ")
+        .append("from supported naming, import, field-type, and Spring test slice class-literal ")
+        .append("signals. Non-inferred statuses such as `not_detected`, `ambiguous`, and ")
+        .append("`unsupported` do not claim coverage or execution. Test method inventory records ")
+        .append("source-visible JUnit annotation structure only. Test execution, CI results, ")
+        .append("coverage, assertion behavior, call graphs, and complete subject mapping are not ")
+        .append("analyzed.\n");
     if (hasTestSliceOrMockSignals(projectMap)) {
       markdown.append("- Source-visible: Spring test slice signals and mock annotation signals record ")
           .append("direct annotation structure only. Runtime Spring context behavior, bean graph ")
@@ -1937,9 +1976,9 @@ public final class AgentGuideGenerator {
           .append("remain declared-type-only.\n");
     }
     markdown.append(step++)
-        .append(". For tests, inspect detected test files and inferred tested-subject evidence");
+        .append(". For tests, inspect detected test files and tested-subject relation/status evidence");
     appendPathHint(markdown, evidencePaths(projectMap.path("tests").path("items"), evidenceById));
-    markdown.append("; do not treat inferred subjects as coverage proof");
+    markdown.append("; do not treat inferred or statused subjects as coverage proof");
     if (hasTestSliceOrMockSignals(projectMap)) {
       markdown.append(", and do not treat Spring test slice or mock annotations as execution or ")
           .append("runtime behavior proof");

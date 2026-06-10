@@ -35,9 +35,9 @@ public contract is the v0.7 tests inventory refinement slice layered on top of t
 JPA/domain model slice, the v0.5 Spring application surface slices, the v0.4 API surface
 slice, and the v0.3 module-aware Maven metadata, dependency, and plugin inventory
 contract. The current v0.7 contract also emits direct Spring test slice and mock
-annotation signals under the top-level `tests` inventory. Expanded tested-subject
-relation status, quality, and change-risk contracts are recorded as planned boundaries
-only where explicitly marked future.
+annotation signals and conservative tested-subject relation/status rows under the
+top-level `tests` inventory. Quality and change-risk contracts are recorded as planned
+boundaries only where explicitly marked future.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2231,8 +2231,8 @@ This section defines the current v0.7 tests inventory refinement and Spring test
 slice/mock signal output contract. The current v0.7 implementation preserves the v0.6
 module-aware build/config, API surface, Spring application surface, and JPA/domain
 contracts while deepening the top-level `tests` inventory. It does not emit a top-level
-`quality` object, test-gap signals, change-risk signals, expanded tested-subject
-relation statuses, or runtime test claims in this slice.
+`quality` object, test-gap signals, change-risk signals, or runtime test claims in this
+slice.
 
 The v0.7 tests inventory refinement contract uses:
 
@@ -2241,7 +2241,7 @@ The v0.7 tests inventory refinement contract uses:
 - The same four output files under `.project-memory/`.
 - The existing top-level `tests` object as the owner of source-visible test class,
   method, direct framework signal, Spring test slice, mock annotation signal, and
-  tested-subject relation facts.
+  tested-subject relation/status facts.
 - Existing evidence fields and evidence types. Test class facts continue to use
   `test_file` evidence. Test method, framework signal, Spring test slice, and mock
   annotation signal observations reuse `annotation` and `code_symbol` evidence.
@@ -2303,8 +2303,11 @@ Current `project-map.json` excerpt. Unchanged v0.6 fields are omitted for focus:
         ],
         "tested_subjects": [
           {
+            "relation_status": "inferred",
+            "relation_type": "spring_test_slice_class_literal",
             "class_name": "com.example.orders.OrderController",
             "target_module_id": "module:services/orders",
+            "candidate_reference": null,
             "support_type": "inferred",
             "confidence": "medium",
             "uncertainty": null,
@@ -2396,36 +2399,74 @@ Current v0.7 test inventory rules:
   source-declared fake framework annotations, generated-source-only annotations,
   classpath-only annotations, and static-import-only references are skipped rather than
   emitted as slice or mock facts.
-- The current output does not parse or emit slice annotation class literals, properties,
-  active profiles, configuration classes, or mock target types as structured fields.
-  Such source text may appear only as bounded evidence excerpts. Slice/mock signals do
-  not create endpoint, entity, repository, bean, tested-subject, coverage, execution, CI,
-  assertion, or runtime behavior facts.
+- The current output parses bounded direct class literals from supported Spring test
+  slice annotations only for conservative tested-subject relation/status rows. It does
+  not emit slice annotation properties, active profiles, configuration classes, or mock
+  target types as structured fields. Other source text may appear only as bounded
+  evidence excerpts. Slice/mock signals do not create endpoint, entity, repository,
+  bean, coverage, execution, CI, assertion, or runtime behavior facts.
 
 Current v0.7 tested-subject relation rules:
 
 - `test.tested_subjects[]` remains a bounded tested-subject relation/status list. It
   must never be described as coverage, execution, assertion, CI, runtime call graph, or
   complete subject mapping.
-- Current emitted tested-subject rows are inferred naming-convention hints only.
-  Expanded `relation_status` and `relation_type` fields remain future work and are not
-  emitted in this slice.
+- Current emitted tested-subject rows are conservative relation/status rows from
+  supported naming conventions, exact production-class imports, direct test field
+  types, and bounded direct class literals inside supported Spring test slice
+  annotations.
+- `tested_subject.relation_status` is one of:
+  - `"inferred"`: a supported source-visible test-side subject signal matched exactly
+    one source-visible production class declaration.
+  - `"not_detected"`: the analyzer ran but either no supported tested-subject signal was
+    detected for the test class, or a supported source-visible candidate did not match a
+    production class declaration.
+  - `"ambiguous"`: a supported source-visible candidate matched multiple production
+    class declarations.
+  - `"unsupported"`: a source-visible candidate shape was present but outside the
+    bounded tested-subject parser, such as a generic field type.
+  - `"not_analyzed"`: reserved compatibility value for future cases where this relation
+    analyzer did not run for an otherwise emitted test fact. It is not emitted by the
+    current analyzer when supported test roots are analyzed.
+- `tested_subject.relation_type` is one of `"naming_convention"`, `"test_import"`,
+  `"test_field_type"`, `"spring_test_slice_class_literal"`, or `"not_detected"`.
 - Inferred relations require evidence for the test-side source observation and the
   matched production-side source observation. `support_type` is `"inferred"`.
 - `tested_subject.class_name` and `tested_subject.target_module_id` are populated only
-  when the relation target is inferred.
+  when a source-visible production candidate is recorded for an `"inferred"` or
+  `"ambiguous"` row. They are `null` for non-candidate status-only rows such as
+  `"not_detected"` and `"unsupported"`.
+- `tested_subject.candidate_reference` is `null` when a production candidate class is
+  recorded. It contains the bounded source-visible candidate text for status-only rows,
+  such as a missing naming candidate or unsupported field type, and is `null` for the
+  no-supported-signal `"not_detected"` row.
+- `tested_subject.support_type` is `"inferred"` for rows that record a production
+  candidate class. It is `null` for status-only rows that do not record a production
+  candidate.
+- `tested_subject.confidence` is `"medium"` for unique inferred target matches and
+  `"low"` for ambiguous, unsupported, or not-detected status rows.
+- `tested_subject.uncertainty` is `null` for unique inferred target matches. Current
+  uncertainty values include `"ambiguous_subject_name"`,
+  `"no_matching_production_class"`, `"unsupported_subject_reference"`, and
+  `"no_supported_subject_signal"`.
 - Naming-convention inference remains conservative: strip supported test suffixes such
   as `Test`, `Tests`, and `IT` from the test class simple name and match the candidate
-  against emitted production classes in the same supported module first. Cross-module
-  matches are allowed only when the source-visible candidate is unique and module
-  ownership is deterministic.
-- Future Spring test slice class-literal inference may link a test class to a production
-  class only when the annotation contains a supported direct class literal and the target
-  can be matched to an emitted production fact. It must remain an inferred
+  against production classes in the same supported module.
+- Import inference is limited to explicit non-static single-type imports whose fully
+  qualified name exactly matches a production class declaration in the analyzed module.
+  Wildcard imports, static imports, classpath-only imports, and external framework
+  imports do not create no-match rows.
+- Field-type inference is limited to direct test class field declarations whose type can
+  be represented as a non-generic class/interface type and matched to a production class
+  through an exact fully qualified name, explicit single-type import, or same-package
+  reference. Generic, array, primitive, wildcard, classpath-only, and otherwise
+  unsupported shapes do not create inferred rows; supported production-like generic
+  shapes are statused as `"unsupported"`.
+- Spring test slice class-literal inference may link a test class to a production class
+  only when a supported slice annotation contains a direct class literal and the target
+  can be matched to a production class declaration. It remains an inferred
   tested-subject hint, not proof that the test executes that subject or covers any
   behavior.
-- Spring test slice class-literal inference and explicit non-inferred relation statuses
-  remain future v0.7 work and are not emitted in this slice.
 
 Future v0.7 quality and change-risk rules:
 
@@ -2445,8 +2486,8 @@ Current v0.7 deterministic sorting rules:
 - Spring test slices sort by `slice_kind`, annotation, and evidence discriminator.
 - Mock annotation signals sort by `target_kind`, `target_name`, `mock_signal`,
   annotation, and evidence discriminator.
-- Tested-subject relations sort by class name, support type, confidence, uncertainty,
-  and evidence discriminator.
+- Tested-subject rows sort by relation status, relation type, class name, candidate
+  reference, support type, confidence, uncertainty, and evidence discriminator.
 - Test-gap signals and change-risk signals are not emitted in the current v0.7 tests
   inventory refinement and Spring test slice/mock signal slice.
 
@@ -2504,7 +2545,7 @@ The current implementation emits:
 - `test_file` evidence for emitted test-like Java class declarations under supported
   test roots.
 - `code_symbol` evidence for production class declarations that are referenced by
-  inferred `tested_subjects` relations.
+  inferred or ambiguous `tested_subjects` relation/status rows.
 - `code_symbol` evidence for directly visible test framework imports attached to
   top-level emitted test classes.
 - `annotation` evidence for directly visible test framework annotations.
@@ -2722,8 +2763,9 @@ Content rules:
   implementation supports otherwise, and should present relationship targets as
   `Uncertain`, not resolved entity links.
 - Test entries use `Detected` wording for test classes and directly visible framework
-  signals. `tested_subjects` entries must use `Inferred` wording and show
-  `support_type`, `confidence`, and `uncertainty` when present.
+  signals. `tested_subjects` entries must use `Inferred` wording only for inferred rows,
+  render status-only rows as statuses, and show `relation_status`, `relation_type`,
+  `support_type`, `confidence`, `candidate_reference`, and `uncertainty` when present.
 - The known-limits section must explicitly call out `Not analyzed`, `Inferred`, and
   `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
   execution/coverage/assertion behavior, call graphs, complete subject mapping,
@@ -2922,10 +2964,15 @@ Current v0.7 tests inventory `agent-guide.md` behavior:
   with `mock_signal`, `signal_kind`, target kind/name, and evidence. They must not claim
   runtime Spring bean override behavior, Mockito behavior, bean graph contents, database
   access, or slice correctness.
-- Tested-subject rows use `Inferred` wording for existing naming-convention rows and
-  must continue to show `support_type`, `confidence`, and `uncertainty` when present.
-- Future expanded relation-status, test-gap, and change-risk rows must be added only
-  after their structured output contract is implemented.
+- Tested-subject rows use `Inferred` wording only when `relation_status` is
+  `"inferred"`. Ambiguous rows should be rendered as ambiguous candidates, and
+  non-inferred status-only rows such as `"not_detected"` and `"unsupported"` should be
+  rendered as tested-subject statuses with explicit wording that no coverage, execution,
+  or runtime relation is claimed.
+- Tested-subject guide rows must show `relation_status`, `relation_type`,
+  `support_type`, `confidence`, `candidate_reference`, and `uncertainty` when present.
+- Future test-gap and change-risk rows must be added only after their structured output
+  contract is implemented.
 - The known-limits section should explicitly state that current v0.7 test facts do not
   perform test execution, CI analysis, coverage analysis, mutation testing, behavioral
   assertion understanding, runtime Spring context reconstruction, runtime

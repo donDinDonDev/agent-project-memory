@@ -106,12 +106,14 @@ ORM runtime behavior.
 
 The tests inventory analyzer records test-like Java class declarations under standard
 Maven `src/test/java` roots, directly visible test framework signals from imports and
-annotations, and likely tested-subject relations inferred only from class naming
-conventions against production classes under `src/main/java`. Helper, support, or
-configuration declarations without clear test naming and without direct test-class
-marker annotations are omitted. Import evidence is attached only to top-level emitted
-test classes; nested emitted test classes use their own class or method annotation
-evidence. Naming-convention relations are explicitly marked as inferred. Duplicate
+annotations, and conservative tested-subject relation/status rows inferred or statused
+from supported naming, exact production imports, direct field types, and direct Spring
+test slice class literals against production classes under `src/main/java`. Helper,
+support, or configuration declarations without clear test naming and without direct
+test-class marker annotations are omitted. Import evidence is attached only to top-level
+emitted test classes; nested emitted test classes use their own class or method
+annotation evidence. Tested-subject rows are explicitly marked with relation status,
+confidence, and uncertainty. Duplicate
 production class simple-name matches are emitted with low confidence and explicit
 uncertainty. The analyzer does not perform coverage analysis, test execution analysis,
 behavioral assertion analysis, call graph construction, symbol solving, Gradle/Kotlin

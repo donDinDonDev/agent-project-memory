@@ -141,7 +141,8 @@ field metadata, partial embedded/identifier signals, relationship metadata, and
 repository/entity relation statuses for the current JPA/domain slice, a bounded
 source-visible tests inventory with stable test IDs, module ownership, direct framework
 signal classifications, supported JUnit test method annotations, direct Spring test
-slice annotations, and conservative mock annotation signals,
+slice annotations, conservative mock annotation signals, and conservative
+tested-subject relation/status rows,
 the staged `spring_application_surface.repositories` repository signal inventory,
 the staged `spring_application_surface.configuration` configuration class,
 configuration-properties, and bean method inventories,
@@ -275,12 +276,14 @@ method annotations and direct JUnit/Spring Test framework signals where source o
 trusted, direct Spring test slice annotation extraction for `@SpringBootTest`,
 `@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`, conservative
 source-visible `@MockBean` and `@SpyBean` annotation signals on emitted test classes,
+conservative tested-subject relation/status rows from supported naming, exact
+production imports, direct field types, and direct Spring test slice class literals,
 deterministic `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
-guidance, and source-visible test method/framework/slice/mock guidance that keeps
-extracted facts, inferred signals, uncertain targets, not-analyzed statuses, and
-warnings separate.
+guidance, and source-visible test method/framework/slice/mock/tested-subject guidance
+that keeps extracted facts, inferred signals, relation statuses, uncertain targets,
+not-analyzed statuses, and warnings separate.
 
 Current limitations:
 
@@ -436,12 +439,16 @@ Current limitations:
   prove test engine execution, CI behavior, assertion behavior, runtime Spring context
   startup, or coverage.
 - Spring test slice and mock annotation signals are limited to directly visible
-  supported annotations on emitted test classes. They do not infer tested subjects from
-  slice class literals, reconstruct runtime Spring test contexts, prove MockMvc setup,
-  bean graph contents, database access, Mockito behavior, or slice correctness.
-- Tested-subject relations are inferred only from test class naming conventions against
-  production classes in the same supported module; ambiguous simple-name matches are
-  marked with low confidence and explicit uncertainty.
+  supported annotations on emitted test classes. Direct slice annotation class literals
+  may contribute only conservative tested-subject relation/status rows. Slice/mock
+  signals do not reconstruct runtime Spring test contexts, prove MockMvc setup, bean
+  graph contents, database access, Mockito behavior, or slice correctness.
+- Tested-subject rows are conservative inferred/statused hints from supported naming
+  conventions, exact production-class imports, direct test field types, and direct
+  Spring test slice class literals against production classes in the same supported
+  module. Ambiguous, missing, unsupported, or absent signals are represented with
+  explicit relation statuses, low confidence, and uncertainty instead of coverage or
+  runtime claims.
 - Tests inventory does not claim code coverage, test execution results, behavioral
   assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
 - `agent-guide.md` is generated from existing deterministic output facts only. It does not

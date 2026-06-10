@@ -26,6 +26,8 @@ final class TestInventoryAnalyzerTest {
 
     assertAll(
         () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals("inferred", subject.relationStatus()),
+        () -> assertEquals("naming_convention", subject.relationType()),
         () -> assertEquals("com.example.web.ProjectMapController", subject.className()),
         () -> assertEquals("inferred", subject.supportType()),
         () -> assertEquals("medium", subject.confidence()),
@@ -37,6 +39,88 @@ final class TestInventoryAnalyzerTest {
         () -> assertTrue(subject.evidenceIds().stream()
             .map(evidenceId -> evidence(analysis, evidenceId))
             .anyMatch(record -> "code_symbol".equals(record.sourceType()))));
+  }
+
+  @Test
+  void importedProductionClassInfersTestedSubject() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact test = test(analysis, "com.example.imported.ImportedSubjectSpec");
+    TestedSubjectFact subject = subject(
+        test,
+        "inferred",
+        "test_import",
+        "com.example.subject.ImportedSubject");
+
+    assertAll(
+        () -> assertEquals("medium", subject.confidence()),
+        () -> assertNull(subject.uncertainty()),
+        () -> assertTrue(subject.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "import com.example.subject.ImportedSubject".equals(record.symbolName()))),
+        () -> assertTrue(subject.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "com.example.subject.ImportedSubject".equals(record.symbolName()))));
+  }
+
+  @Test
+  void fieldTypeAndSliceClassLiteralInferTestedSubjects() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestClassFact springBootSlice = test(analysis, "com.example.web.SpringSlice");
+    TestClassFact webMvcSlice = test(analysis, "com.example.web.WebControllerSlice");
+
+    TestedSubjectFact fieldSubject = subject(
+        springBootSlice,
+        "inferred",
+        "test_field_type",
+        "com.example.web.ProjectMapController");
+    TestedSubjectFact sliceSubject = subject(
+        webMvcSlice,
+        "inferred",
+        "spring_test_slice_class_literal",
+        "com.example.web.ProjectMapController");
+
+    assertAll(
+        () -> assertEquals("medium", fieldSubject.confidence()),
+        () -> assertNull(fieldSubject.uncertainty()),
+        () -> assertTrue(fieldSubject.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "ProjectMapController".equals(record.symbolName())
+                && record.id().contains(":field:projectMapController:type:"))),
+        () -> assertEquals("medium", sliceSubject.confidence()),
+        () -> assertTrue(sliceSubject.evidenceIds().stream()
+            .map(evidenceId -> evidence(analysis, evidenceId))
+            .anyMatch(record -> "@WebMvcTest".equals(record.symbolName()))));
+  }
+
+  @Test
+  void noMatchUnsupportedAndNotDetectedSubjectCasesAreStatused() throws Exception {
+    TestInventoryAnalysis analysis = analyzeFixture();
+
+    TestedSubjectFact missing = subjectStatus(
+        test(analysis, "com.example.web.MissingControllerTest"),
+        "not_detected",
+        "naming_convention",
+        "MissingController");
+    TestedSubjectFact unsupported = subjectStatus(
+        test(analysis, "com.example.web.UnsupportedFieldTypeTest"),
+        "unsupported",
+        "test_field_type",
+        "List<ProjectMapController>");
+    TestedSubjectFact noSignal = subjectStatus(
+        test(analysis, "com.example.web.HealthSpec"),
+        "not_detected",
+        "not_detected",
+        null);
+
+    assertAll(
+        () -> assertNull(missing.className()),
+        () -> assertEquals("low", missing.confidence()),
+        () -> assertEquals("no_matching_production_class", missing.uncertainty()),
+        () -> assertNull(unsupported.className()),
+        () -> assertEquals("unsupported_subject_reference", unsupported.uncertainty()),
+        () -> assertEquals("no_supported_subject_signal", noSignal.uncertainty()));
   }
 
   @Test
@@ -231,6 +315,8 @@ final class TestInventoryAnalyzerTest {
             List.of("com.example.alpha.DuplicateService", "com.example.beta.DuplicateService"),
             test.testedSubjects().stream().map(TestedSubjectFact::className).toList()),
         () -> assertTrue(test.testedSubjects().stream()
+            .allMatch(subject -> "ambiguous".equals(subject.relationStatus()))),
+        () -> assertTrue(test.testedSubjects().stream()
             .allMatch(subject -> "inferred".equals(subject.supportType()))),
         () -> assertTrue(test.testedSubjects().stream()
             .allMatch(subject -> "low".equals(subject.confidence()))),
@@ -257,7 +343,10 @@ final class TestInventoryAnalyzerTest {
 
     assertAll(
         () -> assertEquals("src/test/java/com/example/web/NestedAndHelperTests.java", nestedTest.sourcePath()),
-        () -> assertTrue(nestedTest.testedSubjects().isEmpty()),
+        () -> assertEquals(
+            List.of("not_detected"),
+            nestedTest.testedSubjects().stream().map(TestedSubjectFact::relationStatus).toList()),
+        () -> assertEquals("no_supported_subject_signal", nestedTest.testedSubjects().get(0).uncertainty()),
         () -> assertTrue(junitJupiter.evidenceIds().stream()
             .map(evidenceId -> evidence(analysis, evidenceId))
             .anyMatch(record -> "@Nested".equals(record.symbolName()))),
@@ -357,6 +446,32 @@ final class TestInventoryAnalyzerTest {
   private TestFrameworkSignalFact frameworkSignal(TestClassFact test, String name) {
     return test.frameworkSignals().stream()
         .filter(candidate -> candidate.name().equals(name))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private TestedSubjectFact subject(
+      TestClassFact test,
+      String relationStatus,
+      String relationType,
+      String className) {
+    return test.testedSubjects().stream()
+        .filter(candidate -> relationStatus.equals(candidate.relationStatus()))
+        .filter(candidate -> relationType.equals(candidate.relationType()))
+        .filter(candidate -> className.equals(candidate.className()))
+        .findFirst()
+        .orElseThrow();
+  }
+
+  private TestedSubjectFact subjectStatus(
+      TestClassFact test,
+      String relationStatus,
+      String relationType,
+      String candidateReference) {
+    return test.testedSubjects().stream()
+        .filter(candidate -> relationStatus.equals(candidate.relationStatus()))
+        .filter(candidate -> relationType.equals(candidate.relationType()))
+        .filter(candidate -> Objects.equals(candidateReference, candidate.candidateReference()))
         .findFirst()
         .orElseThrow();
   }

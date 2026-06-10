@@ -295,8 +295,11 @@ public final class SpringMvcEndpointOutputGenerator {
       .thenComparing(TestMockSignalFact::annotation)
       .thenComparing(signal -> String.join("\n", signal.evidenceIds()));
   private static final Comparator<TestedSubjectFact> TESTED_SUBJECT_ORDER = Comparator
-      .comparing(TestedSubjectFact::className)
-      .thenComparing(TestedSubjectFact::supportType)
+      .comparing(TestedSubjectFact::relationStatus)
+      .thenComparing(TestedSubjectFact::relationType)
+      .thenComparing(subject -> nullSafe(subject.className()))
+      .thenComparing(subject -> nullSafe(subject.candidateReference()))
+      .thenComparing(subject -> nullSafe(subject.supportType()))
       .thenComparing(TestedSubjectFact::confidence)
       .thenComparing(subject -> nullSafe(subject.uncertainty()));
   private static final Comparator<ModuleScopedWarningFact> WARNING_ORDER = Comparator
@@ -3886,9 +3889,19 @@ public final class SpringMvcEndpointOutputGenerator {
     for (int index = 0; index < sortedSubjects.size(); index++) {
       TestedSubjectFact subject = sortedSubjects.get(index);
       json.append("          {\n");
-      appendIndentedStringField(json, 6, "class_name", subject.className(), true);
-      appendIndentedStringField(json, 6, "target_module_id", targetModuleId, true);
-      appendIndentedStringField(json, 6, "support_type", subject.supportType(), true);
+      appendIndentedStringField(json, 6, "relation_status", subject.relationStatus(), true);
+      appendIndentedStringField(json, 6, "relation_type", subject.relationType(), true);
+      appendIndentedNullableStringField(json, 6, "class_name", subject.className(), true);
+      appendIndentedNullableStringField(
+          json,
+          6,
+          "target_module_id",
+          subject.className() == null
+              ? null
+              : subject.targetModuleId() == null ? targetModuleId : subject.targetModuleId(),
+          true);
+      appendIndentedNullableStringField(json, 6, "candidate_reference", subject.candidateReference(), true);
+      appendIndentedNullableStringField(json, 6, "support_type", subject.supportType(), true);
       appendIndentedStringField(json, 6, "confidence", subject.confidence(), true);
       appendIndentedNullableStringField(json, 6, "uncertainty", subject.uncertainty(), true);
       appendIndentedStringArrayField(json, 6, "evidence_ids", subject.evidenceIds(), false);

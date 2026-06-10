@@ -120,9 +120,10 @@ v0.1 is acceptable when:
   without clear test naming or direct test-class marker annotations.
 - Minimal tests inventory records test class names, repository-relative source paths,
   directly visible framework signals when supported, and evidence IDs.
-- Likely tested-subject relations are emitted only as conservative inferred relations,
-  based on naming conventions and evidence for both the test class and candidate
-  production class.
+- Likely tested-subject rows remain conservative inferred/statused hints. The initial
+  naming-convention relation uses evidence for both the test class and candidate
+  production class; current v0.7 output also supports bounded import, field-type, and
+  Spring test slice class-literal relation/status rows when deterministic.
 - Minimal tests inventory does not claim full test coverage, test execution results,
   behavioral assertion analysis, CI results, call graph resolution, symbol solving, or
   complete tested-subject mapping.

@@ -139,7 +139,7 @@ Use `2`, `1`, `0`, or `N/A` for each category:
 | Endpoints | Supported Spring MVC controller and mapping annotations are detected without invented HTTP methods or paths. |
 | Components | Direct class-level Spring stereotypes are detected and sorted deterministically. |
 | Entities | Direct `@Entity`, `@Table`, `@Id`, and supported relationship annotations are detected without claiming unresolved ORM behavior. |
-| Tests | Standard Maven `src/test/java` test classes, supported framework signals, and naming-convention tested subjects are represented with explicit uncertainty where needed. |
+| Tests | Standard Maven `src/test/java` test classes, supported framework signals, and conservative tested-subject relation/status rows are represented with explicit confidence and uncertainty where needed. |
 | Evidence quality | Evidence IDs resolve, paths are repository-relative, line ranges and excerpts support the facts, and inferred or uncertain relations are labeled. |
 | `agent-guide.md` | The guide is useful for first-pass orientation, cites deterministic facts, exposes known uncertainty, and avoids unsupported architecture claims. |
 

@@ -24,6 +24,10 @@ architecture documents.
   inventory, including direct `@SpringBootTest`, `@WebMvcTest`, `@DataJpaTest`,
   `@ContextConfiguration`, `@MockBean`, and `@SpyBean` observations with evidence-backed
   `project-map.json` and `agent-guide.md` output.
+- Added conservative tested-subject relation/status rows for supported naming
+  conventions, exact production imports, direct test field types, and direct Spring test
+  slice class literals, with explicit inferred, not-detected, ambiguous, and unsupported
+  statuses.
 
 ### Changed
 
@@ -32,9 +36,13 @@ architecture documents.
   `framework_signals[].signal_kind`, and `tests.items[].methods[]` while continuing to
   avoid coverage, CI, assertion, runtime Spring context, and test execution claims.
 - Expanded generated v0.7 `tests.items[]` output with `spring_test_slices[]` and
-  `mock_signals[]` while continuing to avoid tested-subject inference from slice class
-  literals, runtime Spring test context reconstruction, Mockito behavior claims,
-  coverage, CI, assertion, and test execution claims.
+  `mock_signals[]` while keeping Spring test slice annotations as source-visible signals
+  only and continuing to avoid runtime Spring test context reconstruction, Mockito
+  behavior claims, coverage, CI, assertion, and test execution claims.
+- Expanded generated v0.7 `tests.items[].tested_subjects[]` rows with
+  `relation_status`, `relation_type`, nullable target/candidate fields, confidence, and
+  uncertainty while continuing to avoid coverage, CI, assertion, runtime execution, full
+  call graph, and complete subject-mapping claims.
 
 ### Fixed
 

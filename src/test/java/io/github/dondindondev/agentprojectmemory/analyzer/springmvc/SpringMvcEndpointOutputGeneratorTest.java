@@ -190,6 +190,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
         test.path("mock_signals"),
         "target_name",
         "com.example.web.OrderControllerSlice");
+    JsonNode fieldSubject = objectWithText(test.path("tested_subjects"), "relation_type", "test_field_type");
+    JsonNode sliceSubject = objectWithText(
+        test.path("tested_subjects"),
+        "relation_type",
+        "spring_test_slice_class_literal");
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
@@ -204,6 +209,13 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("@SpyBean", typeMockSignal.path("annotation").asText()),
         () -> assertEquals("spring_boot_spybean_annotation", typeMockSignal.path("mock_signal").asText()),
         () -> assertEquals("type", typeMockSignal.path("target_kind").asText()),
+        () -> assertEquals("inferred", fieldSubject.path("relation_status").asText()),
+        () -> assertEquals("com.example.web.OrderController", fieldSubject.path("class_name").asText()),
+        () -> assertEquals("module:.", fieldSubject.path("target_module_id").asText()),
+        () -> assertTrue(fieldSubject.path("candidate_reference").isNull()),
+        () -> assertEquals("inferred", sliceSubject.path("relation_status").asText()),
+        () -> assertEquals("com.example.web.OrderController", sliceSubject.path("class_name").asText()),
+        () -> assertEquals("module:.", sliceSubject.path("target_module_id").asText()),
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"),
@@ -213,6 +225,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(agentGuide.contains(
             "- Mock annotation signal: Detected `@MockBean` on `field` `orderController` "
                 + "(mock_signal: `spring_boot_mockbean_annotation`, signal_kind: `mock_annotation`)")),
+        () -> assertTrue(agentGuide.contains(
+            "- Inferred tested subject: `com.example.web.OrderController` in target module "
+                + "`module:.` (path: `.`) (relation_status: `inferred`, relation_type: "
+                + "`spring_test_slice_class_literal`, support_type: `inferred`, confidence: `medium`).")),
         () -> assertTrue(agentGuide.contains(
             "do not treat Spring test slice or mock annotations as execution or runtime behavior proof")));
   }
