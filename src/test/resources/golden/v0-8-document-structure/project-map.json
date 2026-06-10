@@ -254,7 +254,11 @@
           "ev:docs/guide.md:unknown:document:file:guide.md"
         ]
       }
-    ]
+    ],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   },
   "quality": {
     "analysis_status": "not_detected",

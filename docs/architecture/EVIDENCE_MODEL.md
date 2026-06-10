@@ -40,7 +40,8 @@ Evidence types defined by the model:
   for other path-only signals that need evidence beyond a source file line.
 - `document`: a local project document such as Markdown. This evidence type is emitted
   by the v0.8 local Markdown/document ingestion contract for accepted file, heading, and
-  chunk observations.
+  chunk observations, plus bounded document-side mention observations used only by
+  uncertain reconciliation signals.
 
 ## Evidence Fields
 
@@ -80,8 +81,8 @@ Extracted facts are directly observed in source files or documents.
 In the current implementation, extracted facts come from root and child Maven build
 files, supported Java production source roots, supported Java test roots, and
 default-scope local Markdown document paths, ATX heading references, and bounded chunk
-references. The current local Markdown structure facts do not emit `document` evidence
-records; that evidence layer remains a later v0.8 step.
+references, with resolving `document` evidence for accepted file, heading, chunk, and
+bounded reconciliation mention observations.
 
 Examples:
 
@@ -134,11 +135,12 @@ Examples:
   assertion behavior, CI behavior, runtime Spring context behavior, Mockito behavior, or
   slice correctness.
 - Current v0.8 local Markdown document inventory, deterministic ATX heading references,
-  bounded chunk references, and resolving `document` evidence from the documented
-  default discovery scope. These document facts support document orientation only and do
-  not prove code structure, runtime behavior, API implementation, test coverage,
-  configuration semantics, or source/document agreement. Current output does not
-  serialize document bodies.
+  bounded chunk references, conservative document reconciliation signals, and resolving
+  `document` evidence from the documented default discovery scope. These document facts
+  and signals support document orientation and uncertain inspection only; they do not
+  prove code structure, runtime behavior, API implementation, test coverage,
+  configuration semantics, documentation completeness, stale documentation, or
+  source/document agreement. Current output does not serialize document bodies.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -207,10 +209,11 @@ The v0.1 implementation emits these evidence records:
 - Hidden HTTP surface warning evidence described in the v0.1 Warning Evidence section
   below.
 
-The current v0.8 local Markdown discovery and structure analyzer does not emit
-`document` evidence records for local Markdown/documents, connectors, generated
-guidance, coverage data, test execution results, behavioral assertion analysis, or LLM
-output.
+The current v0.8 local Markdown discovery, structure, and reconciliation analyzers emit
+`document` evidence records only for accepted local Markdown file, heading, chunk, and
+bounded reconciliation mention observations. They do not emit `document` evidence for
+connectors, generated guidance, coverage data, test execution results, behavioral
+assertion analysis, or LLM output.
 
 ### v0.2 Maven Module Evidence
 
@@ -927,8 +930,8 @@ Current quality and change-risk evidence:
 
 The v0.8 local Markdown/document evidence layer uses the existing evidence field set and
 the `document` evidence type. It does not add global evidence fields. The current
-implementation emits file, heading, and chunk evidence for accepted default-scope local
-Markdown documents.
+implementation emits file, heading, chunk, and bounded mention evidence for accepted
+default-scope local Markdown documents.
 
 Document evidence scope:
 

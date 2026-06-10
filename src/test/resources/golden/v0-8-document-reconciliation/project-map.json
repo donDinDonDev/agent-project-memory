@@ -44,7 +44,7 @@
                   ]
                 },
                 "artifact_id": {
-                  "value": "v04-controller-only-api",
+                  "value": "document-reconciliation-golden",
                   "value_kind": "literal",
                   "evidence_ids": [
                     "ev:pom.xml:4-4:build_file:maven:project:artifactId"
@@ -122,76 +122,65 @@
   },
   "endpoints": [
     {
-      "id": "endpoint:com.example.api.InventoryController#createInventory",
+      "id": "endpoint:com.example.web.OrderController#internal",
       "module_id": "module:.",
       "api_surface_category": "source_visible_spring_mvc_endpoint",
-      "controller_class": "com.example.api.InventoryController",
-      "handler_method": "createInventory",
-      "http_methods": [
-        "POST"
-      ],
-      "http_method_semantics": "declared",
-      "paths": [
-        "/inventory"
-      ],
-      "request_parameters": [],
-      "request_body_type": "CreateInventoryRequest",
-      "response_type": "InventoryDto",
-      "mapping_source": {
-        "kind": "direct_handler_method",
-        "declaring_type": "com.example.api.InventoryController",
-        "declaring_method": "createInventory",
-        "binding": "direct",
-        "uncertainty": null,
-        "evidence_ids": [
-          "ev:src/main/java/com/example/api/InventoryController.java:11-11:com.example.api.InventoryController#createInventory:@PostMapping"
-        ]
-      },
-      "evidence_ids": [
-        "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
-        "ev:src/main/java/com/example/api/InventoryController.java:11-11:com.example.api.InventoryController#createInventory:@PostMapping",
-        "ev:src/main/java/com/example/api/InventoryController.java:12-12:com.example.api.InventoryController#createInventory:@RequestBody:parameter:0:request"
-      ]
-    },
-    {
-      "id": "endpoint:com.example.api.InventoryController#getInventory",
-      "module_id": "module:.",
-      "api_surface_category": "source_visible_spring_mvc_endpoint",
-      "controller_class": "com.example.api.InventoryController",
-      "handler_method": "getInventory",
+      "controller_class": "com.example.web.OrderController",
+      "handler_method": "internal",
       "http_methods": [
         "GET"
       ],
       "http_method_semantics": "declared",
       "paths": [
-        "/inventory/{id}"
+        "/internal"
       ],
-      "request_parameters": [
-        {
-          "name": "includeDetails",
-          "source": "request_param",
-          "java_type": "String",
-          "evidence_ids": [
-            "ev:src/main/java/com/example/api/InventoryController.java:17-17:com.example.api.InventoryController#getInventory:@RequestParam:parameter:0:includeDetails"
-          ]
-        }
-      ],
+      "request_parameters": [],
       "request_body_type": null,
-      "response_type": "InventoryDto",
+      "response_type": "String",
       "mapping_source": {
         "kind": "direct_handler_method",
-        "declaring_type": "com.example.api.InventoryController",
-        "declaring_method": "getInventory",
+        "declaring_type": "com.example.web.OrderController",
+        "declaring_method": "internal",
         "binding": "direct",
         "uncertainty": null,
         "evidence_ids": [
-          "ev:src/main/java/com/example/api/InventoryController.java:16-16:com.example.api.InventoryController#getInventory:@GetMapping"
+          "ev:src/main/java/com/example/web/OrderController.java:10-10:com.example.web.OrderController#internal:@GetMapping"
         ]
       },
       "evidence_ids": [
-        "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
-        "ev:src/main/java/com/example/api/InventoryController.java:16-16:com.example.api.InventoryController#getInventory:@GetMapping",
-        "ev:src/main/java/com/example/api/InventoryController.java:17-17:com.example.api.InventoryController#getInventory:@RequestParam:parameter:0:includeDetails"
+        "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController",
+        "ev:src/main/java/com/example/web/OrderController.java:10-10:com.example.web.OrderController#internal:@GetMapping"
+      ]
+    },
+    {
+      "id": "endpoint:com.example.web.OrderController#orders",
+      "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "controller_class": "com.example.web.OrderController",
+      "handler_method": "orders",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/orders"
+      ],
+      "request_parameters": [],
+      "request_body_type": null,
+      "response_type": "String",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.OrderController",
+        "declaring_method": "orders",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/OrderController.java:5-5:com.example.web.OrderController#orders:@GetMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController",
+        "ev:src/main/java/com/example/web/OrderController.java:5-5:com.example.web.OrderController#orders:@GetMapping"
       ]
     }
   ],
@@ -200,8 +189,8 @@
     "source_visible_spring_mvc_endpoints": {
       "analysis_status": "analyzed",
       "endpoint_ids": [
-        "endpoint:com.example.api.InventoryController#createInventory",
-        "endpoint:com.example.api.InventoryController#getInventory"
+        "endpoint:com.example.web.OrderController#internal",
+        "endpoint:com.example.web.OrderController#orders"
       ]
     },
     "interface_declared_spring_mvc_endpoints": {
@@ -286,14 +275,14 @@
     "analysis_status": "analyzed",
     "items": [
       {
-        "id": "component:com.example.api.InventoryController",
+        "id": "component:com.example.web.OrderController",
         "module_id": "module:.",
-        "class_name": "com.example.api.InventoryController",
+        "class_name": "com.example.web.OrderController",
         "stereotypes": [
           "@RestController"
         ],
         "evidence_ids": [
-          "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController"
+          "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController"
         ]
       }
     ]
@@ -311,7 +300,7 @@
     "items": []
   },
   "documents": {
-    "analysis_status": "not_detected",
+    "analysis_status": "analyzed",
     "discovery": {
       "scope": "default_local_markdown",
       "path_policy": "repository_relative_in_root",
@@ -341,10 +330,108 @@
         "**/secrets/**"
       ]
     },
-    "items": [],
+    "items": [
+      {
+        "id": "document:README.md",
+        "document_kind": "local_markdown",
+        "format": "markdown",
+        "module_id": null,
+        "path": "README.md",
+        "title": "API docs",
+        "title_source": "first_heading",
+        "discovery_source": "root_readme",
+        "headings": [
+          {
+            "id": "document_heading:README.md:heading:API%20docs:occ:000001",
+            "level": 1,
+            "title": "API docs",
+            "anchor": "api-docs",
+            "line_start": 1,
+            "line_end": 1,
+            "evidence_ids": [
+              "ev:README.md:1-1:document:heading:API%20docs:decl:000001"
+            ]
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:README.md:chunk:000001",
+            "heading_id": "document_heading:README.md:heading:API%20docs:occ:000001",
+            "line_start": 1,
+            "line_end": 4,
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:1-4:document:chunk:000001"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:README.md:unknown:document:file:README.md"
+        ]
+      }
+    ],
     "reconciliation": {
-      "analysis_status": "not_detected",
-      "items": []
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "document_reconciliation:document_only_endpoint_mention:README.md:/ghost:decl:000002",
+          "module_id": null,
+          "signal": "document_only_endpoint_mention",
+          "status": "uncertain_signal",
+          "document_id": "document:README.md",
+          "document_path": "README.md",
+          "document_chunk_id": "document_chunk:README.md:chunk:000001",
+          "source_fact_kind": null,
+          "source_fact_id": null,
+          "subject_kind": "endpoint_like_path",
+          "subject_name": "/ghost",
+          "match_basis": "bounded_endpoint_like_path_token",
+          "confidence": "low",
+          "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
+          "evidence_ids": [
+            "ev:README.md:3-3:document:mention:/ghost:decl:000002"
+          ]
+        },
+        {
+          "id": "document_reconciliation:document_only_module_reference:README.md:billing-service:decl:000003",
+          "module_id": null,
+          "signal": "document_only_module_reference",
+          "status": "uncertain_signal",
+          "document_id": "document:README.md",
+          "document_path": "README.md",
+          "document_chunk_id": "document_chunk:README.md:chunk:000001",
+          "source_fact_kind": null,
+          "source_fact_id": null,
+          "subject_kind": "module_reference",
+          "subject_name": "billing-service",
+          "match_basis": "bounded_module_name_token",
+          "confidence": "low",
+          "uncertainty": "document_module_reference_not_matched_to_module_fact",
+          "evidence_ids": [
+            "ev:README.md:4-4:document:mention:billing-service:decl:000003"
+          ]
+        },
+        {
+          "id": "document_reconciliation:source_api_without_document_mention:endpoint%3Acom.example.web.OrderController%23internal",
+          "module_id": "module:.",
+          "signal": "source_api_without_document_mention",
+          "status": "uncertain_signal",
+          "document_id": null,
+          "document_path": null,
+          "document_chunk_id": null,
+          "source_fact_kind": "spring_mvc_endpoint",
+          "source_fact_id": "endpoint:com.example.web.OrderController#internal",
+          "subject_kind": "api_path",
+          "subject_name": "/internal",
+          "match_basis": "bounded_source_api_path_token",
+          "confidence": "low",
+          "uncertainty": "source_api_fact_not_matched_to_default_scope_document",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController",
+            "ev:src/main/java/com/example/web/OrderController.java:10-10:com.example.web.OrderController#internal:@GetMapping"
+          ]
+        }
+      ]
     }
   },
   "quality": {
@@ -353,43 +440,41 @@
       "analysis_status": "analyzed",
       "items": [
         {
-          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.api.InventoryController#createInventory",
+          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.web.OrderController#internal",
           "module_id": "module:.",
           "signal": "endpoint_without_obvious_test",
           "status": "no_obvious_test",
           "subject_kind": "spring_mvc_endpoint",
-          "subject_id": "endpoint:com.example.api.InventoryController#createInventory",
-          "subject_name": "com.example.api.InventoryController#createInventory",
-          "subject_class_name": "com.example.api.InventoryController",
-          "subject_member_name": "createInventory",
+          "subject_id": "endpoint:com.example.web.OrderController#internal",
+          "subject_name": "com.example.web.OrderController#internal",
+          "subject_class_name": "com.example.web.OrderController",
+          "subject_member_name": "internal",
           "inference_basis": "bounded_test_inventory_not_available",
           "confidence": "low",
           "uncertainty": "supported_test_roots_not_detected",
           "related_test_ids": [],
           "evidence_ids": [
-            "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
-            "ev:src/main/java/com/example/api/InventoryController.java:11-11:com.example.api.InventoryController#createInventory:@PostMapping",
-            "ev:src/main/java/com/example/api/InventoryController.java:12-12:com.example.api.InventoryController#createInventory:@RequestBody:parameter:0:request"
+            "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController",
+            "ev:src/main/java/com/example/web/OrderController.java:10-10:com.example.web.OrderController#internal:@GetMapping"
           ]
         },
         {
-          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.api.InventoryController#getInventory",
+          "id": "quality:test_gap:endpoint_without_obvious_test:endpoint:com.example.web.OrderController#orders",
           "module_id": "module:.",
           "signal": "endpoint_without_obvious_test",
           "status": "no_obvious_test",
           "subject_kind": "spring_mvc_endpoint",
-          "subject_id": "endpoint:com.example.api.InventoryController#getInventory",
-          "subject_name": "com.example.api.InventoryController#getInventory",
-          "subject_class_name": "com.example.api.InventoryController",
-          "subject_member_name": "getInventory",
+          "subject_id": "endpoint:com.example.web.OrderController#orders",
+          "subject_name": "com.example.web.OrderController#orders",
+          "subject_class_name": "com.example.web.OrderController",
+          "subject_member_name": "orders",
           "inference_basis": "bounded_test_inventory_not_available",
           "confidence": "low",
           "uncertainty": "supported_test_roots_not_detected",
           "related_test_ids": [],
           "evidence_ids": [
-            "ev:src/main/java/com/example/api/InventoryController.java:9-9:com.example.api.InventoryController:@RestController",
-            "ev:src/main/java/com/example/api/InventoryController.java:16-16:com.example.api.InventoryController#getInventory:@GetMapping",
-            "ev:src/main/java/com/example/api/InventoryController.java:17-17:com.example.api.InventoryController#getInventory:@RequestParam:parameter:0:includeDetails"
+            "ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController",
+            "ev:src/main/java/com/example/web/OrderController.java:5-5:com.example.web.OrderController#orders:@GetMapping"
           ]
         }
       ]

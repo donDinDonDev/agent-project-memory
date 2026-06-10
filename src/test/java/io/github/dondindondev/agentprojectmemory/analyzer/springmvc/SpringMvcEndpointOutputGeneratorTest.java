@@ -126,6 +126,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
     JsonNode documents = JSON.readTree(projectMap).path("documents");
+    JsonNode reconciliation = documents.path("reconciliation");
     JsonNode items = documents.path("items");
     JsonNode readme = items.get(0);
     JsonNode readmeHeadings = readme.path("headings");
@@ -136,6 +137,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(2, result.documentCount()),
         () -> assertEquals("0.8", JSON.readTree(projectMap).path("schema_version").asText()),
         () -> assertEquals("analyzed", documents.path("analysis_status").asText()),
+        () -> assertEquals("not_detected", reconciliation.path("analysis_status").asText()),
+        () -> assertEquals(0, reconciliation.path("items").size()),
         () -> assertEquals("default_local_markdown", documents.path("discovery").path("scope").asText()),
         () -> assertEquals("repository_relative_in_root",
             documents.path("discovery").path("path_policy").asText()),
@@ -221,6 +224,116 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("v0-8-document-structure", "evidence-index.jsonl"),
             Files.readString(outputDirectory.resolve("evidence-index.jsonl"))));
+  }
+
+  @Test
+  void projectMapRendersDocumentReconciliationSignalsWithResolvingEvidence() throws Exception {
+    Path projectPath = tempDir.resolve("document-reconciliation-golden");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>document-reconciliation-golden</artifactId>
+          <version>1.0.0</version>
+        </project>
+        """);
+    writeFile(projectPath.resolve("README.md"), """
+        # API docs
+        The `/orders` endpoint is documented.
+        The `/ghost` path is only a bounded document mention.
+        The billing-service module is mentioned without a source backed module fact.
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/web/OrderController.java"), """
+        package com.example.web;
+
+        @org.springframework.web.bind.annotation.RestController
+        class OrderController {
+          @org.springframework.web.bind.annotation.GetMapping("/orders")
+          String orders() {
+            return "ok";
+          }
+
+          @org.springframework.web.bind.annotation.GetMapping("/internal")
+          String internal() {
+            return "ok";
+          }
+        }
+        """);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    JsonNode reconciliation = JSON.readTree(projectMap).path("documents").path("reconciliation");
+    JsonNode signals = reconciliation.path("items");
+    JsonNode documentOnlyEndpoint = signalWithSubject(
+        signals,
+        "document_only_endpoint_mention",
+        "/ghost");
+    JsonNode documentOnlyModule = signalWithSubject(
+        signals,
+        "document_only_module_reference",
+        "billing-service");
+    JsonNode sourceWithoutDocument = signalWithSubject(
+        signals,
+        "source_api_without_document_mention",
+        "/internal");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(2, result.endpointCount()),
+        () -> assertEquals(1, result.documentCount()),
+        () -> assertEquals(
+            expected("v0-8-document-reconciliation", "project-map.json"),
+            projectMap),
+        () -> assertEquals(
+            expected("v0-8-document-reconciliation", "evidence-index.jsonl"),
+            evidenceIndex),
+        () -> assertEquals("analyzed", reconciliation.path("analysis_status").asText()),
+        () -> assertEquals(3, signals.size()),
+        () -> assertEquals(
+            List.of(
+                "document_only_endpoint_mention",
+                "document_only_module_reference",
+                "source_api_without_document_mention"),
+            jsonTextValues(signals, "signal")),
+        () -> assertEquals("uncertain_signal", documentOnlyEndpoint.path("status").asText()),
+        () -> assertEquals("low", documentOnlyEndpoint.path("confidence").asText()),
+        () -> assertEquals("bounded_endpoint_like_path_token",
+            documentOnlyEndpoint.path("match_basis").asText()),
+        () -> assertEquals("document:README.md", documentOnlyEndpoint.path("document_id").asText()),
+        () -> assertEquals("README.md", documentOnlyEndpoint.path("document_path").asText()),
+        () -> assertEquals("document_chunk:README.md:chunk:000001",
+            documentOnlyEndpoint.path("document_chunk_id").asText()),
+        () -> assertEquals("bounded_module_name_token",
+            documentOnlyModule.path("match_basis").asText()),
+        () -> assertEquals("spring_mvc_endpoint",
+            sourceWithoutDocument.path("source_fact_kind").asText()),
+        () -> assertEquals("endpoint:com.example.web.OrderController#internal",
+            sourceWithoutDocument.path("source_fact_id").asText()),
+        () -> assertTrue(sourceWithoutDocument.path("document_id").isNull()),
+        () -> assertFalse(stringValues(sourceWithoutDocument.path("evidence_ids")).isEmpty()),
+        () -> assertFalse(hasSignalWithSubject(
+            signals,
+            "document_only_endpoint_mention",
+            "/orders")),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Every project-map evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"mention:/ghost\"")),
+        () -> assertTrue(evidenceIndex.contains("\"excerpt\":\"mention token: /ghost\"")),
+        () -> assertFalse(projectMap.contains("only a bounded document mention")),
+        () -> assertFalse(evidenceIndex.contains("only a bounded document mention")),
+        () -> assertFalse(agentGuide.contains("Local Project Documentation")),
+        () -> assertFalse(agentGuide.contains("document_only_endpoint_mention")));
   }
 
   @Test

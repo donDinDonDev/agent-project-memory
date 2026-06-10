@@ -362,7 +362,11 @@
         "**/secrets/**"
       ]
     },
-    "items": []
+    "items": [],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
   },
   "quality": {
     "analysis_status": "analyzed",

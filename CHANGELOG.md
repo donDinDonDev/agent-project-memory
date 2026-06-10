@@ -30,15 +30,21 @@ architecture documents.
   `documents.items[].headings[].evidence_ids`, and
   `documents.items[].chunks[].evidence_ids` while keeping excerpts bounded to path,
   normalized heading, or chunk-boundary observations.
+- Added conservative v0.8 `documents.reconciliation` signals for bounded local Markdown
+  endpoint-like path mentions, module-like references, and source-backed API/module
+  facts without an obvious accepted-document mention. Reconciliation rows are emitted
+  only as low-confidence uncertain inspection hints, with resolving document-side or
+  source-backed evidence, and without stale-document, completeness, coverage, or
+  documentation-quality claims.
 
 ### Changed
 
 - Updated generated `project-map.json` output to `schema_version: "0.8"` for the
   local Markdown discovery and structure slice, including top-level `documents`
   discovery policy metadata, document inventory, ATX heading references, and bounded
-  chunk references with resolving document evidence while keeping code-doc
-  reconciliation and local documentation guide rendering out of the current
-  implementation.
+  chunk references with resolving document evidence and conservative
+  `documents.reconciliation` hints while keeping local documentation guide rendering out
+  of the current implementation.
 
 ### Fixed
 

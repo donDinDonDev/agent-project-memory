@@ -23,6 +23,11 @@ import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentChun
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentFileFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentHeadingFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentReconciliationAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentReconciliationAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentReconciliationSignal;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentSourceApiFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentSourceModuleFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
@@ -376,6 +381,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final OpenApiOperationAnalyzer openApiOperationAnalyzer =
       new OpenApiOperationAnalyzer();
   private final DocumentDiscoveryAnalyzer documentDiscoveryAnalyzer = new DocumentDiscoveryAnalyzer();
+  private final DocumentReconciliationAnalyzer documentReconciliationAnalyzer =
+      new DocumentReconciliationAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
 
   public SpringMvcEndpointOutputGenerator() {
@@ -538,6 +545,11 @@ public final class SpringMvcEndpointOutputGenerator {
         moduleDiscoveryAnalysis.warnings(),
         pluginAnalysis,
         openApiOperationAnalysis);
+    DocumentReconciliationAnalysis documentReconciliationAnalysis = documentReconciliationAnalyzer.analyze(
+        normalizedRepositoryRoot,
+        documentDiscoveryAnalysis,
+        documentSourceApiFacts(scan.endpoints(), openApiOperationAnalysis.operations()),
+        documentSourceModuleFacts(layout.modules().items()));
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         moduleDiscoveryAnalysis.evidence(),
@@ -549,6 +561,7 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiSpecDiscoveryAnalysis.evidence(),
         openApiOperationAnalysis.evidence(),
         documentDiscoveryAnalysis.evidence(),
+        documentReconciliationAnalysis.evidence(),
         scan.endpointEvidence(),
         scan.componentEvidence(),
         scan.springRepositoryEvidence(),
@@ -568,7 +581,8 @@ public final class SpringMvcEndpointOutputGenerator {
         springBootApplicationAnalysis,
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
-        documentDiscoveryAnalysis);
+        documentDiscoveryAnalysis,
+        documentReconciliationAnalysis);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -1474,7 +1488,8 @@ public final class SpringMvcEndpointOutputGenerator {
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
-      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      DocumentReconciliationAnalysis documentReconciliationAnalysis) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
@@ -1530,7 +1545,7 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedStringField(json, 2, "analysis_status", scan.testAnalysisStatus(), true);
     appendTests(json, scan.tests());
     json.append("  },\n");
-    appendDocuments(json, documentDiscoveryAnalysis, true);
+    appendDocuments(json, documentDiscoveryAnalysis, documentReconciliationAnalysis, true);
     appendQuality(json, qualitySignals(scan));
     json.append("}\n");
     return json.toString();
@@ -1539,6 +1554,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendDocuments(
       StringBuilder json,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      DocumentReconciliationAnalysis documentReconciliationAnalysis,
       boolean trailingComma) {
     json.append("  \"documents\": {\n");
     appendIndentedStringField(
@@ -1548,7 +1564,8 @@ public final class SpringMvcEndpointOutputGenerator {
         documentDiscoveryAnalysis.analysisStatus(),
         true);
     appendDocumentDiscovery(json, documentDiscoveryAnalysis.discoveryPolicy(), true);
-    appendDocumentItems(json, documentDiscoveryAnalysis.documents(), false);
+    appendDocumentItems(json, documentDiscoveryAnalysis.documents(), true);
+    appendDocumentReconciliation(json, documentReconciliationAnalysis, false);
     json.append("  }");
     appendLineEnding(json, trailingComma);
   }
@@ -1570,7 +1587,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendDocumentItems(StringBuilder json, List<DocumentFileFact> documents, boolean trailingComma) {
     json.append("    \"items\": [");
     if (documents.isEmpty()) {
-      json.append("]\n");
+      json.append("]");
+      appendLineEnding(json, trailingComma);
       return;
     }
 
@@ -1671,6 +1689,120 @@ public final class SpringMvcEndpointOutputGenerator {
     indent(json, 4);
     json.append("]");
     appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentReconciliation(
+      StringBuilder json,
+      DocumentReconciliationAnalysis reconciliationAnalysis,
+      boolean trailingComma) {
+    json.append("    \"reconciliation\": {\n");
+    appendIndentedStringField(
+        json,
+        3,
+        "analysis_status",
+        reconciliationAnalysis.analysisStatus(),
+        true);
+    appendDocumentReconciliationItems(json, reconciliationAnalysis.signals(), false);
+    json.append("    }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentReconciliationItems(
+      StringBuilder json,
+      List<DocumentReconciliationSignal> signals,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (signals.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < signals.size(); index++) {
+      appendDocumentReconciliationSignal(json, signals.get(index), index < signals.size() - 1);
+    }
+    indent(json, 3);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendDocumentReconciliationSignal(
+      StringBuilder json,
+      DocumentReconciliationSignal signal,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("{\n");
+    appendIndentedStringField(json, 5, "id", signal.id(), true);
+    appendIndentedNullableStringField(json, 5, "module_id", signal.moduleId(), true);
+    appendIndentedStringField(json, 5, "signal", signal.signal(), true);
+    appendIndentedStringField(json, 5, "status", signal.status(), true);
+    appendIndentedNullableStringField(json, 5, "document_id", signal.documentId(), true);
+    appendIndentedNullableStringField(json, 5, "document_path", signal.documentPath(), true);
+    appendIndentedNullableStringField(json, 5, "document_chunk_id", signal.documentChunkId(), true);
+    appendIndentedNullableStringField(json, 5, "source_fact_kind", signal.sourceFactKind(), true);
+    appendIndentedNullableStringField(json, 5, "source_fact_id", signal.sourceFactId(), true);
+    appendIndentedStringField(json, 5, "subject_kind", signal.subjectKind(), true);
+    appendIndentedStringField(json, 5, "subject_name", signal.subjectName(), true);
+    appendIndentedStringField(json, 5, "match_basis", signal.matchBasis(), true);
+    appendIndentedStringField(json, 5, "confidence", signal.confidence(), true);
+    appendIndentedStringField(json, 5, "uncertainty", signal.uncertainty(), true);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", signal.evidenceIds(), false);
+    indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private List<DocumentSourceApiFact> documentSourceApiFacts(
+      List<ModuleScopedEndpointFact> endpoints,
+      List<OpenApiOperationFact> openApiOperations) {
+    List<DocumentSourceApiFact> facts = new ArrayList<>();
+    for (ModuleScopedEndpointFact scopedEndpoint : endpoints) {
+      SpringMvcEndpointFact endpoint = scopedEndpoint.fact();
+      if (endpoint.paths().isEmpty()) {
+        continue;
+      }
+      facts.add(new DocumentSourceApiFact(
+          endpointId(scopedEndpoint.moduleId(), endpoint),
+          "spring_mvc_endpoint",
+          scopedEndpoint.moduleId(),
+          scopedEndpoint.moduleOrder(),
+          firstPath(endpoint),
+          endpoint.paths(),
+          endpoint.evidenceIds()));
+    }
+    for (OpenApiOperationFact operation : openApiOperations) {
+      if (operation.path() == null || operation.path().isBlank()) {
+        continue;
+      }
+      facts.add(new DocumentSourceApiFact(
+          operation.id(),
+          "openapi_operation",
+          operation.moduleId(),
+          operation.moduleOrder(),
+          operation.httpMethod() + " " + operation.path(),
+          List.of(operation.path()),
+          operation.evidenceIds()));
+    }
+    return facts;
+  }
+
+  private List<DocumentSourceModuleFact> documentSourceModuleFacts(List<MavenModuleItem> modules) {
+    List<DocumentSourceModuleFact> facts = new ArrayList<>();
+    for (int index = 0; index < modules.size(); index++) {
+      MavenModuleItem module = modules.get(index);
+      List<String> evidenceIds = new ArrayList<>();
+      evidenceIds.addAll(module.declarationEvidenceIds());
+      evidenceIds.addAll(module.pomEvidenceIds());
+      facts.add(new DocumentSourceModuleFact(
+          module.moduleId(),
+          module.moduleId(),
+          index,
+          module.modulePath(),
+          evidenceIds));
+    }
+    return facts;
   }
 
   private Map<String, MavenModuleMetadata> metadataByModuleId(MavenMetadataAnalysis metadataAnalysis) {
@@ -4836,6 +4968,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<ApiSpecEvidence> apiSpecEvidenceRecords,
       List<ApiSpecEvidence> openApiOperationEvidenceRecords,
       List<DocumentEvidence> documentEvidenceRecords,
+      List<DocumentEvidence> documentReconciliationEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
       List<SpringComponentEvidence> componentEvidenceRecords,
       List<SpringRepositoryEvidence> springRepositoryEvidenceRecords,
@@ -4871,6 +5004,9 @@ public final class SpringMvcEndpointOutputGenerator {
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     documentEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    documentReconciliationEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     endpointEvidenceRecords.stream()

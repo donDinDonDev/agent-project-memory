@@ -414,8 +414,11 @@ Current unreleased implementation status: the first v0.8 slices implement determ
 default-scope local Markdown discovery, `project-map.json` document inventory,
 deterministic ATX heading references, and bounded chunk references with
 `content_status: "not_serialized"`, plus resolving `document` evidence records for
-accepted file, heading, and chunk observations. Code-doc reconciliation signals and
-local documentation guide rendering remain planned later layers.
+accepted file, heading, chunk, and bounded reconciliation mention observations. The
+current implementation also emits conservative `documents.reconciliation` rows for
+bounded endpoint-like path and module-like comparisons against deterministic source
+facts as low-confidence uncertain inspection hints. Local documentation guide rendering
+remains a planned later layer.
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 

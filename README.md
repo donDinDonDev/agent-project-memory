@@ -112,8 +112,11 @@ OpenAPI/Swagger spec filenames as declared API
 inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, and discovers
 safe default-scope local Markdown document inventory with deterministic ATX heading
 references and bounded chunk references, with resolving document evidence for file,
-heading, and chunk observations, without reconciliation or local-document guide
-rendering, then writes:
+heading, chunk, and bounded reconciliation mention observations, plus conservative
+`documents.reconciliation` inspection hints for document-only endpoint-like path
+mentions, document-only module references, and source-backed API/module facts with no
+obvious default-scope document mention, without local-document guide rendering, then
+writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -156,7 +159,8 @@ inventories, `spring_application_surface.messaging.listener_signals` inventories
 `spring_application_surface.security.configuration_warnings` warning-ID references, a
 top-level `documents` object with deterministic default-scope local Markdown discovery
 policy metadata, document inventory, ATX heading references, and bounded chunk
-references, and evidence ID references. The current Spring
+references, conservative low-confidence reconciliation hints, and evidence ID
+references. The current Spring
 application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
@@ -296,8 +300,9 @@ production imports, direct field types, and direct Spring test slice class liter
 conservative test-gap and change-risk planning hints from existing deterministic facts
 and inferred tested-subject relations, deterministic default-scope local Markdown
 document discovery, inventory, ATX heading references, and bounded chunk references with
-safe path exclusions and no symlink following, deterministic `endpoints.md`, and
-deterministic `agent-guide.md` generation from the
+safe path exclusions and no symlink following, conservative local Markdown/code
+reconciliation hints kept under `documents.reconciliation`, deterministic
+`endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
 guidance, source-visible test method/framework/slice/mock/tested-subject guidance, and
@@ -482,17 +487,20 @@ Current limitations:
 - Local Markdown/document ingestion is limited to conservative default-scope document
   inventory, deterministic ATX heading references, and bounded chunk references with
   `content_status: "not_serialized"` and resolving `document` evidence for file,
-  heading, and chunk observations. It does not reconcile code and docs, render
-  local-document guide sections, read hidden/private/generated/dependency/maintainer
-  paths, follow symlinks, or summarize or serialize document bodies.
+  heading, chunk, and bounded reconciliation mention observations. Reconciliation rows
+  are low-confidence uncertain inspection hints only; they do not prove stale
+  documentation, missing documentation, coverage, completeness, correctness, or source
+  and document agreement. The implementation does not render local-document guide
+  sections, read hidden/private/generated/dependency/maintainer paths, follow symlinks,
+  or summarize or serialize document bodies.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
   Boot application, Spring repository stereotype and interface signal, local
   OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, tests inventory
-  evidence, and local Markdown `document` evidence for accepted file, heading, and chunk
-  observations.
+  evidence, and local Markdown `document` evidence for accepted file, heading, chunk,
+  and bounded reconciliation mention observations.
 - The CLI uses only Java standard library argument handling.
 
 For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see

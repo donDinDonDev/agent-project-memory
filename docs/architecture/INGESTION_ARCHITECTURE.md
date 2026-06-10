@@ -4,9 +4,9 @@ The current product focuses on local repository Java/Spring source files, Maven 
 files, standard Maven source/test/resource roots, bounded local OpenAPI/Swagger spec
 inputs, conservative default-scope local Markdown discovery, and deterministic
 generated project-memory output. The current v0.8 implementation emits local Markdown
-document inventory, deterministic ATX heading references, and bounded chunk references;
-document evidence, code-doc reconciliation, and local documentation guide rendering
-remain later layers.
+document inventory, deterministic ATX heading references, bounded chunk references,
+resolving document evidence, and conservative code-doc reconciliation signals. Local
+documentation guide rendering remains a later layer.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 
@@ -44,7 +44,8 @@ They should not:
 
 The v0.8 local document ingestor is a deterministic local Markdown ingestor, not a
 generic document search system and not an AI documentation layer. The current
-implementation covers default discovery, inventory, ATX headings, and bounded chunks.
+implementation covers default discovery, inventory, ATX headings, bounded chunks,
+document evidence, and conservative reconciliation signals.
 
 Default discovery should be conservative:
 
@@ -73,10 +74,11 @@ include/exclude contract makes them safe and reviewable.
 
 The current v0.8 ingestor normalizes accepted Markdown files into document inventory,
 deterministic ATX heading references, and bounded chunk references with
-`content_status: "not_serialized"`. Later layers may add `document` evidence records.
-The ingestor must not store full document bodies, perform semantic summarization, run
-embeddings, build a vector index, call an LLM, fetch external links, or read external
-documentation sources.
+`content_status: "not_serialized"`, emits bounded `document` evidence, and emits
+conservative `documents.reconciliation` rows as low-confidence uncertain inspection
+hints. The ingestor must not store full document bodies, perform semantic
+summarization, run embeddings, build a vector index, call an LLM, fetch external links,
+or read external documentation sources.
 
 Code-doc reconciliation should be implemented only as conservative uncertain signals
 derived from bounded deterministic token rules. Document-backed observations must remain
@@ -106,13 +108,13 @@ v0.1 does not support:
 
 Document ingestors may provide evidence, but document evidence must be identified as
 `document` evidence and kept separate from code evidence. The current local Markdown
-discovery and structure slice emits document evidence records for accepted file,
-heading, and chunk observations only.
+discovery, structure, and reconciliation slice emits document evidence records for
+accepted file, heading, chunk, and bounded mention observations only.
 
 When code and documents disagree, generated memory should prefer deterministic code facts and mark document-only claims as document-backed, not code-backed.
 
 The current v0.8 document evidence layer follows that rule by emitting document evidence
-for file, heading, and chunk observations only. Future bounded mention observations may
-be added for reconciliation. Document evidence should not become evidence for Java
-symbols, Spring annotations, build metadata, config values, tests, OpenAPI
-implementation, runtime behavior, or source/document agreement.
+for file, heading, chunk, and bounded reconciliation mention observations only.
+Document evidence should not become evidence for Java symbols, Spring annotations, build
+metadata, config values, tests, OpenAPI implementation, runtime behavior, stale-document
+claims, completeness claims, or source/document agreement.

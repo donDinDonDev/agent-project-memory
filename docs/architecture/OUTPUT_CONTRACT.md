@@ -42,10 +42,11 @@ object.
 The current unreleased v0.8 implementation extends the local Markdown/document
 ingestion boundary with deterministic default-scope Markdown discovery, document
 inventory, ATX heading references, bounded chunk references, and resolving `document`
-evidence records for accepted file, heading, and chunk observations. It emits
-`schema_version: "0.8"` with a top-level `documents` object. Code-doc reconciliation
-signals and local documentation guide rendering remain planned later v0.8 layers and
-are not emitted by the current local Markdown discovery, structure, and evidence slice.
+evidence records for accepted file, heading, chunk, and bounded reconciliation mention
+observations. It emits `schema_version: "0.8"` with a top-level `documents` object and
+conservative `documents.reconciliation` uncertain inspection hints. Local documentation
+guide rendering remains a planned later v0.8 layer and is not emitted by the current
+local Markdown discovery, structure, evidence, and reconciliation slice.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2624,29 +2625,33 @@ Current v0.7 deterministic sorting rules:
 
 This section defines the v0.8 public output boundary for local Markdown/project
 document ingestion. The current unreleased implementation includes the discovery,
-inventory, ATX heading, bounded chunk, and document evidence subset; later v0.8 layers
-may add reconciliation signals and guide rendering under the same documented safety
-rules.
+inventory, ATX heading, bounded chunk, document evidence, and conservative
+reconciliation signal subset; a later v0.8 layer may add guide rendering under the same
+documented safety rules.
 
 The v0.8 local document ingestion contract uses:
 
 - `schema_version: "0.8"` for output that preserves the v0.7 contracts and adds the
   top-level `documents` owner. In the current implementation, `documents` contains
   deterministic default-scope local Markdown discovery policy metadata, document
-  inventory, bounded ATX heading references, and bounded chunk references.
+  inventory, bounded ATX heading references, bounded chunk references, and conservative
+  reconciliation hints.
 - The same four output files under `.project-memory/`.
 - A top-level `documents` object as the owner of local Markdown document inventory,
-  applied discovery policy metadata, current document structure references, and later
+  applied discovery policy metadata, current document structure references, and
   document/code reconciliation signals.
 - Existing evidence fields plus the reserved `document` evidence type. The current
   implementation emits `document` evidence records for accepted file, heading, and
-  chunk observations within the existing evidence field set.
+  chunk observations, plus document-side mention observations used by uncertain
+  reconciliation signals, within the existing evidence field set.
 
 The current `schema_version: "0.8"` state emits document inventory, bounded
 heading/chunk navigation references, and resolving `document` evidence for accepted
-file, heading, and chunk observations only. It does not emit reconciliation signals,
-guide-rendered local documentation, document summaries, or serialized document bodies.
-Future layers must update tests and contract text when they add those outputs.
+file, heading, chunk, and bounded reconciliation mention observations. It emits
+conservative `documents.reconciliation` rows as low-confidence uncertain inspection
+hints only. It does not emit guide-rendered local documentation, document summaries, or
+serialized document bodies. Future layers must update tests and contract text when they
+add guide-rendered local documentation or other outputs.
 
 Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
 
@@ -2723,7 +2728,31 @@ Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
           "ev:README.md:unknown:document:file:README.md"
         ]
       }
-    ]
+    ],
+    "reconciliation": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "document_reconciliation:document_only_endpoint_mention:README.md:/ghost:decl:000001",
+          "module_id": null,
+          "signal": "document_only_endpoint_mention",
+          "status": "uncertain_signal",
+          "document_id": "document:README.md",
+          "document_path": "README.md",
+          "document_chunk_id": "document_chunk:README.md:chunk:000001",
+          "source_fact_kind": null,
+          "source_fact_id": null,
+          "subject_kind": "endpoint_like_path",
+          "subject_name": "/ghost",
+          "match_basis": "bounded_endpoint_like_path_token",
+          "confidence": "low",
+          "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
+          "evidence_ids": [
+            "ev:README.md:2-2:document:mention:/ghost:decl:000001"
+          ]
+        }
+      ]
+    }
   }
 }
 ```
@@ -2819,7 +2848,7 @@ Current v0.8 heading and chunk rules:
   semantic summarization. Empty Markdown files may have no chunks when no stable
   non-empty line range exists.
 
-Planned v0.8 reconciliation signal taxonomy:
+Current v0.8 reconciliation signal taxonomy:
 
 - Reconciliation lives under `documents.reconciliation`. It compares bounded document
   observations against existing generated source-backed facts and remains separate from
@@ -2831,6 +2860,28 @@ Planned v0.8 reconciliation signal taxonomy:
   reconciliation is intentionally disabled by a future explicit mode or configuration.
 - Every reconciliation item uses `status: "uncertain_signal"` and `confidence: "low"`
   unless a later contract defines a stronger evidence-backed relation type.
+- Current reconciliation items emit these fields:
+  `id`, `module_id`, `signal`, `status`, `document_id`, `document_path`,
+  `document_chunk_id`, `source_fact_kind`, `source_fact_id`, `subject_kind`,
+  `subject_name`, `match_basis`, `confidence`, `uncertainty`, and `evidence_ids`.
+- `id` is stable within the scan and derived from the signal kind plus the document
+  mention or source fact identity. It is not evidence by itself.
+- `module_id` is the source fact module when a source fact is present, the document owner
+  module when the signal is document-only, and `null` for repository-level document-only
+  signals.
+- `document_id`, `document_path`, and `document_chunk_id` identify the accepted
+  default-scope document observation when one exists. They are `null` for source-only
+  missing-document signals.
+- `source_fact_kind` and `source_fact_id` identify the deterministic source-backed fact
+  when one exists, such as `"spring_mvc_endpoint"`, `"openapi_operation"`, or
+  `"maven_module"`. They are `null` for document-only signals.
+- `subject_kind` and `subject_name` describe the bounded comparison subject, not a
+  promoted fact. Current subject kinds include `"endpoint_like_path"`, `"api_path"`,
+  `"module_reference"`, and `"maven_module"`.
+- `evidence_ids` must resolve in `evidence-index.jsonl`. Document-only signals reference
+  document mention evidence for the observed token. Source-only signals reuse the
+  source-backed fact evidence. Missing document mentions do not fabricate absence
+  evidence.
 - `document_only_endpoint_mention`: a default-scope document contains an endpoint-like
   path token that does not match any emitted source-visible endpoint fact or declared
   OpenAPI operation fact under the bounded matching rules.
@@ -2856,14 +2907,11 @@ Planned v0.8 reconciliation signal taxonomy:
   `"source_api_fact_not_matched_to_default_scope_document"`,
   `"document_module_reference_not_matched_to_module_fact"`, or
   `"module_fact_not_matched_to_default_scope_document"`.
-- Document-only signals reference document evidence for the observed token. Source-only
-  signals reference evidence for the source-backed fact being considered. Missing
-  document mentions do not fabricate absence evidence.
 - Reconciliation signals must not be presented as stale-doc truth, completeness checks,
   coverage, implementation proof, runtime routing proof, documentation-quality scores,
   business priority, correctness, vulnerability, or production-impact claims.
 
-Planned v0.8 deterministic sorting rules:
+Current v0.8 deterministic sorting rules:
 
 - Document items sort by module order, document path, and ID.
 - Headings sort by document order, then level, title, and ID.
@@ -3005,11 +3053,10 @@ v0.2 Maven module discovery also does not add new evidence fields. Root
   operation fact IDs. Duplicate evidence ID collisions must be resolved with a
   deterministic `decl:<zero-padded-ordinal>` suffix or degraded to warnings.
 - Current v0.8 local document ingestion emits `document` evidence for default-scope
-  local Markdown file observations, headings, and bounded chunk references. Planned
-  reconciliation layers may add document-side mention observations later. Document
-  evidence supports document inventory and document-backed uncertain signals only. It
-  must not be used as code, build, config, test, API-spec, runtime, or generated-output
-  evidence.
+  local Markdown file observations, headings, bounded chunk references, and
+  reconciliation document-side mention observations. Document evidence supports document
+  inventory and document-backed uncertain signals only. It must not be used as code,
+  build, config, test, API-spec, runtime, or generated-output evidence.
 
 Evidence entries are sorted deterministically by path, line range, class, method, symbol,
 and ID. Nullable fields are emitted as JSON `null`; absent repeated values are emitted as
