@@ -30,10 +30,8 @@ services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.8.0` release candidate is prepared for maintainer approval but is not tagged or
-published yet. When published, the expected release artifact is
-`agent-project-memory-0.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
-verification.
+The `v0.8.0` release artifact is `agent-project-memory-0.8.0.jar`; release assets use
+`SHA256SUMS` for optional checksum verification.
 
 ```sh
 java -jar agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
@@ -270,8 +268,8 @@ release-prep validation, and a read-only security/contract audit. It moves norma
 generated output to `schema_version: "0.7"` with bounded source-visible test method,
 framework, Spring test slice, mock annotation, tested-subject relation/status, and
 quality planning-hint output.
-The v0.8 local Markdown and document ingestion release candidate is prepared for
-maintainer approval after implementation, regression coverage, real-project evaluation,
+The v0.8 local Markdown and document ingestion release is published with packaged jar
+and checksum assets after implementation, regression coverage, real-project evaluation,
 release-prep validation, and a read-only security/contract audit. It moves normal
 generated output to `schema_version: "0.8"` with deterministic default-scope local
 Markdown discovery, document inventory, ATX heading and chunk references, resolving

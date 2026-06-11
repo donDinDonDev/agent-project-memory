@@ -152,11 +152,11 @@ release:
 
 ## Publication Status
 
-The v0.8.0 release candidate materials are prepared for maintainer approval. No tag,
-GitHub release, artifact upload, or checksum publication is performed by this
-release-prep change.
+The v0.8.0 release is published at:
 
-Expected release assets when published:
+[https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.8.0](https://github.com/donDinDonDev/agent-project-memory/releases/tag/v0.8.0)
+
+Published release assets:
 
 - `agent-project-memory-0.8.0.jar`
 - `SHA256SUMS`

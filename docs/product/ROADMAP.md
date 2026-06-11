@@ -38,8 +38,8 @@ inferred tested-subject relations, without coverage, execution, assertion, CI, r
 correctness, vulnerability, production-impact, or business-priority claims. Real-project
 evaluation for the current v0.7 slices and the read-only security/contract audit are
 complete with no release-blocking findings.
-The v0.8 local Markdown and document ingestion release candidate is prepared for
-maintainer approval. Generated output uses `schema_version: "0.8"` and adds a top-level
+The v0.8 local Markdown and document ingestion release is published with packaged jar
+and checksum assets. Generated output uses `schema_version: "0.8"` and adds a top-level
 `documents` object with deterministic default-scope local Markdown discovery policy
 metadata, document inventory, ATX heading references, bounded chunk references, resolving
 `document` evidence, and conservative `documents.reconciliation` rows as low-confidence
@@ -48,8 +48,7 @@ orientation from structured document facts and evidence only, without document b
 serialization, AI summaries, stale-document truth claims, completeness claims, or
 document-backed facts overriding code-backed facts. Real-project v0.8 evaluation and
 read-only security/contract audit are complete with no reportable findings or
-release-blocking follow-up. Tag, GitHub release, artifact upload, and checksum
-publication remain manual release actions.
+release-blocking follow-up.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -444,8 +443,8 @@ Release readiness notes:
 - Release notes exist in [V0_8_RELEASE_NOTES.md](V0_8_RELEASE_NOTES.md).
 - Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
   `git diff --check`.
-- Tag, GitHub release, artifact upload, and checksum publication are not performed in
-  this release-prep state.
+- The `v0.8.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 
