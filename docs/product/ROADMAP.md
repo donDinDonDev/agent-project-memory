@@ -554,6 +554,10 @@ Current development status:
 - v1.0 compatibility expectations are conservative: JSON and JSONL field semantics are
   the stable machine-readable contract, while Markdown outputs are deterministic
   evidence-visible presentations rather than stable parser APIs.
+- Expanded v1.0 evaluation corpus validation is complete on pinned representative
+  Java/Spring Maven targets covering single-module, multi-module, OpenAPI/spec,
+  JPA-heavy, test-heavy, docs/config-heavy, and moderate-size shapes. The public summary
+  is [v1.0 Evaluation Corpus Summary](../development/evaluations/v1.0-evaluation-corpus_SUMMARY.md).
 
 Expected readiness:
 

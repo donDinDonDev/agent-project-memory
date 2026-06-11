@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added a v1.0 evaluation corpus summary for packaged CLI scans over pinned
+  representative Java/Spring Maven targets, covering deterministic output stability,
+  `schema_version: "1.0"`, evidence reference integrity, normalized paths, module and
+  warning references, document/code separation, and configured local Markdown volume.
+
 ### Changed
 
 - Updated normal generated `project-map.json` output to `schema_version: "1.0"` as a
