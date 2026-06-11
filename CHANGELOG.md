@@ -43,6 +43,10 @@ architecture documents.
   without document prose summaries, chunk bodies, stale-document truth claims,
   completeness claims, documentation-quality scoring, or document-backed facts
   overriding code-backed facts.
+- Added a v0.8 real-project evaluation summary for pinned Java/Spring Maven targets,
+  covering local Markdown discovery, heading/chunk navigation references, `document`
+  evidence, reconciliation hint behavior, guide size/noise, determinism, evidence
+  integrity, document/code separation, and the sensitive-content boundary.
 
 ### Changed
 
@@ -57,6 +61,11 @@ architecture documents.
 
 - Updated post-release documentation status to mark `v0.7.0` as published with release
   assets and checksums.
+
+### Security
+
+- Completed the v0.8 real-project evaluation and read-only security/contract audit with
+  no reportable findings or release-blocking follow-up.
 
 ## [0.7.0] - 2026-06-10
 

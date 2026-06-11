@@ -421,6 +421,12 @@ facts as low-confidence uncertain inspection hints, plus compact local project
 documentation rendering in `agent-guide.md` from structured document facts and evidence
 only.
 
+Real-project v0.8 evaluation is complete on pinned Spring PetClinic, Spring PetClinic
+REST, and Spring PetClinic Microservices targets with local Markdown documentation.
+Repeated packaged CLI scans were deterministic, structural evidence/document validation
+passed, and a read-only security/contract audit found no reportable findings or
+release-blocking follow-up.
+
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 
 Expected direction:
