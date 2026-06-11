@@ -471,8 +471,12 @@ Current implementation status:
   workflow are complete for the current v0.9 track.
 - Installation options research is complete for the current v0.9 track: the minimal
   planned v1.0 path remains a GitHub Release executable jar with optional `SHA256SUMS`
-  verification. Broader evaluation, security baseline, and release prep remain follow-up
-  v0.9 goals.
+  verification. Security baseline and release prep remain follow-up v0.9 goals.
+- Broader packaged CLI/config/performance evaluation is complete for the current v0.9
+  development track. It covered default packaged scans, safe config include/exclude
+  behavior, disabled local Markdown behavior, invalid config exit codes, help/version
+  smoke, repeated output digest stability, and bounded local performance observations.
+  Security baseline and release prep remain follow-up v0.9 goals.
 
 Planned contract boundary:
 

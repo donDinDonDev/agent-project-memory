@@ -33,6 +33,10 @@ architecture documents.
   on GitHub Release executable jars with `SHA256SUMS`, while parking shell wrappers,
   JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf plugins, native
   images, and container images as future distribution channels.
+- Added a v0.9 packaged CLI/config/performance evaluation summary covering default scan
+  behavior, safe config include/exclude behavior, disabled local Markdown behavior,
+  invalid config exit codes, help/version smoke, deterministic output digests, and
+  bounded local performance observations.
 
 ### Changed
 
