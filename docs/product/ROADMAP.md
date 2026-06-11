@@ -8,6 +8,13 @@ Current post-v0.9 development output uses `schema_version: "1.0"` for normal gen
 preserves the current v0.9 output shape and evidence semantics unless a later release
 note and architecture update explicitly change them.
 
+The v1.0 compatibility policy treats `project-map.json` and `evidence-index.jsonl` as
+the stable machine-readable surface. `endpoints.md` and `agent-guide.md` remain
+deterministic human-readable outputs with stable evidence visibility and cautious fact
+boundaries, while exact Markdown presentation may evolve. Future breaking changes,
+deprecations, and required migration steps must be documented in architecture docs, the
+changelog, and release notes.
+
 The current v0.x release line includes module-aware Maven analysis, build/config
 orientation, source-visible Spring MVC and application-surface signals, declared
 OpenAPI operations, bounded JPA/domain metadata, source-visible test and quality
@@ -544,6 +551,9 @@ Current development status:
 - The v1.0 schema marker preserves current v0.9 evidence semantics. It does not add
   analyzer capability, change evidence fields, change evidence types, or redesign
   Markdown compatibility by itself.
+- v1.0 compatibility expectations are conservative: JSON and JSONL field semantics are
+  the stable machine-readable contract, while Markdown outputs are deterministic
+  evidence-visible presentations rather than stable parser APIs.
 
 Expected readiness:
 

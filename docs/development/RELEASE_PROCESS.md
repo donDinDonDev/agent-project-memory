@@ -88,6 +88,33 @@ Any evidence shape or evidence semantic change requires:
 
 LLM-generated text must not be used as authoritative evidence in any release line.
 
+## Compatibility, Deprecation, And Migration Notes
+
+Starting with the v1.0 compatibility line, generated JSON and JSONL field semantics are
+the stable machine-readable surface. Markdown outputs remain deterministic,
+evidence-visible, and cautious, but exact Markdown presentation is not a stable parser
+interface unless a specific structure is explicitly documented in
+`docs/architecture/OUTPUT_CONTRACT.md`.
+
+Breaking output or evidence changes must be documented in the same logical change that
+introduces them. The documentation set should identify:
+
+- the affected generated file, field, evidence type, or behavior;
+- the old behavior and the new behavior;
+- whether the change is additive, deprecated, removed, renamed, or semantic;
+- the compatibility impact for downstream consumers;
+- the migration action, such as regenerating outputs, accepting a new
+  `schema_version`, updating a parser, or changing evidence interpretation.
+
+Deprecations should use a `Deprecated` changelog group when applicable and should also
+appear in release notes. A deprecation note should name the affected field or behavior,
+the replacement when available, the current support status, and removal conditions when
+known.
+
+Migration notes belong in release notes for released behavior and in README usage text
+when everyday users need to change commands, installation steps, schema-version
+allowlists, or generated-output consumption.
+
 ## Public Surface Review
 
 Before release documentation or release metadata is published, public-facing text should

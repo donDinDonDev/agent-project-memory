@@ -2981,6 +2981,61 @@ or change evidence semantics. Consumers that already understand the v0.9 generat
 shape should treat `schema_version: "1.0"` as the same output and evidence semantics
 with a stable-line marker.
 
+Conservative v1.0 compatibility expectations:
+
+- `.project-memory/project-map.json` is the primary machine-readable project map.
+  The v1.0 compatibility line keeps the documented current field names, nesting,
+  JSON null and empty-array conventions, and field semantics from the v0.9 shape
+  except for the `schema_version` marker value. Later additive fields are
+  compatibility expansions only when this document, tests or goldens, the changelog,
+  and release notes describe them. Consumers should ignore unknown fields when
+  practical. Removing fields, renaming fields, changing field meanings, or changing
+  required/nullability semantics is a breaking output-contract change.
+- `.project-memory/evidence-index.jsonl` remains newline-delimited JSON with the
+  current evidence field set and evidence semantics documented in
+  `EVIDENCE_MODEL.md`. Evidence IDs must resolve from generated facts that reference
+  them and remain stable within one generated output set. The v1.0 marker does not
+  change evidence types, path normalization, confidence labels, excerpt boundaries,
+  or the no-tool-config-evidence decision.
+- `.project-memory/endpoints.md` is a deterministic human-readable API surface
+  inventory. The filename, cautious fact categories, category separation, and visible
+  evidence references are part of the documented output expectation. Exact Markdown
+  heading wording, list formatting, compactness, and presentation order may evolve as
+  long as the generator keeps the same evidence-backed meaning and does not merge
+  source-visible endpoints, declared OpenAPI operations, generated-source warnings,
+  repository-rest warnings, or hidden HTTP warnings into unsupported facts.
+- `.project-memory/agent-guide.md` is a deterministic human-readable orientation guide
+  generated from structured project facts and `evidence-index.jsonl`. Its caution
+  boundaries are stable: it must not invent architecture, summarize source or document
+  bodies, call LLMs, call external services, or add unsupported runtime claims. Exact
+  Markdown layout, section wording, and evidence-reference presentation may evolve for
+  readability. Downstream automation should parse `project-map.json` and
+  `evidence-index.jsonl` rather than treating Markdown presentation as a stable
+  machine-readable API.
+
+The v0.9-to-v1.0 migration is intentionally narrow. Normal v1.0 generation writes
+`schema_version: "1.0"` instead of `"0.9"` in `project-map.json`; the current JSON
+shape and evidence semantics are preserved. Consumers that gate on schema version need
+to accept `"1.0"` for the same documented shape. No separate evidence-index migration is
+required, but a generated output set should be treated as a set: regenerate all four
+files together when moving a project from v0.9 output to v1.0 output so evidence
+references, Markdown references, and JSON facts remain aligned.
+
+Future compatibility documentation requirements:
+
+- Breaking changes must update this document in the affected file section, update
+  `EVIDENCE_MODEL.md` when evidence shape or semantics change, update focused tests or
+  goldens, add a changelog entry, and include release-note migration notes that name the
+  affected file, field or behavior, old behavior, new behavior, compatibility impact,
+  and required consumer action.
+- Deprecations must be called out in the changelog and release notes with the affected
+  file, field or behavior, current support status, replacement when available, and
+  removal conditions when known.
+- Migration notes are required whenever users or downstream tools need to regenerate
+  outputs, update schema-version allowlists, change parsers, or reinterpret generated
+  facts. Markdown-only presentation changes should say whether the JSON/JSONL contract
+  is unchanged.
+
 Any later v1.x field addition, field removal, field rename, evidence shape change, or
 evidence semantic change must update this document, `EVIDENCE_MODEL.md`, focused tests
 or goldens, changelog entries, and release notes in the same logical change.
@@ -3806,5 +3861,8 @@ Markdown rendering safety:
 - Output changes require updating this file.
 - Evidence field changes require updating `docs/architecture/EVIDENCE_MODEL.md`.
 - Generated facts must reference evidence IDs where possible.
-- Markdown outputs should remain readable without hiding evidence.
-- JSON outputs should remain stable enough for tests and downstream tools.
+- JSON and JSONL field names, nullability conventions, repeated-value conventions, and
+  documented semantics are the stable machine-readable surface.
+- Markdown outputs should remain deterministic, readable, cautious, and evidence-visible
+  without being treated as the stable parser interface unless a specific Markdown
+  structure is explicitly documented as contractual.

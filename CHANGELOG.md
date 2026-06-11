@@ -15,6 +15,11 @@ architecture documents.
   schema marker and compatibility-policy migration, preserving the current v0.9 output
   shape, scan metadata, and evidence semantics without adding analyzer capability or
   changing `evidence-index.jsonl` behavior.
+- Documented conservative v1.0 compatibility and migration expectations for
+  `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`,
+  including the v0.9-to-v1.0 schema marker migration, JSON/JSONL field and semantic
+  stability, Markdown presentation expectations, and future breaking-change,
+  deprecation, and migration-note requirements.
 
 ## [0.9.0] - 2026-06-11
 

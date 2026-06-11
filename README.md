@@ -217,6 +217,22 @@ signals, repository-rest warnings, and hidden HTTP warnings in separate sections
 facts. `agent-guide.md` is a deterministic orientation guide generated only from the
 structured project-map facts and evidence index.
 
+Compatibility and migration notes:
+
+- The v0.9-to-v1.0 output migration is limited to the normal generated
+  `project-map.json` marker moving from `schema_version: "0.9"` to `"1.0"`. The current
+  JSON shape and evidence semantics are preserved.
+- Consumers that accept only known schema markers should add `"1.0"` for the preserved
+  v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
+  evidence IDs, and Markdown evidence references stay aligned.
+- `project-map.json` and `evidence-index.jsonl` are the stable machine-readable
+  outputs. `endpoints.md` and `agent-guide.md` are deterministic human-readable
+  presentations; their filenames, cautious categories, and evidence visibility are
+  documented expectations, while exact Markdown wording or layout may evolve.
+- Future breaking changes, deprecations, and required migration steps are documented in
+  the architecture contract, changelog, and release notes for the release that changes
+  behavior.
+
 ## Future Installed Usage
 
 The current supported path is the release jar documented above. The command forms below
