@@ -417,8 +417,9 @@ deterministic ATX heading references, and bounded chunk references with
 accepted file, heading, chunk, and bounded reconciliation mention observations. The
 current implementation also emits conservative `documents.reconciliation` rows for
 bounded endpoint-like path and module-like comparisons against deterministic source
-facts as low-confidence uncertain inspection hints. Local documentation guide rendering
-remains a planned later layer.
+facts as low-confidence uncertain inspection hints, plus compact local project
+documentation rendering in `agent-guide.md` from structured document facts and evidence
+only.
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 

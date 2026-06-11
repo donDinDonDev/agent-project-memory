@@ -36,6 +36,13 @@ architecture documents.
   only as low-confidence uncertain inspection hints, with resolving document-side or
   source-backed evidence, and without stale-document, completeness, coverage, or
   documentation-quality claims.
+- Added compact v0.8 local project documentation rendering to `agent-guide.md` from
+  structured `documents` facts and resolving evidence only. The guide renders document
+  inventory, module ownership, bounded heading/chunk navigation references, discovery
+  policy facts, and `documents.reconciliation` rows as uncertain inspection hints
+  without document prose summaries, chunk bodies, stale-document truth claims,
+  completeness claims, documentation-quality scoring, or document-backed facts
+  overriding code-backed facts.
 
 ### Changed
 
@@ -43,8 +50,8 @@ architecture documents.
   local Markdown discovery and structure slice, including top-level `documents`
   discovery policy metadata, document inventory, ATX heading references, and bounded
   chunk references with resolving document evidence and conservative
-  `documents.reconciliation` hints while keeping local documentation guide rendering out
-  of the current implementation.
+  `documents.reconciliation` hints plus compact local-document guide rendering from
+  structured document facts and evidence only.
 
 ### Fixed
 

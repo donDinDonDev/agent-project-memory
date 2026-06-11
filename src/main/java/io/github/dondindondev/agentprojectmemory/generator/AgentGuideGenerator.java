@@ -17,6 +17,7 @@ public final class AgentGuideGenerator {
   private static final int MAX_INLINE_EVIDENCE_REFERENCES = 5;
   private static final int MAX_INLINE_INSPECTION_PATHS = 5;
   private static final int MAX_INLINE_BUILD_CONFIG_ITEMS = 5;
+  private static final int MAX_INLINE_DOCUMENT_REFS = 3;
 
   public String generate(String projectMapJson, String evidenceIndexJsonl) throws IOException {
     Objects.requireNonNull(projectMapJson, "projectMapJson");
@@ -46,6 +47,11 @@ public final class AgentGuideGenerator {
     appendEntities(markdown, projectMap, moduleById, evidenceById);
     appendTests(markdown, projectMap.path("tests"), moduleById, evidenceById);
     appendQuality(markdown, projectMap.path("quality"), moduleById, evidenceById);
+    appendLocalProjectDocumentation(
+        markdown,
+        projectMap.path("documents"),
+        moduleById,
+        evidenceById);
     appendKnownLimits(markdown, projectMap, moduleById, evidenceById);
     appendInspectionOrder(markdown, projectMap, evidenceById);
 
@@ -1956,6 +1962,296 @@ public final class AgentGuideGenerator {
     appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
   }
 
+  private void appendLocalProjectDocumentation(
+      StringBuilder markdown,
+      JsonNode documents,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!documents.isObject() || !hasLocalDocumentationGuideContent(documents)) {
+      return;
+    }
+
+    markdown.append("## Local Project Documentation\n\n");
+    markdown.append("- Documents analysis status: ")
+        .append(code(text(documents, "analysis_status")))
+        .append("\n");
+    markdown.append("- Local documentation entries are default-scope Markdown navigation facts only; document bodies, paragraphs, arbitrary lists, tables, code blocks, and prose summaries are not rendered.\n");
+    markdown.append("- Reconciliation rows are uncertain inspection hints only; they do not prove stale documentation, coverage, completeness, correctness, implementation, or source/document agreement.\n");
+    appendDocumentDiscoveryPolicy(markdown, documents.path("discovery"));
+    appendDocumentInventory(markdown, documents.path("items"), moduleById, evidenceById);
+    appendDocumentReconciliationHints(
+        markdown,
+        documents.path("reconciliation"),
+        moduleById,
+        evidenceById);
+    markdown.append("\n");
+  }
+
+  private void appendDocumentDiscoveryPolicy(StringBuilder markdown, JsonNode discovery) {
+    if (!discovery.isObject()) {
+      markdown.append("- Discovery policy: not recorded.\n");
+      return;
+    }
+
+    markdown.append("- Discovery policy: scope ")
+        .append(code(text(discovery, "scope")))
+        .append(", path_policy ")
+        .append(code(text(discovery, "path_policy")))
+        .append(", symlink_policy ")
+        .append(code(text(discovery, "symlink_policy")))
+        .append(", included_patterns ")
+        .append(code(Integer.toString(discovery.path("included_patterns").size())))
+        .append(", excluded_patterns ")
+        .append(code(Integer.toString(discovery.path("excluded_patterns").size())))
+        .append(".\n");
+  }
+
+  private void appendDocumentInventory(
+      StringBuilder markdown,
+      JsonNode documents,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!documents.isArray() || documents.isEmpty()) {
+      markdown.append("- Document inventory: detected no default-scope local Markdown documents.\n");
+      return;
+    }
+
+    markdown.append("- Document inventory: detected ")
+        .append(documents.size())
+        .append(" accepted default-scope Markdown document")
+        .append(documents.size() == 1 ? "" : "s")
+        .append(".\n");
+
+    int visibleCount = Math.min(documents.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode document = documents.get(index);
+      JsonNode headings = document.path("headings");
+      JsonNode chunks = document.path("chunks");
+      markdown.append("  - Document: ")
+          .append(code(text(document, "path")))
+          .append(" (")
+          .append(documentModuleDescription(document, moduleById))
+          .append(", discovery_source: ")
+          .append(code(text(document, "discovery_source")))
+          .append(", title_source: ")
+          .append(code(text(document, "title_source")))
+          .append(", headings: ")
+          .append(code(Integer.toString(headings.size())))
+          .append(", chunks: ")
+          .append(code(Integer.toString(chunks.size())))
+          .append(").\n");
+      appendNestedEvidenceLine(markdown, document.path("evidence_ids"), evidenceById);
+      appendDocumentHeadingRefs(markdown, headings, evidenceById);
+      appendDocumentChunkRefs(markdown, chunks, evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        documents.size() - visibleCount,
+        "local Markdown documents");
+  }
+
+  private String documentModuleDescription(
+      JsonNode document,
+      Map<String, ModuleInfo> moduleById) {
+    String moduleId = nullableText(document, "module_id");
+    if (moduleId == null || moduleId.isBlank()) {
+      return "module: " + code("repository-level");
+    }
+    return "module: " + moduleLabel(moduleId, moduleById);
+  }
+
+  private void appendDocumentHeadingRefs(
+      StringBuilder markdown,
+      JsonNode headings,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!headings.isArray() || headings.isEmpty()) {
+      markdown.append("    - Heading refs: none recorded.\n");
+      return;
+    }
+
+    markdown.append("    - Heading refs: detected ")
+        .append(headings.size())
+        .append(" bounded ATX heading reference")
+        .append(headings.size() == 1 ? "" : "s")
+        .append(".\n");
+    int visibleCount = Math.min(headings.size(), MAX_INLINE_DOCUMENT_REFS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode heading = headings.get(index);
+      markdown.append("      - Heading ref: ")
+          .append(code(text(heading, "id")))
+          .append(" level ")
+          .append(code(text(heading, "level")))
+          .append(", lines ")
+          .append(code(lineRangeLabel(heading)))
+          .append(", anchor ")
+          .append(code(nullDisplay(nullableText(heading, "anchor"))))
+          .append(", evidence ")
+          .append(evidenceReferenceList(stringValues(heading.path("evidence_ids")), evidenceById))
+          .append(".\n");
+    }
+    appendOmittedDocumentRefs(markdown, headings.size() - visibleCount, "heading refs");
+  }
+
+  private void appendDocumentChunkRefs(
+      StringBuilder markdown,
+      JsonNode chunks,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!chunks.isArray() || chunks.isEmpty()) {
+      markdown.append("    - Chunk refs: none recorded.\n");
+      return;
+    }
+
+    markdown.append("    - Chunk refs: detected ")
+        .append(chunks.size())
+        .append(" bounded chunk reference")
+        .append(chunks.size() == 1 ? "" : "s")
+        .append("; chunk bodies are not serialized.\n");
+    int visibleCount = Math.min(chunks.size(), MAX_INLINE_DOCUMENT_REFS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode chunk = chunks.get(index);
+      markdown.append("      - Chunk ref: ")
+          .append(code(text(chunk, "id")))
+          .append(" heading_id ")
+          .append(code(nullDisplay(nullableText(chunk, "heading_id"))))
+          .append(", lines ")
+          .append(code(lineRangeLabel(chunk)))
+          .append(", content_status ")
+          .append(code(text(chunk, "content_status")))
+          .append(", evidence ")
+          .append(evidenceReferenceList(stringValues(chunk.path("evidence_ids")), evidenceById))
+          .append(".\n");
+    }
+    appendOmittedDocumentRefs(markdown, chunks.size() - visibleCount, "chunk refs");
+  }
+
+  private void appendDocumentReconciliationHints(
+      StringBuilder markdown,
+      JsonNode reconciliation,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!reconciliation.isObject()) {
+      markdown.append("- Reconciliation hints: not analyzed; no reconciliation section recorded.\n");
+      return;
+    }
+
+    JsonNode items = reconciliation.path("items");
+    markdown.append("- Reconciliation hints: status ")
+        .append(code(text(reconciliation, "analysis_status")));
+    if (!items.isArray() || items.isEmpty()) {
+      markdown.append("; detected none.\n");
+      return;
+    }
+
+    markdown.append("; detected ")
+        .append(items.size())
+        .append(" low-confidence uncertain inspection hint")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+    int visibleCount = Math.min(items.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode hint = items.get(index);
+      markdown.append("  - Reconciliation hint: ")
+          .append(code(text(hint, "signal")))
+          .append(" for ")
+          .append(code(text(hint, "subject_kind")))
+          .append(" ")
+          .append(code(text(hint, "subject_name")))
+          .append(" (status: ")
+          .append(code(text(hint, "status")))
+          .append(", confidence: ")
+          .append(code(text(hint, "confidence")))
+          .append(", uncertainty: ")
+          .append(code(text(hint, "uncertainty")))
+          .append(", match_basis: ")
+          .append(code(text(hint, "match_basis")))
+          .append(").\n");
+      appendDocumentHintModuleLine(markdown, hint, moduleById);
+      appendDocumentHintReferenceLine(
+          markdown,
+          "Document",
+          nullableText(hint, "document_id"),
+          nullableText(hint, "document_path"),
+          nullableText(hint, "document_chunk_id"));
+      appendDocumentHintReferenceLine(
+          markdown,
+          "Source fact",
+          nullableText(hint, "source_fact_kind"),
+          nullableText(hint, "source_fact_id"),
+          null);
+      appendNestedEvidenceLine(markdown, hint.path("evidence_ids"), evidenceById);
+    }
+    appendOmittedBuildConfigItems(
+        markdown,
+        items.size() - visibleCount,
+        "document reconciliation hints");
+  }
+
+  private void appendDocumentHintModuleLine(
+      StringBuilder markdown,
+      JsonNode hint,
+      Map<String, ModuleInfo> moduleById) {
+    String moduleId = nullableText(hint, "module_id");
+    markdown.append("    - Module: ");
+    if (moduleId == null || moduleId.isBlank()) {
+      markdown.append(code("repository-level-or-not-recorded")).append("\n");
+      return;
+    }
+    markdown.append(moduleLabel(moduleId, moduleById)).append("\n");
+  }
+
+  private void appendDocumentHintReferenceLine(
+      StringBuilder markdown,
+      String label,
+      String primary,
+      String secondary,
+      String tertiary) {
+    markdown.append("    - ").append(label).append(": ");
+    if ((primary == null || primary.isBlank()) && (secondary == null || secondary.isBlank())) {
+      markdown.append("none recorded for this hint.\n");
+      return;
+    }
+
+    List<String> values = new ArrayList<>();
+    if (primary != null && !primary.isBlank()) {
+      values.add(primary);
+    }
+    if (secondary != null && !secondary.isBlank()) {
+      values.add(secondary);
+    }
+    if (tertiary != null && !tertiary.isBlank()) {
+      values.add("chunk=" + tertiary);
+    }
+    markdown.append(codeList(values)).append("\n");
+  }
+
+  private String lineRangeLabel(JsonNode node) {
+    String lineStart = nullableText(node, "line_start");
+    String lineEnd = nullableText(node, "line_end");
+    if (lineStart == null || lineStart.isBlank()) {
+      return "unknown";
+    }
+    if (lineEnd == null || lineEnd.isBlank() || lineEnd.equals(lineStart)) {
+      return lineStart;
+    }
+    return lineStart + "-" + lineEnd;
+  }
+
+  private void appendOmittedDocumentRefs(
+      StringBuilder markdown,
+      int omittedCount,
+      String itemDescription) {
+    if (omittedCount <= 0) {
+      return;
+    }
+    markdown.append("      - ... and ")
+        .append(omittedCount)
+        .append(" more ")
+        .append(MarkdownRenderer.text(itemDescription))
+        .append(" in ")
+        .append(code("project-map.json"))
+        .append(".\n");
+  }
+
   private void appendKnownLimits(
       StringBuilder markdown,
       JsonNode projectMap,
@@ -2043,6 +2339,15 @@ public final class AgentGuideGenerator {
           .append("vulnerabilities, and correctness are not claimed. v0.5 Spring Security ")
           .append("configuration warnings are bounded source-visible inspection hints only.\n");
     }
+    if (hasLocalDocumentationGuideContent(projectMap.path("documents"))) {
+      markdown.append("- Document-backed: local documentation facts come from default-scope ")
+          .append("Markdown inventory, heading/chunk navigation references, and uncertain ")
+          .append("reconciliation hints only. Hidden, private, generated, dependency, ")
+          .append("maintainer, and `.project-memory/` paths are excluded by default; symlinks ")
+          .append("are not followed by default; external docs, PDFs, Word documents, ")
+          .append("connectors, generic RAG, repository chat, and LLM summaries are outside the ")
+          .append("core analyzer. Document-backed signals do not override code-backed facts.\n");
+    }
 
     if (projectMap.path("endpoints").isEmpty()) {
       markdown.append("- Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent ")
@@ -2116,6 +2421,21 @@ public final class AgentGuideGenerator {
           .append("planning hints only, not coverage, runtime, correctness, vulnerability, or ")
           .append("business-priority claims.\n");
     }
+    if (hasLocalDocumentationGuideContent(projectMap.path("documents"))) {
+      markdown.append(step++)
+          .append(". For local documentation context, inspect accepted document evidence and reconciliation hints");
+      appendPathHint(
+          markdown,
+          evidencePaths(projectMap.path("documents"), evidenceById));
+      markdown.append(" and treat document paths, heading refs, chunk refs, and reconciliation rows ")
+          .append("as navigation aids only; prefer code-backed facts for implementation truth.\n");
+    }
+  }
+
+  private boolean hasLocalDocumentationGuideContent(JsonNode documents) {
+    return documents.isObject()
+        && (hasArrayEntries(documents.path("items"))
+            || hasArrayEntries(documents.path("reconciliation").path("items")));
   }
 
   private boolean hasDomainGuideContent(JsonNode projectMap) {
@@ -2281,15 +2601,7 @@ public final class AgentGuideGenerator {
       markdown.append("none recorded.\n");
       return;
     }
-
-    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
-    StringJoiner joiner = new StringJoiner(", ");
-    for (int i = 0; i < visibleCount; i++) {
-      joiner.add(evidenceReference(ids.get(i), evidenceById));
-    }
-    markdown.append(joiner);
-    appendOmittedEvidenceSuffix(markdown, ids.size() - visibleCount);
-    markdown.append("\n");
+    markdown.append(evidenceReferenceList(ids, evidenceById)).append("\n");
   }
 
   private void appendNestedEvidenceLine(
@@ -2308,15 +2620,7 @@ public final class AgentGuideGenerator {
       markdown.append("none recorded.\n");
       return;
     }
-
-    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
-    StringJoiner joiner = new StringJoiner(", ");
-    for (int i = 0; i < visibleCount; i++) {
-      joiner.add(evidenceReference(ids.get(i), evidenceById));
-    }
-    markdown.append(joiner);
-    appendOmittedEvidenceSuffix(markdown, ids.size() - visibleCount);
-    markdown.append("\n");
+    markdown.append(evidenceReferenceList(ids, evidenceById)).append("\n");
   }
 
   private String endpointLabel(JsonNode endpoint) {
@@ -2654,6 +2958,23 @@ public final class AgentGuideGenerator {
       return code(id) + " (unresolved evidence record)";
     }
     return code(evidence.location()) + " (" + code(id) + ")";
+  }
+
+  private String evidenceReferenceList(
+      List<String> ids,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (ids.isEmpty()) {
+      return "none recorded";
+    }
+
+    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
+    StringJoiner joiner = new StringJoiner(", ");
+    for (int i = 0; i < visibleCount; i++) {
+      joiner.add(evidenceReference(ids.get(i), evidenceById));
+    }
+    StringBuilder references = new StringBuilder(joiner.toString());
+    appendOmittedEvidenceSuffix(references, ids.size() - visibleCount);
+    return references.toString();
   }
 
   private String text(JsonNode node, String fieldName) {

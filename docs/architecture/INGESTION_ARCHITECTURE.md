@@ -5,8 +5,8 @@ files, standard Maven source/test/resource roots, bounded local OpenAPI/Swagger 
 inputs, conservative default-scope local Markdown discovery, and deterministic
 generated project-memory output. The current v0.8 implementation emits local Markdown
 document inventory, deterministic ATX heading references, bounded chunk references,
-resolving document evidence, and conservative code-doc reconciliation signals. Local
-documentation guide rendering remains a later layer.
+resolving document evidence, conservative code-doc reconciliation signals, and compact
+local documentation guide rendering from structured document facts and evidence only.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 

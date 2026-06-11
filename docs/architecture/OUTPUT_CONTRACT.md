@@ -44,9 +44,9 @@ ingestion boundary with deterministic default-scope Markdown discovery, document
 inventory, ATX heading references, bounded chunk references, and resolving `document`
 evidence records for accepted file, heading, chunk, and bounded reconciliation mention
 observations. It emits `schema_version: "0.8"` with a top-level `documents` object and
-conservative `documents.reconciliation` uncertain inspection hints. Local documentation
-guide rendering remains a planned later v0.8 layer and is not emitted by the current
-local Markdown discovery, structure, evidence, and reconciliation slice.
+conservative `documents.reconciliation` uncertain inspection hints. `agent-guide.md`
+now includes compact local documentation orientation generated from structured
+`documents` facts and resolving evidence only.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2649,9 +2649,11 @@ The current `schema_version: "0.8"` state emits document inventory, bounded
 heading/chunk navigation references, and resolving `document` evidence for accepted
 file, heading, chunk, and bounded reconciliation mention observations. It emits
 conservative `documents.reconciliation` rows as low-confidence uncertain inspection
-hints only. It does not emit guide-rendered local documentation, document summaries, or
-serialized document bodies. Future layers must update tests and contract text when they
-add guide-rendered local documentation or other outputs.
+hints only. It also emits compact guide-rendered local documentation orientation from
+structured document inventory, bounded heading/chunk references, discovery policy facts,
+and reconciliation hints. It does not emit document summaries or serialized document
+bodies. Future layers must update tests and contract text when they add other local
+documentation outputs or semantics.
 
 Current `project-map.json` excerpt. Unchanged v0.7 fields are omitted for focus:
 
@@ -3140,8 +3142,10 @@ Current v0.4 `endpoints.md` behavior:
 
 It is generated from `project-map.json` and `evidence-index.jsonl`, or from the same
 structured in-memory facts that are serialized to those files. The guide generator must
-not walk source files, call LLMs, call external services, ingest local documentation, or
-invent architecture not represented by deterministic facts.
+not walk source files, call LLMs, call external services, directly ingest local
+documentation, or invent architecture not represented by deterministic facts. Local
+documentation guide rendering must use the structured `documents` facts and resolving
+evidence already produced by the deterministic analyzer pipeline.
 
 The minimal stable v0.1 section order is:
 
@@ -3415,18 +3419,19 @@ Current v0.7 tests inventory `agent-guide.md` behavior:
   repository/database verification, Mockito behavior analysis, slice correctness
   analysis, or full call graph reconstruction.
 
-Planned v0.8 local documentation `agent-guide.md` behavior:
+Current v0.8 local documentation `agent-guide.md` behavior:
 
 - The guide adds a `Local Project Documentation` section generated from structured
-  `documents` facts and resolving `document` evidence only after the v0.8 document
-  ingestion implementation exists.
+  `documents` facts and resolving `document` evidence only when accepted local
+  documents or reconciliation hints exist.
 - The section summarizes deterministic document inventory, such as document path, module
   ownership when available, title source, heading count, chunk count, and evidence
   references. It must not summarize document prose, rewrite document content, or create
   AI-generated documentation summaries.
-- Heading entries may show bounded heading titles and locations. Chunk entries should be
-  used as navigation references and must not print chunk bodies or long document
-  excerpts.
+- Heading and chunk entries are bounded navigation references with IDs, locations,
+  content status, and resolving evidence. They should not print chunk bodies, long
+  document excerpts, paragraphs, arbitrary lists, tables, code blocks, or prose
+  summaries.
 - Reconciliation rows render as uncertain inspection hints with signal, status,
   confidence, uncertainty, subject, document path when applicable, source fact when
   applicable, and evidence. They must not say that documentation is stale, complete,

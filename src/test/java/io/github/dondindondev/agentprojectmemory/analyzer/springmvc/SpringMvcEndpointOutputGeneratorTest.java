@@ -193,7 +193,22 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(evidenceIndex.contains("Body text that must not be serialized")),
         () -> assertFalse(evidenceIndex.contains("More body text that must not be serialized")),
         () -> assertFalse(evidenceIndex.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
-        () -> assertFalse(agentGuide.contains("Local Project Documentation")));
+        () -> assertTrue(agentGuide.contains("## Local Project Documentation")),
+        () -> assertTrue(agentGuide.contains(
+            "- Document inventory: detected 2 accepted default-scope Markdown documents.")),
+        () -> assertTrue(agentGuide.contains(
+            "  - Document: `README.md` (module: `repository-level`, discovery_source: "
+                + "`root_readme`, title_source: `first_heading`, headings: `2`, chunks: `3`).")),
+        () -> assertTrue(agentGuide.contains(
+            "      - Chunk ref: `document_chunk:README.md:chunk:000002` heading_id "
+                + "`document_heading:README.md:heading:Root%20docs:occ:000001`, "
+                + "lines `2-3`, content_status `not_serialized`, evidence `README.md:2-3` "
+                + "(`ev:README.md:2-3:document:chunk:000002`).")),
+        () -> assertTrue(agentGuide.contains(
+            "- Reconciliation hints: status `not_detected`; detected none.")),
+        () -> assertFalse(agentGuide.contains("Body text that must not be serialized")),
+        () -> assertFalse(agentGuide.contains("More body text that must not be serialized")),
+        () -> assertFalse(agentGuide.contains("FAKE_PRIVATE_MARKDOWN_SECRET")));
   }
 
   @Test
@@ -223,7 +238,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
             Files.readString(outputDirectory.resolve("project-map.json"))),
         () -> assertEquals(
             expected("v0-8-document-structure", "evidence-index.jsonl"),
-            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))));
+            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(
+            expected("v0-8-document-structure", "agent-guide.md"),
+            Files.readString(outputDirectory.resolve("agent-guide.md"))));
   }
 
   @Test
@@ -332,8 +350,16 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains("\"excerpt\":\"mention token: /ghost\"")),
         () -> assertFalse(projectMap.contains("only a bounded document mention")),
         () -> assertFalse(evidenceIndex.contains("only a bounded document mention")),
-        () -> assertFalse(agentGuide.contains("Local Project Documentation")),
-        () -> assertFalse(agentGuide.contains("document_only_endpoint_mention")));
+        () -> assertEquals(
+            expected("v0-8-document-reconciliation", "agent-guide.md"),
+            agentGuide),
+        () -> assertTrue(agentGuide.contains("## Local Project Documentation")),
+        () -> assertTrue(agentGuide.contains(
+            "- Reconciliation hints: status `analyzed`; detected 3 low-confidence uncertain inspection hints.")),
+        () -> assertTrue(agentGuide.contains("`document_only_endpoint_mention`")),
+        () -> assertTrue(agentGuide.contains("`source_api_without_document_mention`")),
+        () -> assertFalse(agentGuide.contains("only a bounded document mention")),
+        () -> assertFalse(agentGuide.contains("is stale")));
   }
 
   @Test
@@ -1310,6 +1336,12 @@ final class SpringMvcEndpointOutputGeneratorTest {
                   tags:
                     - "tag\\n## Forged Tag"
             """);
+    writeFile(
+        projectPath.resolve("docs/guide\n## Forged Doc.md"),
+        """
+            # Safe docs
+            The `/doc-only` path is only a bounded document mention.
+            """);
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
@@ -1331,6 +1363,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(endpoints.contains("Forged Evidence")),
         () -> assertTrue(endpoints.contains("Forged Operation")),
         () -> assertTrue(agentGuide.contains("Fake Guide")),
+        () -> assertTrue(agentGuide.contains("Forged Doc")),
         () -> assertFalse(hasLineStartingWith(endpoints, "## Forged")),
         () -> assertFalse(hasLineStartingWith(endpoints, "- Evidence: `ev:forged`")),
         () -> assertFalse(hasLineStartingWith(endpoints, "- Evidence: `ev:operation`")),
@@ -1340,6 +1373,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(hasLineStartingWith(endpoints, "  - Evidence: `ev:param`")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "## Forged")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "## Fake Guide")),
+        () -> assertFalse(hasLineStartingWith(agentGuide, "## Forged Doc")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "- Evidence: `ev:forged`")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "- Evidence: `ev:param`")),
         () -> assertFalse(hasLineStartingWith(agentGuide, "  - Evidence: `ev:forged`")),

@@ -115,8 +115,9 @@ references and bounded chunk references, with resolving document evidence for fi
 heading, chunk, and bounded reconciliation mention observations, plus conservative
 `documents.reconciliation` inspection hints for document-only endpoint-like path
 mentions, document-only module references, and source-backed API/module facts with no
-obvious default-scope document mention, without local-document guide rendering, then
-writes:
+obvious default-scope document mention, plus compact local-document guide rendering from
+structured document inventory, bounded heading/chunk references, and uncertain
+reconciliation hints, then writes:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -480,19 +481,22 @@ Current limitations:
   existing deterministic facts and inferred tested-subject relations. They do not claim
   coverage, test execution, assertion behavior, CI results, runtime behavior, production
   impact, vulnerability, correctness, business priority, or complete subject mapping.
-- `agent-guide.md` is generated from existing deterministic output facts only. It does not
-  render local documentation content, summarize source files, infer architecture layers,
-  or add claims beyond extracted facts, explicit inferences, and known uncertainty
-  labels.
+- `agent-guide.md` is generated from existing deterministic output facts only. It may
+  render compact local Markdown document inventory, bounded heading/chunk navigation
+  references, and uncertain reconciliation hints from structured `documents` facts, but
+  it does not render document bodies, summarize source files or local docs, infer
+  architecture layers, or add claims beyond extracted facts, explicit inferences, and
+  known uncertainty labels.
 - Local Markdown/document ingestion is limited to conservative default-scope document
   inventory, deterministic ATX heading references, and bounded chunk references with
   `content_status: "not_serialized"` and resolving `document` evidence for file,
   heading, chunk, and bounded reconciliation mention observations. Reconciliation rows
   are low-confidence uncertain inspection hints only; they do not prove stale
   documentation, missing documentation, coverage, completeness, correctness, or source
-  and document agreement. The implementation does not render local-document guide
-  sections, read hidden/private/generated/dependency/maintainer paths, follow symlinks,
-  or summarize or serialize document bodies.
+  and document agreement. The implementation renders local-document guide sections only
+  from structured document facts and evidence; it does not read
+  hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
+  serialize document bodies.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,

@@ -160,6 +160,438 @@ final class AgentGuideGeneratorTest {
   }
 
   @Test
+  void localDocumentationGuideRendersInventoryRefsEvidenceAndUncertainHints() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.8",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": [],
+            "modules": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "module_id": "module:services/orders",
+                  "module_path": "services/orders",
+                  "pom_path": "services/orders/pom.xml",
+                  "support_status": "supported",
+                  "declaration_kind": "root_declared_module",
+                  "declared_path": "services/orders",
+                  "source_roots": [],
+                  "test_roots": [],
+                  "declaration_evidence_ids": [],
+                  "pom_evidence_ids": []
+                }
+              ]
+            }
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "documents": {
+            "analysis_status": "analyzed",
+            "discovery": {
+              "scope": "default_local_markdown",
+              "path_policy": "repository_relative_in_root",
+              "symlink_policy": "skip_symlinks",
+              "included_patterns": ["README.md", "docs/**/*.md"],
+              "excluded_patterns": [".git/**", ".project-memory/**"]
+            },
+            "items": [
+              {
+                "id": "document:README.md",
+                "document_kind": "local_markdown",
+                "format": "markdown",
+                "module_id": null,
+                "path": "README.md",
+                "title": "Architecture Notes",
+                "title_source": "first_heading",
+                "discovery_source": "root_readme",
+                "headings": [
+                  {
+                    "id": "document_heading:README.md:heading:Architecture%20Notes:occ:000001",
+                    "level": 1,
+                    "title": "Architecture Notes",
+                    "anchor": "architecture-notes",
+                    "line_start": 1,
+                    "line_end": 1,
+                    "evidence_ids": ["ev:README.md:1-1:document:heading:Architecture%20Notes:decl:000001"]
+                  }
+                ],
+                "chunks": [
+                  {
+                    "id": "document_chunk:README.md:chunk:000001",
+                    "heading_id": "document_heading:README.md:heading:Architecture%20Notes:occ:000001",
+                    "line_start": 1,
+                    "line_end": 6,
+                    "content_status": "not_serialized",
+                    "evidence_ids": ["ev:README.md:1-6:document:chunk:000001"]
+                  }
+                ],
+                "evidence_ids": ["ev:README.md:unknown:document:file:README.md"]
+              },
+              {
+                "id": "document:services/orders/README.md",
+                "document_kind": "local_markdown",
+                "format": "markdown",
+                "module_id": "module:services/orders",
+                "path": "services/orders/README.md",
+                "title": "Orders Module",
+                "title_source": "first_heading",
+                "discovery_source": "module_readme",
+                "headings": [],
+                "chunks": [],
+                "evidence_ids": ["ev:services/orders/README.md:unknown:document:file:services/orders/README.md"]
+              }
+            ],
+            "reconciliation": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "document_reconciliation:document_only_endpoint_mention:README.md:/ghost:decl:000001",
+                  "module_id": null,
+                  "signal": "document_only_endpoint_mention",
+                  "status": "uncertain_signal",
+                  "document_id": "document:README.md",
+                  "document_path": "README.md",
+                  "document_chunk_id": "document_chunk:README.md:chunk:000001",
+                  "source_fact_kind": null,
+                  "source_fact_id": null,
+                  "subject_kind": "endpoint_like_path",
+                  "subject_name": "/ghost",
+                  "match_basis": "bounded_endpoint_like_path_token",
+                  "confidence": "low",
+                  "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
+                  "evidence_ids": ["ev:README.md:5-5:document:mention:/ghost:decl:000001"]
+                },
+                {
+                  "id": "document_reconciliation:source_api_without_document_mention:endpoint%3Acom.example.OrderController%23internal",
+                  "module_id": "module:services/orders",
+                  "signal": "source_api_without_document_mention",
+                  "status": "uncertain_signal",
+                  "document_id": null,
+                  "document_path": null,
+                  "document_chunk_id": null,
+                  "source_fact_kind": "spring_mvc_endpoint",
+                  "source_fact_id": "endpoint:com.example.OrderController#internal",
+                  "subject_kind": "api_path",
+                  "subject_name": "/internal",
+                  "match_basis": "bounded_source_api_path_token",
+                  "confidence": "low",
+                  "uncertainty": "source_api_fact_not_matched_to_default_scope_document",
+                  "evidence_ids": ["ev:src/main/java/com/example/OrderController.java:8-8:com.example.OrderController#internal:@GetMapping"]
+                }
+              ]
+            }
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:README.md:unknown:document:file:README.md","source_type":"document","path":"README.md","class_name":null,"method_name":null,"symbol_name":"file:README.md","line_start":null,"line_end":null,"excerpt":"markdown file detected: README.md","confidence":"high"}
+        {"id":"ev:README.md:1-1:document:heading:Architecture%20Notes:decl:000001","source_type":"document","path":"README.md","class_name":null,"method_name":null,"symbol_name":"heading:Architecture Notes","line_start":1,"line_end":1,"excerpt":"# Architecture Notes","confidence":"high"}
+        {"id":"ev:README.md:1-6:document:chunk:000001","source_type":"document","path":"README.md","class_name":null,"method_name":null,"symbol_name":"chunk:000001","line_start":1,"line_end":6,"excerpt":"chunk lines 1-6; heading: Architecture Notes","confidence":"high"}
+        {"id":"ev:services/orders/README.md:unknown:document:file:services/orders/README.md","source_type":"document","path":"services/orders/README.md","class_name":null,"method_name":null,"symbol_name":"file:services/orders/README.md","line_start":null,"line_end":null,"excerpt":"markdown file detected: services/orders/README.md","confidence":"high"}
+        {"id":"ev:README.md:5-5:document:mention:/ghost:decl:000001","source_type":"document","path":"README.md","class_name":null,"method_name":null,"symbol_name":"mention:/ghost","line_start":5,"line_end":5,"excerpt":"mention token: /ghost","confidence":"low"}
+        {"id":"ev:src/main/java/com/example/OrderController.java:8-8:com.example.OrderController#internal:@GetMapping","source_type":"annotation","path":"src/main/java/com/example/OrderController.java","class_name":"com.example.OrderController","method_name":"internal","symbol_name":"@GetMapping","line_start":8,"line_end":8,"excerpt":"@GetMapping(\\"/internal\\")","confidence":"high"}
+        """;
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains("## Local Project Documentation"));
+    assertTrue(guide.contains(
+        "- Discovery policy: scope `default_local_markdown`, path_policy "
+            + "`repository_relative_in_root`, symlink_policy `skip_symlinks`, "
+            + "included_patterns `2`, excluded_patterns `2`."));
+    assertTrue(guide.contains(
+        "- Document inventory: detected 2 accepted default-scope Markdown documents."));
+    assertTrue(guide.contains(
+        "  - Document: `README.md` (module: `repository-level`, discovery_source: "
+            + "`root_readme`, title_source: `first_heading`, headings: `1`, chunks: `1`)."));
+    assertTrue(guide.contains(
+        "  - Document: `services/orders/README.md` (module: `module:services/orders` "
+            + "(path: `services/orders`), discovery_source: `module_readme`, "
+            + "title_source: `first_heading`, headings: `0`, chunks: `0`)."));
+    assertTrue(guide.contains(
+        "      - Heading ref: `document_heading:README.md:heading:Architecture%20Notes:occ:000001` "
+            + "level `1`, lines `1`, anchor `architecture-notes`, evidence `README.md:1` "
+            + "(`ev:README.md:1-1:document:heading:Architecture%20Notes:decl:000001`)."));
+    assertTrue(guide.contains(
+        "      - Chunk ref: `document_chunk:README.md:chunk:000001` heading_id "
+            + "`document_heading:README.md:heading:Architecture%20Notes:occ:000001`, "
+            + "lines `1-6`, content_status `not_serialized`, evidence `README.md:1-6` "
+            + "(`ev:README.md:1-6:document:chunk:000001`)."));
+    assertTrue(guide.contains(
+        "- Reconciliation hints: status `analyzed`; detected 2 low-confidence uncertain inspection hints."));
+    assertTrue(guide.contains(
+        "- Reconciliation hint: `document_only_endpoint_mention` for `endpoint_like_path` `/ghost` "
+            + "(status: `uncertain_signal`, confidence: `low`, uncertainty: "
+            + "`document_mention_not_matched_to_source_backed_api_fact`, match_basis: "
+            + "`bounded_endpoint_like_path_token`)."));
+    assertTrue(guide.contains(
+        "    - Source fact: `spring_mvc_endpoint`, `endpoint:com.example.OrderController#internal`"));
+    assertTrue(guide.contains(
+        "Document-backed signals do not override code-backed facts."));
+    assertTrue(guide.contains(
+        "prefer code-backed facts for implementation truth."));
+    assertFalse(guide.contains("documented prose body"));
+    assertFalse(guide.contains("is stale"));
+    assertTrue(guide.indexOf("## Local Project Documentation")
+        < guide.indexOf("## Known Uncertainty And Limits"));
+  }
+
+  @Test
+  void localDocumentationGuideRendersNoReconciliationCaseWithoutClaims() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.8",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": []
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "documents": {
+            "analysis_status": "analyzed",
+            "discovery": {
+              "scope": "default_local_markdown",
+              "path_policy": "repository_relative_in_root",
+              "symlink_policy": "skip_symlinks",
+              "included_patterns": [],
+              "excluded_patterns": []
+            },
+            "items": [
+              {
+                "id": "document:README.md",
+                "document_kind": "local_markdown",
+                "format": "markdown",
+                "module_id": null,
+                "path": "README.md",
+                "title": "README",
+                "title_source": "filename",
+                "discovery_source": "root_readme",
+                "headings": [],
+                "chunks": [],
+                "evidence_ids": ["ev:README.md:unknown:document:file:README.md"]
+              }
+            ],
+            "reconciliation": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:README.md:unknown:document:file:README.md","source_type":"document","path":"README.md","class_name":null,"method_name":null,"symbol_name":"file:README.md","line_start":null,"line_end":null,"excerpt":"markdown file detected: README.md","confidence":"high"}
+        """;
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains("## Local Project Documentation"));
+    assertTrue(guide.contains("- Reconciliation hints: status `not_detected`; detected none."));
+    assertFalse(guide.contains("is stale"));
+    assertFalse(guide.contains("complete documentation"));
+  }
+
+  @Test
+  void localDocumentationGuideStaysQuietWhenNoDocumentsOrReconciliationExist() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.8",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": []
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "documents": {
+            "analysis_status": "not_detected",
+            "discovery": {
+              "scope": "default_local_markdown",
+              "path_policy": "repository_relative_in_root",
+              "symlink_policy": "skip_symlinks",
+              "included_patterns": [],
+              "excluded_patterns": []
+            },
+            "items": [],
+            "reconciliation": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        }
+        """;
+
+    String guide = generator.generate(projectMap, "");
+
+    assertFalse(guide.contains("## Local Project Documentation"));
+    assertFalse(guide.contains("Document-backed: local documentation facts"));
+  }
+
+  @Test
+  void localDocumentationGuideEscapesDocumentDerivedValues() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "0.8",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": []
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          },
+          "documents": {
+            "analysis_status": "analyzed",
+            "discovery": {
+              "scope": "default_local_markdown",
+              "path_policy": "repository_relative_in_root",
+              "symlink_policy": "skip_symlinks",
+              "included_patterns": [],
+              "excluded_patterns": []
+            },
+            "items": [
+              {
+                "id": "document:docs/guide`name.md",
+                "document_kind": "local_markdown",
+                "format": "markdown",
+                "module_id": null,
+                "path": "docs/guide`name.md",
+                "title": "## Forged Heading",
+                "title_source": "first_heading",
+                "discovery_source": "docs_tree",
+                "headings": [
+                  {
+                    "id": "document_heading:docs/guide`name.md:heading:%23%23%20Forged%20Heading:occ:000001",
+                    "level": 1,
+                    "title": "## Forged Heading",
+                    "anchor": "forged-heading",
+                    "line_start": 1,
+                    "line_end": 1,
+                    "evidence_ids": ["ev:docs/guide`name.md:1-1:document:heading:%23%23%20Forged%20Heading:decl:000001"]
+                  }
+                ],
+                "chunks": [],
+                "evidence_ids": ["ev:docs/guide`name.md:unknown:document:file:docs/guide`name.md"]
+              }
+            ],
+            "reconciliation": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "document_reconciliation:document_only_endpoint_mention:docs/guide`name.md:/docs:decl:000001",
+                  "module_id": null,
+                  "signal": "document_only_endpoint_mention",
+                  "status": "uncertain_signal",
+                  "document_id": "document:docs/guide`name.md",
+                  "document_path": "docs/guide`name.md",
+                  "document_chunk_id": null,
+                  "source_fact_kind": null,
+                  "source_fact_id": null,
+                  "subject_kind": "endpoint_like_path",
+                  "subject_name": "/docs\\n## Forged Doc",
+                  "match_basis": "bounded_endpoint_like_path_token",
+                  "confidence": "low",
+                  "uncertainty": "document_mention_not_matched_to_source_backed_api_fact",
+                  "evidence_ids": ["ev:docs/guide`name.md:2-2:document:mention:/docs:decl:000001"]
+                }
+              ]
+            }
+          }
+        }
+        """;
+    String evidenceIndex = """
+        {"id":"ev:docs/guide`name.md:unknown:document:file:docs/guide`name.md","source_type":"document","path":"docs/guide`name.md","class_name":null,"method_name":null,"symbol_name":"file:docs/guide`name.md","line_start":null,"line_end":null,"excerpt":"markdown file detected: docs/guide`name.md","confidence":"high"}
+        {"id":"ev:docs/guide`name.md:1-1:document:heading:%23%23%20Forged%20Heading:decl:000001","source_type":"document","path":"docs/guide`name.md","class_name":null,"method_name":null,"symbol_name":"heading:## Forged Heading","line_start":1,"line_end":1,"excerpt":"# ## Forged Heading","confidence":"high"}
+        {"id":"ev:docs/guide`name.md:2-2:document:mention:/docs:decl:000001","source_type":"document","path":"docs/guide`name.md","class_name":null,"method_name":null,"symbol_name":"mention:/docs","line_start":2,"line_end":2,"excerpt":"mention token: /docs","confidence":"low"}
+        """;
+
+    String guide = generator.generate(projectMap, evidenceIndex);
+
+    assertTrue(guide.contains("``docs/guide`name.md``"));
+    assertTrue(guide.contains("`/docs\\n## Forged Doc`"));
+    assertFalse(hasLineStartingWith(guide, "## Forged"));
+    assertFalse(hasLineStartingWith(guide, "- Evidence: `ev:forged`"));
+  }
+
+  @Test
   void generatedGuideCapsLargeEvidenceListsAndInspectionPaths() throws Exception {
     Path goldenRoot = goldenRoot("large-agent-guide");
 
@@ -678,6 +1110,10 @@ final class AgentGuideGeneratorTest {
       return section.substring(0, section.length() - 1);
     }
     return section;
+  }
+
+  private boolean hasLineStartingWith(String markdown, String prefix) {
+    return markdown.lines().anyMatch(line -> line.startsWith(prefix));
   }
 
   private Path goldenRoot(String fixtureName) throws Exception {
