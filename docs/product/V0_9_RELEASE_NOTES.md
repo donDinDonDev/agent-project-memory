@@ -146,11 +146,9 @@ required for this release:
 
 ## Publication Status
 
-The v0.9.0 release candidate materials are prepared for maintainer approval. No tag,
-GitHub Release, artifact upload, or checksum publication is performed by this
-release-prep change.
+v0.9.0 is published on GitHub Releases with executable jar and `SHA256SUMS` assets.
 
-Expected release assets when published:
+Published release assets:
 
 - `agent-project-memory-0.9.0.jar`
 - `SHA256SUMS`

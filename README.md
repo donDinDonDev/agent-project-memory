@@ -30,10 +30,8 @@ services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.9.0` release candidate is prepared for maintainer approval but is not tagged or
-published yet. When published, the expected release artifact is
-`agent-project-memory-0.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
-verification.
+The `v0.9.0` release artifact is `agent-project-memory-0.9.0.jar`; release assets use
+`SHA256SUMS` for optional checksum verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
@@ -330,12 +328,12 @@ generated output to `schema_version: "0.8"` with deterministic default-scope loc
 Markdown discovery, document inventory, ATX heading and chunk references, resolving
 `document` evidence, conservative `documents.reconciliation` uncertain inspection
 hints, and compact local-document guide rendering.
-The v0.9 CLI, config, performance, and distribution readiness release candidate is
-prepared for maintainer approval but is not tagged or published yet. It moves normal
-generated output to `schema_version: "0.9"` with redacted scan metadata for safe
-root-local config selection, stable CLI help/version and exit-code behavior, local
-Markdown-only include/exclude refinement, aggregate local Markdown caps, bounded
-diagnostics, and the repeatable release jar plus `SHA256SUMS` workflow.
+The v0.9 CLI, config, performance, and distribution readiness release is published with
+packaged jar and checksum assets. It moves normal generated output to
+`schema_version: "0.9"` with redacted scan metadata for safe root-local config
+selection, stable CLI help/version and exit-code behavior, local Markdown-only
+include/exclude refinement, aggregate local Markdown caps, bounded diagnostics, and the
+repeatable release jar plus `SHA256SUMS` workflow.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

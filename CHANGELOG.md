@@ -56,7 +56,7 @@ architecture documents.
 
 ### Fixed
 
-- Updated post-release documentation status to mark `v0.8.0` as published with release
+- Updated post-release documentation status to mark `v0.9.0` as published with release
   assets and checksums.
 
 ### Security

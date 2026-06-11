@@ -483,10 +483,9 @@ Current implementation status:
   including bounded hardening for path-rule matching, local Markdown aggregate limits,
   OpenAPI/warning traversal, generated-source warning POM reads, and stable no-follow
   spec/POM/root build-file reads.
-- Release-prep materials for `v0.9.0` are prepared locally for maintainer approval,
-  including Maven version alignment, release notes, README/changelog/roadmap status,
-  packaged CLI validation, and local jar/checksum verification. Tagging, GitHub Release
-  creation, artifact upload, and publication are not performed in this state.
+- The `v0.9.0` tag and GitHub release are published with the packaged jar and checksum
+  assets after Maven version alignment, release notes, README/changelog/roadmap status,
+  packaged CLI validation, and local plus downloaded jar/checksum verification.
 
 Planned contract boundary:
 
@@ -558,13 +557,13 @@ Release readiness notes:
   exit codes, help/version smoke, repeated output digest stability, and bounded local
   performance observations.
 - Release-readiness security review follow-up is complete with no remaining
-  release-blocking finding recorded for the current v0.9 release candidate.
+  release-blocking finding recorded for v0.9.0.
 - Release notes exist in [V0_9_RELEASE_NOTES.md](V0_9_RELEASE_NOTES.md).
 - Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke,
   local `SHA256SUMS` generation/verification, `git diff --check`, and public marker
   audit.
-- Tag, GitHub Release creation, artifact upload, and publication are not performed in
-  this release-prep state.
+- The `v0.9.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 ## v1.0.0: Stable Java/Spring Local-First Project Memory
 
