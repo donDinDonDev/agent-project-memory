@@ -13,13 +13,18 @@ import java.util.Objects;
 import java.util.Optional;
 
 public final class JavaSourceParser {
+  private static final ParserConfiguration PARSER_CONFIGURATION = new ParserConfiguration()
+      .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
+  private static final ThreadLocal<JavaParser> PARSER = ThreadLocal.withInitial(
+      () -> new JavaParser(PARSER_CONFIGURATION));
+
   private JavaSourceParser() {
   }
 
   public static CompilationUnit parse(Path javaFile) throws IOException {
     Objects.requireNonNull(javaFile, "javaFile");
 
-    ParseResult<CompilationUnit> result = new JavaParser(parserConfiguration()).parse(javaFile);
+    ParseResult<CompilationUnit> result = PARSER.get().parse(javaFile);
     Optional<CompilationUnit> compilationUnit = result.getResult();
     if (!result.isSuccessful() || compilationUnit.isEmpty()) {
       throw parseFailure(javaFile, result);
@@ -59,8 +64,4 @@ public final class JavaSourceParser {
     return "; first problem at line " + range.begin.line + ", column " + range.begin.column;
   }
 
-  private static ParserConfiguration parserConfiguration() {
-    return new ParserConfiguration()
-        .setLanguageLevel(ParserConfiguration.LanguageLevel.JAVA_21);
-  }
 }
