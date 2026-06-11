@@ -2,10 +2,10 @@ package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -57,7 +57,7 @@ public final class MavenMetadataAnalyzer {
       }
 
       Path pom = normalizedRepositoryRoot.resolve(module.pomPath()).normalize();
-      if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, pom)) {
+      if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, pom)) {
         moduleMetadata.add(notDetectedMetadata(module.moduleId()));
         continue;
       }
@@ -77,7 +77,8 @@ public final class MavenMetadataAnalyzer {
   }
 
   private ParsedPomMetadata parsePomMetadata(Path pom, String sourcePath) throws IOException {
-    List<String> sourceLines = Files.readAllLines(pom, StandardCharsets.UTF_8);
+    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+    List<String> sourceLines = utf8Lines(pomBytes);
     MetadataElementHandler handler = new MetadataElementHandler();
     SAXParser parser;
     try {
@@ -86,7 +87,7 @@ public final class MavenMetadataAnalyzer {
       throw new IOException("Unable to configure secure XML parser for " + pom, exception);
     }
 
-    try (InputStream input = Files.newInputStream(pom)) {
+    try (InputStream input = new ByteArrayInputStream(pomBytes)) {
       parser.parse(input, handler);
     } catch (SAXException exception) {
       throw malformedPomException(sourcePath, exception);
@@ -271,6 +272,10 @@ public final class MavenMetadataAnalyzer {
   private String repositoryRelativePath(Path repositoryRoot, Path path) {
     Path relativePath = repositoryRoot.relativize(path.toAbsolutePath().normalize());
     return relativePath.toString().replace(path.getFileSystem().getSeparator(), "/");
+  }
+
+  private List<String> utf8Lines(byte[] bytes) {
+    return new String(bytes, StandardCharsets.UTF_8).lines().toList();
   }
 
   private static String ordinalText(int ordinal) {

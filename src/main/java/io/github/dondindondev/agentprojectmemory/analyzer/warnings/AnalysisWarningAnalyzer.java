@@ -7,12 +7,16 @@ import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
@@ -46,6 +50,8 @@ public final class AnalysisWarningAnalyzer {
   private static final String PATH_SIGNAL_SOURCE_TYPE = "path_signal";
   private static final String REPOSITORY_REST_RESOURCE = "RepositoryRestResource";
   private static final String ROOT_BUILD_FILE = "pom.xml";
+  private static final int MAX_WARNING_POM_BYTES = 1024 * 1024;
+  private static final int MAX_PLUGIN_ARTIFACT_ID_TEXT_LENGTH = 256;
   private static final Map<String, Set<String>> SUPPORTED_REPOSITORY_REST_RESOURCE_ORIGINS = Map.of(
       REPOSITORY_REST_RESOURCE,
       Set.of("org.springframework.data.rest.core.annotation.RepositoryRestResource"));
@@ -167,16 +173,11 @@ public final class AnalysisWarningAnalyzer {
       String modulePathForIds,
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
-    for (Path specFile : repositoryFiles(
+    for (Path specFile : repositoryOpenApiSpecFiles(
         repositoryRoot,
         canonicalRepositoryRoot,
         scanRoot,
         excludedModulePaths)) {
-      String fileName = specFile.getFileName().toString().toLowerCase(Locale.ROOT);
-      if (!OPENAPI_SPEC_FILENAMES.contains(fileName)) {
-        continue;
-      }
-
       String sourcePath = repositoryRelativePath(repositoryRoot, specFile);
       AnalysisWarningEvidence specEvidence = new AnalysisWarningEvidence(
           "ev:" + sourcePath + ":unknown:config_file:" + specFile.getFileName(),
@@ -210,11 +211,10 @@ public final class AnalysisWarningAnalyzer {
       List<AnalysisWarningFact> warnings,
       List<AnalysisWarningEvidence> evidence) throws IOException {
     Path pom = repositoryRoot.resolve(pomPath);
-    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, pom)) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, pom)) {
       return;
     }
 
-    List<String> lines = Files.readAllLines(pom, StandardCharsets.UTF_8);
     Set<String> emittedArtifactIds = new LinkedHashSet<>();
     for (MavenPluginArtifactIdSignal signal : mavenPluginArtifactIdSignals(pom)) {
       if (!emittedArtifactIds.add(signal.artifactId())) {
@@ -233,7 +233,7 @@ public final class AnalysisWarningAnalyzer {
           signal.artifactId(),
           lineNumber,
           lineNumber,
-          sourceLineExcerpt(lines, lineNumber, signal.artifactId()),
+          signal.excerpt(),
           HIGH_CONFIDENCE);
       evidence.add(pluginEvidence);
       warnings.add(new AnalysisWarningFact(
@@ -248,7 +248,16 @@ public final class AnalysisWarningAnalyzer {
 
   private List<MavenPluginArtifactIdSignal> mavenPluginArtifactIdSignals(Path pom) throws IOException {
     MavenPluginArtifactIdHandler handler = new MavenPluginArtifactIdHandler();
-    try (InputStream input = Files.newInputStream(pom)) {
+    byte[] pomBytes;
+    try {
+      pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, MAX_WARNING_POM_BYTES);
+    } catch (ScanPathContainment.FileSizeLimitExceededException exception) {
+      return List.of();
+    } catch (IOException | SecurityException exception) {
+      return List.of();
+    }
+
+    try (InputStream input = new ByteArrayInputStream(pomBytes)) {
       SAXParserFactory factory = secureSaxParserFactory();
       factory.newSAXParser().parse(input, handler);
     } catch (SAXException exception) {
@@ -257,7 +266,13 @@ public final class AnalysisWarningAnalyzer {
       throw new IOException("Unable to configure secure XML parser for " + ROOT_BUILD_FILE, exception);
     }
 
-    return handler.signals();
+    List<String> sourceLines = new String(pomBytes, StandardCharsets.UTF_8).lines().toList();
+    return handler.signals().stream()
+        .map(signal -> new MavenPluginArtifactIdSignal(
+            signal.artifactId(),
+            signal.lineNumber(),
+            sourceLineExcerpt(sourceLines, signal.lineNumber(), signal.artifactId())))
+        .toList();
   }
 
   private void analyzeGeneratedSourceRootPaths(
@@ -462,7 +477,7 @@ public final class AnalysisWarningAnalyzer {
         HIGH_CONFIDENCE);
   }
 
-  private List<Path> repositoryFiles(
+  private List<Path> repositoryOpenApiSpecFiles(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       Path scanRoot,
@@ -471,15 +486,36 @@ public final class AnalysisWarningAnalyzer {
       return List.of();
     }
 
-    try (Stream<Path> paths = Files.walk(scanRoot)) {
-      return paths
-          .filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
-              && ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && !isExcluded(repositoryRoot, path)
-              && !isExcludedModulePath(repositoryRoot, path, excludedModulePaths))
-          .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
-          .toList();
-    }
+    List<Path> specFiles = new ArrayList<>();
+    Files.walkFileTree(scanRoot, new SimpleFileVisitor<>() {
+      @Override
+      public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attributes) {
+        if (!directory.equals(scanRoot)
+            && (isExcluded(repositoryRoot, directory)
+                || isExcludedModulePath(repositoryRoot, directory, excludedModulePaths))) {
+          return FileVisitResult.SKIP_SUBTREE;
+        }
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+        if (!attributes.isRegularFile()) {
+          return FileVisitResult.CONTINUE;
+        }
+        String fileName = file.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (OPENAPI_SPEC_FILENAMES.contains(fileName)
+            && ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, file)
+            && !isExcluded(repositoryRoot, file)
+            && !isExcludedModulePath(repositoryRoot, file, excludedModulePaths)) {
+          specFiles.add(file);
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
+    return specFiles.stream()
+        .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
+        .toList();
   }
 
   private boolean isExcluded(Path repositoryRoot, Path path) {
@@ -609,15 +645,17 @@ public final class AnalysisWarningAnalyzer {
     }
   }
 
-  private record MavenPluginArtifactIdSignal(String artifactId, Integer lineNumber) {
+  private record MavenPluginArtifactIdSignal(String artifactId, Integer lineNumber, String excerpt) {
   }
 
   private static final class MavenPluginArtifactIdHandler extends DefaultHandler2 {
     private final List<String> elementStack = new ArrayList<>();
     private final List<MavenPluginArtifactIdSignal> signals = new ArrayList<>();
+    private final Set<String> signalArtifactIds = new LinkedHashSet<>();
     private final StringBuilder artifactIdText = new StringBuilder();
     private Locator locator;
     private boolean readingPluginArtifactId;
+    private boolean artifactIdTextOversized;
     private Integer artifactIdLineNumber;
 
     @Override
@@ -630,6 +668,7 @@ public final class AnalysisWarningAnalyzer {
       elementStack.add(elementName(localName, qName));
       if (isPluginArtifactIdPath()) {
         readingPluginArtifactId = true;
+        artifactIdTextOversized = false;
         artifactIdLineNumber = currentLineNumber();
         artifactIdText.setLength(0);
       }
@@ -638,7 +677,16 @@ public final class AnalysisWarningAnalyzer {
     @Override
     public void characters(char[] characters, int start, int length) {
       if (readingPluginArtifactId) {
-        artifactIdText.append(characters, start, length);
+        int remaining = MAX_PLUGIN_ARTIFACT_ID_TEXT_LENGTH - artifactIdText.length();
+        if (remaining <= 0) {
+          artifactIdTextOversized = true;
+          return;
+        }
+        int acceptedLength = Math.min(remaining, length);
+        artifactIdText.append(characters, start, acceptedLength);
+        if (acceptedLength < length) {
+          artifactIdTextOversized = true;
+        }
       }
     }
 
@@ -646,10 +694,13 @@ public final class AnalysisWarningAnalyzer {
     public void endElement(String uri, String localName, String qName) {
       if (readingPluginArtifactId && isPluginArtifactIdPath()) {
         String artifactId = artifactIdText.toString().trim();
-        if (MAVEN_CODEGEN_PLUGIN_ARTIFACT_IDS.contains(artifactId)) {
-          signals.add(new MavenPluginArtifactIdSignal(artifactId, artifactIdLineNumber));
+        if (!artifactIdTextOversized
+            && MAVEN_CODEGEN_PLUGIN_ARTIFACT_IDS.contains(artifactId)
+            && signalArtifactIds.add(artifactId)) {
+          signals.add(new MavenPluginArtifactIdSignal(artifactId, artifactIdLineNumber, ""));
         }
         readingPluginArtifactId = false;
+        artifactIdTextOversized = false;
         artifactIdLineNumber = null;
         artifactIdText.setLength(0);
       }

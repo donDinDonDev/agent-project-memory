@@ -74,6 +74,32 @@ final class AnalysisWarningAnalyzerTest {
   }
 
   @Test
+  void prunesIrrelevantExcludedTreesBeforeCollectingOpenApiWarningCandidates()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("excluded-openapi-warning-tree");
+    for (int index = 0; index < 150; index++) {
+      writeFile(repositoryRoot.resolve("target/noise-" + index + "/openapi.yml"), """
+          openapi: 3.0.0
+          """);
+      writeFile(repositoryRoot.resolve(".project-memory/noise-" + index + "/swagger.yaml"), """
+          swagger: "2.0"
+          """);
+    }
+    writeFile(repositoryRoot.resolve("docs/openapi.yml"), """
+        openapi: 3.0.0
+        """);
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+
+    assertEquals(
+        List.of("docs/openapi.yml"),
+        analysis.warnings().stream()
+            .filter(warning -> warning.signal().equals("openapi_spec_file"))
+            .map(AnalysisWarningFact::sourcePath)
+            .toList());
+  }
+
+  @Test
   void generatedSourceRootPathsCreatePathSignalWarningsWithoutReadingContents() throws Exception {
     Path repositoryRoot = tempDir.resolve("generated-source-roots");
     writeFile(
@@ -312,6 +338,78 @@ final class AnalysisWarningAnalyzerTest {
         """);
 
     assertEquals(1, mavenCodegenWarnings(analysis).size());
+  }
+
+  @Test
+  void oversizedMavenWarningPomDoesNotCreateCodegenWarning() throws Exception {
+    String oversizedPadding = "x".repeat(1024 * 1024 + 1);
+    AnalysisWarningAnalysis analysis = analyzePom("""
+        <project>
+          <build>
+            <plugins>
+              <plugin>
+                <artifactId>%s</artifactId>
+              </plugin>
+              <plugin>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """.formatted(oversizedPadding));
+
+    assertAll(
+        () -> assertEquals(0, mavenCodegenWarnings(analysis).size()),
+        () -> assertFalse(analysis.toString().contains("openapi-generator-maven-plugin")));
+  }
+
+  @Test
+  void oversizedPluginArtifactIdTextIsSkippedAndDoesNotHideLaterBoundedSignals()
+      throws Exception {
+    String oversizedArtifactId = "x".repeat(10_000);
+    AnalysisWarningAnalysis analysis = analyzePom("""
+        <project>
+          <build>
+            <plugins>
+              <plugin>
+                <artifactId>%s</artifactId>
+              </plugin>
+              <plugin>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """.formatted(oversizedArtifactId));
+
+    assertAll(
+        () -> assertEquals(1, mavenCodegenWarnings(analysis).size()),
+        () -> assertFalse(analysis.toString().contains(oversizedArtifactId.substring(0, 512))));
+  }
+
+  @Test
+  void mavenWarningPomSymlinkIsIgnoredWithoutReadingTarget() throws Exception {
+    Path repositoryRoot = tempDir.resolve("warning-pom-symlink");
+    writeFile(repositoryRoot.resolve("shared/pom.xml"), """
+        <project>
+          <build>
+            <plugins>
+              <plugin>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """);
+    createSymbolicLink(repositoryRoot.resolve("pom.xml"), repositoryRoot.resolve("shared/pom.xml"));
+
+    AnalysisWarningAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+
+    assertAll(
+        () -> assertEquals(0, mavenCodegenWarnings(analysis).size()),
+        () -> assertTrue(analysis.evidence().stream()
+            .noneMatch(evidence -> "pom.xml".equals(evidence.sourcePath()))),
+        () -> assertFalse(analysis.toString().contains("openapi-generator-maven-plugin")));
   }
 
   @Test

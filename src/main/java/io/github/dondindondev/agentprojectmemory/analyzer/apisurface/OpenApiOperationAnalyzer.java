@@ -7,9 +7,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -221,18 +219,13 @@ public final class OpenApiOperationAnalyzer {
   }
 
   private String readBoundedSpecContent(Path localSpecPath) throws IOException {
-    ByteArrayOutputStream content = new ByteArrayOutputStream();
-    byte[] buffer = new byte[8192];
-    try (InputStream input = Files.newInputStream(localSpecPath, LinkOption.NOFOLLOW_LINKS)) {
-      int read;
-      while ((read = input.read(buffer)) >= 0) {
-        if (content.size() + read > MAX_SPEC_BYTES) {
-          throw new OversizedSpecException();
-        }
-        content.write(buffer, 0, read);
-      }
+    byte[] bytes;
+    try {
+      bytes = ScanPathContainment.readRegularFileBytesNoFollowStable(localSpecPath, MAX_SPEC_BYTES);
+    } catch (ScanPathContainment.FileSizeLimitExceededException exception) {
+      throw new OversizedSpecException();
     }
-    return new String(content.toByteArray(), StandardCharsets.UTF_8);
+    return new String(bytes, StandardCharsets.UTF_8);
   }
 
   private List<OperationCandidate> jsonCandidates(

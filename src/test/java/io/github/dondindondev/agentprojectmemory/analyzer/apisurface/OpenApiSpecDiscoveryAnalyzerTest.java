@@ -143,6 +143,30 @@ final class OpenApiSpecDiscoveryAnalyzerTest {
   }
 
   @Test
+  void prunesIrrelevantExcludedTreesBeforeCollectingSpecCandidates() throws Exception {
+    Path repositoryRoot = repository("excluded-tree-pruning");
+    for (int index = 0; index < 150; index++) {
+      writeFile(repositoryRoot.resolve("target/generated-sources/noise-" + index + "/openapi.yml"), """
+          openapi: 3.0.0
+          """);
+      writeFile(repositoryRoot.resolve(".project-memory/noise-" + index + "/swagger.yaml"), """
+          swagger: "2.0"
+          """);
+    }
+    writeFile(repositoryRoot.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.0
+        """);
+
+    OpenApiSpecDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".")));
+
+    assertEquals(
+        List.of("src/main/resources/openapi.yml"),
+        analysis.specFiles().stream().map(OpenApiSpecFileFact::specPath).toList());
+  }
+
+  @Test
   void symlinkEscapingRepositoryRootIsIgnored() throws Exception {
     Path repositoryRoot = repository("symlink-escape");
     Path outsideRoot = tempDir.resolve("outside");

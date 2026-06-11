@@ -4,23 +4,21 @@ import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 public final class OpenApiSpecDiscoveryAnalyzer {
   private static final String ANALYSIS_STATUS_ANALYZED = "analyzed";
@@ -66,12 +64,8 @@ public final class OpenApiSpecDiscoveryAnalyzer {
     List<OpenApiSpecFileFact> specFiles = new ArrayList<>();
     List<ApiSpecEvidence> evidence = new ArrayList<>();
 
-    for (Path specFile : repositoryFiles(normalizedRepositoryRoot, canonicalRepositoryRoot)) {
+    for (Path specFile : repositorySpecFiles(normalizedRepositoryRoot, canonicalRepositoryRoot)) {
       String fileName = specFile.getFileName().toString();
-      if (!SUPPORTED_SPEC_FILENAMES.contains(fileName.toLowerCase(Locale.ROOT))) {
-        continue;
-      }
-
       String specPath = repositoryRelativePath(normalizedRepositoryRoot, specFile);
       Optional<SupportedModuleRoot> module = owningModule(specFile, supportedModuleRoots);
       SpecHeader header = specHeader(specFile, fileName);
@@ -139,20 +133,39 @@ public final class OpenApiSpecDiscoveryAnalyzer {
         .toList();
   }
 
-  private List<Path> repositoryFiles(Path repositoryRoot, Path canonicalRepositoryRoot)
+  private List<Path> repositorySpecFiles(Path repositoryRoot, Path canonicalRepositoryRoot)
       throws IOException {
     if (!ScanPathContainment.isDirectoryUnderRoot(canonicalRepositoryRoot, repositoryRoot)) {
       return List.of();
     }
 
-    try (Stream<Path> paths = Files.walk(repositoryRoot)) {
-      return paths
-          .filter(path -> Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
-              && ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && !isExcluded(repositoryRoot, path))
-          .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
-          .toList();
-    }
+    List<Path> specFiles = new ArrayList<>();
+    Files.walkFileTree(repositoryRoot, new SimpleFileVisitor<>() {
+      @Override
+      public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attributes) {
+        if (!directory.equals(repositoryRoot) && isExcluded(repositoryRoot, directory)) {
+          return FileVisitResult.SKIP_SUBTREE;
+        }
+        return FileVisitResult.CONTINUE;
+      }
+
+      @Override
+      public FileVisitResult visitFile(Path file, BasicFileAttributes attributes) {
+        if (!attributes.isRegularFile()) {
+          return FileVisitResult.CONTINUE;
+        }
+        String fileName = file.getFileName().toString().toLowerCase(Locale.ROOT);
+        if (SUPPORTED_SPEC_FILENAMES.contains(fileName)
+            && ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, file)
+            && !isExcluded(repositoryRoot, file)) {
+          specFiles.add(file);
+        }
+        return FileVisitResult.CONTINUE;
+      }
+    });
+    return specFiles.stream()
+        .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
+        .toList();
   }
 
   private boolean isExcluded(Path repositoryRoot, Path path) {
@@ -213,21 +226,11 @@ public final class OpenApiSpecDiscoveryAnalyzer {
   }
 
   private String boundedHeaderContent(Path specFile) throws IOException {
-    byte[] bytes = new byte[MAX_HEADER_BYTES];
-    int bytesRead = 0;
-    try (InputStream input = Files.newInputStream(specFile)) {
-      while (bytesRead < MAX_HEADER_BYTES) {
-        int read = input.read(bytes, bytesRead, MAX_HEADER_BYTES - bytesRead);
-        if (read < 0) {
-          break;
-        }
-        bytesRead += read;
-      }
-    }
-    if (bytesRead <= 0) {
+    byte[] bytes = ScanPathContainment.readRegularFilePrefixNoFollowStable(specFile, MAX_HEADER_BYTES);
+    if (bytes.length == 0) {
       return "";
     }
-    return new String(bytes, 0, bytesRead, StandardCharsets.UTF_8);
+    return new String(bytes, StandardCharsets.UTF_8);
   }
 
   private Optional<VersionSignal> yamlSignal(String line) {

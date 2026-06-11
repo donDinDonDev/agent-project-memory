@@ -1218,11 +1218,14 @@ public final class SpringMvcEndpointOutputGenerator {
       Path repositoryRoot,
       Path canonicalRepositoryRoot) throws IOException {
     Path buildFile = repositoryRoot.resolve(ROOT_BUILD_FILE);
-    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, buildFile)) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, buildFile)) {
       return Optional.empty();
     }
 
-    List<String> lines = Files.readAllLines(buildFile, StandardCharsets.UTF_8);
+    List<String> lines = ScanPathContainment.readRegularFileLinesNoFollowStable(
+        buildFile,
+        StandardCharsets.UTF_8,
+        Integer.MAX_VALUE);
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
     String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());

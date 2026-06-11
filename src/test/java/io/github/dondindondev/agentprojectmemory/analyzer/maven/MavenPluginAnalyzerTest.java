@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -247,6 +248,32 @@ final class MavenPluginAnalyzerTest {
   }
 
   @Test
+  void pomSymlinkIsNotParsedForPluginSignals() throws Exception {
+    Path repositoryRoot = repository("pom-symlink");
+    writePom(repositoryRoot.resolve("shared/pom.xml"), """
+        <project>
+          <build>
+            <plugins>
+              <plugin>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+              </plugin>
+            </plugins>
+          </build>
+        </project>
+        """);
+    createSymbolicLink(repositoryRoot.resolve("pom.xml"), repositoryRoot.resolve("shared/pom.xml"));
+
+    MavenPluginAnalysis analysis = analyzer.analyze(repositoryRoot, List.of(rootModule()));
+    MavenModulePlugins modulePlugins = modulePlugins(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals("not_detected", modulePlugins.analysisStatus()),
+        () -> assertEquals(List.of(), modulePlugins.plugins()),
+        () -> assertEquals(List.of(), modulePlugins.pluginManagement()),
+        () -> assertEquals(List.of(), analysis.evidence()));
+  }
+
+  @Test
   void xmlDoctypeIsRejectedBeforeEntityExpansion() throws Exception {
     Path repositoryRoot = repository("doctype-rejected");
     writePom(repositoryRoot.resolve("pom.xml"), """
@@ -282,6 +309,14 @@ final class MavenPluginAnalyzerTest {
   private void writePom(Path pom, String xml) throws Exception {
     Files.createDirectories(pom.getParent());
     Files.writeString(pom, xml);
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
   }
 
   private MavenModuleItem rootModule() {

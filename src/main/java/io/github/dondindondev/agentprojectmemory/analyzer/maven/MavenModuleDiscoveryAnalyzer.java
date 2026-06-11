@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -57,7 +58,7 @@ public final class MavenModuleDiscoveryAnalyzer {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Path rootPom = normalizedRepositoryRoot.resolve(ROOT_BUILD_FILE);
-    if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, rootPom)) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, rootPom)) {
       return new MavenModuleDiscoveryAnalysis(
           ANALYSIS_STATUS_NOT_DETECTED,
           List.of(),
@@ -140,7 +141,7 @@ public final class MavenModuleDiscoveryAnalyzer {
         continue;
       }
 
-      if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, childPom)) {
+      if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, childPom)) {
         moduleItems.add(new MavenModuleItem(
             moduleId(modulePath),
             modulePath,
@@ -289,7 +290,10 @@ public final class MavenModuleDiscoveryAnalyzer {
       Path repositoryRoot,
       Path pom,
       String sourcePath) throws IOException {
-    List<String> lines = Files.readAllLines(pom, StandardCharsets.UTF_8);
+    List<String> lines = ScanPathContainment.readRegularFileLinesNoFollowStable(
+        pom,
+        StandardCharsets.UTF_8,
+        Integer.MAX_VALUE);
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
     String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());
@@ -311,8 +315,9 @@ public final class MavenModuleDiscoveryAnalyzer {
       Path declarationBaseDirectory,
       Path pom,
       String sourcePath) throws IOException {
-    List<String> sourceLines = Files.readAllLines(pom, StandardCharsets.UTF_8);
-    List<ModuleDeclaration> declarations = moduleDeclarations(pom, sourcePath);
+    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+    List<String> sourceLines = utf8Lines(pomBytes);
+    List<ModuleDeclaration> declarations = moduleDeclarations(pom, sourcePath, pomBytes);
     List<PreliminaryObservedModuleDeclaration> preliminary = declarations.stream()
         .map(declaration -> {
           NormalizedModulePath normalizedPath = normalizeModulePath(
@@ -384,7 +389,10 @@ public final class MavenModuleDiscoveryAnalyzer {
     return EvidenceExcerpts.bounded("<module>" + declaration.rawText().trim() + "</module>");
   }
 
-  private List<ModuleDeclaration> moduleDeclarations(Path pom, String sourcePath) throws IOException {
+  private List<ModuleDeclaration> moduleDeclarations(
+      Path pom,
+      String sourcePath,
+      byte[] pomBytes) throws IOException {
     ModuleDeclarationHandler handler = new ModuleDeclarationHandler();
     SAXParser parser;
     try {
@@ -393,7 +401,7 @@ public final class MavenModuleDiscoveryAnalyzer {
       throw new IOException("Unable to configure secure XML parser for " + pom, exception);
     }
 
-    try (InputStream input = Files.newInputStream(pom)) {
+    try (InputStream input = new ByteArrayInputStream(pomBytes)) {
       parser.parse(input, handler);
     } catch (SAXException exception) {
       throw malformedPomException(sourcePath, exception);
@@ -591,6 +599,10 @@ public final class MavenModuleDiscoveryAnalyzer {
   private String repositoryRelativePath(Path repositoryRoot, Path path) {
     Path relativePath = repositoryRoot.relativize(path.toAbsolutePath().normalize());
     return relativePath.toString().replace(path.getFileSystem().getSeparator(), "/");
+  }
+
+  private List<String> utf8Lines(byte[] bytes) {
+    return new String(bytes, StandardCharsets.UTF_8).lines().toList();
   }
 
   private static int rootFirst(MavenModuleItem module) {
