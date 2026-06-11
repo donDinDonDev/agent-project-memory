@@ -302,38 +302,19 @@ references.
 
 ## Project Status
 
-The v0.1 public release slice after Stage 8 evaluation is complete. The v0.2
-module-aware Maven release is published with no remaining release-blocking security
-findings from its final risk review. The v0.3 build/configuration release is published.
-The v0.4 API surface release is published with packaged jar and checksum assets. The
-v0.5 deeper Spring application surface release is published with packaged jar and
-checksum assets after real-project evaluation and risk-based review completion. Future
-connector/import work remains a later optional adapter track and is not started.
-The v0.6 JPA/domain release is published with packaged jar and checksum assets after
-implementation, real-project evaluation, follow-up fixes, documentation sync, and
-risk-based review. It includes bounded v0.6 entity field annotation
-metadata, embedded and identifier model signals, relationship metadata deepening,
-conservative repository/entity inferred relations, safe JPA wildcard import support,
-quieter no-domain guide rendering, and `schema_version: "0.6"`.
-The v0.7 tests, quality, and change-risk release is published with packaged jar and
-checksum assets after implementation, regression coverage, real-project evaluation,
-release validation, and a read-only security/contract audit. It moves normal
-generated output to `schema_version: "0.7"` with bounded source-visible test method,
-framework, Spring test slice, mock annotation, tested-subject relation/status, and
-quality planning-hint output.
-The v0.8 local Markdown and document ingestion release is published with packaged jar
-and checksum assets after implementation, regression coverage, real-project evaluation,
-release validation, and a read-only security/contract audit. It moves normal
-generated output to `schema_version: "0.8"` with deterministic default-scope local
-Markdown discovery, document inventory, ATX heading and chunk references, resolving
-`document` evidence, conservative `documents.reconciliation` uncertain inspection
-hints, and compact local-document guide rendering.
-The v0.9 CLI, config, performance, and distribution readiness release is published with
-packaged jar and checksum assets. It moves normal generated output to
-`schema_version: "0.9"` with redacted scan metadata for safe root-local config
-selection, stable CLI help/version and exit-code behavior, local Markdown-only
-include/exclude refinement, aggregate local Markdown caps, bounded diagnostics, and the
-release jar plus `SHA256SUMS` verification path.
+The latest published release is `v0.9.0`. It ships an executable jar and `SHA256SUMS`
+asset, and normal generated `project-map.json` output uses `schema_version: "0.9"`.
+
+The current release line includes module-aware Maven analysis, build/config orientation,
+source-visible Spring MVC and application-surface signals, declared OpenAPI operations,
+bounded JPA/domain metadata, source-visible test and quality planning signals,
+default-scope local Markdown document inventory, redacted scan metadata, safe root-local
+YAML config support, stable CLI help/version behavior, and documented release-jar
+verification.
+
+Earlier v0.x release notes remain available for historical scope, compatibility, and
+validation details. Future connector/import work remains a later optional adapter track
+and is not started.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

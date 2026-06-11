@@ -2,53 +2,20 @@
 
 ## Current Status
 
-`v0.1.0` is the first public local-first Java/Spring CLI release slice. Roadmap Stages 0
-through 8 are closed as the historical v0.1 baseline.
+The latest published release is `v0.9.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` output uses `schema_version: "0.9"`.
 
-Future work is organized by release tracks instead of extending the original v0.1 stage
-list. Connector/import work remains post-v0.1 future work and is not started.
-The v0.5 deeper Spring application surface release is published with packaged jar and
-checksum assets after implementation, guide rendering, real-project evaluation,
-review, risk-based security assessment, and release documentation completion.
-The v0.6 JPA/domain release is published with packaged jar and checksum assets after
-implementation, real-project evaluation, follow-up fixes, release documentation, and
-risk-based review. It extracts bounded source-visible entity field
-annotations for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and
-`@Version`, emits partial embedded and identifier model signals for direct
-`@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`, extracts bounded
-source-visible relationship metadata for direct field-level relationship cardinality,
-`mappedBy`, `@JoinColumn`, `@JoinTable`, and direct relationship attributes while
-keeping relationship targets declared-type-only and uncertain, infers conservative
-repository/entity relations from supported source-visible Spring Data repository generic
-types only when exactly one emitted entity fact matches, supports safe JPA-only wildcard
-imports for the existing supported JPA annotation set, and omits noisy no-domain guide
-sections.
-The v0.7 tests, quality, and change-risk release is published with packaged jar and
-checksum assets. Generated output uses `schema_version: "0.7"`, test facts carry stable
-IDs and `module_id`, direct JUnit/Spring Test framework signals include a source-visible
-`signal_kind`, and supported JUnit Jupiter/JUnit 4 test method annotations are emitted
-as method inventory with evidence. Direct source-visible Spring test slice annotations
-and conservative mock annotation signals are emitted under module-owned test facts
-without runtime Spring context, Mockito behavior, or slice-correctness claims.
-Conservative tested-subject relation/status rows are emitted from supported naming,
-exact production imports, direct field types, and direct Spring test slice class
-literals where deterministic. Conservative test-gap and change-risk planning hints are
-emitted under the top-level `quality` object from existing deterministic facts and
-inferred tested-subject relations, without coverage, execution, assertion, CI, runtime,
-correctness, vulnerability, production-impact, or business-priority claims. Real-project
-evaluation for the current v0.7 slices and the read-only security/contract audit are
-complete with no release-blocking findings.
-The v0.8 local Markdown and document ingestion release is published with packaged jar
-and checksum assets. Generated output uses `schema_version: "0.8"` and adds a top-level
-`documents` object with deterministic default-scope local Markdown discovery policy
-metadata, document inventory, ATX heading references, bounded chunk references, resolving
-`document` evidence, and conservative `documents.reconciliation` rows as low-confidence
-uncertain inspection hints. `agent-guide.md` renders compact local project documentation
-orientation from structured document facts and evidence only, without document body
-serialization, AI summaries, stale-document truth claims, completeness claims, or
-document-backed facts overriding code-backed facts. Real-project v0.8 evaluation and
-read-only security/contract audit are complete with no reportable findings or
-release-blocking follow-up.
+The current v0.x release line includes module-aware Maven analysis, build/config
+orientation, source-visible Spring MVC and application-surface signals, declared
+OpenAPI operations, bounded JPA/domain metadata, source-visible test and quality
+planning signals, default-scope local Markdown document inventory, redacted scan
+metadata, safe root-local YAML config support, stable CLI help/version behavior, and a
+documented release-jar verification path.
+
+Earlier v0.x release notes remain available for historical scope, compatibility, and
+validation details. Future work is organized by release tracks instead of extending the
+original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
+started.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -86,7 +53,7 @@ The v0.1 implementation includes:
 - Minimal deterministic tests inventory with naming-convention tested-subject
   inferences.
 - `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`.
-- Stage 8 evaluation on pinned open-source Spring projects.
+- Real-project evaluation on pinned open-source Spring projects.
 
 The detailed v0.1 scope and limitations are documented in
 [V0_1_RELEASE_NOTES.md](V0_1_RELEASE_NOTES.md) and [MVP_SPEC.md](MVP_SPEC.md).
