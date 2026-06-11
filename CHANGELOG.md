@@ -26,6 +26,9 @@ architecture documents.
 - Added v0.9 CLI help/version behavior, including top-level help, `help`, `scan --help`,
   top-level version, `version`, stable exit codes, bounded command validation, concise
   scan summaries, and packaged CLI smoke coverage for help/version commands.
+- Added a repeatable local release artifact workflow for packaged CLI smoke checks and
+  `SHA256SUMS` generation/verification, while keeping tagging, uploading, and publishing
+  as explicit manual release actions.
 
 ### Changed
 

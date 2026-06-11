@@ -177,8 +177,72 @@ mvn package
 git diff --stat
 ```
 
-For binary releases, inspect the packaged jar and publish checksums when release assets
-are attached.
+For binary releases, inspect the packaged jar and prepare checksums before release
+assets are attached.
+
+## Local Artifact And Checksum Workflow
+
+The local artifact workflow is a verification step. It may prepare files that are later
+attached manually to a release, but it must not create commits, tags, pushes, GitHub
+releases, uploads, credentials, or other remote state changes.
+
+Use this workflow after the intended release version is set and release-prep validation
+is otherwise ready:
+
+1. Build the packaged CLI jar:
+
+   ```sh
+   mvn package
+   ```
+
+   `mvn package` runs the test suite and the Maven packaged CLI smoke test. The smoke
+   test verifies that the shaded jar can run a scan and that packaged help/version
+   commands work.
+
+2. Run a manual packaged CLI smoke check against a disposable fixture copy:
+
+   ```sh
+   ARTIFACT=target/agent-project-memory-X.Y.Z.jar
+   java -jar "$ARTIFACT" --help
+   java -jar "$ARTIFACT" --version
+   rm -rf target/release-smoke
+   mkdir -p target/release-smoke
+   cp -R src/test/resources/fixtures/springmvc-endpoints target/release-smoke/springmvc-endpoints
+   java -jar "$ARTIFACT" scan target/release-smoke/springmvc-endpoints
+   test -f target/release-smoke/springmvc-endpoints/.project-memory/project-map.json
+   test -f target/release-smoke/springmvc-endpoints/.project-memory/evidence-index.jsonl
+   test -f target/release-smoke/springmvc-endpoints/.project-memory/endpoints.md
+   test -f target/release-smoke/springmvc-endpoints/.project-memory/agent-guide.md
+   ```
+
+   Replace `X.Y.Z` with the intended release version. The disposable smoke directory
+   stays under `target/` and must not be committed.
+
+3. Generate and verify local checksums from inside the asset directory:
+
+   ```sh
+   (
+     cd target
+     shasum -a 256 agent-project-memory-X.Y.Z.jar > SHA256SUMS
+     shasum -a 256 -c SHA256SUMS
+   )
+   ```
+
+   `SHA256SUMS` must contain only release asset file names, not absolute paths, parent
+   directories, workspace-local paths, or temporary paths.
+
+4. Before any manual upload, confirm the candidate binary asset set is exactly the
+   packaged jar and `SHA256SUMS` unless the release notes intentionally describe another
+   binary asset. Re-run the public-surface audit on release notes and release body text
+   before publishing or editing public release metadata.
+
+5. After assets are published manually, download the jar and `SHA256SUMS` into the same
+   directory and verify them before considering the binary release complete:
+
+   ```sh
+   shasum -a 256 -c SHA256SUMS
+   java -jar agent-project-memory-X.Y.Z.jar --version
+   ```
 
 ## Release Procedure
 

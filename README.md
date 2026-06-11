@@ -31,9 +31,11 @@ Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
 The `v0.8.0` release artifact is `agent-project-memory-0.8.0.jar`; release assets use
-`SHA256SUMS` for optional checksum verification.
+`SHA256SUMS` for optional checksum verification. After downloading both files into the
+same directory:
 
 ```sh
+shasum -a 256 -c SHA256SUMS
 java -jar agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
 ```
 
@@ -56,6 +58,9 @@ mvn package
 ```text
 target/agent-project-memory-0.8.0.jar
 ```
+
+The release artifact smoke and checksum workflow is documented in
+[docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
 
 ## Quick Start
 

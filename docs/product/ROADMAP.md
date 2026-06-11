@@ -467,7 +467,9 @@ Current implementation status:
 - CLI help/version commands, bounded command validation, stable exit codes, concise scan
   summaries, and packaged help/version smoke coverage are implemented for the current
   v0.9 CLI slice.
-- Performance evaluation and distribution workflow work remain follow-up v0.9 goals.
+- A bounded performance baseline and the repeatable local release artifact/checksum
+  workflow are complete for the current v0.9 track. Installation options research,
+  broader evaluation, security baseline, and release prep remain follow-up v0.9 goals.
 
 Planned contract boundary:
 
