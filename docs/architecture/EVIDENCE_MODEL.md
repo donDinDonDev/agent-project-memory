@@ -16,7 +16,7 @@ Evidence may point to:
 - a Maven build file,
 - a Spring configuration file,
 - a test file,
-- a local Markdown document from planned local document ingestion,
+- a local Markdown document from local document ingestion,
 - another explicit source reference.
 
 ## Evidence Types

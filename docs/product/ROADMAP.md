@@ -38,6 +38,18 @@ inferred tested-subject relations, without coverage, execution, assertion, CI, r
 correctness, vulnerability, production-impact, or business-priority claims. Real-project
 evaluation for the current v0.7 slices and the read-only security/contract audit are
 complete with no release-blocking findings.
+The v0.8 local Markdown and document ingestion release candidate is prepared for
+maintainer approval. Generated output uses `schema_version: "0.8"` and adds a top-level
+`documents` object with deterministic default-scope local Markdown discovery policy
+metadata, document inventory, ATX heading references, bounded chunk references, resolving
+`document` evidence, and conservative `documents.reconciliation` rows as low-confidence
+uncertain inspection hints. `agent-guide.md` renders compact local project documentation
+orientation from structured document facts and evidence only, without document body
+serialization, AI summaries, stale-document truth claims, completeness claims, or
+document-backed facts overriding code-backed facts. Real-project v0.8 evaluation and
+read-only security/contract audit are complete with no reportable findings or
+release-blocking follow-up. Tag, GitHub release, artifact upload, and checksum
+publication remain manual release actions.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -410,22 +422,30 @@ Implementation work that touches Markdown parsing, repository path handling,
 include/exclude behavior, output rendering, evidence serialization, or document-content
 scanning should receive focused tests and risk-based review before release.
 
-Current unreleased implementation status: the first v0.8 slices implement deterministic
-default-scope local Markdown discovery, `project-map.json` document inventory,
-deterministic ATX heading references, and bounded chunk references with
-`content_status: "not_serialized"`, plus resolving `document` evidence records for
-accepted file, heading, chunk, and bounded reconciliation mention observations. The
-current implementation also emits conservative `documents.reconciliation` rows for
-bounded endpoint-like path and module-like comparisons against deterministic source
-facts as low-confidence uncertain inspection hints, plus compact local project
-documentation rendering in `agent-guide.md` from structured document facts and evidence
-only.
+Implementation sequence:
 
-Real-project v0.8 evaluation is complete on pinned Spring PetClinic, Spring PetClinic
-REST, and Spring PetClinic Microservices targets with local Markdown documentation.
-Repeated packaged CLI scans were deterministic, structural evidence/document validation
-passed, and a read-only security/contract audit found no reportable findings or
-release-blocking follow-up.
+- Contract design for the planned v0.8 output and evidence semantics. (complete)
+- Markdown discovery and default include/exclude rules. (implemented)
+- Markdown heading and bounded chunk extraction. (implemented)
+- Document evidence index records. (implemented)
+- Code-doc reconciliation signals. (implemented)
+- Local docs guide rendering and regression coverage. (implemented)
+- Real-project evaluation and security/contract audit. (complete)
+- Release readiness. (complete for release-prep; awaiting maintainer tag/publish
+  approval)
+
+Release readiness notes:
+
+- Real-project v0.8 evaluation is complete on pinned Spring PetClinic, Spring PetClinic
+  REST, and Spring PetClinic Microservices targets with local Markdown documentation.
+- Repeated packaged CLI scans were deterministic, structural evidence/document
+  validation passed, and a read-only security/contract audit found no reportable
+  findings or release-blocking follow-up.
+- Release notes exist in [V0_8_RELEASE_NOTES.md](V0_8_RELEASE_NOTES.md).
+- Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
+  `git diff --check`.
+- Tag, GitHub release, artifact upload, and checksum publication are not performed in
+  this release-prep state.
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 

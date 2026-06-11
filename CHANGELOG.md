@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-06-11
+
 ### Added
 
 - Added the planned v0.8 local Markdown/document ingestion contract design boundary,
@@ -56,6 +58,8 @@ architecture documents.
   chunk references with resolving document evidence and conservative
   `documents.reconciliation` hints plus compact local-document guide rendering from
   structured document facts and evidence only.
+- Aligned release-prep README usage, roadmap status, release notes, changelog, output
+  contract wording, and Maven project version for `v0.8.0`.
 
 ### Fixed
 
@@ -66,6 +70,16 @@ architecture documents.
 
 - Completed the v0.8 real-project evaluation and read-only security/contract audit with
   no reportable findings or release-blocking follow-up.
+
+### Not Included
+
+- PDF, Word, external documentation, connectors, network access, embeddings, vector
+  stores, generic RAG, repository chat, AI-generated document summaries, or LLM calls in
+  the core analyzer.
+- Document body serialization, document prose summaries, stale-document truth claims,
+  documentation completeness or coverage claims, documentation-quality scoring, or
+  document claims promoted to source-backed code facts.
+- SaaS, web UI, or automatic code modification.
 
 ## [0.7.0] - 2026-06-10
 

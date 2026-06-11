@@ -30,8 +30,8 @@ mapping reconstruction.
 
 ## `project-map.json`
 
-`project-map.json` is the machine-readable project memory file. The current unreleased
-implemented public contract is the v0.8 local Markdown discovery and structure slice
+`project-map.json` is the machine-readable project memory file. The current implemented
+public contract is the v0.8 local Markdown discovery and structure slice
 layered on top of the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model
 slice, the v0.5 Spring application surface slices, the v0.4 API surface slice, and the
 v0.3 module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
@@ -39,7 +39,7 @@ v0.7 contract also emits direct Spring test slice and mock annotation signals an
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current unreleased v0.8 implementation extends the local Markdown/document
+The current v0.8 implementation extends the local Markdown/document
 ingestion boundary with deterministic default-scope Markdown discovery, document
 inventory, ATX heading references, bounded chunk references, and resolving `document`
 evidence records for accepted file, heading, chunk, and bounded reconciliation mention
@@ -2624,10 +2624,9 @@ Current v0.7 deterministic sorting rules:
 ### v0.8 Local Markdown And Document Ingestion Contract
 
 This section defines the v0.8 public output boundary for local Markdown/project
-document ingestion. The current unreleased implementation includes the discovery,
-inventory, ATX heading, bounded chunk, document evidence, and conservative
-reconciliation signal subset; a later v0.8 layer may add guide rendering under the same
-documented safety rules.
+document ingestion. The current implementation includes the discovery, inventory, ATX
+heading, bounded chunk, document evidence, conservative reconciliation signal subset,
+and compact local documentation guide rendering under the documented safety rules.
 
 The v0.8 local document ingestion contract uses:
 

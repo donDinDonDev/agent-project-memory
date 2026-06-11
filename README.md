@@ -27,14 +27,16 @@ services by default.
 
 ## Download
 
-Release artifacts are published on the
+Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.7.0` release artifact is `agent-project-memory-0.7.0.jar`; release assets use
-`SHA256SUMS` for optional checksum verification.
+The `v0.8.0` release candidate is prepared for maintainer approval but is not tagged or
+published yet. When published, the expected release artifact is
+`agent-project-memory-0.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
+verification.
 
 ```sh
-java -jar agent-project-memory-0.7.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
 ```
 
 ## Build And Test
@@ -54,7 +56,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.7.0.jar
+target/agent-project-memory-0.8.0.jar
 ```
 
 ## Quick Start
@@ -62,7 +64,7 @@ target/agent-project-memory-0.7.0.jar
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.7.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
 ```
 
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
@@ -203,6 +205,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.8 release summary: [docs/product/V0_8_RELEASE_NOTES.md](docs/product/V0_8_RELEASE_NOTES.md).
 - v0.7 release summary: [docs/product/V0_7_RELEASE_NOTES.md](docs/product/V0_7_RELEASE_NOTES.md).
 - v0.6 release summary: [docs/product/V0_6_RELEASE_NOTES.md](docs/product/V0_6_RELEASE_NOTES.md).
 - v0.5 release summary: [docs/product/V0_5_RELEASE_NOTES.md](docs/product/V0_5_RELEASE_NOTES.md).
@@ -267,6 +270,13 @@ release-prep validation, and a read-only security/contract audit. It moves norma
 generated output to `schema_version: "0.7"` with bounded source-visible test method,
 framework, Spring test slice, mock annotation, tested-subject relation/status, and
 quality planning-hint output.
+The v0.8 local Markdown and document ingestion release candidate is prepared for
+maintainer approval after implementation, regression coverage, real-project evaluation,
+release-prep validation, and a read-only security/contract audit. It moves normal
+generated output to `schema_version: "0.8"` with deterministic default-scope local
+Markdown discovery, document inventory, ATX heading and chunk references, resolving
+`document` evidence, conservative `documents.reconciliation` uncertain inspection
+hints, and compact local-document guide rendering.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
