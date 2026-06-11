@@ -10,11 +10,13 @@ public final class ScanConfigPathPattern {
   private static final String INVALID_GLOB_CHARS = "?[]{}()|";
 
   private final String pattern;
-  private final List<String> segments;
+  private final List<SegmentMatcher> segments;
 
   private ScanConfigPathPattern(String pattern) {
     this.pattern = pattern;
-    this.segments = List.of(pattern.split("/", -1));
+    this.segments = List.of(pattern.split("/", -1)).stream()
+        .map(SegmentMatcher::new)
+        .toList();
   }
 
   public static ScanConfigPathPattern parse(String pattern, String field, boolean includeRule)
@@ -58,35 +60,33 @@ public final class ScanConfigPathPattern {
         || repositoryRelativePath.contains("\\")) {
       return false;
     }
-    return matches(0, 0, List.of(repositoryRelativePath.split("/", -1)));
+    String[] pathSegments = repositoryRelativePath.split("/", -1);
+    boolean[] nextMatches = new boolean[pathSegments.length + 1];
+    nextMatches[pathSegments.length] = true;
+    for (int patternIndex = segments.size() - 1; patternIndex >= 0; patternIndex--) {
+      SegmentMatcher segment = segments.get(patternIndex);
+      boolean[] currentMatches = new boolean[pathSegments.length + 1];
+      if (segment.recursive()) {
+        currentMatches[pathSegments.length] = nextMatches[pathSegments.length];
+        for (int pathIndex = pathSegments.length - 1; pathIndex >= 0; pathIndex--) {
+          currentMatches[pathIndex] = nextMatches[pathIndex] || currentMatches[pathIndex + 1];
+        }
+      } else {
+        for (int pathIndex = pathSegments.length - 1; pathIndex >= 0; pathIndex--) {
+          currentMatches[pathIndex] = segment.matches(pathSegments[pathIndex]) && nextMatches[pathIndex + 1];
+        }
+      }
+      nextMatches = currentMatches;
+    }
+    return nextMatches[0];
   }
 
   String pattern() {
     return pattern;
   }
 
-  private boolean matches(int patternIndex, int pathIndex, List<String> pathSegments) {
-    if (patternIndex == segments.size()) {
-      return pathIndex == pathSegments.size();
-    }
-
-    String segment = segments.get(patternIndex);
-    if ("**".equals(segment)) {
-      for (int nextPathIndex = pathIndex; nextPathIndex <= pathSegments.size(); nextPathIndex++) {
-        if (matches(patternIndex + 1, nextPathIndex, pathSegments)) {
-          return true;
-        }
-      }
-      return false;
-    }
-
-    return pathIndex < pathSegments.size()
-        && segmentMatches(segment, pathSegments.get(pathIndex))
-        && matches(patternIndex + 1, pathIndex + 1, pathSegments);
-  }
-
-  private boolean segmentMatches(String patternSegment, String pathSegment) {
-    StringBuilder regex = new StringBuilder();
+  private static Pattern segmentPattern(String patternSegment) {
+    StringBuilder regex = new StringBuilder("^");
     for (int index = 0; index < patternSegment.length(); index++) {
       char character = patternSegment.charAt(index);
       if (character == '*') {
@@ -95,6 +95,33 @@ public final class ScanConfigPathPattern {
         regex.append(Pattern.quote(String.valueOf(character)));
       }
     }
-    return pathSegment.matches(regex.toString());
+    regex.append('$');
+    return Pattern.compile(regex.toString());
+  }
+
+  private static final class SegmentMatcher {
+    private final String literal;
+    private final Pattern pattern;
+    private final boolean recursive;
+
+    private SegmentMatcher(String segment) {
+      this.recursive = "**".equals(segment);
+      this.literal = !recursive && !segment.contains("*") ? segment : null;
+      this.pattern = !recursive && literal == null ? segmentPattern(segment) : null;
+    }
+
+    private boolean recursive() {
+      return recursive;
+    }
+
+    private boolean matches(String pathSegment) {
+      if (recursive) {
+        return true;
+      }
+      if (literal != null) {
+        return literal.equals(pathSegment);
+      }
+      return pattern.matcher(pathSegment).matches();
+    }
   }
 }

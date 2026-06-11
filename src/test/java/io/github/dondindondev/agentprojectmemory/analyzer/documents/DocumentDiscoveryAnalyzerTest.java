@@ -420,6 +420,30 @@ final class DocumentDiscoveryAnalyzerTest {
   }
 
   @Test
+  void appliesMultipleRecursiveUserIncludesAndExcludesDuringDiscovery() throws Exception {
+    Path repositoryRoot = repository("recursive-user-rules");
+    writeFile(repositoryRoot.resolve("custom/project/api/reference/v1/guide.md"), "# Guide\n");
+    writeFile(repositoryRoot.resolve("custom/project/api/reference/v1/archive/old.md"), "# Old\n");
+    writeFile(repositoryRoot.resolve("custom/project/api/reference/v2/skip.md"), "# Skip\n");
+    writeFile(repositoryRoot.resolve("custom/project/reference/v1/skip.md"), "# Skip\n");
+
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".", "pom.xml")),
+        new DocumentDiscoveryOptions(
+            true,
+            List.of(ScanConfigPathPattern.parse(
+                "**/api/**/v1/**/*.md",
+                "documents.include[0]",
+                true)),
+            List.of(ScanConfigPathPattern.parse("**/archive/**", "documents.exclude[0]", false))));
+
+    assertEquals(
+        List.of("custom/project/api/reference/v1/guide.md"),
+        analysis.documents().stream().map(DocumentFileFact::path).toList());
+  }
+
+  @Test
   void reportsNotAnalyzedWhenLocalMarkdownIsDisabled() throws Exception {
     Path repositoryRoot = repository("disabled");
     writeFile(repositoryRoot.resolve("README.md"), "# Root\n");
