@@ -448,15 +448,53 @@ Release readiness notes:
 
 ## v0.9.0: CLI, Config, Performance, And Distribution Readiness
 
-Expected direction:
+Product outcome: make the local CLI predictable, safely configurable, and easier to
+evaluate before the v1.0 stabilization track, without weakening the local-first
+deterministic analyzer boundary.
 
-- Config file design.
-- Include/exclude patterns.
-- Explicit enable flags for later optional scan modes.
-- Better CLI help, exit codes, and diagnostics.
-- Large-repository performance baseline.
-- Release artifact and checksum workflow.
-- Installation options research.
+Planned contract boundary:
+
+- A root-local YAML scan config file named `agent-project-memory.yml`, plus optional
+  explicit CLI config selection, with no global, user-home, environment-variable, or
+  network-loaded config discovery. The selected config must be one regular in-root YAML
+  file and must not be loaded through symlinks.
+- Config precedence: built-in defaults first, then the selected scan-root config file,
+  then explicit CLI flags. CLI selection of an explicit config replaces default config
+  discovery rather than merging multiple config files.
+- Include/exclude semantics based only on normalized repository-relative paths using
+  slash separators, no absolute paths, no `./`, no `..`, no scan-root escape, and no
+  symlink following by default.
+- Conservative local Markdown defaults compatible with v0.8: local document discovery
+  remains enabled by default, uses the existing default-scope discovery policy, applies
+  the existing built-in exclusions, and does not include hidden, generated, dependency,
+  private/internal, maintainer-like, secret-like, or `.project-memory/` output paths by
+  default.
+- User include/exclude rules may refine local Markdown discovery only within the
+  repository-root boundary. Built-in safety exclusions remain non-overridable in the
+  initial v0.9 design.
+- Feature toggles for local Markdown discovery and reserved later optional scan modes.
+  Generated-source scanning and symlink following remain disabled by default; enabling
+  generated-source scanning or symlink following must require a later explicit mode,
+  implementation, tests, output/evidence contract update, and security review.
+- CLI help, version, command validation, exit codes, and diagnostics that are stable
+  enough for automation and do not print config values, secrets, source excerpts, raw
+  document bodies, or generated output contents.
+- A planned v0.9 `project-map.json` scan summary that records redacted effective
+  config, feature, path-policy, and non-fatal diagnostic metadata. It records config
+  source and counts/statuses, not raw config values or user-provided include/exclude
+  patterns.
+- No tool-config evidence records in `evidence-index.jsonl`; the config summary is scan
+  metadata, not project evidence. Existing `config_file` evidence remains limited to
+  project application/logging config file presence facts.
+- Performance evaluation and distribution workflow work as follow-up goals after the
+  CLI/config contract is implemented.
+
+Non-goals include connector configuration, network or credential handling, global
+machine config, telemetry, update checks, plugin loading, package publication,
+generated-source scanning by default, broad filesystem traversal outside the scanned
+repository root, config value extraction, secret output, source upload, SaaS, web UI,
+repository chat, generic RAG, LLM calls in the core analyzer, and automatic code
+modification.
 
 ## v1.0.0: Stable Java/Spring Local-First Project Memory
 

@@ -2920,6 +2920,241 @@ Current v0.8 deterministic sorting rules:
 - Reconciliation signals sort by signal, module order when a source module is available,
   subject kind, subject name, document path, and ID.
 
+### Planned v0.9 CLI And Scan Configuration Contract
+
+This section defines the planned v0.9 public output boundary for CLI/config behavior.
+It is a contract design for future implementation, not a statement that the current
+v0.8 implementation already emits these fields.
+
+The planned v0.9 CLI/config contract uses:
+
+- `schema_version: "0.9"` for output that preserves the v0.8 local Markdown/document
+  contract and adds a top-level `scan` owner for redacted effective scan metadata.
+- The same four output files under `.project-memory/`.
+- Root-local YAML config discovery by default. The default discovered file name is
+  `agent-project-memory.yml` at the scan root. Global config files, user-home config
+  files, environment-variable config discovery, network-loaded config, and generated
+  output directory config discovery are not part of the v0.9 design.
+- Config precedence in this order: built-in defaults, then the selected scan-root config
+  file, then explicit CLI flags. An explicit `--config` selection replaces default
+  config-file discovery rather than merging multiple config files.
+- A shared normalized repository-relative path policy for user include/exclude rules.
+  The initial v0.9 implementation should apply user include/exclude rules only to local
+  Markdown document discovery. Existing Java/Maven analyzers keep their documented
+  supported-root behavior unless a later contract explicitly adds analyzer-specific path
+  filtering.
+- No `evidence-index.jsonl` evidence records for the tool config file. The selected
+  scan config is execution metadata, not project evidence.
+
+Planned `project-map.json` excerpt. Unchanged v0.8 fields are omitted for focus:
+
+```json
+{
+  "schema_version": "0.9",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  }
+}
+```
+
+Planned config file rules:
+
+- The default config file is `<scan-root>/agent-project-memory.yml`.
+- The selected config file, whether discovered by default or selected explicitly, must
+  resolve to one regular YAML file under the scan root and must not be a symlink.
+- An explicit `--config <path>` value, if implemented, is interpreted after scan-root
+  validation as a normalized repository-relative path under the selected scan root. It
+  must not be absolute, start with `./`, contain `.` or `..` path segments after
+  normalization, use backslash separators, resolve outside the scan root, point into
+  `.project-memory/`, or point to a symlink.
+- If the default config file is present and no explicit config is selected, it is the
+  selected config. If no config is selected or discovered, built-in defaults apply.
+- If an explicit config path is provided, default discovery is skipped. The explicit
+  path must resolve to one regular YAML file under the scan root.
+- Config files are not merged. Multiple default config locations are intentionally not
+  discovered in v0.9 so there is no hidden precedence between root-visible and hidden
+  files.
+- The planned config format is YAML with a required bounded schema version, for example
+  `version: 1`. Unknown top-level keys, unsupported values, unsupported future-mode
+  enables, invalid YAML, unsafe path values, oversized config files, YAML aliases that
+  exceed parser limits, and non-scalar values where scalars are required should fail as
+  invalid config before output generation.
+- Config parsing must not perform environment-variable interpolation, file includes,
+  remote imports, command execution, credential lookup, plugin loading, or network
+  access.
+- Generated outputs must not serialize raw config values, raw user include/exclude
+  patterns, config file contents, config excerpts, environment variables, decrypted
+  values, credentials, tokens, secret-looking values, or local absolute paths.
+
+Planned feature toggle rules:
+
+- `local_markdown` defaults to enabled to preserve the v0.8 no-config behavior. When it
+  is disabled by config or CLI flag, local Markdown discovery, document structure,
+  document evidence, document reconciliation, and local-document guide rendering are
+  not run.
+- When local Markdown is disabled, `documents.analysis_status` should be
+  `"not_analyzed"` and `documents.reconciliation.analysis_status` should be
+  `"not_analyzed"` if those shells are emitted. The reason may be represented in
+  `scan.features.local_markdown` and `scan.diagnostics`, not by fabricating document
+  evidence.
+- `generated_sources` is reserved and disabled. A value or flag that attempts to enable
+  generated-source scanning must be rejected until a later explicit generated-source
+  scan mode defines its own analyzer, path policy, output contract, evidence semantics,
+  focused tests, and review boundary.
+- `follow_symlinks` is reserved and disabled. A value or flag that attempts to enable
+  symlink following must be rejected until a later explicit symlink policy defines safe
+  containment and evidence behavior.
+
+Planned include/exclude path semantics:
+
+- User path rules use normalized repository-relative slash-separated paths. They must
+  never be absolute, start with `./`, contain `.` or `..` path segments after
+  normalization, use backslash separators, or resolve outside the scan root.
+- Matching is case-sensitive and byte-stable. The contract does not promise
+  filesystem-specific case folding.
+- The initial supported pattern language should be bounded: literal path segments,
+  `*` inside one segment, and `**` only as a whole path segment. Brace expansion,
+  character classes, extglob syntax, regex syntax, drive letters, and URL-like schemes
+  are not part of the v0.9 design.
+- Include rules add local Markdown candidates to the existing default-scope document
+  candidate set. Exclude rules remove candidates from the default-plus-user candidate
+  set. User excludes win over user includes.
+- Built-in safety exclusions win over all user includes in v0.9. Hidden paths,
+  `.project-memory/`, generated outputs, build outputs, dependency directories,
+  private/internal paths, maintainer-like paths, secret-like path segments, symlinked
+  files, and symlinked directories cannot be re-included by user config in the initial
+  design.
+- User include rules for local documents may accept only Markdown files in the supported
+  local document formats. They must not add PDF, Word, external docs, connector docs,
+  remote URLs, generated source files, binary files, or arbitrary source files as local
+  document facts.
+- User path rules change candidate selection only. They do not convert document
+  evidence into code evidence, do not promote document mentions to source-backed facts,
+  and do not change existing evidence semantics.
+- `documents.discovery` may continue to list built-in default patterns, but it must not
+  serialize raw user include/exclude patterns. Custom policy effects should be visible
+  through `scan.path_policy` counts/statuses and per-document `discovery_source` values
+  such as `"explicit_include"` when a document is accepted through a user include rule.
+
+Planned `scan.config` rules:
+
+- `scan.config.analysis_status` is `"analyzed"` when config discovery and validation
+  ran.
+- `scan.config.source` is one of:
+  - `"defaults_only"` when no config file or CLI override affected scan behavior.
+  - `"config_file"` when a selected scan-root config file affected or confirmed
+    behavior.
+  - `"cli_overrides"` when CLI flags affected behavior without a config file.
+  - `"config_file_and_cli_overrides"` when both a config file and CLI flags affected
+    behavior.
+- `config_file_path` is the normalized repository-relative path to the selected config
+  file when it is safe to record and `null` otherwise. It must never be absolute or
+  point outside the scan root.
+- `config_file_status` is `"not_detected"`, `"applied"`, or `"explicit"`.
+- `cli_overrides_applied` is a boolean.
+- `raw_values_serialized` must be `false` for v0.9 output.
+
+Planned `scan.features` rules:
+
+- Feature entries record effective enablement and the source of the effective value.
+- `source` values are `"default"`, `"config_file"`, or `"cli_override"` for implemented
+  toggles.
+- Reserved disabled modes use `status: "reserved_disabled"` and `enabled: false`.
+- Feature entries must not imply that an analyzer ran. Analyzer-specific
+  `analysis_status` fields remain authoritative for generated fact sections.
+
+Planned `scan.path_policy` rules:
+
+- `path_format` is `"normalized_repository_relative"`.
+- `case_sensitivity` is `"case_sensitive"` in the v0.9 contract.
+- `symlink_policy` is `"skip_symlinks"` until a later explicit mode changes it.
+- `default_exclusions_applied` is `true` in normal v0.9 scans.
+- `default_exclusion_override` is `"not_supported"` in the initial v0.9 design.
+- User include/exclude counts record how many validated user rules affected local
+  document candidate selection. They must not serialize the raw patterns.
+
+Planned `scan.diagnostics` rules:
+
+- Diagnostics are bounded scan metadata for non-fatal conditions such as config defaults
+  in use, user path rules accepted, user path rules matching no candidate, files skipped
+  by built-in safety exclusions, disabled local docs, or generated-source roots remaining
+  warning-only.
+- Fatal usage, scan input, invalid config, output write, and unexpected internal errors
+  are reported through CLI exit codes and stderr. A scan that fails before output
+  generation should not create a partial `project-map.json` solely to record fatal
+  diagnostics.
+- Diagnostic items, when emitted, should include stable fields such as `id`, `severity`,
+  `code`, `category`, `message`, optional normalized repository-relative `path`, and
+  optional `count`.
+- Diagnostic messages must be deterministic and bounded. They must not include raw
+  config values, raw include/exclude patterns, source excerpts, document bodies, config
+  contents, environment variables, credentials, tokens, secret-looking values, stack
+  traces, local absolute paths, timing measurements, or generated output contents.
+- Diagnostics are not evidence. Diagnostic item IDs must not be referenced by
+  `evidence_ids`.
+
+Planned CLI behavior:
+
+- `agent-project-memory --help`, `agent-project-memory help`,
+  `agent-project-memory scan --help`, `agent-project-memory --version`, and
+  `agent-project-memory version` should succeed without scanning.
+- Help and version output go to stdout and exit with code `0`.
+- Usage errors such as unknown commands, missing required arguments, unknown flags,
+  duplicate mutually exclusive flags, or unexpected extra arguments go to stderr and
+  exit with code `2`.
+- Scan input errors such as invalid path syntax, missing scan path, non-directory scan
+  path, unresolved scan root, invalid output directory, output symlink, or output path
+  escaping the scan root go to stderr and exit with code `3`.
+- Invalid config errors such as missing explicit config file, unsafe config path,
+  invalid YAML, unsupported schema version, unknown keys, invalid value types, invalid
+  include/exclude path rules, or attempts to enable reserved modes go to stderr and exit
+  with code `4`.
+- Output generation or write errors go to stderr and exit with code `5`.
+- Unexpected internal errors go to stderr with a bounded generic message and exit with
+  code `1` unless a later CLI contract defines a more specific code. Stack traces are
+  not printed by default.
+- Successful scans exit with code `0`, even when bounded non-fatal diagnostics are
+  emitted.
+- Normal stdout should remain concise: generated output file names, stable fact counts,
+  and a bounded diagnostic summary. Detailed diagnostics, when a flag is added, should
+  still follow the redaction rules above.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.

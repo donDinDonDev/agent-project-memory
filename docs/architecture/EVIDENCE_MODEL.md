@@ -1011,6 +1011,33 @@ Document reconciliation evidence:
   treated as stale-document proof, completeness proof, documentation-quality scoring, or
   implementation truth.
 
+### Planned v0.9 Scan Config Evidence Decision
+
+The planned v0.9 CLI/config contract does not add a tool-config evidence type, global
+evidence fields, or `evidence-index.jsonl` records for the selected
+`agent-project-memory.yml` scan config file.
+
+The v0.9 scan config summary is execution metadata, not project evidence:
+
+- It may record redacted effective scan policy under `project-map.json` `scan` metadata.
+- It may record a normalized repository-relative selected config path when safe.
+- It may record feature enablement, path-policy status, counts, and bounded non-fatal
+  diagnostic metadata.
+- It must not record raw config values, raw user include/exclude patterns, config file
+  contents, YAML nodes, environment variables, decrypted values, credentials, tokens,
+  secret-looking values, source excerpts, document bodies, stack traces, local absolute
+  paths, or generated output contents.
+
+Existing `config_file` evidence remains reserved for project application/logging config
+file presence and legacy filename-only OpenAPI/Swagger warning evidence. It must not be
+reused for the tool's own scan config file unless a later contract explicitly changes
+that evidence boundary.
+
+Path-filter decisions are also not evidence. A user include or exclude rule may affect
+which local Markdown files are discovered, but the rule itself does not prove a project
+fact. Accepted local Markdown files still require normal `document` evidence, and
+source-backed Java/Maven/API/test facts still require their existing source evidence.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

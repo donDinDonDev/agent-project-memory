@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added the planned v0.9 CLI/config contract design boundary, including root-local
+  config discovery, config precedence, repository-relative include/exclude semantics,
+  safe local Markdown defaults, reserved optional scan-mode toggles, stable help/version
+  and exit-code behavior, bounded scan diagnostics, redacted scan metadata output, and
+  the no-tool-config-evidence decision.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.8.0` as published with release
