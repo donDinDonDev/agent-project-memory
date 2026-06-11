@@ -29,6 +29,10 @@ architecture documents.
 - Added a repeatable local release artifact workflow for packaged CLI smoke checks and
   `SHA256SUMS` generation/verification, while keeping tagging, uploading, and publishing
   as explicit manual release actions.
+- Added v0.9 installation-options guidance that keeps the v1.0 minimum installation path
+  on GitHub Release executable jars with `SHA256SUMS`, while parking shell wrappers,
+  JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf plugins, native
+  images, and container images as future distribution channels.
 
 ### Changed
 

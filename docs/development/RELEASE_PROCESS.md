@@ -244,6 +244,19 @@ is otherwise ready:
    java -jar agent-project-memory-X.Y.Z.jar --version
    ```
 
+## Installation Channel Policy
+
+Until a future approved distribution channel changes this document, public binary
+releases are expected to ship the executable shaded jar and `SHA256SUMS`. README and
+release notes should document `java -jar agent-project-memory-X.Y.Z.jar ...` as the
+supported install/run path.
+
+Shell wrappers, JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf
+plugins, native images, and container images are separate distribution channels. Adding
+any of them requires an explicit scoped change to the release checklist, user-facing
+installation documentation, and release notes. They must not be bundled into ordinary
+release prep.
+
 ## Release Procedure
 
 1. Prepare a focused release branch or release-prep change.

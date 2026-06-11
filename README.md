@@ -39,6 +39,12 @@ shasum -a 256 -c SHA256SUMS
 java -jar agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
 ```
 
+This release-jar path is also the minimum planned installation path through v1.0:
+download the executable jar from GitHub Releases, optionally verify `SHA256SUMS`, and
+run it with `java -jar`. Package-manager installs and a first-party installed
+`agent-project-memory` command are future distribution work and should not be assumed
+available until a release note documents them.
+
 ## Build And Test
 
 Run the test suite:
@@ -212,6 +218,12 @@ facts. `agent-guide.md` is a deterministic orientation guide generated only from
 structured project-map facts and evidence index.
 
 ## Future Installed Usage
+
+The current supported path is the release jar documented above. The command forms below
+describe the intended installed-command UX for a future distribution channel; no
+first-party shell wrapper, Homebrew formula, JBang catalog, Maven Central CLI
+installation, SDKMAN/asdf plugin, native image, or container image is currently
+published.
 
 Future installed command:
 

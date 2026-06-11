@@ -468,8 +468,11 @@ Current implementation status:
   summaries, and packaged help/version smoke coverage are implemented for the current
   v0.9 CLI slice.
 - A bounded performance baseline and the repeatable local release artifact/checksum
-  workflow are complete for the current v0.9 track. Installation options research,
-  broader evaluation, security baseline, and release prep remain follow-up v0.9 goals.
+  workflow are complete for the current v0.9 track.
+- Installation options research is complete for the current v0.9 track: the minimal
+  planned v1.0 path remains a GitHub Release executable jar with optional `SHA256SUMS`
+  verification. Broader evaluation, security baseline, and release prep remain follow-up
+  v0.9 goals.
 
 Planned contract boundary:
 
@@ -504,8 +507,9 @@ Planned contract boundary:
 - No tool-config evidence records in `evidence-index.jsonl`; the config summary is scan
   metadata, not project evidence. Existing `config_file` evidence remains limited to
   project application/logging config file presence facts.
-- Performance evaluation and distribution workflow work as follow-up goals after the
-  CLI/config contract is implemented.
+- Remaining v0.9 evaluation, security baseline, and release-prep work stay as follow-up
+  goals. Package-manager distribution channels remain future work unless explicitly
+  implemented and documented.
 
 Non-goals include connector configuration, network or credential handling, global
 machine config, telemetry, update checks, plugin loading, package publication,
@@ -513,6 +517,21 @@ generated-source scanning by default, broad filesystem traversal outside the sca
 repository root, config value extraction, secret output, source upload, SaaS, web UI,
 repository chat, generic RAG, LLM calls in the core analyzer, and automatic code
 modification.
+
+Installation options research outcome:
+
+| Option | v1.0 recommendation | Rationale |
+| --- | --- | --- |
+| GitHub Release executable jar plus `SHA256SUMS` | Minimal supported path. | Already matches the current release workflow, keeps the Java 21 requirement explicit, supports optional checksum verification, and avoids new registries, signing keys, package indexes, or update automation. |
+| First-party shell wrapper | Defer. | Improves command UX but adds install, uninstall, PATH, permission, platform, checksum, and upgrade behavior that should be designed and tested as a separate distribution channel. |
+| JBang catalog or app install path | Park for v1.x. | Useful for Java CLI discovery after artifact coordinates or stable jar URLs are mature, but it adds a JBang prerequisite and catalog maintenance surface. |
+| Homebrew tap | Park for v1.x. | Good developer UX on macOS/Linux after adoption grows, but it requires formula/tap maintenance, per-release checksum updates, and a tested package-manager workflow. |
+| Maven Central publication | Park for v1.x/v2.x infrastructure work. | Helpful for Java ecosystem consumption and possible JBang coordinates, but it is not a minimal CLI install path and requires namespace, metadata, validation, signing, and immutable publication discipline. |
+| SDKMAN/asdf plugins, native images, or container images | Park until demand is clear. | Each channel adds channel-specific accounts, plugin or image maintenance, platform testing, and release-process complexity beyond the current Java 21 jar. |
+
+Until one of those parked channels is implemented and documented in a release note,
+public install instructions should keep the release jar as the supported path and should
+not present package-manager commands as available.
 
 ## v1.0.0: Stable Java/Spring Local-First Project Memory
 
