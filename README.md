@@ -362,13 +362,14 @@ production imports, direct field types, and direct Spring test slice class liter
 conservative test-gap and change-risk planning hints from existing deterministic facts
 and inferred tested-subject relations, deterministic default-scope local Markdown
 document discovery, inventory, ATX heading references, and bounded chunk references with
-safe path exclusions and no symlink following, conservative local Markdown/code
-reconciliation hints kept under `documents.reconciliation`, deterministic
+safe path exclusions, aggregate caps, and no symlink following, conservative local
+Markdown/code reconciliation hints kept under `documents.reconciliation`, deterministic
 root-local `agent-project-memory.yml` config discovery with optional explicit
 `scan <path> --config <repo-relative-yaml>` selection, safe config defaults, local
 Markdown-only user include/exclude refinement, non-overridable built-in document safety
 exclusions, reserved generated-source and symlink-following modes rejected when enabled,
-redacted `scan` metadata that avoids raw config values and raw user path patterns,
+redacted `scan` metadata and bounded diagnostics that avoid raw config values and raw
+user path patterns,
 `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
@@ -559,8 +560,13 @@ Current limitations:
   heading, chunk, and bounded reconciliation mention observations. Reconciliation rows
   are low-confidence uncertain inspection hints only; they do not prove stale
   documentation, missing documentation, coverage, completeness, correctness, or source
-  and document agreement. The implementation renders local-document guide sections only
-  from structured document facts and evidence; it does not read
+  and document agreement. The current implementation caps emitted local Markdown output
+  at 256 accepted documents, 16 MiB of aggregate accepted Markdown bytes, 4096 heading
+  references, 4096 chunk references, 2048 reconciliation mention observations, and 2048
+  reconciliation rows per scan; cap hits are reported as bounded non-fatal
+  `scan.diagnostics` items and do not create evidence records. The implementation
+  renders local-document guide sections only from structured document facts and
+  evidence; it does not read
   hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
   serialize document bodies.
 - Root-local scan configuration is limited to the current safe v0.9 YAML schema:

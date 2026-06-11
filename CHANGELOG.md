@@ -47,11 +47,20 @@ architecture documents.
 - Split CLI failure modes into documented exit codes for usage, scan input, invalid
   config, output/write, and unexpected internal errors while keeping stderr bounded and
   stack-trace-free by default.
+- Extended `scan.diagnostics` and the concise CLI diagnostic summary to report bounded
+  non-fatal warnings when aggregate local Markdown caps are reached.
 
 ### Fixed
 
 - Updated post-release documentation status to mark `v0.8.0` as published with release
   assets and checksums.
+
+### Security
+
+- Added deterministic aggregate caps for local Markdown discovery and reconciliation:
+  accepted document count, accepted Markdown bytes, heading references, chunk references,
+  reconciliation mention observations, and emitted reconciliation rows are now bounded,
+  with skipped document-backed output represented by diagnostics rather than evidence.
 
 ## [0.8.0] - 2026-06-11
 

@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
 import java.io.IOException;
@@ -460,6 +461,73 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertEquals("default_local_markdown", analysis.discoveryPolicy().scope()));
   }
 
+  @Test
+  void capsAggregateDocumentsHeadingsChunksAndDocumentEvidence() throws Exception {
+    Path repositoryRoot = repository("aggregate-caps");
+    writeFile(repositoryRoot.resolve("README.md"), """
+        # One
+        One body
+        # Two
+        Two body
+        # Three
+        Three body
+        """);
+    writeFile(repositoryRoot.resolve("docs/extra.md"), "# Extra\n");
+    DocumentDiscoveryAnalyzer cappedAnalyzer = new DocumentDiscoveryAnalyzer(
+        new DocumentAnalysisLimits(1, 1024, 2, 2, 10, 10));
+
+    DocumentDiscoveryAnalysis analysis = cappedAnalyzer.analyze(repositoryRoot, List.of());
+    DocumentFileFact document = analysis.documents().get(0);
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals(List.of("README.md"), analysis.documents().stream()
+            .map(DocumentFileFact::path)
+            .toList()),
+        () -> assertEquals(2, document.headings().size()),
+        () -> assertEquals(List.of("One", "Two"), document.headings().stream()
+            .map(DocumentHeadingFact::title)
+            .toList()),
+        () -> assertEquals(2, document.chunks().size()),
+        () -> assertEquals(5, analysis.evidence().size()),
+        () -> assertTrue(analysis.evidence().stream()
+            .allMatch(evidence -> evidence.sourcePath().equals("README.md"))),
+        () -> assertEquals(
+            List.of(
+                "local_markdown_heading_count_cap_reached",
+                "local_markdown_chunk_count_cap_reached",
+                "local_markdown_document_count_cap_reached"),
+            diagnosticCodes(analysis.diagnostics())),
+        () -> assertEquals(
+            List.of(2, 2, 1),
+            analysis.diagnostics().stream().map(ScanDiagnostic::count).toList()),
+        () -> assertFalse(analysis.toString().contains("Extra")));
+  }
+
+  @Test
+  void capsAggregateDocumentBytesBeforeReadingSkippedDocuments() throws Exception {
+    Path repositoryRoot = repository("byte-cap");
+    writeFile(repositoryRoot.resolve("README.md"), "# A\n");
+    writeFile(repositoryRoot.resolve("docs/big.md"), "# FAKE_SKIPPED_MARKDOWN_SECRET\n");
+    writeFile(repositoryRoot.resolve("docs/small.md"), "# S\n");
+    DocumentDiscoveryAnalyzer cappedAnalyzer = new DocumentDiscoveryAnalyzer(
+        new DocumentAnalysisLimits(10, 10, 100, 100, 10, 10));
+
+    DocumentDiscoveryAnalysis analysis = cappedAnalyzer.analyze(repositoryRoot, List.of());
+
+    assertAll(
+        () -> assertEquals(
+            List.of("README.md", "docs/small.md"),
+            analysis.documents().stream().map(DocumentFileFact::path).toList()),
+        () -> assertEquals(
+            List.of("local_markdown_document_bytes_cap_reached"),
+            diagnosticCodes(analysis.diagnostics())),
+        () -> assertEquals(List.of(10), analysis.diagnostics().stream()
+            .map(ScanDiagnostic::count)
+            .toList()),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_MARKDOWN_SECRET")));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);
@@ -505,5 +573,9 @@ final class DocumentDiscoveryAnalyzerTest {
         .filter(evidence -> id.equals(evidence.id()))
         .findFirst()
         .orElseThrow();
+  }
+
+  private List<String> diagnosticCodes(List<ScanDiagnostic> diagnostics) {
+    return diagnostics.stream().map(ScanDiagnostic::code).toList();
   }
 }

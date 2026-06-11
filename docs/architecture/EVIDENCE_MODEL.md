@@ -931,7 +931,8 @@ Current quality and change-risk evidence:
 The v0.8 local Markdown/document evidence layer uses the existing evidence field set and
 the `document` evidence type. It does not add global evidence fields. The current
 implementation emits file, heading, chunk, and bounded mention evidence for accepted
-default-scope local Markdown documents.
+default-scope local Markdown documents, subject to the aggregate local Markdown caps
+documented in `OUTPUT_CONTRACT.md`.
 
 Document evidence scope:
 
@@ -947,6 +948,13 @@ Document evidence scope:
 - `.project-memory/`, generated output paths, hidden paths, dependency directories,
   build outputs, maintainer-only paths, private/internal paths, and secret-like path
   segments are not default document evidence sources.
+- The current aggregate caps bound emitted `document` evidence by accepted document
+  count, accepted document bytes, heading references, chunk references, document-side
+  reconciliation mention observations, and reconciliation output rows. Omitted
+  documents, headings, chunks, or mentions do not create placeholder evidence records.
+- Scan diagnostics for aggregate cap conditions are execution metadata under
+  `project-map.json` `scan.diagnostics`. They are not evidence and their diagnostic IDs
+  must not appear in `evidence_ids`.
 
 Document evidence IDs:
 

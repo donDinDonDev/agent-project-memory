@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.ApiSpecEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiOperationAnalysis;
@@ -549,7 +550,7 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
         documentDiscoveryAnalysis)) {
-      return new Result(false, 0, 0, 0, 0, 0, 0);
+      return new Result(false, 0, 0, 0, 0, 0, 0, 0);
     }
 
     ModuleAwareScan scan = analyzeModules(
@@ -565,7 +566,10 @@ public final class SpringMvcEndpointOutputGenerator {
             documentDiscoveryAnalysis,
             documentSourceApiFacts(scan.endpoints(), openApiOperationAnalysis.operations()),
             documentSourceModuleFacts(layout.modules().items()))
-        : new DocumentReconciliationAnalysis(ANALYSIS_NOT_ANALYZED, List.of(), List.of());
+        : new DocumentReconciliationAnalysis(ANALYSIS_NOT_ANALYZED, List.of(), List.of(), List.of());
+    List<ScanDiagnostic> scanDiagnostics = scanDiagnostics(
+        documentDiscoveryAnalysis,
+        documentReconciliationAnalysis);
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         moduleDiscoveryAnalysis.evidence(),
@@ -599,7 +603,8 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiOperationAnalysis,
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis,
-        scanConfiguration);
+        scanConfiguration,
+        scanDiagnostics);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -629,7 +634,8 @@ public final class SpringMvcEndpointOutputGenerator {
         scan.entities().size(),
         scan.tests().size(),
         documentDiscoveryAnalysis.documents().size(),
-        evidenceRecords.size());
+        evidenceRecords.size(),
+        scanDiagnostics.size());
   }
 
   private boolean shouldGenerate(
@@ -660,7 +666,8 @@ public final class SpringMvcEndpointOutputGenerator {
         || !openApiSpecDiscoveryAnalysis.specFiles().isEmpty()
         || !openApiOperationAnalysis.operations().isEmpty()
         || !openApiOperationAnalysis.warnings().isEmpty()
-        || !documentDiscoveryAnalysis.documents().isEmpty();
+        || !documentDiscoveryAnalysis.documents().isEmpty()
+        || !documentDiscoveryAnalysis.diagnostics().isEmpty();
   }
 
   private ProjectLayout detectLayout(
@@ -1507,11 +1514,12 @@ public final class SpringMvcEndpointOutputGenerator {
       OpenApiOperationAnalysis openApiOperationAnalysis,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis,
-      ScanConfiguration scanConfiguration) {
+      ScanConfiguration scanConfiguration,
+      List<ScanDiagnostic> scanDiagnostics) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
-    appendScanMetadata(json, scanConfiguration, true);
+    appendScanMetadata(json, scanConfiguration, scanDiagnostics, true);
     json.append("  \"project\": {\n");
     appendIndentedStringField(json, 2, "root", ".", true);
     json.append("    \"build\": {\n");
@@ -1573,6 +1581,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendScanMetadata(
       StringBuilder json,
       ScanConfiguration scanConfiguration,
+      List<ScanDiagnostic> scanDiagnostics,
       boolean trailingComma) {
     boolean documentPathRulesApplied = scanConfiguration.localMarkdownEnabled();
     json.append("  \"scan\": {\n");
@@ -1631,10 +1640,53 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("    },\n");
     json.append("    \"diagnostics\": {\n");
     appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
-    indent(json, 3);
-    json.append("\"items\": []\n");
+    appendScanDiagnosticItems(json, scanDiagnostics, false);
     json.append("    }\n");
     json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private List<ScanDiagnostic> scanDiagnostics(
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      DocumentReconciliationAnalysis documentReconciliationAnalysis) {
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
+    diagnostics.addAll(documentDiscoveryAnalysis.diagnostics());
+    diagnostics.addAll(documentReconciliationAnalysis.diagnostics());
+    return diagnostics;
+  }
+
+  private void appendScanDiagnosticItems(
+      StringBuilder json,
+      List<ScanDiagnostic> diagnostics,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (diagnostics.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < diagnostics.size(); index++) {
+      ScanDiagnostic diagnostic = diagnostics.get(index);
+      indent(json, 4);
+      json.append("{\n");
+      appendIndentedStringField(json, 5, "id", diagnostic.id(), true);
+      appendIndentedStringField(json, 5, "severity", diagnostic.severity(), true);
+      appendIndentedStringField(json, 5, "code", diagnostic.code(), true);
+      appendIndentedStringField(json, 5, "category", diagnostic.category(), true);
+      appendIndentedStringField(json, 5, "message", diagnostic.message(), true);
+      appendIndentedNullableStringField(json, 5, "path", diagnostic.path(), true);
+      appendIndentedNullableIntegerField(json, 5, "count", diagnostic.count(), false);
+      indent(json, 4);
+      json.append("}");
+      if (index < diagnostics.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 3);
+    json.append("]");
     appendLineEnding(json, trailingComma);
   }
 
@@ -5694,7 +5746,8 @@ public final class SpringMvcEndpointOutputGenerator {
       int entityCount,
       int testCount,
       int documentCount,
-      int evidenceCount) {
+      int evidenceCount,
+      int diagnosticCount) {
   }
 
   private record GeneratedOutputFile(String fileName, String content) {

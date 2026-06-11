@@ -2854,6 +2854,30 @@ Current v0.8 heading and chunk rules:
   semantic summarization. Empty Markdown files may have no chunks when no stable
   non-empty line range exists.
 
+Current aggregate local Markdown caps:
+
+- The current v0.9 implementation caps emitted local Markdown inventory at 256 accepted
+  documents and 16 MiB of aggregate accepted Markdown file bytes per scan.
+- It caps emitted document structure at 4096 heading references and 4096 chunk
+  references per scan. Additional headings or chunks are omitted after the cap is
+  reached, and omitted structure references do not create `document` evidence records.
+- It caps reconciliation document-side mention observations at 2048 per scan and caps
+  emitted `documents.reconciliation.items[]` rows at 2048 per scan. Mention evidence is
+  emitted only for document-side reconciliation rows that pass the output cap.
+- Source-only `source_api_without_document_mention` and
+  `module_without_document_mention` rows are emitted only when document candidate input
+  and mention observation input were not truncated by the aggregate document count,
+  document byte, or mention caps. If those inputs are truncated, the cap diagnostic is
+  the conservative signal and missing-document rows are omitted rather than inferred
+  from incomplete matching input.
+- These caps bound document-backed `project-map.json`, `evidence-index.jsonl`, and
+  local-document guide input volume. Source-only reconciliation rows reuse the existing
+  source-backed evidence IDs for the source fact being considered; they do not create
+  `document` evidence.
+- When one of these caps is reached, the scan remains successful and records a bounded
+  non-fatal diagnostic item under `scan.diagnostics.items[]`. Diagnostics are scan
+  metadata, not evidence, and diagnostic IDs must not appear in `evidence_ids`.
+
 Current v0.8 reconciliation signal taxonomy:
 
 - Reconciliation lives under `documents.reconciliation`. It compares bounded document
@@ -3142,18 +3166,29 @@ Current `scan.path_policy` rules:
 
 Current `scan.diagnostics` rules:
 
-- `scan.diagnostics.analysis_status` is `"analyzed"` and the current config parser slice
-  emits an empty `items` array. Later v0.9 diagnostics may add bounded scan metadata for
-  non-fatal conditions such as config defaults in use, user path rules accepted, user
-  path rules matching no candidate, files skipped by built-in safety exclusions,
-  disabled local docs, or generated-source roots remaining warning-only.
+- `scan.diagnostics.analysis_status` is `"analyzed"`.
+- `scan.diagnostics.items[]` is empty when no bounded non-fatal diagnostic condition was
+  observed. The current implementation emits warning items when aggregate local Markdown
+  caps are reached.
+- Diagnostic items contain `id`, `severity`, `code`, `category`, `message`, nullable
+  `path`, and nullable `count`. For current local Markdown aggregate cap diagnostics,
+  `severity` is `"warning"`, `category` is `"documents"`, `path` is `null`, and `count`
+  records the cap value that was reached.
+- Current local Markdown cap diagnostic `code` values are
+  `"local_markdown_document_count_cap_reached"`,
+  `"local_markdown_document_bytes_cap_reached"`,
+  `"local_markdown_heading_count_cap_reached"`,
+  `"local_markdown_chunk_count_cap_reached"`,
+  `"local_markdown_mention_count_cap_reached"`, and
+  `"local_markdown_reconciliation_output_cap_reached"`.
+- Later v0.9 diagnostics may add other bounded scan metadata for non-fatal conditions
+  such as config defaults in use, user path rules accepted, user path rules matching no
+  candidate, files skipped by built-in safety exclusions, disabled local docs, or
+  generated-source roots remaining warning-only.
 - Fatal usage, scan input, invalid config, output write, and unexpected internal errors
   are reported through CLI exit codes and stderr. A scan that fails before output
   generation should not create a partial `project-map.json` solely to record fatal
   diagnostics.
-- Diagnostic items, when emitted, should include stable fields such as `id`, `severity`,
-  `code`, `category`, `message`, optional normalized repository-relative `path`, and
-  optional `count`.
 - Diagnostic messages must be deterministic and bounded. They must not include raw
   config values, raw include/exclude patterns, source excerpts, document bodies, config
   contents, environment variables, credentials, tokens, secret-looking values, stack
@@ -3186,8 +3221,9 @@ Current v0.9 CLI behavior:
   emitted.
 - Normal stdout remains concise: `.project-memory` preparation, generated output file
   names, stable fact counts when outputs are written, a no-output line when no supported
-  contract inputs are detected, and a bounded diagnostic summary. Detailed diagnostics,
-  when a flag is added, should still follow the redaction rules above.
+  contract inputs are detected, and a bounded diagnostic summary such as
+  `Diagnostics: none.` or `Diagnostics: N item(s).` Detailed diagnostics, when a flag is
+  added, should still follow the redaction rules above.
 
 ## `evidence-index.jsonl`
 

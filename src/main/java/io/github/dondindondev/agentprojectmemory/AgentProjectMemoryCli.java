@@ -257,7 +257,11 @@ public final class AgentProjectMemoryCli {
       } else {
         out.println("No project memory output generated.");
       }
-      out.println("Diagnostics: none.");
+      if (result.diagnosticCount() == 0) {
+        out.println("Diagnostics: none.");
+      } else {
+        out.println("Diagnostics: " + result.diagnosticCount() + " item(s).");
+      }
     } catch (IOException ex) {
       String message = boundedExceptionMessage(ex, normalizedProjectPath);
       if (isOutputPathValidationError(message)) {

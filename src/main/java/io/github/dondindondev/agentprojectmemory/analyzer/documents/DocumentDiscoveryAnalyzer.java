@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import java.io.IOException;
@@ -18,6 +19,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalLong;
 import java.util.Set;
 
 public final class DocumentDiscoveryAnalyzer {
@@ -54,6 +56,16 @@ public final class DocumentDiscoveryAnalyzer {
   private static final String FORMAT_MARKDOWN = "markdown";
   private static final String DOCUMENT_SOURCE_TYPE = "document";
   private static final String HIGH_CONFIDENCE = "high";
+  private static final String DIAGNOSTIC_SEVERITY_WARNING = "warning";
+  private static final String DIAGNOSTIC_CATEGORY_DOCUMENTS = "documents";
+  private static final String DIAGNOSTIC_DOCUMENT_COUNT_CAP =
+      "local_markdown_document_count_cap_reached";
+  private static final String DIAGNOSTIC_DOCUMENT_BYTES_CAP =
+      "local_markdown_document_bytes_cap_reached";
+  private static final String DIAGNOSTIC_HEADING_COUNT_CAP =
+      "local_markdown_heading_count_cap_reached";
+  private static final String DIAGNOSTIC_CHUNK_COUNT_CAP =
+      "local_markdown_chunk_count_cap_reached";
   private static final String TITLE_SOURCE_FILENAME = "filename";
   private static final String ROOT_README = "root_readme";
   private static final String MODULE_README = "module_readme";
@@ -76,8 +88,20 @@ public final class DocumentDiscoveryAnalyzer {
       .comparingInt(DocumentFileFact::moduleOrder)
       .thenComparing(DocumentFileFact::path)
       .thenComparing(DocumentFileFact::id);
+  private static final Comparator<CandidateDocument> CANDIDATE_ORDER = Comparator
+      .comparingInt(CandidateDocument::moduleOrder)
+      .thenComparing(CandidateDocument::sourcePath);
   private final MarkdownDocumentStructureExtractor structureExtractor =
       new MarkdownDocumentStructureExtractor();
+  private final DocumentAnalysisLimits limits;
+
+  public DocumentDiscoveryAnalyzer() {
+    this(DocumentAnalysisLimits.defaults());
+  }
+
+  DocumentDiscoveryAnalyzer(DocumentAnalysisLimits limits) {
+    this.limits = Objects.requireNonNull(limits, "limits");
+  }
 
   public DocumentDiscoveryAnalysis analyze(
       Path repositoryRoot,
@@ -103,6 +127,7 @@ public final class DocumentDiscoveryAnalyzer {
       return new DocumentDiscoveryAnalysis(
           ANALYSIS_NOT_DETECTED,
           DEFAULT_POLICY,
+          List.of(),
           List.of(),
           List.of());
     }
@@ -181,8 +206,57 @@ public final class DocumentDiscoveryAnalyzer {
         options);
     removeUserExcludedCandidates(candidates, options);
 
-    List<AnalyzedDocument> analyzedDocuments = candidates.values().stream()
-        .map(this::analyzedDocument)
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
+    List<AnalyzedDocument> analyzedDocuments = new ArrayList<>();
+    boolean documentCountCapReported = false;
+    boolean documentBytesCapReported = false;
+    boolean headingCountCapReported = false;
+    boolean chunkCountCapReported = false;
+    long acceptedDocumentBytes = 0;
+    int acceptedHeadings = 0;
+    int acceptedChunks = 0;
+
+    for (CandidateDocument candidate : candidates.values().stream().sorted(CANDIDATE_ORDER).toList()) {
+      if (analyzedDocuments.size() >= limits.maxDocuments()) {
+        if (!documentCountCapReported) {
+          diagnostics.add(documentCountCapDiagnostic());
+          documentCountCapReported = true;
+        }
+        continue;
+      }
+
+      OptionalLong candidateSize = documentSize(candidate);
+      long remainingBytes = limits.maxTotalDocumentBytes() - acceptedDocumentBytes;
+      if (candidateSize.isEmpty() || candidateSize.getAsLong() > remainingBytes) {
+        if (!documentBytesCapReported) {
+          diagnostics.add(documentBytesCapDiagnostic());
+          documentBytesCapReported = true;
+        }
+        continue;
+      }
+      long documentBytes = candidateSize.getAsLong();
+
+      DocumentStructure structure = documentStructure(
+          candidate,
+          remainingCount(limits.maxHeadings(), acceptedHeadings),
+          remainingCount(limits.maxChunks(), acceptedChunks));
+      if (structure.headingCapReached() && !headingCountCapReported) {
+        diagnostics.add(headingCountCapDiagnostic());
+        headingCountCapReported = true;
+      }
+      if (structure.chunkCapReached() && !chunkCountCapReported) {
+        diagnostics.add(chunkCountCapDiagnostic());
+        chunkCountCapReported = true;
+      }
+
+      AnalyzedDocument analyzedDocument = analyzedDocument(candidate, structure);
+      analyzedDocuments.add(analyzedDocument);
+      acceptedDocumentBytes += documentBytes;
+      acceptedHeadings += analyzedDocument.document().headings().size();
+      acceptedChunks += analyzedDocument.document().chunks().size();
+    }
+
+    analyzedDocuments = analyzedDocuments.stream()
         .sorted(Comparator.comparing(AnalyzedDocument::document, DOCUMENT_ORDER))
         .toList();
     List<DocumentFileFact> documents = analyzedDocuments.stream()
@@ -195,7 +269,8 @@ public final class DocumentDiscoveryAnalyzer {
         documents.isEmpty() ? ANALYSIS_NOT_DETECTED : ANALYSIS_ANALYZED,
         DEFAULT_POLICY,
         documents,
-        evidence);
+        evidence,
+        diagnostics);
   }
 
   private void addExplicitIncludeCandidates(
@@ -490,8 +565,7 @@ public final class DocumentDiscoveryAnalyzer {
     return Optional.empty();
   }
 
-  private AnalyzedDocument analyzedDocument(CandidateDocument candidate) {
-    DocumentStructure structure = documentStructure(candidate);
+  private AnalyzedDocument analyzedDocument(CandidateDocument candidate, DocumentStructure structure) {
     List<DocumentEvidence> evidence = new ArrayList<>();
     DocumentEvidence fileEvidence = fileEvidence(candidate);
     evidence.add(fileEvidence);
@@ -661,12 +735,81 @@ public final class DocumentDiscoveryAnalyzer {
     return String.format(Locale.ROOT, "%06d", value);
   }
 
-  private DocumentStructure documentStructure(CandidateDocument candidate) {
+  private DocumentStructure documentStructure(
+      CandidateDocument candidate,
+      int remainingHeadings,
+      int remainingChunks) {
     try {
-      return structureExtractor.extract(candidate.normalizedPath(), candidate.sourcePath());
+      return structureExtractor.extract(
+          candidate.normalizedPath(),
+          candidate.sourcePath(),
+          remainingHeadings,
+          remainingChunks);
     } catch (IOException exception) {
       return DocumentStructure.empty();
     }
+  }
+
+  private OptionalLong documentSize(CandidateDocument candidate) {
+    try {
+      return OptionalLong.of(Files.readAttributes(
+          candidate.normalizedPath(),
+          BasicFileAttributes.class,
+          LinkOption.NOFOLLOW_LINKS).size());
+    } catch (IOException exception) {
+      return OptionalLong.empty();
+    }
+  }
+
+  private int remainingCount(int max, int accepted) {
+    return Math.max(0, max - accepted);
+  }
+
+  private ScanDiagnostic documentCountCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_DOCUMENT_COUNT_CAP,
+        "Local Markdown document discovery reached the aggregate document count cap; "
+            + "remaining document candidates were skipped.",
+        limits.maxDocuments());
+  }
+
+  private ScanDiagnostic documentBytesCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_DOCUMENT_BYTES_CAP,
+        "Local Markdown document discovery reached the aggregate document byte cap; "
+            + "remaining document candidates were skipped.",
+        boundedCount(limits.maxTotalDocumentBytes()));
+  }
+
+  private ScanDiagnostic headingCountCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_HEADING_COUNT_CAP,
+        "Local Markdown structure extraction reached the aggregate heading cap; "
+            + "additional headings were omitted.",
+        limits.maxHeadings());
+  }
+
+  private ScanDiagnostic chunkCountCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_CHUNK_COUNT_CAP,
+        "Local Markdown structure extraction reached the aggregate chunk cap; "
+            + "additional chunks were omitted.",
+        limits.maxChunks());
+  }
+
+  private ScanDiagnostic diagnostic(String code, String message, int count) {
+    return new ScanDiagnostic(
+        "scan_diagnostic:documents:" + code,
+        DIAGNOSTIC_SEVERITY_WARNING,
+        code,
+        DIAGNOSTIC_CATEGORY_DOCUMENTS,
+        message,
+        null,
+        count);
+  }
+
+  private int boundedCount(long value) {
+    return value > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) value;
   }
 
   private String titleFromFilename(String fileName) {

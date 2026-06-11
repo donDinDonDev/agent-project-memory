@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -22,6 +23,16 @@ public final class DocumentReconciliationAnalyzer {
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
   private static final String DOCUMENT_SOURCE_TYPE = "document";
   private static final String LOW_CONFIDENCE = "low";
+  private static final String DIAGNOSTIC_SEVERITY_WARNING = "warning";
+  private static final String DIAGNOSTIC_CATEGORY_DOCUMENTS = "documents";
+  private static final String DIAGNOSTIC_MENTION_COUNT_CAP =
+      "local_markdown_mention_count_cap_reached";
+  private static final String DIAGNOSTIC_RECONCILIATION_OUTPUT_CAP =
+      "local_markdown_reconciliation_output_cap_reached";
+  private static final String DISCOVERY_DOCUMENT_COUNT_CAP =
+      "local_markdown_document_count_cap_reached";
+  private static final String DISCOVERY_DOCUMENT_BYTES_CAP =
+      "local_markdown_document_bytes_cap_reached";
   private static final String STATUS_UNCERTAIN_SIGNAL = "uncertain_signal";
   private static final String SIGNAL_DOCUMENT_ONLY_ENDPOINT_MENTION =
       "document_only_endpoint_mention";
@@ -104,6 +115,15 @@ public final class DocumentReconciliationAnalyzer {
       .thenComparing(DocumentReconciliationSignal::subjectName)
       .thenComparing(signal -> nullSafe(signal.documentPath()))
       .thenComparing(DocumentReconciliationSignal::id);
+  private final DocumentAnalysisLimits limits;
+
+  public DocumentReconciliationAnalyzer() {
+    this(DocumentAnalysisLimits.defaults());
+  }
+
+  DocumentReconciliationAnalyzer(DocumentAnalysisLimits limits) {
+    this.limits = Objects.requireNonNull(limits, "limits");
+  }
 
   public DocumentReconciliationAnalysis analyze(
       Path repositoryRoot,
@@ -124,17 +144,24 @@ public final class DocumentReconciliationAnalyzer {
     Map<String, List<DocumentSourceApiFact>> sourceApisByPath = sourceApisByPath(apiFacts);
     Map<String, List<DocumentSourceModuleFact>> sourceModulesByToken = sourceModulesByToken(moduleFacts);
     Set<String> sourceModuleNames = sourceModuleNames(moduleFacts);
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
+    MentionBudget mentionBudget = new MentionBudget(limits.maxReconciliationMentions());
     List<DocumentMention> mentions = documentMentions(
         repositoryRoot,
         documentDiscoveryAnalysis.documents(),
-        sourceModuleNames);
+        sourceModuleNames,
+        mentionBudget);
+    if (mentionBudget.capReached()) {
+      diagnostics.add(mentionCountCapDiagnostic());
+    }
 
-    if (apiFacts.isEmpty() && moduleFacts.isEmpty() && mentions.isEmpty()) {
+    if (apiFacts.isEmpty() && moduleFacts.isEmpty() && mentions.isEmpty() && diagnostics.isEmpty()) {
       return notDetected();
     }
 
     List<DocumentReconciliationSignal> signals = new ArrayList<>();
     List<DocumentEvidence> evidence = new ArrayList<>();
+    SignalBudget signalBudget = new SignalBudget(limits.maxReconciliationSignals());
     LinkedHashSet<String> matchedApiIds = new LinkedHashSet<>();
     LinkedHashSet<String> matchedModuleIds = new LinkedHashSet<>();
 
@@ -143,13 +170,15 @@ public final class DocumentReconciliationAnalyzer {
         List<DocumentSourceApiFact> matchedApis = sourceApisByPath.get(mention.normalizedToken());
         if (matchedApis == null || matchedApis.isEmpty()) {
           DocumentEvidence mentionEvidence = mentionEvidence(mention);
-          evidence.add(mentionEvidence);
-          signals.add(documentOnlySignal(
+          DocumentReconciliationSignal signal = documentOnlySignal(
               SIGNAL_DOCUMENT_ONLY_ENDPOINT_MENTION,
               SUBJECT_KIND_ENDPOINT_LIKE_PATH,
               UNCERTAINTY_DOCUMENT_ENDPOINT_NOT_MATCHED,
               mention,
-              mentionEvidence));
+              mentionEvidence);
+          if (signalBudget.tryAdd(signals, signal)) {
+            evidence.add(mentionEvidence);
+          }
         } else {
           matchedApis.stream()
               .map(DocumentSourceApiFact::id)
@@ -159,13 +188,15 @@ public final class DocumentReconciliationAnalyzer {
         List<DocumentSourceModuleFact> matchedModules = sourceModulesByToken.get(mention.normalizedToken());
         if (matchedModules == null || matchedModules.isEmpty()) {
           DocumentEvidence mentionEvidence = mentionEvidence(mention);
-          evidence.add(mentionEvidence);
-          signals.add(documentOnlySignal(
+          DocumentReconciliationSignal signal = documentOnlySignal(
               SIGNAL_DOCUMENT_ONLY_MODULE_REFERENCE,
               SUBJECT_KIND_MODULE_REFERENCE,
               UNCERTAINTY_DOCUMENT_MODULE_NOT_MATCHED,
               mention,
-              mentionEvidence));
+              mentionEvidence);
+          if (signalBudget.tryAdd(signals, signal)) {
+            evidence.add(mentionEvidence);
+          }
         } else {
           matchedModules.stream()
               .map(DocumentSourceModuleFact::id)
@@ -174,25 +205,43 @@ public final class DocumentReconciliationAnalyzer {
       }
     }
 
-    for (DocumentSourceApiFact sourceApi : apiFacts) {
-      if (!matchedApiIds.contains(sourceApi.id())) {
-        signals.add(sourceOnlyApiSignal(sourceApi));
+    if (sourceOnlyMatchingComplete(documentDiscoveryAnalysis, mentionBudget)) {
+      for (DocumentSourceApiFact sourceApi : apiFacts) {
+        if (!matchedApiIds.contains(sourceApi.id())) {
+          signalBudget.tryAdd(signals, sourceOnlyApiSignal(sourceApi));
+        }
+      }
+      for (DocumentSourceModuleFact sourceModule : moduleFacts) {
+        if (!matchedModuleIds.contains(sourceModule.id())) {
+          signalBudget.tryAdd(signals, sourceOnlyModuleSignal(sourceModule));
+        }
       }
     }
-    for (DocumentSourceModuleFact sourceModule : moduleFacts) {
-      if (!matchedModuleIds.contains(sourceModule.id())) {
-        signals.add(sourceOnlyModuleSignal(sourceModule));
-      }
+    if (signalBudget.capReached()) {
+      diagnostics.add(reconciliationOutputCapDiagnostic());
     }
 
     return new DocumentReconciliationAnalysis(
         ANALYSIS_ANALYZED,
         signals.stream().sorted(SIGNAL_ORDER).toList(),
-        evidence);
+        evidence,
+        diagnostics);
   }
 
   private DocumentReconciliationAnalysis notDetected() {
-    return new DocumentReconciliationAnalysis(ANALYSIS_NOT_DETECTED, List.of(), List.of());
+    return new DocumentReconciliationAnalysis(ANALYSIS_NOT_DETECTED, List.of(), List.of(), List.of());
+  }
+
+  private boolean sourceOnlyMatchingComplete(
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      MentionBudget mentionBudget) {
+    if (mentionBudget.capReached()) {
+      return false;
+    }
+    return documentDiscoveryAnalysis.diagnostics().stream()
+        .map(ScanDiagnostic::code)
+        .noneMatch(code -> DISCOVERY_DOCUMENT_COUNT_CAP.equals(code)
+            || DISCOVERY_DOCUMENT_BYTES_CAP.equals(code));
   }
 
   private List<DocumentSourceModuleFact> childModuleFacts(List<DocumentSourceModuleFact> sourceModuleFacts) {
@@ -253,7 +302,8 @@ public final class DocumentReconciliationAnalyzer {
   private List<DocumentMention> documentMentions(
       Path repositoryRoot,
       List<DocumentFileFact> documents,
-      Set<String> sourceModuleNames) {
+      Set<String> sourceModuleNames,
+      MentionBudget mentionBudget) {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     List<DocumentMention> mentions = new ArrayList<>();
     for (DocumentFileFact document : documents) {
@@ -281,7 +331,8 @@ public final class DocumentReconciliationAnalyzer {
                   normalizedToken.get(),
                   MATCH_BASIS_ENDPOINT_LIKE_PATH_TOKEN,
                   lineNumber,
-                  ordinal);
+                  ordinal,
+                  mentionBudget);
             }
           }
           for (ModuleToken moduleToken : moduleTokens(boundedLine, sourceModuleNames)) {
@@ -293,7 +344,8 @@ public final class DocumentReconciliationAnalyzer {
                 moduleToken.normalizedToken(),
                 moduleToken.matchBasis(),
                 lineNumber,
-                ordinal);
+                ordinal,
+                mentionBudget);
           }
         }
         mentions.addAll(uniqueDocumentMentions.values());
@@ -312,9 +364,13 @@ public final class DocumentReconciliationAnalyzer {
       String normalizedToken,
       String matchBasis,
       int lineNumber,
-      int ordinal) {
+      int ordinal,
+      MentionBudget mentionBudget) {
     MentionKey key = new MentionKey(kind, normalizedToken);
     if (mentions.containsKey(key)) {
+      return ordinal;
+    }
+    if (!mentionBudget.tryAccept()) {
       return ordinal;
     }
     int nextOrdinal = ordinal + 1;
@@ -703,6 +759,33 @@ public final class DocumentReconciliationAnalyzer {
     return String.format(Locale.ROOT, "%06d", value);
   }
 
+  private ScanDiagnostic mentionCountCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_MENTION_COUNT_CAP,
+        "Local Markdown reconciliation reached the aggregate document mention cap; "
+            + "additional mention observations were omitted.",
+        limits.maxReconciliationMentions());
+  }
+
+  private ScanDiagnostic reconciliationOutputCapDiagnostic() {
+    return diagnostic(
+        DIAGNOSTIC_RECONCILIATION_OUTPUT_CAP,
+        "Local Markdown reconciliation reached the aggregate reconciliation output cap; "
+            + "additional reconciliation rows were omitted.",
+        limits.maxReconciliationSignals());
+  }
+
+  private ScanDiagnostic diagnostic(String code, String message, int count) {
+    return new ScanDiagnostic(
+        "scan_diagnostic:documents:" + code,
+        DIAGNOSTIC_SEVERITY_WARNING,
+        code,
+        DIAGNOSTIC_CATEGORY_DOCUMENTS,
+        message,
+        null,
+        count);
+  }
+
   private static String nullSafe(String value) {
     return value == null ? "" : value;
   }
@@ -730,5 +813,52 @@ public final class DocumentReconciliationAnalyzer {
   }
 
   private record WordSpan(String value) {
+  }
+
+  private static final class MentionBudget {
+    private final int maxMentions;
+    private int accepted;
+    private boolean capReached;
+
+    private MentionBudget(int maxMentions) {
+      this.maxMentions = maxMentions;
+    }
+
+    private boolean tryAccept() {
+      if (accepted >= maxMentions) {
+        capReached = true;
+        return false;
+      }
+      accepted++;
+      return true;
+    }
+
+    private boolean capReached() {
+      return capReached;
+    }
+  }
+
+  private static final class SignalBudget {
+    private final int maxSignals;
+    private boolean capReached;
+
+    private SignalBudget(int maxSignals) {
+      this.maxSignals = maxSignals;
+    }
+
+    private boolean tryAdd(
+        List<DocumentReconciliationSignal> signals,
+        DocumentReconciliationSignal signal) {
+      if (signals.size() >= maxSignals) {
+        capReached = true;
+        return false;
+      }
+      signals.add(signal);
+      return true;
+    }
+
+    private boolean capReached() {
+      return capReached;
+    }
   }
 }

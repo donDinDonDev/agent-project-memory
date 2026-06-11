@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -209,6 +210,50 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(agentGuide.contains("Body text that must not be serialized")),
         () -> assertFalse(agentGuide.contains("More body text that must not be serialized")),
         () -> assertFalse(agentGuide.contains("FAKE_PRIVATE_MARKDOWN_SECRET")));
+  }
+
+  @Test
+  void projectMapRendersDocumentCapDiagnosticsAndBoundsOutput() throws Exception {
+    Path projectPath = tempDir.resolve("document-cap-diagnostics");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    for (int index = 1; index <= 257; index++) {
+      String ordinal = String.format(Locale.ROOT, "%03d", index);
+      writeFile(projectPath.resolve("docs/doc-" + ordinal + ".md"), "# Doc " + ordinal + "\n");
+    }
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode diagnostics = root.path("scan").path("diagnostics").path("items");
+    JsonNode documents = root.path("documents").path("items");
+    List<String> documentPaths = jsonTextValues(documents, "path");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(256, result.documentCount()),
+        () -> assertEquals(1, result.diagnosticCount()),
+        () -> assertEquals(256, documents.size()),
+        () -> assertTrue(documentPaths.contains("docs/doc-256.md")),
+        () -> assertFalse(documentPaths.contains("docs/doc-257.md")),
+        () -> assertEquals(1, diagnostics.size()),
+        () -> assertEquals(
+            "local_markdown_document_count_cap_reached",
+            diagnostics.get(0).path("code").asText()),
+        () -> assertEquals("warning", diagnostics.get(0).path("severity").asText()),
+        () -> assertEquals("documents", diagnostics.get(0).path("category").asText()),
+        () -> assertEquals(256, diagnostics.get(0).path("count").asInt()),
+        () -> assertTrue(diagnostics.get(0).path("path").isNull()),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(projectMapEvidenceIds),
+            "Capped project-map evidence_ids must resolve in evidence-index.jsonl"));
   }
 
   @Test

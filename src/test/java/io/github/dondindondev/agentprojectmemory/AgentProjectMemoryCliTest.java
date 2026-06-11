@@ -247,6 +247,20 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanSummarizesReportedDiagnostics() throws Exception {
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration) ->
+            new SpringMvcEndpointOutputGenerator.Result(true, 0, 0, 0, 0, 0, 0, 2),
+        "scan",
+        tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Diagnostics: 2 item(s).")),
+        () -> assertFalse(result.stdout().contains(tempDir.toString())));
+  }
+
+  @Test
   void scanMavenStyleSourceRootGeneratesProjectMapEndpointsEvidenceIndexAndAgentGuide()
       throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");

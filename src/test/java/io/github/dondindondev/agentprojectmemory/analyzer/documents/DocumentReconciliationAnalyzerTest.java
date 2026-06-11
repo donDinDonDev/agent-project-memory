@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -167,6 +168,51 @@ final class DocumentReconciliationAnalyzerTest {
         () -> assertEquals(List.of(), analysis.evidence()));
   }
 
+  @Test
+  void capsAggregateMentionsSignalsAndMentionEvidence() throws Exception {
+    Path repositoryRoot = repository("capped-reconciliation");
+    writeFile(
+        repositoryRoot.resolve("README.md"),
+        """
+            # Root
+            Unknown endpoints: `/ghost-one`, `/ghost-two`, and `/ghost-three`.
+            """);
+    DocumentDiscoveryAnalysis discoveryAnalysis = discoveryAnalyzer.analyze(repositoryRoot, List.of());
+    DocumentReconciliationAnalyzer cappedAnalyzer = new DocumentReconciliationAnalyzer(
+        new DocumentAnalysisLimits(10, 1024, 10, 10, 2, 1));
+
+    DocumentReconciliationAnalysis analysis = cappedAnalyzer.analyze(
+        repositoryRoot,
+        discoveryAnalysis,
+        List.of(sourceApi(
+            "endpoint:OrdersController#undocumented",
+            "spring_mvc_endpoint",
+            "module:.",
+            0,
+            "/undocumented",
+            List.of("/undocumented"),
+            List.of("ev:undocumented"))),
+        List.of());
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals(1, analysis.signals().size()),
+        () -> assertEquals("/ghost-one", analysis.signals().get(0).subjectName()),
+        () -> assertEquals(1, analysis.evidence().size()),
+        () -> assertEquals("mention:/ghost-one", analysis.evidence().get(0).symbolName()),
+        () -> assertEquals(
+            List.of(
+                "local_markdown_mention_count_cap_reached",
+                "local_markdown_reconciliation_output_cap_reached"),
+            diagnosticCodes(analysis.diagnostics())),
+        () -> assertEquals(
+            List.of(2, 1),
+            analysis.diagnostics().stream().map(ScanDiagnostic::count).toList()),
+        () -> assertFalse(signalWithSubject(analysis.signals(), "/ghost-two")),
+        () -> assertFalse(signalWithSubject(analysis.signals(), "/ghost-three")),
+        () -> assertFalse(signalWithSubject(analysis.signals(), "/undocumented")));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);
@@ -206,5 +252,9 @@ final class DocumentReconciliationAnalyzerTest {
 
   private boolean signalWithSubject(List<DocumentReconciliationSignal> signals, String subjectName) {
     return signals.stream().anyMatch(signal -> subjectName.equals(signal.subjectName()));
+  }
+
+  private List<String> diagnosticCodes(List<ScanDiagnostic> diagnostics) {
+    return diagnostics.stream().map(ScanDiagnostic::code).toList();
   }
 }

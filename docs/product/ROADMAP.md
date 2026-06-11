@@ -477,6 +477,9 @@ Current implementation status:
   behavior, disabled local Markdown behavior, invalid config exit codes, help/version
   smoke, repeated output digest stability, and bounded local performance observations.
   Security baseline and release prep remain follow-up v0.9 goals.
+- Local Markdown discovery, structure extraction, reconciliation mention observation,
+  and reconciliation output now have deterministic aggregate caps with bounded
+  non-fatal `scan.diagnostics` warnings when caps are reached.
 
 Planned contract boundary:
 
@@ -495,6 +498,10 @@ Planned contract boundary:
   the existing built-in exclusions, and does not include hidden, generated, dependency,
   private/internal, maintainer-like, secret-like, or `.project-memory/` output paths by
   default.
+- Local Markdown discovery and reconciliation output must remain aggregate-capped so
+  document count, accepted Markdown bytes, heading references, chunk references,
+  document-side mention observations, reconciliation rows, and document evidence output
+  cannot grow without bound.
 - User include/exclude rules may refine local Markdown discovery only within the
   repository-root boundary. Built-in safety exclusions remain non-overridable in the
   initial v0.9 design.
@@ -504,7 +511,8 @@ Planned contract boundary:
   implementation, tests, output/evidence contract update, and security review.
 - CLI help, version, command validation, exit codes, and diagnostics that are stable
   enough for automation and do not print config values, secrets, source excerpts, raw
-  document bodies, or generated output contents.
+  document bodies, or generated output contents. Successful scans may report bounded
+  non-fatal diagnostics such as local Markdown aggregate cap warnings.
 - A v0.9 `project-map.json` scan summary that records redacted effective config,
   feature, path-policy, and diagnostic metadata. It records config source and
   counts/statuses, not raw config values or user-provided include/exclude patterns.

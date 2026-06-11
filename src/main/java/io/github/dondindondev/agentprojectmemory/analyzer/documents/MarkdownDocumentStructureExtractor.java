@@ -20,11 +20,20 @@ final class MarkdownDocumentStructureExtractor {
   private static final String CONTENT_STATUS_NOT_SERIALIZED = "not_serialized";
 
   DocumentStructure extract(Path markdownFile, String sourcePath) throws IOException {
+    return extract(markdownFile, sourcePath, Integer.MAX_VALUE, Integer.MAX_VALUE);
+  }
+
+  DocumentStructure extract(
+      Path markdownFile,
+      String sourcePath,
+      int maxHeadings,
+      int maxChunks) throws IOException {
     List<DocumentHeadingFact> headings = new ArrayList<>();
     List<DocumentChunkFact> chunks = new ArrayList<>();
     Map<String, Integer> titleOccurrences = new LinkedHashMap<>();
     Map<String, Integer> anchorOccurrences = new LinkedHashMap<>();
-    ChunkState chunk = new ChunkState(sourcePath);
+    ExtractionBudget budget = new ExtractionBudget(maxHeadings, maxChunks);
+    ChunkState chunk = new ChunkState(sourcePath, budget);
     FenceState fence = FenceState.none();
 
     try (BufferedReader reader = Files.newBufferedReader(markdownFile, StandardCharsets.UTF_8)) {
@@ -35,14 +44,19 @@ final class MarkdownDocumentStructureExtractor {
         HeadingCandidate heading = fence.inFence() ? null : atxHeading(line);
         if (heading != null) {
           chunk.closeBefore(lineNumber, chunks);
-          DocumentHeadingFact headingFact = headingFact(
-              sourcePath,
-              heading,
-              lineNumber,
-              titleOccurrences,
-              anchorOccurrences);
-          headings.add(headingFact);
-          chunk.start(lineNumber, headingFact.id());
+          DocumentHeadingFact headingFact = null;
+          if (budget.canAddHeading(headings)) {
+            headingFact = headingFact(
+                sourcePath,
+                heading,
+                lineNumber,
+                titleOccurrences,
+                anchorOccurrences);
+            headings.add(headingFact);
+          } else {
+            budget.markHeadingCapReached();
+          }
+          chunk.start(lineNumber, headingFact == null ? null : headingFact.id());
         } else if (!chunk.started()) {
           chunk.start(lineNumber, null);
         }
@@ -52,7 +66,11 @@ final class MarkdownDocumentStructureExtractor {
     }
 
     chunk.close(chunks);
-    return new DocumentStructure(headings, chunks);
+    return new DocumentStructure(
+        headings,
+        chunks,
+        budget.headingCapReached(),
+        budget.chunkCapReached());
   }
 
   private DocumentHeadingFact headingFact(
@@ -230,8 +248,45 @@ final class MarkdownDocumentStructureExtractor {
     return String.format(Locale.ROOT, "%06d", value);
   }
 
+  private static final class ExtractionBudget {
+    private final int maxHeadings;
+    private final int maxChunks;
+    private boolean headingCapReached;
+    private boolean chunkCapReached;
+
+    private ExtractionBudget(int maxHeadings, int maxChunks) {
+      this.maxHeadings = Math.max(0, maxHeadings);
+      this.maxChunks = Math.max(0, maxChunks);
+    }
+
+    private boolean canAddHeading(List<DocumentHeadingFact> headings) {
+      return headings.size() < maxHeadings;
+    }
+
+    private boolean canAddChunk(List<DocumentChunkFact> chunks) {
+      return chunks.size() < maxChunks;
+    }
+
+    private void markHeadingCapReached() {
+      headingCapReached = true;
+    }
+
+    private void markChunkCapReached() {
+      chunkCapReached = true;
+    }
+
+    private boolean headingCapReached() {
+      return headingCapReached;
+    }
+
+    private boolean chunkCapReached() {
+      return chunkCapReached;
+    }
+  }
+
   private final class ChunkState {
     private final String sourcePath;
+    private final ExtractionBudget budget;
     private int startLine;
     private int endLine;
     private String headingId;
@@ -239,8 +294,9 @@ final class MarkdownDocumentStructureExtractor {
     private int utf8Bytes;
     private int nextOrdinal = 1;
 
-    private ChunkState(String sourcePath) {
+    private ChunkState(String sourcePath, ExtractionBudget budget) {
       this.sourcePath = sourcePath;
+      this.budget = budget;
     }
 
     private boolean started() {
@@ -276,6 +332,15 @@ final class MarkdownDocumentStructureExtractor {
 
     private void close(List<DocumentChunkFact> chunks) {
       if (!started() || endLine < startLine) {
+        return;
+      }
+      if (!budget.canAddChunk(chunks)) {
+        budget.markChunkCapReached();
+        startLine = 0;
+        endLine = 0;
+        headingId = null;
+        lineCount = 0;
+        utf8Bytes = 0;
         return;
       }
       chunks.add(new DocumentChunkFact(
