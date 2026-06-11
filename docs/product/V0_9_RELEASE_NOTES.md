@@ -19,12 +19,11 @@ or LLM calls in the core analyzer.
 - Redacted top-level `scan` metadata in `project-map.json` for effective config source,
   feature state, path-policy counts/statuses, and bounded non-fatal diagnostics.
 - Stable CLI help/version command forms, documented exit codes, bounded command
-  validation, concise scan summaries, and packaged help/version smoke coverage.
+  validation, concise scan summaries, and packaged help/version validation.
 - Deterministic aggregate caps for local Markdown document count, accepted Markdown
   bytes, heading references, chunk references, reconciliation mention observations, and
   reconciliation rows.
-- Repeatable local release artifact verification using the executable shaded jar plus
-  `SHA256SUMS`.
+- Release artifact verification using the executable shaded jar plus `SHA256SUMS`.
 - Public installation guidance that keeps GitHub Release executable jars with optional
   checksum verification as the minimal supported path through v1.0.
 
@@ -66,29 +65,29 @@ evidence decision.
 
 ## Validation
 
-This release-prep pass ran and passed the required local release checks:
+The v0.9 release validation passed:
 
 - `mvn test`: 314 tests, 0 failures, 0 errors, 0 skipped.
-- `mvn package`: 314 tests, 0 failures, 0 errors, 0 skipped, plus packaged CLI smoke.
-- Packaged CLI help/version smoke with `target/agent-project-memory-0.9.0.jar`:
-  `--help`, `--version`, and representative `scan` commands succeeded.
-- Separate packaged CLI smoke with `target/agent-project-memory-0.9.0.jar`: generated
-  `project-map.json`, `endpoints.md`, `evidence-index.jsonl`, and `agent-guide.md`.
-- Local checksum workflow generated `target/SHA256SUMS` with the release jar filename
-  only and verified it with `shasum -a 256 -c SHA256SUMS`.
+- `mvn package`: 314 tests, 0 failures, 0 errors, 0 skipped, plus packaged CLI
+  validation.
+- Packaged CLI help/version and representative scan behavior succeeded with the
+  `agent-project-memory-0.9.0.jar` artifact.
+- The packaged scan generated `project-map.json`, `endpoints.md`,
+  `evidence-index.jsonl`, and `agent-guide.md`.
+- `SHA256SUMS` was generated with release asset filenames only and verified
+  successfully.
 - `git diff --check`: passed.
-- Public marker audit over public docs, release notes, release metadata text, and public
-  evaluation summaries: passed.
+- Public release-document review passed.
 
 Earlier v0.9 release-track checks supporting this release:
 
-- focused CLI, config, path-policy, document-discovery, output, and packaged smoke tests
+- focused CLI, config, path-policy, document-discovery, output, and packaged CLI tests
   across the implementation slices;
-- packaged CLI/config/performance evaluation covering default scans, safe config
+- packaged CLI/config/performance validation covering default scans, safe config
   include/exclude behavior, disabled local Markdown behavior, invalid config exit codes,
-  help/version smoke, repeated output digest stability, and bounded local performance
+  help/version behavior, deterministic output stability, and bounded local performance
   observations;
-- release-readiness security review follow-up with bounded hardening for path-rule
+- release security review follow-up with bounded hardening for path-rule
   matching, local Markdown aggregate limits, OpenAPI/warning traversal, generated-source
   warning POM reads, and stable no-follow spec/POM/root build-file reads.
 
@@ -111,7 +110,7 @@ v0.9.0 keeps the deterministic local analyzer boundary:
   generated output contents in generated project memory;
 - no tool-config evidence records;
 - no package-manager publishing, signing, credentials, upload automation, or remote
-  release-state change in the local artifact workflow;
+  release-state change in artifact verification;
 - no SaaS, web UI, repository chat, generic RAG, LLM calls in the core analyzer, or
   automatic code modification.
 
@@ -135,7 +134,7 @@ exclusions continue to win over all user includes in v0.9.
 
 ## Known Follow-Ups
 
-The v0.9 evaluation and release-readiness work record bounded future work that is not
+The v0.9 validation and release review record bounded future work that is not
 required for this release:
 
 - Design a shared source parse model before attempting broader analyzer parse reuse.

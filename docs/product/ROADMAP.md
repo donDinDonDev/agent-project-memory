@@ -9,10 +9,10 @@ Future work is organized by release tracks instead of extending the original v0.
 list. Connector/import work remains post-v0.1 future work and is not started.
 The v0.5 deeper Spring application surface release is published with packaged jar and
 checksum assets after implementation, guide rendering, real-project evaluation,
-review, risk-based security assessment, and release-prep documentation completion.
+review, risk-based security assessment, and release documentation completion.
 The v0.6 JPA/domain release is published with packaged jar and checksum assets after
-implementation, real-project evaluation, follow-up fixes, release-prep documentation,
-and risk-based review/compliance gates. It extracts bounded source-visible entity field
+implementation, real-project evaluation, follow-up fixes, release documentation, and
+risk-based review. It extracts bounded source-visible entity field
 annotations for direct field-level `@Column`, `@Enumerated`, `@GeneratedValue`, and
 `@Version`, emits partial embedded and identifier model signals for direct
 `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`, extracts bounded
@@ -245,7 +245,7 @@ Release readiness notes:
 - Real-project v0.5 evaluation is complete on five pinned Java/Spring targets.
 - Review and risk-based security assessment are complete with no release-blocking
   findings.
-- The release-prep evidence-excerpt decision is resolved: bounded source annotation evidence
+- The release evidence-excerpt decision is resolved: bounded source annotation evidence
   excerpts for `@ConfigurationProperties` and inherited test annotations remain
   acceptable for v0.5; no pre-release symbol-only evidence fix is required.
 - The `v0.5.0` tag and GitHub release are published with the packaged jar and checksum
@@ -291,15 +291,14 @@ Implementation sequence:
 - Safe JPA wildcard import support follow-up for explicit `jakarta.persistence.*` and
   `javax.persistence.*`. (implemented)
 - Quieter no-domain guide rendering follow-up. (implemented)
-- Release-prep documentation and version alignment. (complete in this release-prep
-  state)
+- Release documentation and version alignment. (complete)
 
 Release readiness notes:
 
 - Real-project v0.6 evaluation is complete on pinned Spring PetClinic, Spring PetClinic
   REST, Spring PetClinic Microservices, and Spring Cloud OpenFeign targets.
-- Follow-ups from that evaluation that were required for this release-prep state are
-  complete: safe JPA wildcard import support and quieter no-domain guide rendering.
+- Follow-ups required for the v0.6 release are complete: safe JPA wildcard import
+  support and quieter no-domain guide rendering.
 - Additional real-project corpus coverage for embeddables, embedded IDs, id-class
   signals, enumerated fields, and version fields was tracked separately from the release
   and is not a release blocker.
@@ -375,7 +374,7 @@ Release readiness notes:
 - Review/security-contract audit is complete with no release-blocking or bounded-fix
   findings.
 - Release notes exist in [V0_7_RELEASE_NOTES.md](V0_7_RELEASE_NOTES.md).
-- Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
+- Release validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
   `git diff --check`.
 - The `v0.7.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
@@ -430,18 +429,17 @@ Implementation sequence:
 - Code-doc reconciliation signals. (implemented)
 - Local docs guide rendering and regression coverage. (implemented)
 - Real-project evaluation and security/contract audit. (complete)
-- Release readiness. (complete for release-prep; awaiting maintainer tag/publish
-  approval)
+- Release readiness and publication. (complete)
 
 Release readiness notes:
 
 - Real-project v0.8 evaluation is complete on pinned Spring PetClinic, Spring PetClinic
   REST, and Spring PetClinic Microservices targets with local Markdown documentation.
-- Repeated packaged CLI scans were deterministic, structural evidence/document
-  validation passed, and a read-only security/contract audit found no reportable
-  findings or release-blocking follow-up.
+- Deterministic packaged CLI validation, structural evidence/document validation, and a
+  read-only security/contract audit completed with no reportable findings or
+  release-blocking follow-up.
 - Release notes exist in [V0_8_RELEASE_NOTES.md](V0_8_RELEASE_NOTES.md).
-- Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
+- Release validation passed with `mvn test`, `mvn package`, packaged CLI smoke, and
   `git diff --check`.
 - The `v0.8.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
@@ -465,21 +463,21 @@ Current implementation status:
   metadata. The selected tool config is not evidence and does not create
   `evidence-index.jsonl` records.
 - CLI help/version commands, bounded command validation, stable exit codes, concise scan
-  summaries, and packaged help/version smoke coverage are implemented for the current
+  summaries, and packaged help/version validation are implemented for the current
   v0.9 CLI slice.
-- A bounded performance baseline and the repeatable local release artifact/checksum
-  workflow are complete for the current v0.9 track.
+- A bounded performance baseline and release artifact/checksum verification discipline
+  are complete for the current v0.9 track.
 - Installation options research is complete for the current v0.9 track: the minimal
   planned v1.0 path remains a GitHub Release executable jar with optional `SHA256SUMS`
   verification.
-- Broader packaged CLI/config/performance evaluation is complete for the current v0.9
-  development track. It covered default packaged scans, safe config include/exclude
+- Broader packaged CLI/config/performance validation is complete for the current v0.9
+  release. It covered default packaged scans, safe config include/exclude
   behavior, disabled local Markdown behavior, invalid config exit codes, help/version
-  smoke, repeated output digest stability, and bounded local performance observations.
+  behavior, deterministic output stability, and bounded local performance observations.
 - Local Markdown discovery, structure extraction, reconciliation mention observation,
   and reconciliation output now have deterministic aggregate caps with bounded
   non-fatal `scan.diagnostics` warnings when caps are reached.
-- Release-readiness security review follow-up is complete for the current v0.9 track,
+- Release security review follow-up is complete for the current v0.9 track,
   including bounded hardening for path-rule matching, local Markdown aggregate limits,
   OpenAPI/warning traversal, generated-source warning POM reads, and stable no-follow
   spec/POM/root build-file reads.
@@ -539,7 +537,7 @@ Installation options research outcome:
 
 | Option | v1.0 recommendation | Rationale |
 | --- | --- | --- |
-| GitHub Release executable jar plus `SHA256SUMS` | Minimal supported path. | Already matches the current release workflow, keeps the Java 21 requirement explicit, supports optional checksum verification, and avoids new registries, signing keys, package indexes, or update automation. |
+| GitHub Release executable jar plus `SHA256SUMS` | Minimal supported path. | Keeps the Java 21 requirement explicit, supports optional checksum verification, and avoids new registries, signing keys, package indexes, or update automation. |
 | First-party shell wrapper | Defer. | Improves command UX but adds install, uninstall, PATH, permission, platform, checksum, and upgrade behavior that should be designed and tested as a separate distribution channel. |
 | JBang catalog or app install path | Park for v1.x. | Useful for Java CLI discovery after artifact coordinates or stable jar URLs are mature, but it adds a JBang prerequisite and catalog maintenance surface. |
 | Homebrew tap | Park for v1.x. | Good developer UX on macOS/Linux after adoption grows, but it requires formula/tap maintenance, per-release checksum updates, and a tested package-manager workflow. |
@@ -552,16 +550,15 @@ not present package-manager commands as available.
 
 Release readiness notes:
 
-- Packaged CLI/config/performance evaluation is complete for default scans, safe
+- Packaged CLI/config/performance validation is complete for default scans, safe
   config include/exclude behavior, disabled local Markdown behavior, invalid config
-  exit codes, help/version smoke, repeated output digest stability, and bounded local
+  exit codes, help/version behavior, deterministic output stability, and bounded local
   performance observations.
-- Release-readiness security review follow-up is complete with no remaining
+- Release security review follow-up is complete with no remaining
   release-blocking finding recorded for v0.9.0.
 - Release notes exist in [V0_9_RELEASE_NOTES.md](V0_9_RELEASE_NOTES.md).
-- Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke,
-  local `SHA256SUMS` generation/verification, `git diff --check`, and public marker
-  audit.
+- Release validation passed with `mvn test`, `mvn package`, packaged CLI validation, checksum
+  verification, and `git diff --check`.
 - The `v0.9.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 

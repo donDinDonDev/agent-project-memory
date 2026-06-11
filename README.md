@@ -64,7 +64,7 @@ mvn package
 target/agent-project-memory-0.9.0.jar
 ```
 
-The release artifact smoke and checksum workflow is documented in
+Release artifact and checksum verification expectations are documented in
 [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
 
 ## Quick Start
@@ -310,20 +310,20 @@ v0.5 deeper Spring application surface release is published with packaged jar an
 checksum assets after real-project evaluation and risk-based review completion. Future
 connector/import work remains a later optional adapter track and is not started.
 The v0.6 JPA/domain release is published with packaged jar and checksum assets after
-implementation, real-project evaluation, follow-up fixes, release-prep documentation,
-and risk-based review/compliance gates. It includes bounded v0.6 entity field annotation
+implementation, real-project evaluation, follow-up fixes, documentation sync, and
+risk-based review. It includes bounded v0.6 entity field annotation
 metadata, embedded and identifier model signals, relationship metadata deepening,
 conservative repository/entity inferred relations, safe JPA wildcard import support,
 quieter no-domain guide rendering, and `schema_version: "0.6"`.
 The v0.7 tests, quality, and change-risk release is published with packaged jar and
 checksum assets after implementation, regression coverage, real-project evaluation,
-release-prep validation, and a read-only security/contract audit. It moves normal
+release validation, and a read-only security/contract audit. It moves normal
 generated output to `schema_version: "0.7"` with bounded source-visible test method,
 framework, Spring test slice, mock annotation, tested-subject relation/status, and
 quality planning-hint output.
 The v0.8 local Markdown and document ingestion release is published with packaged jar
 and checksum assets after implementation, regression coverage, real-project evaluation,
-release-prep validation, and a read-only security/contract audit. It moves normal
+release validation, and a read-only security/contract audit. It moves normal
 generated output to `schema_version: "0.8"` with deterministic default-scope local
 Markdown discovery, document inventory, ATX heading and chunk references, resolving
 `document` evidence, conservative `documents.reconciliation` uncertain inspection
@@ -333,7 +333,7 @@ packaged jar and checksum assets. It moves normal generated output to
 `schema_version: "0.9"` with redacted scan metadata for safe root-local config
 selection, stable CLI help/version and exit-code behavior, local Markdown-only
 include/exclude refinement, aggregate local Markdown caps, bounded diagnostics, and the
-repeatable release jar plus `SHA256SUMS` workflow.
+release jar plus `SHA256SUMS` verification path.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface

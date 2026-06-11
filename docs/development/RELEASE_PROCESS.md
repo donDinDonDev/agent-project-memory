@@ -2,29 +2,29 @@
 
 This document defines the public release discipline for `agent-project-memory`.
 
-The human maintainer owns release authority. A coding agent may prepare release
+The human maintainer owns release authority. Coding agents may prepare release
 materials, run checks, and summarize state, but must not create commits, tags, GitHub
-releases, or publish artifacts unless the maintainer explicitly asks for that specific
-action.
+releases, uploads, or published artifacts unless the maintainer explicitly asks for that
+specific action.
 
 ## Versioning Policy
 
 The project follows SemVer intent.
 
 During the `0.x` line, the public output contract may still evolve. Even before `1.0.0`,
-schema, output, and evidence changes must be explicit in the architecture docs, tests,
+schema, output, and evidence changes must be explicit in architecture docs, tests,
 changelog, and release notes.
 
 Use versions this way:
 
 - Patch versions such as `0.1.1` or `0.2.1`: bug fixes, documentation corrections,
   packaging fixes, evaluation follow-up fixes, and narrow compatibility fixes.
-- Minor versions such as `0.2.0` or `0.3.0`: new pre-1.0 capabilities or output contract
-  expansions.
+- Minor versions such as `0.2.0` or `0.3.0`: new pre-1.0 capabilities or output
+  contract expansions.
 - `1.0.0`: stable Java/Spring local-first project memory product with documented
   compatibility expectations.
 - Future major versions: substantial public API, schema, adapter, or platform changes
-  that should not be treated as a minor release.
+  that should not be treated as minor releases.
 
 Release tags should use the format:
 
@@ -32,27 +32,10 @@ Release tags should use the format:
 vX.Y.Z
 ```
 
-## Development Versions And Pre-Releases
-
 After a stable release, active development may move `pom.xml` to the next planned
-`-SNAPSHOT` version when the maintainer chooses to open that release track. For example,
-after `0.1.0`, v0.2 development may use:
-
-```text
-0.2.0-SNAPSHOT
-```
-
-This is a maintainer decision and should happen as a focused versioning change or as part
-of the first approved release-track development slice. Until that happens, local development
-builds may still produce jars named with the last released version from `pom.xml`.
-
-Use pre-release versions such as `0.2.0-alpha.1`, `0.2.0-beta.1`, or `0.2.0-rc.1` only
-when the maintainer explicitly wants public pre-release artifacts. Do not create
-pre-release tags or GitHub releases automatically.
-
-Development commits are ordinary commits that capture a reviewed work slice. Release
-commits prepare a specific version for tagging and publishing. A development commit must
-not be treated as permission to tag, publish, or call the result a release.
+`-SNAPSHOT` version when the maintainer chooses to open that release track. Pre-release
+versions such as `0.2.0-alpha.1`, `0.2.0-beta.1`, or `0.2.0-rc.1` should be used only
+when public pre-release artifacts are intentionally planned.
 
 ## Changelog Rules
 
@@ -84,15 +67,8 @@ Before a release, move relevant entries into:
 ## [X.Y.Z] - YYYY-MM-DD
 ```
 
-Use these groups when applicable:
-
-- `Added`
-- `Changed`
-- `Deprecated`
-- `Removed`
-- `Fixed`
-- `Security`
-- `Not Included`
+Use standard groups such as `Added`, `Changed`, `Deprecated`, `Removed`, `Fixed`,
+`Security`, and `Not Included` when applicable.
 
 ## Contract And Evidence Gates
 
@@ -112,16 +88,17 @@ Any evidence shape or evidence semantic change requires:
 
 LLM-generated text must not be used as authoritative evidence in any release line.
 
-## Public Surface Audit
+## Public Surface Review
 
-Before any release-prep checkpoint, release tag, publication step, or GitHub Release
-body publish/edit, audit every public-facing text surface that will be committed or
-published. Public surfaces include README usage text, changelog entries, product and
-release documentation, public evaluation summaries, public review or risk summaries,
-release notes, and GitHub Release body text.
+Before release documentation or release metadata is published, public-facing text should
+be reviewed for product, contract, validation, limitation, compatibility, and release
+facts only.
 
-The audit is tool-neutral and checks that public text contains only product, contract,
-validation, limitation, and release facts. Public text must not expose:
+Public surfaces include README usage text, changelog entries, product and release
+documentation, public evaluation summaries, public review or risk summaries, release
+notes, and GitHub Release body text.
+
+Public text must not expose:
 
 - local machine paths;
 - raw command transcripts or unreviewed execution logs;
@@ -129,160 +106,84 @@ validation, limitation, and release facts. Public text must not expose:
 - maintainer-only workflow notes;
 - tool-specific internal report names or local report paths.
 
-If the audit fails, publicize the text or move raw details to maintainer-only notes
-before checkpointing, tagging, publishing, or editing public release metadata. After
-publishing or editing a GitHub Release body, read back the saved body and verify the
-same boundary before considering that release step complete.
+If raw execution detail is useful for maintenance, keep it in ignored maintainer notes
+rather than tracked public documentation.
 
-## Release Readiness Checklist
+## Release Readiness
 
-Before preparing a release candidate:
+Before a release, confirm that:
 
-- Confirm the intended version and release scope.
-- Confirm `pom.xml` has the intended release version.
-- Confirm `README.md` usage examples match the intended artifact name and version.
-- Confirm `docs/product/ROADMAP.md` and relevant product docs match the release scope.
-- Confirm `docs/architecture/OUTPUT_CONTRACT.md` is synchronized with generated output.
-- Confirm `docs/architecture/EVIDENCE_MODEL.md` is synchronized with evidence records.
-- Confirm `CHANGELOG.md` has a dated release section.
-- Confirm release notes exist or are drafted for the release.
-- Confirm evaluation summaries are updated when the release includes meaningful analyzer
-  expansion.
-- Complete the public-surface audit for release notes, evaluation summaries, public
-  status docs, changelog entries, and any GitHub Release body text that will be
-  published or edited.
-- Before creating a release tag, finalize release documentation in release-ready wording.
-  The tag must point to a commit whose `CHANGELOG.md`, roadmap/status docs, README
-  version references, and release notes already describe the release as ready/released
-  rather than pending.
-- Run any risk-based security review defined by the active release track before tagging
-  or publishing.
-- Treat a broad release-candidate security review as an open-ended discovery baseline,
-  not as routine fix verification. If the active release track identifies a final
-  security discovery baseline, do not run another open-ended broad review for the same
-  release unless the maintainer explicitly reopens that baseline because it is invalid
-  or incomplete. Verify that every baseline finding is fixed, explicitly deferred, or
-  maintainer-accepted using closed-set targeted verification or focused security
-  re-review of fix changes.
-- Confirm no connector, network, AI, SaaS, web UI, repo chat, generic RAG, or automatic
+- the intended version and release scope are clear;
+- `pom.xml`, README usage examples, release notes, roadmap/status docs, and
+  `CHANGELOG.md` agree on the release version and status;
+- output and evidence architecture docs match generated behavior;
+- meaningful analyzer expansions have public validation summaries;
+- focused tests, full local tests, packaging checks, and release artifact checks have
+  passed for the release scope;
+- risk-based security review is complete where the release changes parser, path,
+  filesystem, dependency, output, evidence, network/auth, security configuration, or
+  packaging behavior;
+- public docs and release metadata have passed public-surface review;
+- no connector, network, AI, SaaS, web UI, repository chat, generic RAG, or automatic
   code-modification scope entered the release accidentally.
 
-Required local checks:
+## Artifact And Checksum Discipline
 
-```sh
-git status --short
-git diff --check
-mvn test
-mvn package
-git diff --stat
-```
+Public binary releases are expected to ship:
 
-For binary releases, inspect the packaged jar and prepare checksums before release
-assets are attached.
+- `agent-project-memory-X.Y.Z.jar`
+- `SHA256SUMS`
 
-## Local Artifact And Checksum Workflow
+The release jar should be built from the intended release version, smoke-checked as an
+executable CLI, and verified against `SHA256SUMS`. Checksum files should contain release
+asset filenames only, not absolute paths, parent directories, workspace-local paths, or
+temporary paths.
 
-The local artifact workflow is a verification step. It may prepare files that are later
-attached manually to a release, but it must not create commits, tags, pushes, GitHub
-releases, uploads, credentials, or other remote state changes.
+Before publication, the candidate binary asset set should match the release notes. After
+publication, downloaded assets should be verified against the published checksums before
+the binary release is considered complete.
 
-Use this workflow after the intended release version is set and release-prep validation
-is otherwise ready:
-
-1. Build the packaged CLI jar:
-
-   ```sh
-   mvn package
-   ```
-
-   `mvn package` runs the test suite and the Maven packaged CLI smoke test. The smoke
-   test verifies that the shaded jar can run a scan and that packaged help/version
-   commands work.
-
-2. Run a manual packaged CLI smoke check against a disposable fixture copy:
-
-   ```sh
-   ARTIFACT=target/agent-project-memory-X.Y.Z.jar
-   java -jar "$ARTIFACT" --help
-   java -jar "$ARTIFACT" --version
-   rm -rf target/release-smoke
-   mkdir -p target/release-smoke
-   cp -R src/test/resources/fixtures/springmvc-endpoints target/release-smoke/springmvc-endpoints
-   java -jar "$ARTIFACT" scan target/release-smoke/springmvc-endpoints
-   test -f target/release-smoke/springmvc-endpoints/.project-memory/project-map.json
-   test -f target/release-smoke/springmvc-endpoints/.project-memory/evidence-index.jsonl
-   test -f target/release-smoke/springmvc-endpoints/.project-memory/endpoints.md
-   test -f target/release-smoke/springmvc-endpoints/.project-memory/agent-guide.md
-   ```
-
-   Replace `X.Y.Z` with the intended release version. The disposable smoke directory
-   stays under `target/` and must not be committed.
-
-3. Generate and verify local checksums from inside the asset directory:
-
-   ```sh
-   (
-     cd target
-     shasum -a 256 agent-project-memory-X.Y.Z.jar > SHA256SUMS
-     shasum -a 256 -c SHA256SUMS
-   )
-   ```
-
-   `SHA256SUMS` must contain only release asset file names, not absolute paths, parent
-   directories, workspace-local paths, or temporary paths.
-
-4. Before any manual upload, confirm the candidate binary asset set is exactly the
-   packaged jar and `SHA256SUMS` unless the release notes intentionally describe another
-   binary asset. Re-run the public-surface audit on release notes and release body text
-   before publishing or editing public release metadata.
-
-5. After assets are published manually, download the jar and `SHA256SUMS` into the same
-   directory and verify them before considering the binary release complete:
-
-   ```sh
-   shasum -a 256 -c SHA256SUMS
-   java -jar agent-project-memory-X.Y.Z.jar --version
-   ```
+The artifact/checksum process is verification and packaging discipline. It must not be
+treated as permission for automated commits, tags, pushes, uploads, GitHub Release
+publication, credentials use, or other remote state changes.
 
 ## Installation Channel Policy
 
 Until a future approved distribution channel changes this document, public binary
-releases are expected to ship the executable shaded jar and `SHA256SUMS`. README and
-release notes should document `java -jar agent-project-memory-X.Y.Z.jar ...` as the
-supported install/run path.
+releases are expected to use the executable shaded jar and `SHA256SUMS`. README and
+release notes should document:
+
+```sh
+java -jar agent-project-memory-X.Y.Z.jar ...
+```
 
 Shell wrappers, JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf
 plugins, native images, and container images are separate distribution channels. Adding
-any of them requires an explicit scoped change to the release checklist, user-facing
-installation documentation, and release notes. They must not be bundled into ordinary
-release prep.
+any of them requires an explicit scoped change to release checklist expectations,
+user-facing installation documentation, and release notes. They must not be bundled into
+ordinary release prep.
 
-## Release Procedure
+## Publication Responsibility
 
-1. Prepare a focused release branch or release-prep change.
-2. Update the version in `pom.xml` when needed.
-3. Update README usage examples if the artifact version changes.
-4. Update `CHANGELOG.md`.
-5. Update or create release notes under `docs/product/`.
-6. Run the release readiness checks, including the public-surface audit.
-7. Review the full diff for scope drift, contract drift, evidence drift, and generated
-   artifact hygiene.
-8. Merge only after maintainer review.
-9. Create the `vX.Y.Z` tag only after explicit maintainer approval and a clean
-   public-surface audit on the tagged release documentation.
-10. Draft the GitHub release only after the tag is approved, using audited public
-    release notes.
-11. Before publishing or editing a GitHub Release body, audit the body text; after the
-    publish or edit, read back the saved body and verify the same boundary.
-12. Attach the packaged jar and checksum files when publishing binary assets.
-13. Verify the published release notes and download instructions.
+Publication is manual maintainer authority unless explicitly delegated for a specific
+action. A release is not complete merely because release materials are prepared or local
+checks pass.
+
+The maintainer should ensure that:
+
+- the release tag points to the intended release-ready commit;
+- the GitHub Release body matches audited public release notes;
+- the packaged jar and checksum assets are attached when binary assets are expected;
+- downloaded assets verify successfully;
+- README download instructions remain accurate;
+- known limitations and evaluation follow-ups remain visible.
 
 ## Agent Boundaries
 
 Coding agents may:
 
 - prepare release notes;
-- update docs and changelog within an approved release-prep goal;
+- update docs and changelog during approved release preparation;
 - run validation commands;
 - summarize release readiness;
 - recommend a tag name or release title.
@@ -297,13 +198,3 @@ Coding agents must not, unless explicitly asked by the maintainer:
 - change release scope;
 - bypass failed checks;
 - treat external connector data or LLM output as release evidence.
-
-## Post-Release Follow-Up
-
-After a release:
-
-- Confirm the tag and GitHub release point to the intended commit.
-- Confirm release artifacts and checksums are available when expected.
-- Confirm README download instructions remain accurate.
-- Open or update follow-up issues for known limitations and evaluation findings.
-- Move unreleased changelog entries forward for the next development cycle.

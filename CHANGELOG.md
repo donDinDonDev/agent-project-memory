@@ -27,17 +27,16 @@ architecture documents.
   without raw config values or raw user path patterns.
 - Added v0.9 CLI help/version behavior, including top-level help, `help`, `scan --help`,
   top-level version, `version`, stable exit codes, bounded command validation, concise
-  scan summaries, and packaged CLI smoke coverage for help/version commands.
-- Added a repeatable local release artifact workflow for packaged CLI smoke checks and
-  `SHA256SUMS` generation/verification, while keeping tagging, uploading, and publishing
-  as explicit manual release actions.
+  scan summaries, and packaged CLI validation for help/version commands.
+- Added public release artifact discipline for packaged CLI verification and
+  `SHA256SUMS` verification, while keeping publication authority manual.
 - Added v0.9 installation-options guidance that keeps the v1.0 minimum installation path
   on GitHub Release executable jars with `SHA256SUMS`, while parking shell wrappers,
   JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf plugins, native
   images, and container images as future distribution channels.
-- Added a v0.9 packaged CLI/config/performance evaluation summary covering default scan
+- Added a v0.9 packaged CLI/config/performance validation summary covering default scan
   behavior, safe config include/exclude behavior, disabled local Markdown behavior,
-  invalid config exit codes, help/version smoke, deterministic output digests, and
+  invalid config exit codes, help/version behavior, deterministic output stability, and
   bounded local performance observations.
 
 ### Changed
@@ -51,7 +50,7 @@ architecture documents.
   stack-trace-free by default.
 - Extended `scan.diagnostics` and the concise CLI diagnostic summary to report bounded
   non-fatal warnings when aggregate local Markdown caps are reached.
-- Aligned release-prep README usage, roadmap status, release notes, output contract
+- Aligned release README usage, roadmap status, release notes, output contract
   wording, changelog, and Maven project version for `v0.9.0`.
 
 ### Fixed
@@ -65,7 +64,7 @@ architecture documents.
   accepted document count, accepted Markdown bytes, heading references, chunk references,
   reconciliation mention observations, and emitted reconciliation rows are now bounded,
   with skipped document-backed output represented by diagnostics rather than evidence.
-- Completed release-readiness security review follow-up with bounded hardening for
+- Completed release security review follow-up with bounded hardening for
   recursive scan config path-rule matching, local Markdown aggregate limits,
   OpenAPI/warning traversal, generated-source warning POM reads, and stable no-follow
   spec/POM/root build-file reads.
@@ -126,7 +125,7 @@ architecture documents.
   chunk references with resolving document evidence and conservative
   `documents.reconciliation` hints plus compact local-document guide rendering from
   structured document facts and evidence only.
-- Aligned release-prep README usage, roadmap status, release notes, changelog, output
+- Aligned release README usage, roadmap status, release notes, changelog, output
   contract wording, and Maven project version for `v0.8.0`.
 
 ### Fixed
@@ -196,7 +195,7 @@ architecture documents.
   evidence-backed quality planning hints while continuing to avoid coverage, test
   execution, assertion, CI, runtime, correctness, vulnerability, production-impact,
   business-priority, and complete subject-mapping claims.
-- Aligned release-prep README usage, roadmap status, release notes, changelog, and Maven
+- Aligned release README usage, roadmap status, release notes, changelog, and Maven
   project version for `v0.7.0`.
 
 ### Fixed
@@ -278,7 +277,7 @@ architecture documents.
   present.
 - Reduced the public documentation surface to product, contract, release, evaluation
   summary, and review-risk summary documents.
-- Aligned release-prep README usage, roadmap status, release notes, changelog, and Maven
+- Aligned release README usage, roadmap status, release notes, changelog, and Maven
   project version for `v0.6.0`.
 
 ### Fixed
@@ -380,7 +379,7 @@ architecture documents.
 - Kept Spring Security configuration output as warning/change-risk signals only, without
   endpoint protection, authentication, authorization, filter-chain ordering,
   vulnerability, or correctness claims.
-- Resolved the release-prep evidence-excerpt question: bounded source annotation
+- Resolved the release evidence-excerpt question: bounded source annotation
   evidence excerpts for `@ConfigurationProperties` and inherited test annotations remain
   acceptable for v0.5 because they are bounded, source-local evidence excerpts and do
   not serialize structured `prefix`/`value` fields, config file contents, environment

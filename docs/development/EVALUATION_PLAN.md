@@ -1,241 +1,136 @@
-# Evaluation Plan
+# Evaluation Policy
 
-This document is the Stage 8 runbook for evaluating `agent-project-memory` on real
-open-source Spring projects. Stage 8 evaluation records observations only. Analyzer,
-contract, script, and product changes must be split into later bounded tasks.
+This document defines the public evaluation policy for `agent-project-memory`.
+Evaluations check whether released or release-candidate analyzer behavior is accurate,
+useful, deterministic, evidence-backed, and aligned with the documented product scope.
 
-Stage 8 is closed for the v0.1 baseline after the linked public evaluation summaries.
-Keep this file as the historical runbook and baseline for future pilot scans.
+Detailed maintainer execution notes, local command transcripts, local paths, and raw
+review logs are not public product documentation. Public evaluation summaries should
+record the project identity, validation scope, outcomes, limitations, and follow-ups at a
+level that can be reviewed without exposing maintainer workflow mechanics.
 
-## Stage 8 Scope
+## Scope
 
-Stage 8 is limited to:
+Public evaluations are intended for meaningful analyzer or CLI expansions, especially
+when a change affects generated facts, output files, evidence semantics, CLI behavior, or
+release confidence.
+
+Evaluations should stay within the documented product boundary:
 
 - Java/Spring-first projects.
 - Maven-first project layouts.
 - Local-first scanning of checked-out source trees.
-- Deterministic analyzer outputs only:
+- Deterministic analyzer outputs:
   - `.project-memory/project-map.json`
   - `.project-memory/evidence-index.jsonl`
   - `.project-memory/endpoints.md`
   - `.project-memory/agent-guide.md`
 
-The evaluation asks whether the current v0.1 outputs are accurate, useful, and
-evidence-backed for representative Spring codebases. It must not change analyzer
-behavior during the evaluation slice.
+Evaluation work records observations. Analyzer, contract, script, release, and product
+changes should be handled as separate bounded changes.
 
-## Selected Projects
+## Reproducibility Expectations
 
-Refs were verified on 2026-05-30 using GitHub REST API metadata. Re-verify refs before a
-later pilot scan if reproducibility matters for the run date.
+Public summaries should identify evaluated targets clearly enough for an independent
+reader to understand the validation basis:
 
-| Project | Repository URL | Ref | License note | Why selected | Expected signals |
-| --- | --- | --- | --- | --- | --- |
-| Spring PetClinic | `https://github.com/spring-projects/spring-petclinic` | commit `3c06fbfc1e42eb40802e0d0ca989bc9226755804` | Apache-2.0, verified from repository license metadata | Canonical Spring sample, single Maven root, Spring MVC controllers, JPA entities, and tests. Good first real-project baseline. | Endpoints: MVC controller routes. Components: direct Spring stereotypes such as controllers and services. Entities: direct JPA model classes and basic relationships. Tests: standard `src/test/java` inventory and naming-convention subjects. Evidence: annotation/build/test evidence should be high quality. Guide usefulness: should orient an agent to controllers, domain model, tests, and known uncertainty. |
-| Spring PetClinic REST | `https://github.com/spring-petclinic/spring-petclinic-rest` | tag `v4.0.2`, commit `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | Apache-2.0, verified from repository license metadata | REST API variant of PetClinic with Maven, Spring MVC, JPA, security, OpenAPI-related structure, and a larger test surface. Useful as a moderate project and known-limitation probe for generated API sources. | Endpoints: REST controller mappings when declared in scanned source; generated-source or interface-only mappings may become false negatives. Components: services, controllers, configuration, repositories when directly stereotyped. Entities: direct JPA annotations and relationships. Tests: Spring/JUnit signals and naming-convention subjects. Evidence: should expose whether evidence remains precise in a larger tree. Guide usefulness: should distinguish reliable extracted facts from misses or uncertainty. |
-| Spring Guide: REST Service | `https://github.com/spring-guides/gs-rest-service` | commit `e9efc9dfa0abe8cf8e15cf0e71830b5125322cae`; scan subproject `complete/` | Apache-2.0, verified from repository license metadata | Very small Maven Spring MVC project for manual review. It keeps the first evaluation set grounded with a simple endpoint and simple tests. | Endpoints: one small REST endpoint set. Components: controller/application stereotypes. Entities: expected none. Tests: simple `src/test/java` inventory. Evidence: easy manual line-level validation. Guide usefulness: should stay concise and avoid inventing architecture. |
+- project name;
+- public repository URL;
+- pinned tag or commit when useful;
+- scan target when it is not the repository root;
+- analyzer or release version under evaluation;
+- generated schema version when relevant.
 
-### Refs Pending Verification
+Pinned refs should be rechecked when reproducibility matters for a later evaluation.
+Third-party source and generated `.project-memory/` outputs should not be vendored into
+this repository as part of public evaluation documentation.
 
-None for the Stage 8 selected set. If a selected project is replaced later and its ref
-cannot be verified without network access, add it here with the exact command that should
-verify it, such as:
+## Validation Principles
 
-```sh
-git ls-remote --tags https://github.com/<owner>/<repo>.git <tag>
-git ls-remote https://github.com/<owner>/<repo>.git <commit-or-branch>
-```
+Evaluations should check the behavior that the relevant product and architecture
+documents promise, without expanding the product scope during the evaluation.
 
-## Local Workspace Rules
+Useful validation dimensions include:
 
-- Clone third-party projects outside this repository, for example under
-  `<external-eval-dir>/`.
-- Do not vendor third-party source into this repository.
-- Do not copy third-party source snippets into this repository beyond short evidence
-  examples needed in an observation.
-- Do not commit generated `.project-memory/` outputs from third-party repositories in
-  this slice.
-- Keep each third-party checkout pinned to its selected ref before scanning.
-- Keep all generated artifacts inside the evaluated project's own `.project-memory/`
-  directory.
+- Supported facts are emitted for source-visible inputs.
+- Unsupported or runtime-only behavior is not invented.
+- Inferred and uncertain relations remain labeled.
+- Evidence IDs resolve to repository-relative references.
+- Generated paths are normalized and do not escape the scanned repository.
+- Module, warning, document, and source references are internally consistent.
+- Generated Markdown is useful without overclaiming.
+- Determinism is checked for representative outputs when deterministic behavior is part
+  of the release claim.
+- Sensitive source, document, config, or local-machine details are not leaked into
+  generated outputs.
 
-Suggested local layout:
-
-```text
-<external-eval-dir>/
-  spring-petclinic/
-  spring-petclinic-rest/
-  gs-rest-service/
-```
+The exact validation method may vary by release track. Public summaries should describe
+what was validated and what passed, not expose raw command sequencing or local
+maintainer mechanics.
 
 ## Public Summary Boundary
 
-Evaluation work may produce maintainer-only raw execution notes outside tracked public
-documentation. Raw notes can include local paths, command transcripts, internal task or
-goal identifiers, maintainer workflow details, and tool-specific internal report names or
-local report paths. Do not copy raw notes directly into tracked documentation.
+Tracked public evaluation summaries live under `docs/development/evaluations/` and use
+the `*_SUMMARY.md` suffix.
 
-Tracked public evaluation summaries under `docs/development/evaluations/` must be
-publicized before writing or committing them. They should summarize reproducible
-project/ref identity, generated artifact names, scorecard outcomes, confirmed
-observations, follow-up candidates, and release relevance. Public summaries must not
-expose:
+Public summaries should include:
+
+- evaluation date;
+- evaluated project/ref table;
+- scope and non-scope;
+- generated artifact names or schema versions when relevant;
+- outcome tables with stable counts when useful;
+- scorecard or validation result summary;
+- important observations;
+- limitations and follow-ups.
+
+Public summaries must not include:
 
 - local machine paths;
 - raw command transcripts;
+- local checkout layout;
 - internal task, goal, checkpoint, or decision IDs;
 - maintainer-only workflow notes;
-- tool-specific internal report names or local report paths.
+- tool-specific internal report names or local report paths;
+- repeated release-action disclaimers such as commit/tag/push/upload status.
 
-## Evaluation Procedure
+## Baseline Evaluation Targets
 
-1. Build the packaged CLI locally from this repository:
+The original v0.1 public baseline used these pinned targets:
 
-   ```sh
-   mvn package
-   ```
+| Project | Repository URL | Ref | Scan target | Purpose |
+| --- | --- | --- | --- | --- |
+| Spring PetClinic | `https://github.com/spring-projects/spring-petclinic` | `3c06fbfc1e42eb40802e0d0ca989bc9226755804` | repository root | Canonical Spring sample with MVC controllers, JPA entities, and tests. |
+| Spring PetClinic REST | `https://github.com/spring-petclinic/spring-petclinic-rest` | tag `v4.0.2`, commit `d8026bb5bcc58145b95a66a7f8e7694f0fae142f` | repository root | REST/OpenAPI-heavy Spring project used to check source-visible facts and known generated/API boundaries. |
+| Spring Guide: REST Service | `https://github.com/spring-guides/gs-rest-service` | `e9efc9dfa0abe8cf8e15cf0e71830b5125322cae` | `complete/` | Small Maven Spring MVC sample for concise manual validation. |
 
-2. Clone or update each selected third-party project under `<external-eval-dir>/`, then
-   check out the pinned ref. Example:
+Later release-track summaries may use different pinned targets that better exercise the
+feature under validation.
 
-   ```sh
-   git clone https://github.com/spring-projects/spring-petclinic.git <external-eval-dir>/spring-petclinic
-   git -C <external-eval-dir>/spring-petclinic checkout 3c06fbfc1e42eb40802e0d0ca989bc9226755804
-   ```
+## Scorecard Guidance
 
-3. Run the packaged CLI against the local project path. Use the subproject path when the
-   selected project stores the Maven app below the repository root:
+Public summaries may use a compact scorecard when that helps compare evaluated targets.
 
-   ```sh
-   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic
-   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/spring-petclinic-rest
-   java -jar target/agent-project-memory-0.1.0.jar scan <external-eval-dir>/gs-rest-service/complete
-   ```
+Recommended score meanings:
 
-4. Inspect generated local artifacts only:
-
-   ```text
-   <evaluated-project>/.project-memory/project-map.json
-   <evaluated-project>/.project-memory/evidence-index.jsonl
-   <evaluated-project>/.project-memory/endpoints.md
-   <evaluated-project>/.project-memory/agent-guide.md
-   ```
-
-5. Record observations using the format below. Do not fix analyzer behavior during the
-   evaluation run.
-
-## Scorecard
-
-Use `2`, `1`, `0`, or `N/A` for each category:
-
-- `2`: accurate enough for v0.1, materially complete for the supported scope, and
-  evidence-backed.
-- `1`: usable, but has bounded misses, weak evidence, or unclear uncertainty labels.
+- `2`: accurate and useful for the documented release scope, with resolving evidence.
+- `1`: usable, but with bounded misses, noise, or follow-up candidates.
 - `0`: absent, misleading, contract-breaking, or not useful for the supported scope.
-- `N/A`: signal is not expected in the selected project.
+- `N/A`: the selected project did not exercise that signal.
 
-| Category | What to check |
-| --- | --- |
-| Endpoints | Supported Spring MVC controller and mapping annotations are detected without invented HTTP methods or paths. |
-| Components | Direct class-level Spring stereotypes are detected and sorted deterministically. |
-| Entities | Direct `@Entity`, `@Table`, `@Id`, and supported relationship annotations are detected without claiming unresolved ORM behavior. |
-| Tests | Standard Maven `src/test/java` test classes, supported framework signals, and conservative tested-subject relation/status rows are represented with explicit confidence and uncertainty where needed. |
-| Evidence quality | Evidence IDs resolve, paths are repository-relative, line ranges and excerpts support the facts, and inferred or uncertain relations are labeled. |
-| `agent-guide.md` | The guide is useful for first-pass orientation, cites deterministic facts, exposes known uncertainty, and avoids unsupported architecture claims. |
+Scorecards should be backed by observations and limitations. They should not imply
+coverage, runtime correctness, security posture, or production readiness beyond the
+specific evaluation scope.
 
-Recommended scorecard row:
+## Non-Goals
 
-| Project/ref | Endpoints | Components | Entities | Tests | Evidence quality | `agent-guide.md` | Notes |
-| --- | --- | --- | --- | --- | --- | --- | --- |
-| `<project>@<ref>` | `<score>` | `<score>` | `<score>` | `<score>` | `<score>` | `<score>` | `<summary>` |
+Public evaluations do not include:
 
-## Observation Format
-
-Use one observation per concrete issue or useful confirmation:
-
-```md
-### OBS-8-XXX: <short title>
-
-- Project/ref:
-- Observed artifact:
-- Expected:
-- Actual:
-- False positive:
-- False negative:
-- Evidence quality:
-- Output contract issue:
-- Notes:
-```
-
-Field rules:
-
-- `Expected`: what the current v0.1 contract and docs imply should appear.
-- `Actual`: what appears in the generated local artifact.
-- `False positive`: unsupported fact emitted by the analyzer, or `None`.
-- `False negative`: supported-scope fact missing from output, or `None`.
-- `Evidence quality`: whether evidence resolves to the right file, symbol, line range,
-  excerpt, and confidence.
-- `Output contract issue`: field-shape, naming, sorting, nullability, or semantics issue
-  against `docs/architecture/OUTPUT_CONTRACT.md`, or `None`.
-
-## Follow-up Summary Format
-
-Convert confirmed evaluation findings into public follow-up summaries only after the
-observation is recorded and the summary text has been publicized for tracked
-documentation:
-
-```md
-### Follow-up: <bounded title>
-
-- Project/ref:
-- Observed artifact:
-- Suspected cause:
-- Affected contract/doc:
-- Proposed validation:
-- Non-goals:
-```
-
-Field rules:
-
-- `Project/ref`: selected project and exact ref where the issue was observed.
-- `Observed artifact`: generated file and, when possible, JSON path or Markdown section.
-- `Suspected cause`: narrow analyzer, generator, evidence, or contract hypothesis.
-- `Affected contract/doc`: canonical doc that may need an update, or `None` if behavior
-  should change under the existing contract.
-- `Proposed validation`: focused fixture, golden output, or repeat scan needed to prove
-  the fix.
-- `Non-goals`: adjacent cleanup or future features that must stay out of the task.
-
-## Network And Leakage Controls
-
-- Do not use external analysis services.
-- Do not make LLM calls for source analysis, fact extraction, or evidence generation.
-- Do not upload third-party source to any service.
-- Do not commit third-party source.
-- Do not commit generated third-party `.project-memory/` outputs in this slice.
-- Network access is limited to cloning public open-source repositories and verifying
-  public refs or license metadata. The analyzer run itself must be local-only.
-- Evaluation notes should summarize findings and point to generated artifact names,
-  repository-relative references, or repository refs; they should not embed large
-  third-party source excerpts.
-- Keep maintainer-only raw execution notes separate from tracked public summaries.
-
-## Non-goals
-
-Stage 8 does not include:
-
-- Analyzer changes.
-- Test changes.
-- Script creation.
-- Pilot scans.
-- Output contract changes.
-- Evidence model changes.
-- Maven configuration changes.
-- Generated output commits.
-- YouTrack, Jira, Confluence, GitHub, or GitLab connectors.
-- SaaS features.
-- Web UI.
-- Repository chat.
-- Generic RAG.
-- Automatic code modification.
-- Multi-language analysis outside the documented Java/Spring focus.
+- analyzer changes;
+- test, fixture, or golden-output changes;
+- output contract or evidence model changes;
+- Maven/build changes;
+- generated output commits from third-party repositories;
+- connector, SaaS, web UI, repository chat, generic RAG, or automatic code modification
+  work;
+- multi-language analysis outside the documented Java/Spring focus.
