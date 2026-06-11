@@ -2931,8 +2931,9 @@ This section defines the v0.9 public output boundary for CLI/config behavior. Th
 current implementation includes the config parser and safe-defaults slice: root-local
 config discovery, optional explicit config selection for `scan`, local Markdown-only
 include/exclude refinement, reserved-mode rejection, redacted `scan` metadata, and the
-no-tool-config-evidence decision. Broader help/version, diagnostics depth, performance,
-and distribution workflow polish remain later v0.9 goals.
+no-tool-config-evidence decision. It also includes help/version commands, bounded
+command validation, stable exit codes, concise scan stdout, and a bounded CLI diagnostic
+summary. Performance and distribution workflow polish remain later v0.9 goals.
 
 The v0.9 CLI/config contract uses:
 
@@ -3160,15 +3161,16 @@ Current `scan.diagnostics` rules:
 - Diagnostics are not evidence. Diagnostic item IDs must not be referenced by
   `evidence_ids`.
 
-Planned later v0.9 CLI behavior:
+Current v0.9 CLI behavior:
 
 - `agent-project-memory --help`, `agent-project-memory help`,
   `agent-project-memory scan --help`, `agent-project-memory --version`, and
-  `agent-project-memory version` should succeed without scanning.
+  `agent-project-memory version` succeed without scanning.
 - Help and version output go to stdout and exit with code `0`.
-- Usage errors such as unknown commands, missing required arguments, unknown flags,
-  duplicate mutually exclusive flags, or unexpected extra arguments go to stderr and
-  exit with code `2`.
+- Version output is one line: `agent-project-memory <version>`.
+- Usage errors such as a missing top-level command, unknown commands, unknown flags,
+  duplicate mutually exclusive flags, or unexpected extra arguments go to stderr and exit
+  with code `2`.
 - Scan input errors such as invalid path syntax, missing scan path, non-directory scan
   path, unresolved scan root, invalid output directory, output symlink, or output path
   escaping the scan root go to stderr and exit with code `3`.
@@ -3182,9 +3184,10 @@ Planned later v0.9 CLI behavior:
   not printed by default.
 - Successful scans exit with code `0`, even when bounded non-fatal diagnostics are
   emitted.
-- Normal stdout should remain concise: generated output file names, stable fact counts,
-  and a bounded diagnostic summary. Detailed diagnostics, when a flag is added, should
-  still follow the redaction rules above.
+- Normal stdout remains concise: `.project-memory` preparation, generated output file
+  names, stable fact counts when outputs are written, a no-output line when no supported
+  contract inputs are detected, and a bounded diagnostic summary. Detailed diagnostics,
+  when a flag is added, should still follow the redaction rules above.
 
 ## `evidence-index.jsonl`
 

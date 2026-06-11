@@ -7,12 +7,14 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -26,8 +28,8 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli();
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
-        () -> assertTrue(result.stderr().contains("Missing command.")),
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Usage error: Missing command.")),
         () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)));
   }
 
@@ -36,32 +38,135 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("status");
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
-        () -> assertTrue(result.stderr().contains("Unknown command: status")),
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Unknown command.")),
+        () -> assertFalse(result.stderr().contains("status")),
         () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)));
   }
 
   @Test
-  void scanMissingPathReturnsNonZero() {
+  void helpCommandsPrintHelpWithoutScanning() {
+    for (String[] args : List.of(new String[] {"--help"}, new String[] {"help"})) {
+      CliResult result = runCli(args);
+
+      assertAll(
+          () -> assertEquals(0, result.exitCode()),
+          () -> assertTrue(result.stdout().contains("agent-project-memory - local evidence-backed")),
+          () -> assertTrue(result.stdout().contains("Usage:")),
+          () -> assertTrue(result.stdout().contains("agent-project-memory scan <path> [--config <path>]")),
+          () -> assertTrue(result.stderr().isEmpty()),
+          () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+    }
+  }
+
+  @Test
+  void scanHelpPrintsScanHelpWithoutScanning() {
+    CliResult result = runCli("scan", "--help");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertTrue(result.stdout().contains("--config <path>")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void versionCommandsPrintVersionWithoutScanning() {
+    for (String[] args : List.of(new String[] {"--version"}, new String[] {"version"})) {
+      CliResult result = runCli(args);
+
+      assertAll(
+          () -> assertEquals(0, result.exitCode()),
+          () -> assertTrue(result.stdout().startsWith("agent-project-memory ")),
+          () -> assertFalse(result.stdout().contains("${")),
+          () -> assertTrue(result.stderr().isEmpty()),
+          () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+    }
+  }
+
+  @Test
+  void scanWithoutPathReturnsScanInputExitCode() {
+    CliResult result = runCli("scan");
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Scan input error: Missing scan path.")));
+  }
+
+  @Test
+  void scanMissingPathReturnsScanInputExitCode() {
     Path missingPath = tempDir.resolve("missing-project");
 
     CliResult result = runCli("scan", missingPath.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
-        () -> assertTrue(result.stderr().contains("Path does not exist")));
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Scan path does not exist")),
+        () -> assertFalse(result.stderr().contains(missingPath.toString())));
   }
 
   @Test
-  void scanFilePathReturnsNonZero() throws Exception {
+  void scanFilePathReturnsScanInputExitCode() throws Exception {
     Path filePath = tempDir.resolve("project.txt");
     Files.writeString(filePath, "not a directory");
 
     CliResult result = runCli("scan", filePath.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
-        () -> assertTrue(result.stderr().contains("Path is not a directory")));
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Scan path is not a directory")),
+        () -> assertFalse(result.stderr().contains(filePath.toString())));
+  }
+
+  @Test
+  void scanUnknownFlagReturnsUsageExitCode() {
+    CliResult result = runCli("scan", tempDir.toString(), "--unknown");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Unexpected extra arguments.")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)));
+  }
+
+  @Test
+  void scanDuplicateConfigFlagReturnsUsageExitCode() {
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--config",
+        "agent-project-memory.yml",
+        "--config",
+        "other.yml");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Duplicate --config flag.")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)));
+  }
+
+  @Test
+  void scanFlagBeforePathReturnsUsageExitCodeWithoutScanning() {
+    for (String[] args : List.of(new String[] {"scan", "--unknown"}, new String[] {"scan", "--version"})) {
+      CliResult result = runCli(args);
+
+      assertAll(
+          () -> assertEquals(2, result.exitCode()),
+          () -> assertTrue(result.stderr().contains("Usage error: Unknown flag.")),
+          () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+          () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+    }
+  }
+
+  @Test
+  void scanConfigFlagBeforePathReturnsUsageExitCodeWithoutScanning() {
+    CliResult result = runCli("scan", "--config", "agent-project-memory.yml");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Usage error: Missing scan path.")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
 
   @Test
@@ -70,7 +175,10 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
-        () -> assertTrue(Files.isDirectory(tempDir.resolve(".project-memory"))));
+        () -> assertTrue(Files.isDirectory(tempDir.resolve(".project-memory"))),
+        () -> assertTrue(result.stdout().contains("Prepared .project-memory.")),
+        () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
+        () -> assertFalse(result.stdout().contains(tempDir.toString())));
   }
 
   @Test
@@ -119,6 +227,8 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(Files.isDirectory(outputDirectory)),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
+        () -> assertFalse(result.stdout().contains(tempDir.toString())),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
@@ -155,6 +265,8 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
+        () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
+        () -> assertFalse(result.stdout().contains(projectPath.toString())),
         () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
         () -> assertTrue(projectMap.contains("\"spring_application_surface\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
@@ -342,13 +454,14 @@ final class AgentProjectMemoryCliTest {
     Path outputDirectory = tempDir.resolve(".project-memory");
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertEquals(5, result.exitCode()),
         () -> assertTrue(
             result.stderr().contains(
-                "Could not generate project memory output: Could not parse Java source:")),
+                "Output error: Could not generate project memory output: Could not parse Java source:")),
         () -> assertTrue(result.stderr().contains("BrokenController.java")),
         () -> assertTrue(result.stderr().contains("1 parse problem")),
         () -> assertTrue(result.stderr().contains("first problem at line")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
         () -> assertFalse(result.stderr().contains("ParseProblemException")),
         () -> assertFalse(result.stderr().contains("com.github.javaparser")),
         () -> assertFalse(result.stderr().contains("\tat ")),
@@ -369,8 +482,9 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("scan", projectPath.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertEquals(3, result.exitCode()),
         () -> assertTrue(result.stderr().contains("Output path must not be a symbolic link")),
+        () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("project-map.json"))),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("endpoints.md"))),
@@ -390,8 +504,9 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("scan", projectPath.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertEquals(3, result.exitCode()),
         () -> assertTrue(result.stderr().contains("Output file must not be a symbolic link")),
+        () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
@@ -411,8 +526,9 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("scan", projectPath.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertEquals(3, result.exitCode()),
         () -> assertTrue(result.stderr().contains("Output file must not have multiple hard links")),
+        () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
         () -> assertEquals(
             "outside content",
@@ -430,16 +546,45 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("scan", tempDir.toString());
 
     assertAll(
-        () -> assertNotEquals(0, result.exitCode()),
+        () -> assertEquals(3, result.exitCode()),
         () -> assertTrue(result.stderr().contains("Output path exists and is not a directory")));
   }
 
+  @Test
+  void unexpectedRuntimeErrorReturnsInternalExitCodeWithoutDetails() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration) -> {
+          throw new IllegalStateException("INTERNAL_SECRET_DETAIL");
+        },
+        "scan",
+        tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(1, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Unexpected internal error.")),
+        () -> assertFalse(result.stderr().contains("INTERNAL_SECRET_DETAIL")),
+        () -> assertFalse(result.stderr().contains("\tat ")));
+  }
+
   private CliResult runCli(String... args) {
+    return runCliWithGenerator(new SpringMvcEndpointOutputGenerator()::generate, args);
+  }
+
+  private CliResult runCliWithGenerator(
+      AgentProjectMemoryCli.ProjectMemoryOutputGenerator outputGenerator,
+      String... args) {
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
     int exitCode = new AgentProjectMemoryCli(
         new PrintWriter(stdout, true),
-        new PrintWriter(stderr, true))
+        new PrintWriter(stderr, true),
+        outputGenerator)
         .run(args);
 
     return new CliResult(exitCode, stdout.toString(), stderr.toString());

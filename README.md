@@ -65,6 +65,30 @@ After `mvn package`, run a scan with the packaged CLI jar:
 java -jar target/agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
 ```
 
+The packaged CLI also supports help and version commands without scanning:
+
+```sh
+java -jar target/agent-project-memory-0.8.0.jar --help
+java -jar target/agent-project-memory-0.8.0.jar help
+java -jar target/agent-project-memory-0.8.0.jar scan --help
+java -jar target/agent-project-memory-0.8.0.jar --version
+java -jar target/agent-project-memory-0.8.0.jar version
+```
+
+CLI exit codes are stable for automation:
+
+- `0`: success, help, or version.
+- `1`: unexpected internal error.
+- `2`: usage error, such as an unknown command, unknown flag, or malformed command.
+- `3`: scan input error, such as a missing scan path, missing directory, or unsafe output
+  path.
+- `4`: invalid scan config.
+- `5`: output generation or write error.
+
+Normal scan stdout is concise and deterministic: it reports `.project-memory`
+preparation, generated file names with stable fact counts when outputs are written, and
+a bounded diagnostics summary.
+
 `scan <path>` validates that the path exists and is a directory, then creates or reuses:
 
 ```text
@@ -188,6 +212,16 @@ Future installed command:
 
 ```sh
 agent-project-memory scan .
+```
+
+Future installed help and version command forms:
+
+```sh
+agent-project-memory --help
+agent-project-memory help
+agent-project-memory scan --help
+agent-project-memory --version
+agent-project-memory version
 ```
 
 The same output files:

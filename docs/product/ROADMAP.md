@@ -464,8 +464,10 @@ Current implementation status:
 - Generated `project-map.json` uses `schema_version: "0.9"` with redacted `scan`
   metadata. The selected tool config is not evidence and does not create
   `evidence-index.jsonl` records.
-- CLI help/version, broader exit-code polish, diagnostics depth, performance evaluation,
-  and distribution workflow work remain follow-up v0.9 goals.
+- CLI help/version commands, bounded command validation, stable exit codes, concise scan
+  summaries, and packaged help/version smoke coverage are implemented for the current
+  v0.9 CLI slice.
+- Performance evaluation and distribution workflow work remain follow-up v0.9 goals.
 
 Planned contract boundary:
 

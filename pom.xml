@@ -53,7 +53,21 @@
   </dependencies>
 
   <build>
+    <resources>
+      <resource>
+        <directory>src/main/resources</directory>
+        <filtering>true</filtering>
+      </resource>
+    </resources>
     <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-resources-plugin</artifactId>
+        <version>3.3.1</version>
+        <configuration>
+          <propertiesEncoding>${project.build.sourceEncoding}</propertiesEncoding>
+        </configuration>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-compiler-plugin</artifactId>
@@ -140,6 +154,36 @@
                 <fail
                     unless="smoke.agent.guide.generated"
                     message="Packaged CLI smoke test did not generate agent-guide.md"/>
+                <java
+                    jar="${project.build.directory}/${project.build.finalName}.jar"
+                    fork="true"
+                    failonerror="true"
+                    outputproperty="smoke.help.output">
+                  <arg value="--help"/>
+                </java>
+                <condition property="smoke.help.ok">
+                  <contains
+                      string="${smoke.help.output}"
+                      substring="Usage:"/>
+                </condition>
+                <fail
+                    unless="smoke.help.ok"
+                    message="Packaged CLI smoke test did not print help output"/>
+                <java
+                    jar="${project.build.directory}/${project.build.finalName}.jar"
+                    fork="true"
+                    failonerror="true"
+                    outputproperty="smoke.version.output">
+                  <arg value="--version"/>
+                </java>
+                <condition property="smoke.version.ok">
+                  <contains
+                      string="${smoke.version.output}"
+                      substring="agent-project-memory ${project.version}"/>
+                </condition>
+                <fail
+                    unless="smoke.version.ok"
+                    message="Packaged CLI smoke test did not print project version"/>
               </target>
             </configuration>
           </execution>

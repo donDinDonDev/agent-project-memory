@@ -23,6 +23,9 @@ architecture documents.
   include/exclude refinement, non-overridable built-in safety exclusions, reserved
   generated-source and symlink-following mode rejection, and redacted `scan` metadata
   without raw config values or raw user path patterns.
+- Added v0.9 CLI help/version behavior, including top-level help, `help`, `scan --help`,
+  top-level version, `version`, stable exit codes, bounded command validation, concise
+  scan summaries, and packaged CLI smoke coverage for help/version commands.
 
 ### Changed
 
@@ -30,6 +33,9 @@ architecture documents.
   config parser and safe-defaults slice, adding top-level redacted `scan` metadata while
   preserving existing evidence semantics and keeping the tool config file out of
   `evidence-index.jsonl`.
+- Split CLI failure modes into documented exit codes for usage, scan input, invalid
+  config, output/write, and unexpected internal errors while keeping stderr bounded and
+  stack-trace-free by default.
 
 ### Fixed
 
