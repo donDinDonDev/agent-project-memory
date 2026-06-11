@@ -31,22 +31,27 @@ mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current implemented
-public contract is the v0.8 local Markdown discovery and structure slice
-layered on top of the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model
+public contract is the v0.9 config parser and safe-defaults slice layered on top of the
+v0.8 local Markdown discovery and structure slice, the v0.7 tests inventory refinement
+slice, the v0.6 JPA/domain model
 slice, the v0.5 Spring application surface slices, the v0.4 API surface slice, and the
 v0.3 module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
 v0.7 contract also emits direct Spring test slice and mock annotation signals and
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current v0.8 implementation extends the local Markdown/document
-ingestion boundary with deterministic default-scope Markdown discovery, document
-inventory, ATX heading references, bounded chunk references, and resolving `document`
-evidence records for accepted file, heading, chunk, and bounded reconciliation mention
-observations. It emits `schema_version: "0.8"` with a top-level `documents` object and
-conservative `documents.reconciliation` uncertain inspection hints. `agent-guide.md`
-now includes compact local documentation orientation generated from structured
-`documents` facts and resolving evidence only.
+The current v0.9 implementation emits `schema_version: "0.9"` with a top-level `scan`
+owner for redacted config, feature, path-policy, and diagnostic metadata. It discovers a
+root-local `agent-project-memory.yml` config file or an explicitly selected
+repository-relative YAML config, validates the bounded config schema, applies safe
+defaults, and applies user include/exclude rules only to local Markdown discovery while
+preserving non-overridable built-in safety exclusions. It preserves the v0.8
+local Markdown/document ingestion boundary with deterministic default-scope Markdown
+discovery, document inventory, ATX heading references, bounded chunk references, and
+resolving `document` evidence records for accepted file, heading, chunk, and bounded
+reconciliation mention observations. It keeps conservative `documents.reconciliation`
+uncertain inspection hints and compact local documentation orientation generated from
+structured `documents` facts and resolving evidence only.
 The v0.1 single-module shape below is kept as historical compatibility context for
 fields that later contracts preserve.
 
@@ -2920,13 +2925,16 @@ Current v0.8 deterministic sorting rules:
 - Reconciliation signals sort by signal, module order when a source module is available,
   subject kind, subject name, document path, and ID.
 
-### Planned v0.9 CLI And Scan Configuration Contract
+### v0.9 CLI And Scan Configuration Contract
 
-This section defines the planned v0.9 public output boundary for CLI/config behavior.
-It is a contract design for future implementation, not a statement that the current
-v0.8 implementation already emits these fields.
+This section defines the v0.9 public output boundary for CLI/config behavior. The
+current implementation includes the config parser and safe-defaults slice: root-local
+config discovery, optional explicit config selection for `scan`, local Markdown-only
+include/exclude refinement, reserved-mode rejection, redacted `scan` metadata, and the
+no-tool-config-evidence decision. Broader help/version, diagnostics depth, performance,
+and distribution workflow polish remain later v0.9 goals.
 
-The planned v0.9 CLI/config contract uses:
+The v0.9 CLI/config contract uses:
 
 - `schema_version: "0.9"` for output that preserves the v0.8 local Markdown/document
   contract and adds a top-level `scan` owner for redacted effective scan metadata.
@@ -2946,7 +2954,7 @@ The planned v0.9 CLI/config contract uses:
 - No `evidence-index.jsonl` evidence records for the tool config file. The selected
   scan config is execution metadata, not project evidence.
 
-Planned `project-map.json` excerpt. Unchanged v0.8 fields are omitted for focus:
+Current `project-map.json` excerpt. Unchanged v0.8 fields are omitted for focus:
 
 ```json
 {
@@ -2993,16 +3001,17 @@ Planned `project-map.json` excerpt. Unchanged v0.8 fields are omitted for focus:
 }
 ```
 
-Planned config file rules:
+Current config file rules:
 
 - The default config file is `<scan-root>/agent-project-memory.yml`.
 - The selected config file, whether discovered by default or selected explicitly, must
   resolve to one regular YAML file under the scan root and must not be a symlink.
-- An explicit `--config <path>` value, if implemented, is interpreted after scan-root
-  validation as a normalized repository-relative path under the selected scan root. It
-  must not be absolute, start with `./`, contain `.` or `..` path segments after
-  normalization, use backslash separators, resolve outside the scan root, point into
-  `.project-memory/`, or point to a symlink.
+- The current explicit config selection syntax is `scan <path> --config <path>`. The
+  explicit config value is interpreted after scan-root validation as a normalized
+  repository-relative path under the selected scan root. It must not be absolute, start
+  with `./`, contain `.` or `..` path segments after normalization, use backslash
+  separators, resolve outside the scan root, point into `.project-memory/`, or point to a
+  symlink.
 - If the default config file is present and no explicit config is selected, it is the
   selected config. If no config is selected or discovered, built-in defaults apply.
 - If an explicit config path is provided, default discovery is skipped. The explicit
@@ -3010,11 +3019,32 @@ Planned config file rules:
 - Config files are not merged. Multiple default config locations are intentionally not
   discovered in v0.9 so there is no hidden precedence between root-visible and hidden
   files.
-- The planned config format is YAML with a required bounded schema version, for example
-  `version: 1`. Unknown top-level keys, unsupported values, unsupported future-mode
-  enables, invalid YAML, unsafe path values, oversized config files, YAML aliases that
-  exceed parser limits, and non-scalar values where scalars are required should fail as
-  invalid config before output generation.
+- The current config format is YAML with a required bounded schema version:
+
+  ```yaml
+  version: 1
+  features:
+    local_markdown: true
+    generated_sources: false
+    follow_symlinks: false
+  documents:
+    include:
+      - notes/**/*.md
+    exclude:
+      - docs/archive/**
+  ```
+
+- `version` is required and must be integer `1`.
+- `features` is optional. `features.local_markdown` is an optional boolean. The reserved
+  `features.generated_sources` and `features.follow_symlinks` keys may be present only
+  with boolean `false`; attempts to set either to `true` are invalid config.
+- `documents` is optional. `documents.include` and `documents.exclude` are optional
+  lists of string path rules. Include rules must target Markdown files ending in `.md`
+  or `.markdown`; exclude rules may target files or path trees.
+- Unknown top-level keys, unknown `features` or `documents` keys, unsupported values,
+  unsupported future-mode enables, invalid YAML, unsafe path values, oversized config
+  files, YAML aliases that exceed parser limits, and non-scalar values where scalars are
+  required fail as invalid config before output generation.
 - Config parsing must not perform environment-variable interpolation, file includes,
   remote imports, command execution, credential lookup, plugin loading, or network
   access.
@@ -3022,7 +3052,7 @@ Planned config file rules:
   patterns, config file contents, config excerpts, environment variables, decrypted
   values, credentials, tokens, secret-looking values, or local absolute paths.
 
-Planned feature toggle rules:
+Current feature toggle rules:
 
 - `local_markdown` defaults to enabled to preserve the v0.8 no-config behavior. When it
   is disabled by config or CLI flag, local Markdown discovery, document structure,
@@ -3041,17 +3071,17 @@ Planned feature toggle rules:
   symlink following must be rejected until a later explicit symlink policy defines safe
   containment and evidence behavior.
 
-Planned include/exclude path semantics:
+Current include/exclude path semantics:
 
 - User path rules use normalized repository-relative slash-separated paths. They must
   never be absolute, start with `./`, contain `.` or `..` path segments after
   normalization, use backslash separators, or resolve outside the scan root.
 - Matching is case-sensitive and byte-stable. The contract does not promise
   filesystem-specific case folding.
-- The initial supported pattern language should be bounded: literal path segments,
-  `*` inside one segment, and `**` only as a whole path segment. Brace expansion,
-  character classes, extglob syntax, regex syntax, drive letters, and URL-like schemes
-  are not part of the v0.9 design.
+- The initial supported pattern language is bounded: literal path segments, `*` inside
+  one segment, and `**` only as a whole path segment. Brace expansion, character
+  classes, extglob syntax, regex syntax, drive letters, and URL-like schemes are not
+  part of the v0.9 design.
 - Include rules add local Markdown candidates to the existing default-scope document
   candidate set. Exclude rules remove candidates from the default-plus-user candidate
   set. User excludes win over user includes.
@@ -3072,7 +3102,7 @@ Planned include/exclude path semantics:
   through `scan.path_policy` counts/statuses and per-document `discovery_source` values
   such as `"explicit_include"` when a document is accepted through a user include rule.
 
-Planned `scan.config` rules:
+Current `scan.config` rules:
 
 - `scan.config.analysis_status` is `"analyzed"` when config discovery and validation
   ran.
@@ -3090,7 +3120,7 @@ Planned `scan.config` rules:
 - `cli_overrides_applied` is a boolean.
 - `raw_values_serialized` must be `false` for v0.9 output.
 
-Planned `scan.features` rules:
+Current `scan.features` rules:
 
 - Feature entries record effective enablement and the source of the effective value.
 - `source` values are `"default"`, `"config_file"`, or `"cli_override"` for implemented
@@ -3099,22 +3129,23 @@ Planned `scan.features` rules:
 - Feature entries must not imply that an analyzer ran. Analyzer-specific
   `analysis_status` fields remain authoritative for generated fact sections.
 
-Planned `scan.path_policy` rules:
+Current `scan.path_policy` rules:
 
 - `path_format` is `"normalized_repository_relative"`.
 - `case_sensitivity` is `"case_sensitive"` in the v0.9 contract.
 - `symlink_policy` is `"skip_symlinks"` until a later explicit mode changes it.
 - `default_exclusions_applied` is `true` in normal v0.9 scans.
 - `default_exclusion_override` is `"not_supported"` in the initial v0.9 design.
-- User include/exclude counts record how many validated user rules affected local
+- User include/exclude counts record how many validated user rules were applied to local
   document candidate selection. They must not serialize the raw patterns.
 
-Planned `scan.diagnostics` rules:
+Current `scan.diagnostics` rules:
 
-- Diagnostics are bounded scan metadata for non-fatal conditions such as config defaults
-  in use, user path rules accepted, user path rules matching no candidate, files skipped
-  by built-in safety exclusions, disabled local docs, or generated-source roots remaining
-  warning-only.
+- `scan.diagnostics.analysis_status` is `"analyzed"` and the current config parser slice
+  emits an empty `items` array. Later v0.9 diagnostics may add bounded scan metadata for
+  non-fatal conditions such as config defaults in use, user path rules accepted, user
+  path rules matching no candidate, files skipped by built-in safety exclusions,
+  disabled local docs, or generated-source roots remaining warning-only.
 - Fatal usage, scan input, invalid config, output write, and unexpected internal errors
   are reported through CLI exit codes and stderr. A scan that fails before output
   generation should not create a partial `project-map.json` solely to record fatal
@@ -3129,7 +3160,7 @@ Planned `scan.diagnostics` rules:
 - Diagnostics are not evidence. Diagnostic item IDs must not be referenced by
   `evidence_ids`.
 
-Planned CLI behavior:
+Planned later v0.9 CLI behavior:
 
 - `agent-project-memory --help`, `agent-project-memory help`,
   `agent-project-memory scan --help`, `agent-project-memory --version`, and

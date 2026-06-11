@@ -18,6 +18,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceConfigE
 import io.github.dondindondev.agentprojectmemory.analyzer.config.ResourceRootFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryOptions;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentDiscoveryPolicy;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentChunkFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentEvidence;
@@ -108,6 +109,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningFact;
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
@@ -133,7 +135,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String MAIN_RESOURCE_ROOT = "src/main/resources";
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
-  private static final String SCHEMA_VERSION = "0.8";
+  private static final String SCHEMA_VERSION = "0.9";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
@@ -489,8 +491,16 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   public Result generate(Path repositoryRoot, Path outputDirectory) throws IOException {
+    return generate(repositoryRoot, outputDirectory, ScanConfiguration.defaultsOnly());
+  }
+
+  public Result generate(
+      Path repositoryRoot,
+      Path outputDirectory,
+      ScanConfiguration scanConfiguration) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(outputDirectory, "outputDirectory");
+    Objects.requireNonNull(scanConfiguration, "scanConfiguration");
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
@@ -523,7 +533,11 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiSpecDiscoveryAnalysis.specFiles());
     DocumentDiscoveryAnalysis documentDiscoveryAnalysis = documentDiscoveryAnalyzer.analyze(
         normalizedRepositoryRoot,
-        layout.modules().items());
+        layout.modules().items(),
+        new DocumentDiscoveryOptions(
+            scanConfiguration.localMarkdownEnabled(),
+            scanConfiguration.documentIncludes(),
+            scanConfiguration.documentExcludes()));
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
@@ -545,11 +559,13 @@ public final class SpringMvcEndpointOutputGenerator {
         moduleDiscoveryAnalysis.warnings(),
         pluginAnalysis,
         openApiOperationAnalysis);
-    DocumentReconciliationAnalysis documentReconciliationAnalysis = documentReconciliationAnalyzer.analyze(
-        normalizedRepositoryRoot,
-        documentDiscoveryAnalysis,
-        documentSourceApiFacts(scan.endpoints(), openApiOperationAnalysis.operations()),
-        documentSourceModuleFacts(layout.modules().items()));
+    DocumentReconciliationAnalysis documentReconciliationAnalysis = scanConfiguration.localMarkdownEnabled()
+        ? documentReconciliationAnalyzer.analyze(
+            normalizedRepositoryRoot,
+            documentDiscoveryAnalysis,
+            documentSourceApiFacts(scan.endpoints(), openApiOperationAnalysis.operations()),
+            documentSourceModuleFacts(layout.modules().items()))
+        : new DocumentReconciliationAnalysis(ANALYSIS_NOT_ANALYZED, List.of(), List.of());
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         moduleDiscoveryAnalysis.evidence(),
@@ -582,7 +598,8 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
         documentDiscoveryAnalysis,
-        documentReconciliationAnalysis);
+        documentReconciliationAnalysis,
+        scanConfiguration);
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -1489,10 +1506,12 @@ public final class SpringMvcEndpointOutputGenerator {
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
-      DocumentReconciliationAnalysis documentReconciliationAnalysis) {
+      DocumentReconciliationAnalysis documentReconciliationAnalysis,
+      ScanConfiguration scanConfiguration) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
+    appendScanMetadata(json, scanConfiguration, true);
     json.append("  \"project\": {\n");
     appendIndentedStringField(json, 2, "root", ".", true);
     json.append("    \"build\": {\n");
@@ -1549,6 +1568,74 @@ public final class SpringMvcEndpointOutputGenerator {
     appendQuality(json, qualitySignals(scan));
     json.append("}\n");
     return json.toString();
+  }
+
+  private void appendScanMetadata(
+      StringBuilder json,
+      ScanConfiguration scanConfiguration,
+      boolean trailingComma) {
+    boolean documentPathRulesApplied = scanConfiguration.localMarkdownEnabled();
+    json.append("  \"scan\": {\n");
+    json.append("    \"config\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringField(json, 3, "source", scanConfiguration.configSource(), true);
+    appendIndentedNullableStringField(json, 3, "config_file_path", scanConfiguration.configFilePath(), true);
+    appendIndentedStringField(json, 3, "config_file_status", scanConfiguration.configFileStatus(), true);
+    appendIndentedBooleanField(json, 3, "cli_overrides_applied", scanConfiguration.cliOverridesApplied(), true);
+    appendIndentedBooleanField(json, 3, "raw_values_serialized", scanConfiguration.rawValuesSerialized(), false);
+    json.append("    },\n");
+    json.append("    \"features\": {\n");
+    json.append("      \"local_markdown\": {\n");
+    appendIndentedBooleanField(json, 4, "enabled", scanConfiguration.localMarkdownEnabled(), true);
+    appendIndentedStringField(json, 4, "source", scanConfiguration.localMarkdownSource(), false);
+    json.append("      },\n");
+    json.append("      \"generated_sources\": {\n");
+    appendIndentedBooleanField(json, 4, "enabled", false, true);
+    appendIndentedStringField(json, 4, "status", "reserved_disabled", false);
+    json.append("      },\n");
+    json.append("      \"follow_symlinks\": {\n");
+    appendIndentedBooleanField(json, 4, "enabled", false, true);
+    appendIndentedStringField(json, 4, "status", "reserved_disabled", false);
+    json.append("      }\n");
+    json.append("    },\n");
+    json.append("    \"path_policy\": {\n");
+    appendIndentedStringField(json, 3, "path_format", "normalized_repository_relative", true);
+    appendIndentedStringField(json, 3, "case_sensitivity", "case_sensitive", true);
+    appendIndentedStringField(json, 3, "symlink_policy", "skip_symlinks", true);
+    appendIndentedBooleanField(json, 3, "default_exclusions_applied", true, true);
+    appendIndentedStringField(json, 3, "default_exclusion_override", "not_supported", true);
+    appendIndentedBooleanField(
+        json,
+        3,
+        "user_includes_applied",
+        documentPathRulesApplied && scanConfiguration.userIncludesApplied(),
+        true);
+    appendIndentedIntegerField(
+        json,
+        3,
+        "user_include_count",
+        documentPathRulesApplied ? scanConfiguration.documentIncludes().size() : 0,
+        true);
+    appendIndentedBooleanField(
+        json,
+        3,
+        "user_excludes_applied",
+        documentPathRulesApplied && scanConfiguration.userExcludesApplied(),
+        true);
+    appendIndentedIntegerField(
+        json,
+        3,
+        "user_exclude_count",
+        documentPathRulesApplied ? scanConfiguration.documentExcludes().size() : 0,
+        false);
+    json.append("    },\n");
+    json.append("    \"diagnostics\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    indent(json, 3);
+    json.append("\"items\": []\n");
+    json.append("    }\n");
+    json.append("  }");
+    appendLineEnding(json, trailingComma);
   }
 
   private void appendDocuments(

@@ -452,6 +452,21 @@ Product outcome: make the local CLI predictable, safely configurable, and easier
 evaluate before the v1.0 stabilization track, without weakening the local-first
 deterministic analyzer boundary.
 
+Current implementation status:
+
+- The config parser and safe-defaults slice is implemented for root-local
+  `agent-project-memory.yml` discovery and optional explicit
+  `scan <path> --config <repo-relative-yaml>` selection.
+- The current YAML schema is intentionally small: required `version: 1`, optional
+  `features.local_markdown`, reserved `features.generated_sources: false` and
+  `features.follow_symlinks: false`, and optional `documents.include` /
+  `documents.exclude` rules for local Markdown discovery only.
+- Generated `project-map.json` uses `schema_version: "0.9"` with redacted `scan`
+  metadata. The selected tool config is not evidence and does not create
+  `evidence-index.jsonl` records.
+- CLI help/version, broader exit-code polish, diagnostics depth, performance evaluation,
+  and distribution workflow work remain follow-up v0.9 goals.
+
 Planned contract boundary:
 
 - A root-local YAML scan config file named `agent-project-memory.yml`, plus optional
@@ -479,10 +494,9 @@ Planned contract boundary:
 - CLI help, version, command validation, exit codes, and diagnostics that are stable
   enough for automation and do not print config values, secrets, source excerpts, raw
   document bodies, or generated output contents.
-- A planned v0.9 `project-map.json` scan summary that records redacted effective
-  config, feature, path-policy, and non-fatal diagnostic metadata. It records config
-  source and counts/statuses, not raw config values or user-provided include/exclude
-  patterns.
+- A v0.9 `project-map.json` scan summary that records redacted effective config,
+  feature, path-policy, and diagnostic metadata. It records config source and
+  counts/statuses, not raw config values or user-provided include/exclude patterns.
 - No tool-config evidence records in `evidence-index.jsonl`; the config summary is scan
   metadata, not project evidence. Existing `config_file` evidence remains limited to
   project application/logging config file presence facts.

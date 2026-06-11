@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -380,6 +381,59 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertEquals(List.of(), analysis.documents()),
         () -> assertEquals("default_local_markdown", analysis.discoveryPolicy().scope()),
         () -> assertEquals("skip_symlinks", analysis.discoveryPolicy().symlinkPolicy()));
+  }
+
+  @Test
+  void appliesUserIncludesAndExcludesWithoutOverridingSafetyExclusions() throws Exception {
+    Path repositoryRoot = repository("user-rules");
+    writeFile(repositoryRoot.resolve("docs/public.md"), "# Public\n");
+    writeFile(repositoryRoot.resolve("notes/guide.md"), "# Guide\n");
+    writeFile(repositoryRoot.resolve("notes/archive/old.md"), "# Old\n");
+    writeFile(repositoryRoot.resolve("notes/manual.markdown"), "# Manual\n");
+    writeFile(repositoryRoot.resolve("docs/private/secret.md"), "# FAKE_PRIVATE_MARKDOWN_SECRET\n");
+    writeFile(repositoryRoot.resolve(".hidden/secret.md"), "# FAKE_HIDDEN_MARKDOWN_SECRET\n");
+
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".", "pom.xml")),
+        new DocumentDiscoveryOptions(
+            true,
+            List.of(
+                ScanConfigPathPattern.parse("notes/**/*.md", "documents.include[0]", true),
+                ScanConfigPathPattern.parse("notes/*.markdown", "documents.include[1]", true),
+                ScanConfigPathPattern.parse("docs/private/*.md", "documents.include[2]", true),
+                ScanConfigPathPattern.parse(".hidden/*.md", "documents.include[3]", true)),
+            List.of(ScanConfigPathPattern.parse("notes/archive/**", "documents.exclude[0]", false))));
+
+    assertAll(
+        () -> assertEquals(
+            List.of("docs/public.md", "notes/guide.md", "notes/manual.markdown"),
+            analysis.documents().stream().map(DocumentFileFact::path).toList()),
+        () -> assertEquals(
+            List.of("docs_tree", "explicit_include", "explicit_include"),
+            analysis.documents().stream().map(DocumentFileFact::discoverySource).toList()),
+        () -> assertFalse(analysis.toString().contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
+        () -> assertFalse(analysis.toString().contains("FAKE_HIDDEN_MARKDOWN_SECRET")),
+        () -> assertFalse(analysis.documents().stream()
+            .map(DocumentFileFact::path)
+            .anyMatch(path -> path.contains("archive") || path.contains("private") || path.contains(".hidden"))));
+  }
+
+  @Test
+  void reportsNotAnalyzedWhenLocalMarkdownIsDisabled() throws Exception {
+    Path repositoryRoot = repository("disabled");
+    writeFile(repositoryRoot.resolve("README.md"), "# Root\n");
+
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(),
+        new DocumentDiscoveryOptions(false, List.of(), List.of()));
+
+    assertAll(
+        () -> assertEquals("not_analyzed", analysis.analysisStatus()),
+        () -> assertEquals(List.of(), analysis.documents()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertEquals("default_local_markdown", analysis.discoveryPolicy().scope()));
   }
 
   private Path repository(String name) throws Exception {

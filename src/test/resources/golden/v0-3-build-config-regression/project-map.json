@@ -1,5 +1,44 @@
 {
-  "schema_version": "0.8",
+  "schema_version": "0.9",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
   "project": {
     "root": ".",
     "build": {

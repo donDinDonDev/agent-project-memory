@@ -123,7 +123,9 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"scan\": {")),
+        () -> assertTrue(projectMap.contains("\"source\": \"defaults_only\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),
         () -> assertTrue(projectMap.contains("\"metadata\": {\n"
@@ -153,7 +155,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated endpoints.md")),
         () -> assertTrue(result.stdout().contains("Generated evidence-index.jsonl")),
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.8\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
         () -> assertTrue(projectMap.contains("\"spring_application_surface\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"api_surface\": {")),
@@ -202,8 +204,124 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
-        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.8\"")),
+        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.9\"")),
         () -> assertFalse(rewrittenProjectMap.contains("stale generated content")));
+  }
+
+  @Test
+  void scanDiscoversRootConfigAndDisablesLocalMarkdownWithoutDocumentEvidence()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.writeString(tempDir.resolve("README.md"), "# Should not be discovered\n");
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        features:
+          local_markdown: false
+        documents:
+          include:
+            - docs/*.md
+          exclude:
+            - docs/private/**
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"source\": \"config_file\"")),
+        () -> assertTrue(projectMap.contains("\"config_file_path\": \"agent-project-memory.yml\"")),
+        () -> assertTrue(projectMap.contains("\"config_file_status\": \"applied\"")),
+        () -> assertTrue(projectMap.contains("\"local_markdown\": {\n"
+            + "        \"enabled\": false,\n"
+            + "        \"source\": \"config_file\"")),
+        () -> assertTrue(projectMap.contains("\"user_includes_applied\": false")),
+        () -> assertTrue(projectMap.contains("\"user_include_count\": 0")),
+        () -> assertTrue(projectMap.contains("\"user_excludes_applied\": false")),
+        () -> assertTrue(projectMap.contains("\"user_exclude_count\": 0")),
+        () -> assertTrue(projectMap.contains("\"documents\": {\n"
+            + "    \"analysis_status\": \"not_analyzed\"")),
+        () -> assertTrue(projectMap.contains("\"reconciliation\": {\n"
+            + "      \"analysis_status\": \"not_analyzed\"")),
+        () -> assertFalse(projectMap.contains("Should not be discovered")),
+        () -> assertFalse(evidenceIndex.contains("\"source_type\":\"document\"")));
+  }
+
+  @Test
+  void scanAppliesExplicitConfigIncludeExcludeWithoutSerializingPatterns()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("config"));
+    Files.createDirectories(tempDir.resolve("docs"));
+    Files.createDirectories(tempDir.resolve("notes"));
+    Files.writeString(tempDir.resolve("docs/public.md"), "# Public\n");
+    Files.writeString(tempDir.resolve("docs/secret-token-plan.md"), "# FAKE_SECRET_TOKEN_MARKDOWN\n");
+    Files.writeString(tempDir.resolve("notes/visible.md"), "# Visible\n");
+    Files.writeString(tempDir.resolve("config/custom.yml"), """
+        version: 1
+        features:
+          local_markdown: true
+        documents:
+          include:
+            - notes/*.md
+          exclude:
+            - docs/secret-token-*.md
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--config", "config/custom.yml");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(projectMap.contains("\"config_file_path\": \"config/custom.yml\"")),
+        () -> assertTrue(projectMap.contains("\"config_file_status\": \"explicit\"")),
+        () -> assertTrue(projectMap.contains("\"user_includes_applied\": true")),
+        () -> assertTrue(projectMap.contains("\"user_include_count\": 1")),
+        () -> assertTrue(projectMap.contains("\"user_excludes_applied\": true")),
+        () -> assertTrue(projectMap.contains("\"user_exclude_count\": 1")),
+        () -> assertTrue(projectMap.contains("\"path\": \"docs/public.md\"")),
+        () -> assertTrue(projectMap.contains("\"path\": \"notes/visible.md\"")),
+        () -> assertTrue(projectMap.contains("\"discovery_source\": \"explicit_include\"")),
+        () -> assertFalse(projectMap.contains("notes/*.md")),
+        () -> assertFalse(projectMap.contains("secret-token")),
+        () -> assertFalse(projectMap.contains("FAKE_SECRET_TOKEN_MARKDOWN")),
+        () -> assertFalse(evidenceIndex.contains("notes/*.md")),
+        () -> assertFalse(evidenceIndex.contains("secret-token")),
+        () -> assertFalse(evidenceIndex.contains("FAKE_SECRET_TOKEN_MARKDOWN")),
+        () -> assertFalse(agentGuide.contains("notes/*.md")),
+        () -> assertFalse(agentGuide.contains("secret-token")),
+        () -> assertFalse(agentGuide.contains("FAKE_SECRET_TOKEN_MARKDOWN")));
+  }
+
+  @Test
+  void scanRejectsInvalidConfigBeforeCreatingOutputDirectory() throws Exception {
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        features:
+          generated_sources: true
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("reserved scan modes cannot be enabled")),
+        () -> assertFalse(result.stderr().contains("true")),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
 
   @Test

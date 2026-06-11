@@ -127,8 +127,9 @@ reconciliation hints, then writes:
 ```
 
 `project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.8"` and includes detected root `pom.xml` build metadata when
-present, Maven module inventory, module-owned source-visible Maven metadata under
+`schema_version: "0.9"` and includes redacted scan metadata for safe root-local config
+selection, detected root `pom.xml` build metadata when present, Maven module inventory,
+module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
 `dependency_management`, module-owned source-visible Maven plugin inventory under
@@ -158,10 +159,11 @@ configuration-properties, and bean method inventories,
 `spring_application_surface.behavior` transaction, scheduled, and event listener
 inventories, `spring_application_surface.messaging.listener_signals` inventories, and
 `spring_application_surface.security.configuration_warnings` warning-ID references, a
-top-level `documents` object with deterministic default-scope local Markdown discovery
-policy metadata, document inventory, ATX heading references, and bounded chunk
-references, conservative low-confidence reconciliation hints, and evidence ID
-references. The current Spring
+top-level `scan` object with redacted config, feature, path-policy, and diagnostic
+metadata, and a top-level `documents` object with deterministic default-scope local
+Markdown discovery policy metadata, document inventory, ATX heading references, and
+bounded chunk references, conservative low-confidence reconciliation hints, and evidence
+ID references. The current Spring
 application surface implementation emits
 repository, configuration-surface, behavior, and messaging facts, plus Spring Security
 configuration warning references when bounded source-visible signals are detected. The
@@ -311,6 +313,11 @@ and inferred tested-subject relations, deterministic default-scope local Markdow
 document discovery, inventory, ATX heading references, and bounded chunk references with
 safe path exclusions and no symlink following, conservative local Markdown/code
 reconciliation hints kept under `documents.reconciliation`, deterministic
+root-local `agent-project-memory.yml` config discovery with optional explicit
+`scan <path> --config <repo-relative-yaml>` selection, safe config defaults, local
+Markdown-only user include/exclude refinement, non-overridable built-in document safety
+exclusions, reserved generated-source and symlink-following modes rejected when enabled,
+redacted `scan` metadata that avoids raw config values and raw user path patterns,
 `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
@@ -505,6 +512,13 @@ Current limitations:
   from structured document facts and evidence; it does not read
   hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
   serialize document bodies.
+- Root-local scan configuration is limited to the current safe v0.9 YAML schema:
+  `version: 1`, optional `features.local_markdown`, reserved
+  `features.generated_sources: false` and `features.follow_symlinks: false`, and optional
+  `documents.include`/`documents.exclude` path rules. User include/exclude rules apply
+  only to local Markdown discovery through normalized repository-relative paths, cannot
+  override built-in safety exclusions, and are summarized only through redacted counts
+  and statuses in `scan` metadata.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,

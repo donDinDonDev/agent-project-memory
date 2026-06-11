@@ -2,6 +2,9 @@ package io.github.dondindondev.agentprojectmemory;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
+import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
@@ -11,14 +14,16 @@ import java.nio.file.Path;
 import java.util.Objects;
 
 public final class AgentProjectMemoryCli {
-  public static final String USAGE = "Usage: agent-project-memory scan <path>";
+  public static final String USAGE = "Usage: agent-project-memory scan <path> [--config <path>]";
   private static final String OUTPUT_DIRECTORY_NAME = ".project-memory";
   private static final int SUCCESS = 0;
   private static final int ERROR = 2;
+  private static final int INVALID_CONFIG = 4;
 
   private final PrintWriter out;
   private final PrintWriter err;
   private final SpringMvcEndpointOutputGenerator endpointOutputGenerator;
+  private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
     this(out, err, new SpringMvcEndpointOutputGenerator());
@@ -44,18 +49,42 @@ public final class AgentProjectMemoryCli {
       return usageError("Unknown command: " + args[0]);
     }
 
-    if (args.length < 2) {
-      return usageError("Missing path.");
+    ScanArgs scanArgs = scanArgs(args);
+    if (scanArgs.errorMessage() != null) {
+      return usageError(scanArgs.errorMessage());
     }
-
-    if (args.length > 2) {
-      return usageError("Unexpected extra arguments.");
-    }
-
-    return scan(args[1]);
+    return scan(scanArgs.path(), scanArgs.configPath());
   }
 
-  private int scan(String rawPath) {
+  private ScanArgs scanArgs(String[] args) {
+    if (args.length < 2) {
+      return new ScanArgs(null, null, "Missing path.");
+    }
+
+    String scanPath = args[1];
+    String configPath = null;
+    int index = 2;
+    while (index < args.length) {
+      String argument = args[index];
+      if (!"--config".equals(argument)) {
+        return new ScanArgs(null, null, "Unexpected extra arguments.");
+      }
+      if (configPath != null) {
+        return new ScanArgs(null, null, "Duplicate --config flag.");
+      }
+      if (index + 1 >= args.length) {
+        return new ScanArgs(null, null, "Missing --config value.");
+      }
+      configPath = args[index + 1];
+      index += 2;
+    }
+    return new ScanArgs(scanPath, configPath, null);
+  }
+
+  private int scan(String rawPath, String explicitConfigPath) {
+    if (rawPath == null) {
+      return usageError("Missing path.");
+    }
     Path projectPath;
     try {
       projectPath = Path.of(rawPath);
@@ -77,6 +106,16 @@ public final class AgentProjectMemoryCli {
       canonicalProjectPath = ScanPathContainment.canonicalRoot(normalizedProjectPath);
     } catch (IOException ex) {
       return scanError("Could not resolve scan root: " + rawPath);
+    }
+
+    ScanConfiguration scanConfiguration;
+    try {
+      scanConfiguration = scanConfigurationLoader.load(
+          normalizedProjectPath,
+          canonicalProjectPath,
+          explicitConfigPath);
+    } catch (InvalidScanConfigException ex) {
+      return invalidConfigError(ex.getMessage());
     }
 
     Path outputDirectory = normalizedProjectPath.resolve(OUTPUT_DIRECTORY_NAME);
@@ -112,7 +151,8 @@ public final class AgentProjectMemoryCli {
     try {
       SpringMvcEndpointOutputGenerator.Result result = endpointOutputGenerator.generate(
           normalizedProjectPath,
-          containedOutputDirectory);
+          containedOutputDirectory,
+          scanConfiguration);
       if (result.generated()) {
         out.println(
             "Generated project-map.json with "
@@ -149,5 +189,13 @@ public final class AgentProjectMemoryCli {
   private int scanError(String message) {
     err.println(message);
     return ERROR;
+  }
+
+  private int invalidConfigError(String message) {
+    err.println(message);
+    return INVALID_CONFIG;
+  }
+
+  private record ScanArgs(String path, String configPath, String errorMessage) {
   }
 }

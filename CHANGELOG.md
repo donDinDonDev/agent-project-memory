@@ -16,6 +16,20 @@ architecture documents.
   safe local Markdown defaults, reserved optional scan-mode toggles, stable help/version
   and exit-code behavior, bounded scan diagnostics, redacted scan metadata output, and
   the no-tool-config-evidence decision.
+- Added the first v0.9 config parser and safe-defaults implementation slice, including
+  root-local `agent-project-memory.yml` discovery, optional explicit
+  `scan <path> --config <repo-relative-yaml>` selection, required `version: 1` YAML
+  schema validation, safe local Markdown defaults, local Markdown-only user
+  include/exclude refinement, non-overridable built-in safety exclusions, reserved
+  generated-source and symlink-following mode rejection, and redacted `scan` metadata
+  without raw config values or raw user path patterns.
+
+### Changed
+
+- Updated generated `project-map.json` output to `schema_version: "0.9"` for the
+  config parser and safe-defaults slice, adding top-level redacted `scan` metadata while
+  preserving existing evidence semantics and keeping the tool config file out of
+  `evidence-index.jsonl`.
 
 ### Fixed
 

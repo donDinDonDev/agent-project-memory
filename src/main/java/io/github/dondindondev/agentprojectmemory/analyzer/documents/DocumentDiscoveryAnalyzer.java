@@ -82,8 +82,20 @@ public final class DocumentDiscoveryAnalyzer {
   public DocumentDiscoveryAnalysis analyze(
       Path repositoryRoot,
       List<MavenModuleItem> modules) throws IOException {
+    return analyze(repositoryRoot, modules, DocumentDiscoveryOptions.defaults());
+  }
+
+  public DocumentDiscoveryAnalysis analyze(
+      Path repositoryRoot,
+      List<MavenModuleItem> modules,
+      DocumentDiscoveryOptions options) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(modules, "modules");
+    Objects.requireNonNull(options, "options");
+
+    if (!options.localMarkdownEnabled()) {
+      return DocumentDiscoveryAnalysis.notAnalyzed(DEFAULT_POLICY);
+    }
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
@@ -161,6 +173,13 @@ public final class DocumentDiscoveryAnalyzer {
         normalizedRepositoryRoot.resolve("adrs"),
         ADR_TREE,
         supportedModuleRoots);
+    addExplicitIncludeCandidates(
+        candidates,
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        supportedModuleRoots,
+        options);
+    removeUserExcludedCandidates(candidates, options);
 
     List<AnalyzedDocument> analyzedDocuments = candidates.values().stream()
         .map(this::analyzedDocument)
@@ -177,6 +196,69 @@ public final class DocumentDiscoveryAnalyzer {
         DEFAULT_POLICY,
         documents,
         evidence);
+  }
+
+  private void addExplicitIncludeCandidates(
+      Map<String, CandidateDocument> candidates,
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      List<SupportedModuleRoot> supportedModuleRoots,
+      DocumentDiscoveryOptions options) throws IOException {
+    if (options.includes().isEmpty()) {
+      return;
+    }
+
+    List<Path> files = new ArrayList<>();
+    Files.walkFileTree(
+        repositoryRoot,
+        new SimpleFileVisitor<>() {
+          @Override
+          public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) {
+            if (!safeDirectory(repositoryRoot, dir, canonicalRepositoryRoot)
+                || isExcluded(repositoryRoot, dir)) {
+              return FileVisitResult.SKIP_SUBTREE;
+            }
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+            acceptedUserMarkdownFile(repositoryRoot, canonicalRepositoryRoot, file)
+                .filter(path -> options.includes().stream().anyMatch(pattern -> pattern.matches(path)))
+                .ifPresent(ignored -> files.add(file.toAbsolutePath().normalize()));
+            return FileVisitResult.CONTINUE;
+          }
+
+          @Override
+          public FileVisitResult visitFileFailed(Path file, IOException exception) {
+            return FileVisitResult.CONTINUE;
+          }
+        });
+
+    files.stream()
+        .sorted(Comparator.comparing(file -> repositoryRelativePath(repositoryRoot, file)))
+        .forEach(file -> {
+          String path = repositoryRelativePath(repositoryRoot, file);
+          Optional<SupportedModuleRoot> moduleRoot = owningModule(file, supportedModuleRoots);
+          candidates.putIfAbsent(
+              path,
+              new CandidateDocument(
+                  file,
+                  path,
+                  moduleRoot.map(SupportedModuleRoot::moduleId).orElse(null),
+                  moduleRoot.map(SupportedModuleRoot::moduleOrder).orElse(UNSCOPED_DOCUMENT_ORDER),
+                  "explicit_include"));
+        });
+  }
+
+  private void removeUserExcludedCandidates(
+      Map<String, CandidateDocument> candidates,
+      DocumentDiscoveryOptions options) {
+    if (options.excludes().isEmpty()) {
+      return;
+    }
+    candidates.entrySet().removeIf(entry ->
+        options.excludes().stream().anyMatch(pattern -> pattern.matches(entry.getKey())));
   }
 
   private void addReadmeCandidate(
@@ -282,6 +364,37 @@ public final class DocumentDiscoveryAnalyzer {
       return Optional.empty();
     }
     return Optional.of(repositoryRelativePath(repositoryRoot, normalizedFile));
+  }
+
+  private Optional<String> acceptedUserMarkdownFile(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path file) {
+    Path normalizedFile = file.toAbsolutePath().normalize();
+    String fileName = normalizedFile.getFileName().toString();
+    if (!(fileName.endsWith(".md") || fileName.endsWith(".markdown"))) {
+      return Optional.empty();
+    }
+    return acceptedMarkdownFile(repositoryRoot, canonicalRepositoryRoot, file, false)
+        .or(() -> {
+          if (fileName.endsWith(".markdown")
+              && safeRegularDocumentFile(repositoryRoot, canonicalRepositoryRoot, normalizedFile)) {
+            return Optional.of(repositoryRelativePath(repositoryRoot, normalizedFile));
+          }
+          return Optional.empty();
+        });
+  }
+
+  private boolean safeRegularDocumentFile(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path normalizedFile) {
+    return normalizedFile.startsWith(repositoryRoot)
+        && !Files.isSymbolicLink(normalizedFile)
+        && Files.isRegularFile(normalizedFile, LinkOption.NOFOLLOW_LINKS)
+        && !hasSymbolicLinkSegment(repositoryRoot, normalizedFile)
+        && ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, normalizedFile).isPresent()
+        && !isExcluded(repositoryRoot, normalizedFile);
   }
 
   private boolean safeDirectory(Path repositoryRoot, Path directory, Path canonicalRepositoryRoot) {

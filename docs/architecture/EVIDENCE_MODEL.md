@@ -1011,10 +1011,10 @@ Document reconciliation evidence:
   treated as stale-document proof, completeness proof, documentation-quality scoring, or
   implementation truth.
 
-### Planned v0.9 Scan Config Evidence Decision
+### v0.9 Scan Config Evidence Decision
 
-The planned v0.9 CLI/config contract does not add a tool-config evidence type, global
-evidence fields, or `evidence-index.jsonl` records for the selected
+The v0.9 CLI/config contract does not add a tool-config evidence type, global evidence
+fields, or `evidence-index.jsonl` records for the selected
 `agent-project-memory.yml` scan config file.
 
 The v0.9 scan config summary is execution metadata, not project evidence:
