@@ -471,15 +471,22 @@ Current implementation status:
   workflow are complete for the current v0.9 track.
 - Installation options research is complete for the current v0.9 track: the minimal
   planned v1.0 path remains a GitHub Release executable jar with optional `SHA256SUMS`
-  verification. Security baseline and release prep remain follow-up v0.9 goals.
+  verification.
 - Broader packaged CLI/config/performance evaluation is complete for the current v0.9
   development track. It covered default packaged scans, safe config include/exclude
   behavior, disabled local Markdown behavior, invalid config exit codes, help/version
   smoke, repeated output digest stability, and bounded local performance observations.
-  Security baseline and release prep remain follow-up v0.9 goals.
 - Local Markdown discovery, structure extraction, reconciliation mention observation,
   and reconciliation output now have deterministic aggregate caps with bounded
   non-fatal `scan.diagnostics` warnings when caps are reached.
+- Release-readiness security review follow-up is complete for the current v0.9 track,
+  including bounded hardening for path-rule matching, local Markdown aggregate limits,
+  OpenAPI/warning traversal, generated-source warning POM reads, and stable no-follow
+  spec/POM/root build-file reads.
+- Release-prep materials for `v0.9.0` are prepared locally for maintainer approval,
+  including Maven version alignment, release notes, README/changelog/roadmap status,
+  packaged CLI validation, and local jar/checksum verification. Tagging, GitHub Release
+  creation, artifact upload, and publication are not performed in this state.
 
 Planned contract boundary:
 
@@ -519,9 +526,8 @@ Planned contract boundary:
 - No tool-config evidence records in `evidence-index.jsonl`; the config summary is scan
   metadata, not project evidence. Existing `config_file` evidence remains limited to
   project application/logging config file presence facts.
-- Remaining v0.9 evaluation, security baseline, and release-prep work stay as follow-up
-  goals. Package-manager distribution channels remain future work unless explicitly
-  implemented and documented.
+- Package-manager distribution channels remain future work unless explicitly implemented
+  and documented.
 
 Non-goals include connector configuration, network or credential handling, global
 machine config, telemetry, update checks, plugin loading, package publication,
@@ -544,6 +550,21 @@ Installation options research outcome:
 Until one of those parked channels is implemented and documented in a release note,
 public install instructions should keep the release jar as the supported path and should
 not present package-manager commands as available.
+
+Release readiness notes:
+
+- Packaged CLI/config/performance evaluation is complete for default scans, safe
+  config include/exclude behavior, disabled local Markdown behavior, invalid config
+  exit codes, help/version smoke, repeated output digest stability, and bounded local
+  performance observations.
+- Release-readiness security review follow-up is complete with no remaining
+  release-blocking finding recorded for the current v0.9 release candidate.
+- Release notes exist in [V0_9_RELEASE_NOTES.md](V0_9_RELEASE_NOTES.md).
+- Release-prep validation passed with `mvn test`, `mvn package`, packaged CLI smoke,
+  local `SHA256SUMS` generation/verification, `git diff --check`, and public marker
+  audit.
+- Tag, GitHub Release creation, artifact upload, and publication are not performed in
+  this release-prep state.
 
 ## v1.0.0: Stable Java/Spring Local-First Project Memory
 

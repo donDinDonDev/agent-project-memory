@@ -2957,7 +2957,8 @@ config discovery, optional explicit config selection for `scan`, local Markdown-
 include/exclude refinement, reserved-mode rejection, redacted `scan` metadata, and the
 no-tool-config-evidence decision. It also includes help/version commands, bounded
 command validation, stable exit codes, concise scan stdout, and a bounded CLI diagnostic
-summary. Performance and distribution workflow polish remain later v0.9 goals.
+summary. Performance and distribution workflow polish do not add fields to this output
+shape.
 
 The v0.9 CLI/config contract uses:
 

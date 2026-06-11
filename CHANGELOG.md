@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-06-11
+
 ### Added
 
 - Added the planned v0.9 CLI/config contract design boundary, including root-local
@@ -49,6 +51,8 @@ architecture documents.
   stack-trace-free by default.
 - Extended `scan.diagnostics` and the concise CLI diagnostic summary to report bounded
   non-fatal warnings when aggregate local Markdown caps are reached.
+- Aligned release-prep README usage, roadmap status, release notes, output contract
+  wording, changelog, and Maven project version for `v0.9.0`.
 
 ### Fixed
 
@@ -61,6 +65,17 @@ architecture documents.
   accepted document count, accepted Markdown bytes, heading references, chunk references,
   reconciliation mention observations, and emitted reconciliation rows are now bounded,
   with skipped document-backed output represented by diagnostics rather than evidence.
+- Completed release-readiness security review follow-up with bounded hardening for
+  recursive scan config path-rule matching, local Markdown aggregate limits,
+  OpenAPI/warning traversal, generated-source warning POM reads, and stable no-follow
+  spec/POM/root build-file reads.
+
+### Not Included
+
+- Connectors, network access, telemetry, update checks, plugin loading, package-manager
+  publication, global machine config, generated-source scanning by default, symlink
+  following, SaaS, web UI, repository chat, generic RAG, LLM calls in the core analyzer,
+  or automatic code modification.
 
 ## [0.8.0] - 2026-06-11
 

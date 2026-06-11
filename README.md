@@ -30,13 +30,14 @@ services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.8.0` release artifact is `agent-project-memory-0.8.0.jar`; release assets use
-`SHA256SUMS` for optional checksum verification. After downloading both files into the
-same directory:
+The `v0.9.0` release candidate is prepared for maintainer approval but is not tagged or
+published yet. When published, the expected release artifact is
+`agent-project-memory-0.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
+verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-0.9.0.jar scan /path/to/java-spring-project
 ```
 
 This release-jar path is also the minimum planned installation path through v1.0:
@@ -62,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.8.0.jar
+target/agent-project-memory-0.9.0.jar
 ```
 
 The release artifact smoke and checksum workflow is documented in
@@ -73,17 +74,17 @@ The release artifact smoke and checksum workflow is documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.8.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-0.9.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-0.8.0.jar --help
-java -jar target/agent-project-memory-0.8.0.jar help
-java -jar target/agent-project-memory-0.8.0.jar scan --help
-java -jar target/agent-project-memory-0.8.0.jar --version
-java -jar target/agent-project-memory-0.8.0.jar version
+java -jar target/agent-project-memory-0.9.0.jar --help
+java -jar target/agent-project-memory-0.9.0.jar help
+java -jar target/agent-project-memory-0.9.0.jar scan --help
+java -jar target/agent-project-memory-0.9.0.jar --version
+java -jar target/agent-project-memory-0.9.0.jar version
 ```
 
 CLI exit codes are stable for automation:
@@ -256,6 +257,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v0.9 release summary: [docs/product/V0_9_RELEASE_NOTES.md](docs/product/V0_9_RELEASE_NOTES.md).
 - v0.8 release summary: [docs/product/V0_8_RELEASE_NOTES.md](docs/product/V0_8_RELEASE_NOTES.md).
 - v0.7 release summary: [docs/product/V0_7_RELEASE_NOTES.md](docs/product/V0_7_RELEASE_NOTES.md).
 - v0.6 release summary: [docs/product/V0_6_RELEASE_NOTES.md](docs/product/V0_6_RELEASE_NOTES.md).
@@ -328,6 +330,12 @@ generated output to `schema_version: "0.8"` with deterministic default-scope loc
 Markdown discovery, document inventory, ATX heading and chunk references, resolving
 `document` evidence, conservative `documents.reconciliation` uncertain inspection
 hints, and compact local-document guide rendering.
+The v0.9 CLI, config, performance, and distribution readiness release candidate is
+prepared for maintainer approval but is not tagged or published yet. It moves normal
+generated output to `schema_version: "0.9"` with redacted scan metadata for safe
+root-local config selection, stable CLI help/version and exit-code behavior, local
+Markdown-only include/exclude refinement, aggregate local Markdown caps, bounded
+diagnostics, and the repeatable release jar plus `SHA256SUMS` workflow.
 
 The current implementation includes a Java 21 Maven CLI, root-declared Maven module
 discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
