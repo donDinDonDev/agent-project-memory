@@ -63,7 +63,7 @@ wildcard-origin rule, no-domain guide rendering behavior, and evidence boundarie
 
 ## Validation
 
-This release-prep pass ran and passed the required local release checks:
+The v0.6 validation record passed:
 
 - `mvn test`: 244 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 244 tests, 0 failures, 0 errors, 0 skipped, plus packaged CLI smoke.
@@ -71,17 +71,17 @@ This release-prep pass ran and passed the required local release checks:
   embedded Maven metadata reports `version=0.6.0`, and the manifest includes
   `Main-Class: io.github.dondindondev.agentprojectmemory.Main`.
 - `git diff --check`: passed.
-- `git diff --stat`: run for the release-prep diff.
+- Documentation/version consistency review for release documentation and version state.
 - release notes, changelog, README, roadmap, output contract, and evidence model
   consistency review
 
-Earlier v0.6 release-track checks supporting this release:
+Additional v0.6 validation supporting this release:
 
 - focused analyzer, output, guide, fixture, and golden checks across the v0.6
   implementation slices;
 - v0.6 real-project evaluation on pinned Spring PetClinic, Spring PetClinic REST, Spring
   PetClinic Microservices, and Spring Cloud OpenFeign targets;
-- risk-based implementation and follow-up review gates.
+- implementation and follow-up review gates.
 
 Public evaluation summary:
 [docs/development/evaluations/v0.6-jpa-domain-real-projects_SUMMARY.md][v0.6-eval].

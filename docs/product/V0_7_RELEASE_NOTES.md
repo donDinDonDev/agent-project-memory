@@ -64,7 +64,7 @@ boundaries, and non-goals.
 
 ## Validation
 
-This release-prep pass ran and passed the required local release checks:
+The v0.7 validation record passed:
 
 - `mvn test`: 254 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 254 tests, 0 failures, 0 errors, 0 skipped, plus packaged CLI smoke.
@@ -74,11 +74,11 @@ This release-prep pass ran and passed the required local release checks:
 - Separate packaged CLI smoke with `target/agent-project-memory-0.7.0.jar`: generated
   `project-map.json`, `endpoints.md`, `evidence-index.jsonl`, and `agent-guide.md`.
 - `git diff --check`: passed.
-- `git diff --stat`: run for the release-prep diff.
+- Documentation/version consistency review for release documentation and version state.
 - release notes, changelog, README, roadmap, output contract, and evidence model
   consistency review.
 
-Earlier v0.7 release-track checks supporting this release:
+Additional v0.7 validation supporting this release:
 
 - focused analyzer, output, guide, fixture, and golden checks across the v0.7
   implementation slices;

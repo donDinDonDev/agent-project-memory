@@ -70,7 +70,7 @@ document discovery policy, heading/chunk semantics, reconciliation uncertainty,
 
 ## Validation
 
-This release-prep pass ran and passed the required local release checks:
+The v0.8 validation record passed:
 
 - `mvn test`: 278 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 278 tests, 0 failures, 0 errors, 0 skipped, plus packaged CLI smoke.
@@ -80,11 +80,11 @@ This release-prep pass ran and passed the required local release checks:
 - Separate packaged CLI smoke with `target/agent-project-memory-0.8.0.jar`: generated
   `project-map.json`, `endpoints.md`, `evidence-index.jsonl`, and `agent-guide.md`.
 - `git diff --check`: passed.
-- `git diff --stat`: run for the release-prep diff.
+- Documentation/version consistency review for release documentation and version state.
 - release notes, changelog, README, roadmap, output contract, and evidence model
   consistency review.
 
-Earlier v0.8 release-track checks supporting this release:
+Additional v0.8 validation supporting this release:
 
 - focused analyzer, output, guide, fixture, and golden checks across the v0.8
   implementation slices;

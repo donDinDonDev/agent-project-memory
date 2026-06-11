@@ -65,30 +65,29 @@ The generated files remain:
 `docs/architecture/EVIDENCE_MODEL.md` already describe the generated v0.5 output shape,
 warning references, messaging destination-value exclusion, Spring Security warning
 semantics, and evidence boundaries. No contract or evidence-model change was required
-for this release-prep pass.
+for the final release documentation update.
 
 ## Validation
 
-This release-prep pass ran and passed the full test suite, package build, packaged CLI
-smoke test, jar metadata inspection, Markdown whitespace checks, release-prep diff
-review, and publication verification. The published `v0.5.0` release includes the
-expected jar and checksum assets, downloaded assets verify against `SHA256SUMS`, and
-embedded Maven metadata reports `version=0.5.0`.
+The v0.5 validation record covers the full test suite, package build, packaged CLI
+smoke test, jar metadata inspection, Markdown whitespace checks, documentation/version
+consistency review, and publication verification. The published `v0.5.0` release
+includes the expected jar and checksum assets, downloaded assets verify against
+`SHA256SUMS`, and embedded Maven metadata reports `version=0.5.0`.
 
-Earlier v0.5 release-track checks supporting this release:
+Additional v0.5 validation supporting this release:
 
 - v0.5 real-project evaluation on five pinned Java/Spring targets.
-- v0.5 review and risk-based security assessment over the implementation range.
+- v0.5 review and security assessment over the changed implementation surface.
 
 Public evaluation summary:
 [docs/development/evaluations/v0.5-spring-application-surface-real-projects_SUMMARY.md](../development/evaluations/v0.5-spring-application-surface-real-projects_SUMMARY.md).
 
-The v0.5 implementation-range security assessment reported no release-blocking
-findings.
+The v0.5 security assessment reported no release-blocking findings.
 
-The final release-prep assessment was narrow because release prep changed only release
+The final documentation and version-state assessment was narrow because only release
 documentation, changelog, README/status wording, the Maven project version, and release
-state; the implementation range had already been reviewed.
+state changed after the implementation review.
 
 ## Security Notes
 
@@ -104,14 +103,14 @@ v0.5.0 keeps the deterministic local analyzer boundary:
 - no Spring Security policy, endpoint protection, authentication, authorization,
   vulnerability, or correctness claims.
 
-The release-prep evidence-excerpt decision is resolved for this release: bounded source annotation evidence
-excerpts for `@ConfigurationProperties` and inherited test annotations remain
+The evidence-excerpt decision is resolved for this release: bounded source annotation
+evidence excerpts for `@ConfigurationProperties` and inherited test annotations remain
 acceptable for v0.5. They are bounded source-local evidence excerpts, not structured
 `prefix`/`value` output fields or configuration value extraction. The v0.5 evaluation
 found no secret-looking values in the checked generated artifacts, and the
-implementation-range security assessment did not classify this as a reportable finding. A future
-evidence-hardening follow-up may still evaluate symbol-only excerpts, but it is not
-required before v0.5.0 release.
+security assessment did not classify this as a reportable finding. A future
+evidence-hardening follow-up may still evaluate symbol-only excerpts, but it was not
+required for v0.5.0.
 
 ## Not Included
 

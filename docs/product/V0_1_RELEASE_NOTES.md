@@ -103,10 +103,8 @@ outputs instead of presenting it as a direct fact.
 
 ## Validation
 
-The v0.1 release-readiness documentation pass validates working-tree scope, public-doc
-marker hygiene, Markdown whitespace, the full test suite, and package generation with
-`git status --short`, `rg`, `git diff --check`, `mvn test`, `mvn package`, and
-`git diff --stat`.
+The v0.1 validation record covers tracked change scope, public documentation hygiene,
+Markdown whitespace, the full test suite, and package generation.
 
 `mvn package` produces the executable shaded CLI jar at:
 

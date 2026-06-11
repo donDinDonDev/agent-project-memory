@@ -56,29 +56,28 @@ The generated files remain:
 
 ## Validation
 
-This release-prep pass ran and passed:
+The v0.4 validation record passed:
 
 - `mvn test`: 202 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 202 tests, 0 failures, 0 errors, 0 skipped.
 - Packaged CLI smoke from the Maven build: generated `project-map.json`,
   `endpoints.md`, `evidence-index.jsonl`, and `agent-guide.md`.
 - `git diff --check`: passed.
-- `git diff --stat`: run for the release-prep diff.
+- Documentation/version consistency review for the release update.
 
-Earlier v0.4 release-track checks supporting this release:
+Additional v0.4 validation supporting this release:
 
 - v0.4 real-project evaluation on pinned Java/Spring Maven projects
-- v0.4 review and risk-based security assessment
+- v0.4 review and security assessment
 
 Public evaluation summary:
 [docs/development/evaluations/v0.4-api-surface-real-projects_SUMMARY.md](../development/evaluations/v0.4-api-surface-real-projects_SUMMARY.md).
 
-The v0.4 implementation-range security assessment reported no release-blocking
-findings.
+The v0.4 security assessment reported no release-blocking findings.
 
-The final release-prep assessment was narrow because release prep changed only release
-documentation, changelog, README/status wording, and the Maven project version; the
-implementation range had already been reviewed.
+The final documentation and version-state assessment was narrow because only release
+documentation, changelog, README/status wording, and the Maven project version changed
+after the implementation review.
 
 ## Security Notes
 
@@ -142,6 +141,6 @@ The `v0.4.0` tag and GitHub release are published:
 - Jar SHA-256:
   `5a7944704727a2e6b28eeffa04027a3dbc47c3da3ec8141890243716ee479992`.
 
-Post-publish verification confirmed that the remote tag points to the intended release
+Publication verification confirmed that the remote tag points to the intended release
 commit, the release is not a draft or prerelease, the expected assets are attached, and
 the published checksum verifies the downloaded jar.

@@ -11,9 +11,9 @@ v0.2 is the module-aware Maven release track for the local-first Java/Spring CLI
 The `v0.2.0` tag and GitHub release are published with the packaged CLI jar and
 `SHA256SUMS` assets. The release version and README artifact references are aligned to
 `0.2.0`.
-The required release-candidate security baseline completed for the v0.2 release line.
-Its findings were fixed, no release-blocking security findings remain, and targeted
-verification was used for known findings and release-readiness checks.
+The v0.2 security review completed for the release line. Its findings were fixed, no
+release-blocking security findings remain, and targeted verification covered the known
+findings and release validation.
 
 ## Scope
 
@@ -124,17 +124,10 @@ outputs instead of presenting it as a direct fact.
 
 ## Validation
 
-The v0.2 release-readiness pass ran:
+The v0.2 validation record covers tracked change scope, Markdown whitespace, the full
+test suite, package generation, and documentation/version consistency review.
 
-```sh
-git status --short
-git diff --check
-mvn test
-mvn package
-git diff --stat
-```
-
-The active release track's release-candidate security baseline completed. Its findings
-were fixed, and no additional broad security review was required for `v0.2.0`.
+The v0.2 security review completed. Its findings were fixed, and no additional broad
+security review was required for `v0.2.0`.
 
 Binary release artifact names match the maintainer-approved release version in `pom.xml`.

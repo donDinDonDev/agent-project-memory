@@ -54,21 +54,15 @@ The generated files remain:
 
 ## Validation
 
-Release-prep validation covered:
-
-- `mvn test`
-- `mvn package`
-- packaged CLI smoke from the Maven build
-- `git diff --check`
-- `git diff --stat`
-- v0.3 real-project evaluation on pinned Maven Java/Spring projects
-- v0.3 review and risk-based security assessment
-- final post-fix release security baseline
+The v0.3 validation record covers the full test suite, package generation, packaged CLI
+smoke from the Maven build, Markdown whitespace, documentation/version consistency
+review, real-project evaluation on pinned Maven Java/Spring projects, public review, and
+security assessment.
 
 Public evaluation summary:
 [docs/development/evaluations/v0.3-build-config-real-projects_SUMMARY.md](../development/evaluations/v0.3-build-config-real-projects_SUMMARY.md).
 
-The final post-fix release security baseline reported no release-blocking findings.
+The final v0.3 security assessment reported no release-blocking findings.
 
 ## Security Notes
 
