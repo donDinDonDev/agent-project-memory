@@ -136,7 +136,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.documentCount()),
-        () -> assertEquals("0.9", JSON.readTree(projectMap).path("schema_version").asText()),
+        () -> assertEquals("1.0", JSON.readTree(projectMap).path("schema_version").asText()),
         () -> assertEquals("analyzed", documents.path("analysis_status").asText()),
         () -> assertEquals("not_detected", reconciliation.path("analysis_status").asText()),
         () -> assertEquals(0, reconciliation.path("items").size()),
@@ -1272,7 +1272,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(0, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertEquals("analyzed", apiSurface.path("analysis_status").asText()),
         () -> assertEquals("analyzed", specFiles.path("analysis_status").asText()),
         () -> assertEquals(1, specFiles.path("items").size()),
@@ -1557,7 +1557,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(2, result.endpointCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"api_surface_category\": \"source_visible_spring_mvc_endpoint\"")),
         () -> assertTrue(projectMap.contains("\"source_visible_spring_mvc_endpoints\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
@@ -1635,7 +1635,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"source_roots\": []")),
         () -> assertTrue(projectMap.contains("\"test_roots\": []")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"missing_child_pom\"")),
@@ -1705,7 +1705,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
     assertAll(
         () -> assertTrue(result.generated()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.indexOf("\"module_id\": \"module:services/alpha\"")
             < projectMap.indexOf("\"module_id\": \"module:services/zeta\"")),
         () -> assertEquals("analyzed", alphaBuildConfig.path("analysis_status").asText()),
@@ -2194,7 +2194,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(0, result.componentCount()),
         () -> assertEquals(0, result.entityCount()),
         () -> assertEquals(0, result.testCount()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"support_status\": \"unsupported\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),

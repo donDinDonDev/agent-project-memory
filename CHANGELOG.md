@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated normal generated `project-map.json` output to `schema_version: "1.0"` as a
+  schema marker and compatibility-policy migration, preserving the current v0.9 output
+  shape, scan metadata, and evidence semantics without adding analyzer capability or
+  changing `evidence-index.jsonl` behavior.
+
 ## [0.9.0] - 2026-06-11
 
 ### Added

@@ -160,9 +160,10 @@ reconciliation hints, then writes:
 <path>/.project-memory/agent-guide.md
 ```
 
-`project-map.json` is the minimal stable machine-readable project map. It currently uses
-`schema_version: "0.9"` and includes redacted scan metadata for safe root-local config
-selection, detected root `pom.xml` build metadata when present, Maven module inventory,
+`project-map.json` is the minimal stable machine-readable project map. Current
+development output uses `schema_version: "1.0"` and includes redacted scan metadata for
+safe root-local config selection, detected root `pom.xml` build metadata when present,
+Maven module inventory,
 module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
@@ -303,7 +304,10 @@ references.
 ## Project Status
 
 The latest published release is `v0.9.0`. It ships an executable jar and `SHA256SUMS`
-asset, and normal generated `project-map.json` output uses `schema_version: "0.9"`.
+asset. Current post-v0.9 development output uses `schema_version: "1.0"` for normal
+generated `project-map.json` files as a marker and compatibility-policy migration. The
+v1.0 schema marker preserves the current v0.9 output shape and evidence semantics unless
+a later release note and architecture update explicitly change them.
 
 The current release line includes module-aware Maven analysis, build/config orientation,
 source-visible Spring MVC and application-surface signals, declared OpenAPI operations,
@@ -556,7 +560,7 @@ Current limitations:
   evidence; it does not read
   hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
   serialize document bodies.
-- Root-local scan configuration is limited to the current safe v0.9 YAML schema:
+- Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, and optional
   `documents.include`/`documents.exclude` path rules. User include/exclude rules apply

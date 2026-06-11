@@ -1046,6 +1046,19 @@ which local Markdown files are discovered, but the rule itself does not prove a 
 fact. Accepted local Markdown files still require normal `document` evidence, and
 source-backed Java/Maven/API/test facts still require their existing source evidence.
 
+### v1.0 Schema Marker Evidence Compatibility
+
+The v1.0 `project-map.json` schema marker does not add evidence types, evidence fields,
+evidence records, confidence labels, excerpt semantics, path semantics, or tool-config
+evidence. Normal generated output with `schema_version: "1.0"` preserves the current
+v0.9 evidence semantics, including the no-tool-config-evidence decision for
+`agent-project-memory.yml` and the existing `document` evidence boundary for local
+Markdown observations.
+
+Any later v1.x evidence shape or semantic change must update this document,
+`OUTPUT_CONTRACT.md`, focused tests or goldens, changelog entries, and release notes in
+the same logical change.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

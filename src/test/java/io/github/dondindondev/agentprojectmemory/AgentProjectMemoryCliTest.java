@@ -233,7 +233,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"scan\": {")),
         () -> assertTrue(projectMap.contains("\"source\": \"defaults_only\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
@@ -281,7 +281,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Generated agent-guide.md")),
         () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
         () -> assertFalse(result.stdout().contains(projectPath.toString())),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"spring_application_surface\": {")),
         () -> assertTrue(projectMap.contains("\"modules\": {")),
         () -> assertTrue(projectMap.contains("\"api_surface\": {")),
@@ -330,7 +330,7 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
-        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(rewrittenProjectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertFalse(rewrittenProjectMap.contains("stale generated content")));
   }
 
@@ -361,7 +361,7 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
-        () -> assertTrue(projectMap.contains("\"schema_version\": \"0.9\"")),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"source\": \"config_file\"")),
         () -> assertTrue(projectMap.contains("\"config_file_path\": \"agent-project-memory.yml\"")),
         () -> assertTrue(projectMap.contains("\"config_file_status\": \"applied\"")),

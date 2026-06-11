@@ -31,18 +31,21 @@ mapping reconstruction.
 ## `project-map.json`
 
 `project-map.json` is the machine-readable project memory file. The current implemented
-public contract is the v0.9 config parser and safe-defaults slice layered on top of the
-v0.8 local Markdown discovery and structure slice, the v0.7 tests inventory refinement
-slice, the v0.6 JPA/domain model
+public contract uses the v1.0 schema marker and compatibility policy layered on top of
+the v0.9 config parser and safe-defaults slice, the v0.8 local Markdown discovery and
+structure slice, the v0.7 tests inventory refinement slice, the v0.6 JPA/domain model
 slice, the v0.5 Spring application surface slices, the v0.4 API surface slice, and the
 v0.3 module-aware Maven metadata, dependency, and plugin inventory contract. The preserved
 v0.7 contract also emits direct Spring test slice and mock annotation signals and
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current v0.9 implementation emits `schema_version: "0.9"` with a top-level `scan`
-owner for redacted config, feature, path-policy, and diagnostic metadata. It discovers a
-root-local `agent-project-memory.yml` config file or an explicitly selected
+The current v1.0 implementation emits `schema_version: "1.0"` with a top-level `scan`
+owner for redacted config, feature, path-policy, and diagnostic metadata. The v1.0
+marker preserves the current v0.9 output field shape and evidence semantics; it does
+not add, remove, rename, or redesign output fields and does not change
+`evidence-index.jsonl` semantics. It discovers a root-local
+`agent-project-memory.yml` config file or an explicitly selected
 repository-relative YAML config, validates the bounded config schema, applies safe
 defaults, and applies user include/exclude rules only to local Markdown discovery while
 preserving non-overridable built-in safety exclusions. It preserves the v0.8
@@ -2949,15 +2952,48 @@ Current v0.8 deterministic sorting rules:
 - Reconciliation signals sort by signal, module order when a source module is available,
   subject kind, subject name, document path, and ID.
 
+### v1.0 Schema Marker And Compatibility Policy
+
+Current normal generated `project-map.json` output uses:
+
+```json
+{
+  "schema_version": "1.0"
+}
+```
+
+The v1.0 schema marker is a compatibility-policy marker over the v0.9 output shape, not
+a broad schema redesign. It preserves:
+
+- the same four output files under `.project-memory/`;
+- the v0.9 top-level `scan` metadata owner and redaction rules;
+- the v0.8 local Markdown/document inventory, heading, chunk, reconciliation, and guide
+  rendering boundaries;
+- the v0.7 tests and quality planning-hint boundaries;
+- the v0.6 JPA/domain, v0.5 Spring application surface, v0.4 API surface, and v0.3
+  Maven/build/config output boundaries;
+- the current evidence field set, evidence types, evidence ID resolution rules,
+  confidence labels, excerpt boundaries, and normalized repository-relative path rules.
+
+The marker change does not add output fields, remove output fields, rename fields,
+change Markdown compatibility, change analyzer behavior, create tool-config evidence,
+or change evidence semantics. Consumers that already understand the v0.9 generated
+shape should treat `schema_version: "1.0"` as the same output and evidence semantics
+with a stable-line marker.
+
+Any later v1.x field addition, field removal, field rename, evidence shape change, or
+evidence semantic change must update this document, `EVIDENCE_MODEL.md`, focused tests
+or goldens, changelog entries, and release notes in the same logical change.
+
 ### v0.9 CLI And Scan Configuration Contract
 
-This section defines the v0.9 public output boundary for CLI/config behavior. The
-current implementation includes the config parser and safe-defaults slice: root-local
-config discovery, optional explicit config selection for `scan`, local Markdown-only
+This section defines the v0.9 public output boundary for CLI/config behavior. The v0.9
+implementation included the config parser and safe-defaults slice: root-local config
+discovery, optional explicit config selection for `scan`, local Markdown-only
 include/exclude refinement, reserved-mode rejection, redacted `scan` metadata, and the
-no-tool-config-evidence decision. It also includes help/version commands, bounded
+no-tool-config-evidence decision. It also included help/version commands, bounded
 command validation, stable exit codes, concise scan stdout, and a bounded CLI diagnostic
-summary. Performance and distribution workflow polish do not add fields to this output
+summary. Performance and distribution workflow polish did not add fields to this output
 shape.
 
 The v0.9 CLI/config contract uses:

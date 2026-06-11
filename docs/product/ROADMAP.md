@@ -3,7 +3,10 @@
 ## Current Status
 
 The latest published release is `v0.9.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` output uses `schema_version: "0.9"`.
+Current post-v0.9 development output uses `schema_version: "1.0"` for normal generated
+`project-map.json` files as a marker and compatibility-policy migration. The v1.0 marker
+preserves the current v0.9 output shape and evidence semantics unless a later release
+note and architecture update explicitly change them.
 
 The current v0.x release line includes module-aware Maven analysis, build/config
 orientation, source-visible Spring MVC and application-surface signals, declared
@@ -417,7 +420,7 @@ Product outcome: make the local CLI predictable, safely configurable, and easier
 evaluate before the v1.0 stabilization track, without weakening the local-first
 deterministic analyzer boundary.
 
-Current implementation status:
+Published v0.9 implementation status:
 
 - The config parser and safe-defaults slice is implemented for root-local
   `agent-project-memory.yml` discovery and optional explicit
@@ -426,8 +429,8 @@ Current implementation status:
   `features.local_markdown`, reserved `features.generated_sources: false` and
   `features.follow_symlinks: false`, and optional `documents.include` /
   `documents.exclude` rules for local Markdown discovery only.
-- Generated `project-map.json` uses `schema_version: "0.9"` with redacted `scan`
-  metadata. The selected tool config is not evidence and does not create
+- Published v0.9 generated `project-map.json` output uses `schema_version: "0.9"` with
+  redacted `scan` metadata. The selected tool config is not evidence and does not create
   `evidence-index.jsonl` records.
 - CLI help/version commands, bounded command validation, stable exit codes, concise scan
   summaries, and packaged help/version validation are implemented for the current
@@ -533,6 +536,14 @@ Release readiness notes:
 
 v1.0 should stabilize the public Java/Spring Maven project-memory product. It is a
 contract and reliability milestone, not just a feature milestone.
+
+Current development status:
+
+- Normal generated `project-map.json` output uses `schema_version: "1.0"` as a schema
+  marker and compatibility-policy migration over the v0.9 output shape.
+- The v1.0 schema marker preserves current v0.9 evidence semantics. It does not add
+  analyzer capability, change evidence fields, change evidence types, or redesign
+  Markdown compatibility by itself.
 
 Expected readiness:
 
