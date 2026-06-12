@@ -1,6 +1,10 @@
 # Non-Goals
 
-This document protects the v0.1 scope. Items listed here may be useful later, but they are not part of the first MVP.
+This document records the historical v0.1 non-goals and the product boundaries that
+still keep the project focused on deterministic local Java/Spring memory. Items listed
+here may be useful later, but they are not part of the first MVP and should become
+current behavior only through an explicit roadmap, contract, tests, and release-note
+change.
 
 ## Non-Goals For v0.1
 
@@ -41,4 +45,6 @@ These may become useful after the deterministic Java/Spring core is proven:
 - IDE integration.
 - Hosted collaboration features.
 
-None of these should be implemented before v0.1 has stable local scanning, evidence-backed outputs, and tests against fixture Spring projects.
+None of these should be treated as current behavior until a scoped release track
+documents the user-facing behavior, output/evidence implications, tests, limitations,
+and release status.

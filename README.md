@@ -17,8 +17,8 @@ The current product focus is intentionally narrow:
 - Deterministic source analysis as the source of truth.
 - Optional AI assistance later, outside the core analyzer.
 
-The first version is a local-first CLI. Source code must not be sent to external
-services by default.
+The supported product line is a local-first CLI. Source code must not be sent to
+external services by default.
 
 ## Requirements
 
@@ -30,17 +30,19 @@ services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The `v0.9.0` release artifact is `agent-project-memory-0.9.0.jar`; release assets use
-`SHA256SUMS` for optional checksum verification.
+The latest published release is `v0.9.0`. Its release artifact is
+`agent-project-memory-0.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
+verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
 java -jar agent-project-memory-0.9.0.jar scan /path/to/java-spring-project
 ```
 
-This release-jar path is also the minimum planned installation path through v1.0:
-download the executable jar from GitHub Releases, optionally verify `SHA256SUMS`, and
-run it with `java -jar`. Package-manager installs and a first-party installed
+For published releases, the supported installation path is the executable jar from
+GitHub Releases: download the jar, optionally verify `SHA256SUMS`, and run it with
+`java -jar`. The v1.0 stabilization track keeps this release-jar path as the minimum
+planned distribution path. Package-manager installs and a first-party installed
 `agent-project-memory` command are future distribution work and should not be assumed
 available until a release note documents them.
 
@@ -281,6 +283,8 @@ Start here:
 - v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
 - v0.2 release summary: [docs/product/V0_2_RELEASE_NOTES.md](docs/product/V0_2_RELEASE_NOTES.md).
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
+- v1.0 evaluation corpus summary:
+  [docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md](docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
 - Product direction and release tracks:
@@ -320,17 +324,18 @@ references.
 ## Project Status
 
 The latest published release is `v0.9.0`. It ships an executable jar and `SHA256SUMS`
-asset. Current post-v0.9 development output uses `schema_version: "1.0"` for normal
-generated `project-map.json` files as a marker and compatibility-policy migration. The
-v1.0 schema marker preserves the current v0.9 output shape and evidence semantics unless
-a later release note and architecture update explicitly change them.
+asset. There is not yet a published `v1.0.0` release in this repository state. Current
+post-v0.9 development output uses `schema_version: "1.0"` for normal generated
+`project-map.json` files as a marker and compatibility-policy migration. The v1.0
+schema marker preserves the current v0.9 output shape and evidence semantics unless a
+later release note and architecture update explicitly change them.
 
-The current release line includes module-aware Maven analysis, build/config orientation,
-source-visible Spring MVC and application-surface signals, declared OpenAPI operations,
-bounded JPA/domain metadata, source-visible test and quality planning signals,
-default-scope local Markdown document inventory, redacted scan metadata, safe root-local
-YAML config support, stable CLI help/version behavior, and documented release-jar
-verification.
+The current Java/Spring line includes module-aware Maven analysis, build/config
+orientation, source-visible Spring MVC and application-surface signals, declared OpenAPI
+operations, bounded JPA/domain metadata, source-visible test and quality planning
+signals, default-scope local Markdown document inventory, redacted scan metadata, safe
+root-local YAML config support, stable CLI help/version behavior, and documented
+release-jar verification.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future connector/import work remains a later optional adapter track

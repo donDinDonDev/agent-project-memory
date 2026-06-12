@@ -8,13 +8,16 @@ The core analyzer must not depend on external APIs. It should be able to scan a 
 
 ### CLI
 
-Accepts user commands and local repository paths. The intended first command is:
+Accepts user commands and local repository paths. Published binary usage currently runs
+the executable release jar:
 
 ```sh
-agent-project-memory scan .
+java -jar agent-project-memory-X.Y.Z.jar scan .
 ```
 
-The CLI should coordinate scanning and artifact generation. It should not contain analyzer logic directly.
+A future installed `agent-project-memory scan .` command may wrap the same CLI after a
+separate distribution-channel release documents it. The CLI should coordinate scanning
+and artifact generation. It should not contain analyzer logic directly.
 
 ### Repository Scanner
 
@@ -63,10 +66,10 @@ facts.
 
 ### Java/Spring Analyzer
 
-Uses JavaParser first to inspect Java source files. The current implementation extracts
-Spring MVC endpoint facts, deterministic hidden HTTP surface warnings, direct Spring
-stereotype component facts, and direct JPA entity facts from supported production source
-roots.
+Uses JavaParser first to inspect Java source files. The current analyzer family
+extracts source-visible Spring MVC endpoint facts, deterministic hidden HTTP surface
+warnings, direct Spring stereotype component facts, Spring application-surface signals,
+direct JPA/domain facts, and bounded test inventory facts from supported Maven roots.
 
 The v0.1 endpoint contract includes Spring MVC mappings declared on Java interface
 methods only when those interfaces are visible under supported production source roots
@@ -127,9 +130,10 @@ Builds a structured project map from extracted facts. The graph should describe 
 
 ### Evidence Index Builder
 
-Creates stable evidence records for important facts. The current v0.1 implementation
-emits evidence for build files, code symbols, annotations, and test files. Future
-ingestors may add document evidence.
+Creates stable evidence records for important facts. The current implementation emits
+evidence for build files, code symbols, annotations, supported config-file paths, local
+API specs, generated-source path signals, test files, and accepted local Markdown
+document observations.
 
 ### Memory Generator
 
@@ -142,15 +146,17 @@ Writes human-readable and agent-oriented Markdown artifacts such as `endpoints.m
 `endpoints.md` is generated directly from deterministic endpoint facts. `agent-guide.md`
 is generated from `project-map.json` and `evidence-index.jsonl`, or from the same
 structured in-memory facts that are serialized to those files. The guide generator does
-not re-analyze source files, call LLMs, call external services, or ingest local
-documentation.
+not re-analyze source files, call LLMs, call external services, or read documents outside
+the structured local-document facts emitted by the analyzer.
 
 These files must not invent architecture beyond the extracted facts, documented
 inferences, and explicitly labeled uncertainty.
 
-### Future Docs/Issues Ingestors
+### Local Docs And Future Issue Ingestors
 
-Future ingestors may import local Markdown docs or external materials from systems such as YouTrack, Jira, Confluence, GitHub, and GitLab.
+The current local Markdown ingestor handles a conservative default scope and keeps
+document facts separate from code-backed facts. Future external ingestors may import
+materials from systems such as YouTrack, Jira, Confluence, GitHub, and GitLab.
 
 Connectors are input adapters. They should normalize external records into source documents and should not become part of the core Java/Spring analyzer.
 
@@ -169,6 +175,7 @@ local repository
   -> repository scanner
   -> build detector
   -> Java/Spring analyzers
+  -> local Markdown/document analyzer
   -> project graph builder
   -> evidence index builder
   -> memory and agent file generators

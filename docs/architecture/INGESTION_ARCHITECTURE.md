@@ -3,7 +3,7 @@
 The current product focuses on local repository Java/Spring source files, Maven build
 files, standard Maven source/test/resource roots, bounded local OpenAPI/Swagger spec
 inputs, conservative default-scope local Markdown discovery, and deterministic
-generated project-memory output. The current v0.8 implementation emits local Markdown
+generated project-memory output. The current v1.0 development line emits local Markdown
 document inventory, deterministic ATX heading references, bounded chunk references,
 resolving document evidence, conservative code-doc reconciliation signals, and compact
 local documentation guide rendering from structured document facts and evidence only.
@@ -12,8 +12,8 @@ External connectors are future input adapters. They should not be part of the MV
 
 ## SourceDocument
 
-Future ingestors should normalize external and local documents into a `SourceDocument`
-abstraction.
+Future external ingestors and any broader local document modes should normalize inputs
+into a `SourceDocument` abstraction.
 
 Proposed fields:
 
