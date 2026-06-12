@@ -9,7 +9,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -19,7 +18,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class SpringBehaviorAnalyzer {
   public static final String SURFACE_CATEGORY_TRANSACTION_BOUNDARY =
@@ -129,6 +127,7 @@ public final class SpringBehaviorAnalyzer {
     List<SpringEventListenerFact> eventListeners = new ArrayList<>();
     List<SpringMessagingListenerFact> messagingListenerSignals = new ArrayList<>();
     Map<String, SpringBehaviorEvidence> evidence = new java.util.LinkedHashMap<>();
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (BehaviorSourceFile sourceFile : sourceFiles) {
       analyzeJavaFile(
           sourceFile,
@@ -537,13 +536,7 @@ public final class SpringBehaviorAnalyzer {
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot)
       throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private SpringBehaviorEvidence annotationEvidence(

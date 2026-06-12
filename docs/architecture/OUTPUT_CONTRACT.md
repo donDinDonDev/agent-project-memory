@@ -3264,7 +3264,8 @@ Current `scan.diagnostics` rules:
 - `scan.diagnostics.analysis_status` is `"analyzed"`.
 - `scan.diagnostics.items[]` is empty when no bounded non-fatal diagnostic condition was
   observed. The current implementation emits warning items when aggregate local Markdown
-  caps are reached or oversized Maven POM/root build-file inputs are skipped.
+  caps are reached, oversized Maven POM/root build-file inputs are skipped, or Java
+  source inputs are skipped by bounded source parsing controls.
 - Diagnostic items contain `id`, `severity`, `code`, `category`, `message`, nullable
   `path`, and nullable `count`. For current local Markdown aggregate cap diagnostics,
   `severity` is `"warning"`, `category` is `"documents"`, `path` is `null`, and `count`
@@ -3282,6 +3283,22 @@ Current `scan.diagnostics` rules:
   `count: 1048576`. The affected POM/root build-file input is skipped fail-closed: no
   Maven module declaration, Maven metadata, dependency, plugin, or root build-file
   evidence is emitted from skipped oversized POM bytes.
+- Current Java source diagnostics use `severity: "warning"` and
+  `category: "java_source"`. Per-file diagnostics set `path` to the normalized
+  repository-relative Java source path; aggregate diagnostics set `path` to `null`.
+  Current Java source diagnostic `code` values are
+  `"java_source_file_bytes_cap_exceeded"`,
+  `"java_source_file_lines_cap_exceeded"`,
+  `"java_source_file_read_skipped"`,
+  `"java_source_file_count_cap_reached"`,
+  `"java_source_aggregate_bytes_cap_reached"`,
+  `"java_source_aggregate_lines_cap_reached"`,
+  `"java_source_ast_node_cap_exceeded"`, and
+  `"java_source_parse_error"`. Java source files that exceed per-file byte, line,
+  no-symlink stable regular-file read, AST node, parse, file-count, or aggregate source
+  workload limits are skipped fail-closed before unbounded JavaParser or full source
+  line materialization. Diagnostics are scan metadata and must not be referenced from
+  `evidence_ids`.
 - Later v0.9 diagnostics may add other bounded scan metadata for non-fatal conditions
   such as config defaults in use, user path rules accepted, user path rules matching no
   candidate, files skipped by built-in safety exclusions, disabled local docs, or

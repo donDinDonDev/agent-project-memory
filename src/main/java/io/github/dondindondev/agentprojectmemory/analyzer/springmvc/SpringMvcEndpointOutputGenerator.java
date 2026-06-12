@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.ApiSpecEvidence;
@@ -524,9 +525,14 @@ public final class SpringMvcEndpointOutputGenerator {
     ResourceConfigAnalysis resourceConfigAnalysis = resourceConfigAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
-    SpringBootApplicationAnalysis springBootApplicationAnalysis = springBootApplicationAnalyzer.analyze(
-        normalizedRepositoryRoot,
-        layout.modules().items());
+    JavaSourceParser.ScanContext javaSourceContext =
+        JavaSourceParser.newScanContext(normalizedRepositoryRoot);
+    SpringBootApplicationAnalysis springBootApplicationAnalysis =
+        JavaSourceParser.withScanContext(
+            javaSourceContext,
+            () -> springBootApplicationAnalyzer.analyze(
+                normalizedRepositoryRoot,
+                layout.modules().items()));
     OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis = openApiSpecDiscoveryAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
@@ -554,13 +560,15 @@ public final class SpringMvcEndpointOutputGenerator {
       return new Result(false, 0, 0, 0, 0, 0, 0, 0);
     }
 
-    ModuleAwareScan scan = analyzeModules(
-        normalizedRepositoryRoot,
-        canonicalRepositoryRoot,
-        layout.modules(),
-        moduleDiscoveryAnalysis.warnings(),
-        pluginAnalysis,
-        openApiOperationAnalysis);
+    ModuleAwareScan scan = JavaSourceParser.withScanContext(
+        javaSourceContext,
+        () -> analyzeModules(
+            normalizedRepositoryRoot,
+            canonicalRepositoryRoot,
+            layout.modules(),
+            moduleDiscoveryAnalysis.warnings(),
+            pluginAnalysis,
+            openApiOperationAnalysis));
     DocumentReconciliationAnalysis documentReconciliationAnalysis = scanConfiguration.localMarkdownEnabled()
         ? documentReconciliationAnalyzer.analyze(
             normalizedRepositoryRoot,
@@ -574,6 +582,7 @@ public final class SpringMvcEndpointOutputGenerator {
         metadataAnalysis,
         dependencyAnalysis,
         pluginAnalysis,
+        javaSourceContext.diagnostics(),
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis);
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
@@ -1679,6 +1688,7 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
+      List<ScanDiagnostic> javaSourceDiagnostics,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis) {
     Map<String, ScanDiagnostic> diagnostics = new LinkedHashMap<>();
@@ -1687,6 +1697,7 @@ public final class SpringMvcEndpointOutputGenerator {
     addScanDiagnostics(diagnostics, metadataAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, dependencyAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, pluginAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, javaSourceDiagnostics);
     addScanDiagnostics(diagnostics, documentDiscoveryAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, documentReconciliationAnalysis.diagnostics());
     return new ArrayList<>(diagnostics.values());

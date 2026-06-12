@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParserFactory;
@@ -387,6 +386,7 @@ public final class AnalysisWarningAnalyzer {
       }
     }
 
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (RepositoryRestSourceFile sourceFile : sourceFiles) {
       analyzeRepositoryRestResourceJavaFile(
           sourceFile,
@@ -405,7 +405,7 @@ public final class AnalysisWarningAnalyzer {
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
-    List<String> sourceLines = Files.readAllLines(javaFile, StandardCharsets.UTF_8);
+    List<String> sourceLines = JavaSourceParser.sourceLines(javaFile);
     Map<String, String> importsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit);
 
     return new RepositoryRestSourceFile(
@@ -552,13 +552,7 @@ public final class AnalysisWarningAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private String warningId(String signal, String sourceKey, String modulePathForIds) {

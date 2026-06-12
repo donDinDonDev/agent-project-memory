@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -291,6 +292,119 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(build.path("root_build_file").isNull()),
         () -> assertEquals(0, build.path("evidence_ids").size()),
         () -> assertFalse(evidenceIndex.contains("ev:pom.xml:1-1:build_file:pom.xml")),
+        () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
+  }
+
+  @Test
+  void projectMapRendersJavaSourceDiagnosticsAndSkipsSpringJpaAndTestFacts() throws Exception {
+    Path projectPath = tempDir.resolve("java-source-diagnostics");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    writeOversizedJava(projectPath.resolve("src/main/java/com/example/HugeController.java"));
+    writeLineBombJava(projectPath.resolve("src/main/java/com/example/LineBombService.java"));
+    writeFile(projectPath.resolve("src/main/java/com/example/BrokenEntity.java"), """
+        package com.example;
+
+        public class BrokenEntity {
+          void broken( {
+          }
+        }
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/AcceptedSignals.java"), """
+        package com.example;
+
+        @org.springframework.web.bind.annotation.RestController
+        class AcceptedController {
+          @org.springframework.web.bind.annotation.GetMapping("/accepted")
+          String accepted() {
+            return "ok";
+          }
+        }
+
+        @org.springframework.stereotype.Service
+        class AcceptedService {
+        }
+
+        @jakarta.persistence.Entity
+        class AcceptedEntity {
+          @jakarta.persistence.Id
+          Long id;
+        }
+
+        @org.springframework.context.annotation.Configuration
+        class AcceptedConfiguration {
+          @org.springframework.context.annotation.Bean
+          Object acceptedBean() {
+            return new Object();
+          }
+        }
+
+        @org.springframework.transaction.annotation.Transactional
+        class AcceptedTransactionalService {
+        }
+
+        @org.springframework.data.rest.core.annotation.RepositoryRestResource
+        interface AcceptedRestRepository
+            extends org.springframework.data.repository.Repository<AcceptedEntity, Long> {
+        }
+        """);
+    writeFile(projectPath.resolve("src/test/java/com/example/AcceptedSignalsTest.java"), """
+        package com.example;
+
+        class AcceptedSignalsTest {
+          @org.junit.jupiter.api.Test
+          void accepted() {
+          }
+        }
+        """);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode diagnostics = root.path("scan").path("diagnostics").path("items");
+    JsonNode testItems = root.path("tests").path("items");
+    List<String> diagnosticCodes = jsonTextValues(diagnostics, "code");
+    List<String> diagnosticPaths = jsonTextValues(diagnostics, "path");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(3, result.diagnosticCount()),
+        () -> assertEquals(3, diagnostics.size()),
+        () -> assertTrue(diagnosticCodes.contains(
+            JavaSourceParser.DIAGNOSTIC_CODE_JAVA_SOURCE_FILE_BYTES_CAP_EXCEEDED)),
+        () -> assertTrue(diagnosticCodes.contains(
+            JavaSourceParser.DIAGNOSTIC_CODE_JAVA_SOURCE_FILE_LINES_CAP_EXCEEDED)),
+        () -> assertTrue(diagnosticCodes.contains(
+            JavaSourceParser.DIAGNOSTIC_CODE_JAVA_SOURCE_PARSE_ERROR)),
+        () -> assertTrue(diagnosticPaths.contains("src/main/java/com/example/HugeController.java")),
+        () -> assertTrue(diagnosticPaths.contains("src/main/java/com/example/LineBombService.java")),
+        () -> assertTrue(diagnosticPaths.contains("src/main/java/com/example/BrokenEntity.java")),
+        () -> assertEquals(0, root.path("endpoints").size()),
+        () -> assertEquals(0, root.path("components").path("items").size()),
+        () -> assertEquals(0, root.path("entities").path("items").size()),
+        () -> assertEquals(0, root.path("entities").path("embeddables").path("items").size()),
+        () -> assertEquals(0, root.path("spring_application_surface").path("repositories")
+            .path("items").size()),
+        () -> assertEquals(0, root.path("spring_application_surface").path("configuration")
+            .path("classes").path("items").size()),
+        () -> assertEquals(0, root.path("spring_application_surface").path("behavior")
+            .path("transaction_boundaries").path("items").size()),
+        () -> assertEquals(0, root.path("warnings").path("items").size()),
+        () -> assertEquals(1, testItems.size()),
+        () -> assertEquals("com.example.AcceptedSignalsTest",
+            testItems.get(0).path("class_name").asText()),
+        () -> assertEquals(0, testItems.get(0).path("framework_signals").size()),
+        () -> assertEquals(0, testItems.get(0).path("methods").size()),
+        () -> assertFalse(projectMap.contains("AcceptedController")),
+        () -> assertFalse(projectMap.contains("AcceptedService")),
+        () -> assertFalse(projectMap.contains("AcceptedEntity")),
+        () -> assertFalse(projectMap.contains("AcceptedRestRepository")),
         () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }
 
@@ -2510,6 +2624,18 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
   private void writeOversizedPom(Path path) throws Exception {
     writeFile(path, "<project>\n<!-- " + "x".repeat(MavenPomInput.MAX_POM_BYTES) + " -->\n</project>\n");
+  }
+
+  private void writeOversizedJava(Path path) throws Exception {
+    writeFile(path, "package com.example;\n// " + "x".repeat(JavaSourceParser.MAX_JAVA_SOURCE_BYTES));
+  }
+
+  private void writeLineBombJava(Path path) throws Exception {
+    writeFile(
+        path,
+        "package com.example;\n"
+            + "// line\n".repeat(JavaSourceParser.MAX_JAVA_SOURCE_LINES)
+            + "class LineBombService {}\n");
   }
 
   private void createSymbolicLink(Path link, Path target) throws Exception {

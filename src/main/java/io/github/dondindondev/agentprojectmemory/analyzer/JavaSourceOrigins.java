@@ -12,6 +12,9 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class JavaSourceOrigins {
+  private static final String INCOMPLETE_SOURCE_INDEX_MARKER =
+      "__agent_project_memory_incomplete_java_source_index__";
+
   private JavaSourceOrigins() {
   }
 
@@ -68,6 +71,10 @@ public final class JavaSourceOrigins {
       Map<String, String> singleTypeImportsBySimpleName,
       Map<String, ? extends Collection<String>> supportedOrigins,
       Set<String> sourceDeclaredTypeNames) {
+    if (sourceDeclaredTypeNames.contains(INCOMPLETE_SOURCE_INDEX_MARKER)) {
+      return Optional.empty();
+    }
+
     String simpleName = simpleName(referenceName);
     Collection<String> supportedQualifiedNames = supportedOrigins.get(simpleName);
     if (supportedQualifiedNames == null) {
@@ -90,6 +97,16 @@ public final class JavaSourceOrigins {
 
   public static String simpleAnnotationName(AnnotationExpr annotation) {
     return simpleName(annotation.getNameAsString());
+  }
+
+  public static void markIncompleteSourceIndexIfNeeded(Set<String> sourceDeclaredTypeNames) {
+    if (JavaSourceParser.hasSkippedSources()) {
+      sourceDeclaredTypeNames.add(INCOMPLETE_SOURCE_INDEX_MARKER);
+    }
+  }
+
+  public static boolean isIncompleteSourceIndex(Set<String> sourceDeclaredTypeNames) {
+    return sourceDeclaredTypeNames.contains(INCOMPLETE_SOURCE_INDEX_MARKER);
   }
 
   public static String simpleName(String name) {

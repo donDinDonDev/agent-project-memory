@@ -10,7 +10,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class SpringConfigurationAnalyzer {
   public static final String SURFACE_CATEGORY_CONFIGURATION_CLASS = "spring_configuration_class";
@@ -88,6 +86,7 @@ public final class SpringConfigurationAnalyzer {
     List<SpringConfigurationPropertiesFact> configurationProperties = new ArrayList<>();
     List<SpringBeanMethodFact> beanMethods = new ArrayList<>();
     Map<String, SpringConfigurationEvidence> evidence = new java.util.LinkedHashMap<>();
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (ConfigurationSourceFile sourceFile : sourceFiles) {
       analyzeJavaFile(
           sourceFile,
@@ -281,7 +280,7 @@ public final class SpringConfigurationAnalyzer {
         compilationUnit,
         packageName,
         repositoryRelativePath(repositoryRoot, javaFile),
-        Files.readAllLines(javaFile),
+        JavaSourceParser.sourceLines(javaFile),
         JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit),
         JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
   }
@@ -295,13 +294,7 @@ public final class SpringConfigurationAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private SpringConfigurationEvidence annotationEvidence(

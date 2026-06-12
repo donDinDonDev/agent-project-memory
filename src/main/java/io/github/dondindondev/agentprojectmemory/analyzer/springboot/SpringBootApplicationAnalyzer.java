@@ -11,7 +11,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -21,7 +20,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class SpringBootApplicationAnalyzer {
   private static final String ANALYSIS_STATUS_ANALYZED = "analyzed";
@@ -119,6 +117,7 @@ public final class SpringBootApplicationAnalyzer {
 
     List<SpringBootApplicationFact> applications = new ArrayList<>();
     List<SpringBootApplicationEvidence> evidence = new ArrayList<>();
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (ApplicationSourceFile sourceFile : sourceFiles) {
       analyzeJavaFile(sourceFile, moduleId, sourceDeclaredTypeNames, applications, evidence);
     }
@@ -277,13 +276,7 @@ public final class SpringBootApplicationAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private String applicationId(String moduleId, String className) {

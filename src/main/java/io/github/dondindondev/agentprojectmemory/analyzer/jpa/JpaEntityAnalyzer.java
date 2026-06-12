@@ -13,7 +13,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -24,7 +23,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class JpaEntityAnalyzer {
   private static final String ENTITY = "Entity";
@@ -157,6 +155,7 @@ public final class JpaEntityAnalyzer {
       }
     }
 
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     Map<String, MappedSuperclassSource> mappedSuperclasses = mappedSuperclasses(javaTypes);
     Map<String, EmbeddableSource> embeddableSources = embeddableSources(javaTypes);
     for (EmbeddableSource embeddableSource : embeddableSources.values()) {
@@ -181,7 +180,7 @@ public final class JpaEntityAnalyzer {
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
-    List<String> sourceLines = Files.readAllLines(javaFile);
+    List<String> sourceLines = JavaSourceParser.sourceLines(javaFile);
     Map<String, String> importsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit);
     Set<String> wildcardImportPackages = JavaSourceOrigins.wildcardImportPackages(compilationUnit);
     sourceDeclaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
@@ -1041,13 +1040,7 @@ public final class JpaEntityAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private Optional<AnnotationExpr> findAnnotation(
@@ -1153,6 +1146,10 @@ public final class JpaEntityAnalyzer {
       JavaTypeSource javaType,
       String referenceName,
       Map<String, Set<String>> supportedOrigins) {
+    if (JavaSourceOrigins.isIncompleteSourceIndex(javaType.sourceDeclaredTypeNames())) {
+      return Optional.empty();
+    }
+
     Optional<String> exactOrSingleImport = JavaSourceOrigins.supportedTypeSimpleName(
         referenceName,
         javaType.importsBySimpleName(),

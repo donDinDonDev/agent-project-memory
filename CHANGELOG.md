@@ -34,6 +34,10 @@ architecture documents.
   metadata, dependency, plugin, and root build-file evidence paths; oversized POM inputs
   are skipped with deterministic `scan.diagnostics` warnings instead of being fully
   materialized.
+- Bounded Java source discovery, parsing, source-line loading, and aggregate Java source
+  workload for Spring MVC, component, JPA, Spring application surface, warning, test
+  inventory, and Spring Boot application analyzers; oversized, symlinked/unreadable, or
+  pathological Java files are skipped with deterministic `scan.diagnostics` warnings.
 
 ## [0.9.0] - 2026-06-11
 

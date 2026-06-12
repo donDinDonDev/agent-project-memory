@@ -451,7 +451,7 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanMalformedJavaReturnsBoundedErrorWithoutGeneratedContractOutputFiles()
+  void scanMalformedJavaReturnsBoundedDiagnosticAndGeneratedContractOutputFiles()
       throws Exception {
     Path javaFile = tempDir.resolve("src/main/java/com/example/BrokenController.java");
     Files.createDirectories(javaFile.getParent());
@@ -466,23 +466,55 @@ final class AgentProjectMemoryCliTest {
 
     CliResult result = runCli("scan", tempDir.toString());
     Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
 
     assertAll(
-        () -> assertEquals(5, result.exitCode()),
-        () -> assertTrue(
-            result.stderr().contains(
-                "Output error: Could not generate project memory output: Could not parse Java source:")),
-        () -> assertTrue(result.stderr().contains("BrokenController.java")),
-        () -> assertTrue(result.stderr().contains("1 parse problem")),
-        () -> assertTrue(result.stderr().contains("first problem at line")),
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(projectMap.contains("\"code\": \"java_source_parse_error\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"path\": \"src/main/java/com/example/BrokenController.java\"")),
+        () -> assertTrue(projectMap.contains("\"category\": \"java_source\"")),
+        () -> assertTrue(projectMap.contains("\"endpoints\": []")),
         () -> assertFalse(result.stderr().contains(tempDir.toString())),
         () -> assertFalse(result.stderr().contains("ParseProblemException")),
         () -> assertFalse(result.stderr().contains("com.github.javaparser")),
         () -> assertFalse(result.stderr().contains("\tat ")),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanSymlinkedJavaReturnsBoundedDiagnosticAndGeneratedContractOutputFiles()
+      throws Exception {
+    Path target = tempDir.resolve("linked-target/RealSource.java");
+    Files.createDirectories(target.getParent());
+    Files.writeString(target, "package com.example;\nclass RealSource {}\n");
+    Path javaLink = tempDir.resolve("src/main/java/com/example/LinkedSource.java");
+    Files.createDirectories(javaLink.getParent());
+    createSymbolicLink(javaLink, target);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(projectMap.contains("\"code\": \"java_source_file_read_skipped\"")),
+        () -> assertTrue(projectMap.contains(
+            "\"path\": \"src/main/java/com/example/LinkedSource.java\"")),
+        () -> assertTrue(projectMap.contains("\"category\": \"java_source\"")),
+        () -> assertFalse(evidenceIndex.contains("LinkedSource.java")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
+        () -> assertFalse(result.stderr().contains("\tat ")),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))));
   }
 
   @Test

@@ -8,7 +8,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -17,7 +16,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 final class SpringComponentAnalyzer {
   private static final String HIGH_CONFIDENCE = "high";
@@ -65,6 +63,7 @@ final class SpringComponentAnalyzer {
       }
     }
 
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (ComponentSourceFile sourceFile : sourceFiles) {
       analyzeJavaFile(sourceFile, sourceDeclaredTypeNames, components, evidence);
     }
@@ -82,7 +81,7 @@ final class SpringComponentAnalyzer {
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
-    List<String> sourceLines = Files.readAllLines(javaFile);
+    List<String> sourceLines = JavaSourceParser.sourceLines(javaFile);
     Map<String, String> importsBySimpleName = SpringAnnotationOrigins.importsBySimpleName(compilationUnit);
 
     return new ComponentSourceFile(
@@ -141,13 +140,7 @@ final class SpringComponentAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private List<AnnotationExpr> stereotypeAnnotations(

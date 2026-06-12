@@ -10,7 +10,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -20,7 +19,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class SpringRepositoryAnalyzer {
   public static final String SURFACE_CATEGORY_REPOSITORY_STEREOTYPE = "spring_repository_stereotype";
@@ -84,6 +82,7 @@ public final class SpringRepositoryAnalyzer {
 
     List<SpringRepositoryFact> repositories = new ArrayList<>();
     Map<String, SpringRepositoryEvidence> evidence = new java.util.LinkedHashMap<>();
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     for (RepositorySourceFile sourceFile : sourceFiles) {
       analyzeJavaFile(sourceFile, sourceDeclaredTypeNames, repositories, evidence);
     }
@@ -310,6 +309,10 @@ public final class SpringRepositoryAnalyzer {
       ClassOrInterfaceType type,
       Map<String, String> importsBySimpleName,
       Set<String> sourceDeclaredTypeNames) {
+    if (JavaSourceOrigins.isIncompleteSourceIndex(sourceDeclaredTypeNames)) {
+      return Optional.empty();
+    }
+
     String referenceName = type.getNameWithScope();
     String simpleName = JavaSourceOrigins.simpleName(referenceName);
     Set<String> supportedQualifiedNames = SUPPORTED_SPRING_DATA_REPOSITORY_BASE_TYPES.get(simpleName);
@@ -344,7 +347,7 @@ public final class SpringRepositoryAnalyzer {
         compilationUnit,
         packageName,
         repositoryRelativePath(repositoryRoot, javaFile),
-        Files.readAllLines(javaFile),
+        JavaSourceParser.sourceLines(javaFile),
         JavaSourceOrigins.singleTypeImportsBySimpleName(compilationUnit),
         JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
   }
@@ -358,13 +361,7 @@ public final class SpringRepositoryAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private SpringRepositoryEvidence annotationEvidence(

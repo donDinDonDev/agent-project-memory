@@ -16,8 +16,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -28,7 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Stream;
 
 public final class TestInventoryAnalyzer {
   private static final String ANALYZED = "analyzed";
@@ -169,6 +166,7 @@ public final class TestInventoryAnalyzer {
         canonicalRepositoryRoot,
         productionSourceRoots,
         testSourceRoots);
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(sourceDeclaredTypeNames);
     List<TestClassFact> tests = new ArrayList<>();
     Map<String, TestInventoryEvidence> evidence = new LinkedHashMap<>();
 
@@ -202,7 +200,7 @@ public final class TestInventoryAnalyzer {
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
-    List<String> sourceLines = Files.readAllLines(javaFile, StandardCharsets.UTF_8);
+    List<String> sourceLines = JavaSourceParser.sourceLines(javaFile);
     Map<String, ImportDeclaration> importsBySimpleName = importsBySimpleName(compilationUnit);
     Map<String, String> singleTypeImportsBySimpleName = JavaSourceOrigins.singleTypeImportsBySimpleName(
         compilationUnit);
@@ -380,6 +378,9 @@ public final class TestInventoryAnalyzer {
       Optional<String> resolvedName,
       String simpleAnnotationName,
       Set<String> sourceDeclaredTypeNames) {
+    if (JavaSourceOrigins.isIncompleteSourceIndex(sourceDeclaredTypeNames)) {
+      return Optional.empty();
+    }
     if (resolvedName.isEmpty()) {
       return Optional.empty();
     }
@@ -1332,6 +1333,7 @@ public final class TestInventoryAnalyzer {
         declaredTypeNames.addAll(JavaSourceOrigins.declaredTypeNames(compilationUnit, packageName));
       }
     }
+    JavaSourceOrigins.markIncompleteSourceIndexIfNeeded(declaredTypeNames);
     return declaredTypeNames;
   }
 
@@ -1341,7 +1343,7 @@ public final class TestInventoryAnalyzer {
         .map(packageDeclaration -> packageDeclaration.getName().asString())
         .orElse("");
     String sourcePath = repositoryRelativePath(repositoryRoot, javaFile);
-    List<String> sourceLines = Files.readAllLines(javaFile, StandardCharsets.UTF_8);
+    List<String> sourceLines = JavaSourceParser.sourceLines(javaFile);
     List<ProductionClass> productionClasses = new ArrayList<>();
 
     for (ClassOrInterfaceDeclaration type : compilationUnit.findAll(ClassOrInterfaceDeclaration.class)) {
@@ -1391,13 +1393,7 @@ public final class TestInventoryAnalyzer {
   }
 
   private List<Path> javaFiles(Path canonicalRepositoryRoot, Path sourceRoot) throws IOException {
-    try (Stream<Path> paths = Files.walk(sourceRoot)) {
-      return paths
-          .filter(path -> ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, path)
-              && path.getFileName().toString().endsWith(".java"))
-          .sorted(Comparator.comparing(path -> path.toAbsolutePath().normalize().toString()))
-          .toList();
-    }
+    return JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot);
   }
 
   private String repositoryRelativePath(Path repositoryRoot, Path javaFile) {
