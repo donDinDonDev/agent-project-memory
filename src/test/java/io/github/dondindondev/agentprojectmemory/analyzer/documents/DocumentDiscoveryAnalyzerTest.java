@@ -505,6 +505,59 @@ final class DocumentDiscoveryAnalyzerTest {
   }
 
   @Test
+  void boundsDefaultMarkdownCandidatesBeforeFactMaterialization() throws Exception {
+    Path repositoryRoot = repository("default-candidate-cap");
+    writeFile(repositoryRoot.resolve("README.md"), "# Root\n");
+    writeFile(repositoryRoot.resolve("docs/a.md"), "# A\n");
+    writeFile(repositoryRoot.resolve("docs/z.md"), "# FAKE_SKIPPED_DEFAULT_MARKDOWN_SECRET\n");
+    DocumentDiscoveryAnalyzer cappedAnalyzer = new DocumentDiscoveryAnalyzer(
+        new DocumentAnalysisLimits(2, 1024, 100, 100, 10, 10));
+
+    DocumentDiscoveryAnalysis analysis = cappedAnalyzer.analyze(repositoryRoot, List.of());
+
+    assertAll(
+        () -> assertEquals(
+            List.of("README.md", "docs/a.md"),
+            analysis.documents().stream().map(DocumentFileFact::path).toList()),
+        () -> assertEquals(
+            List.of("local_markdown_document_count_cap_reached"),
+            diagnosticCodes(analysis.diagnostics())),
+        () -> assertFalse(analysis.toString().contains("docs/z.md")),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_DEFAULT_MARKDOWN_SECRET")));
+  }
+
+  @Test
+  void boundsExplicitIncludeCandidatesBeforeFactMaterialization() throws Exception {
+    Path repositoryRoot = repository("explicit-include-candidate-cap");
+    writeFile(repositoryRoot.resolve("notes/a.md"), "# A\n");
+    writeFile(repositoryRoot.resolve("notes/b.md"), "# B\n");
+    writeFile(repositoryRoot.resolve("notes/z.md"), "# FAKE_SKIPPED_INCLUDE_MARKDOWN_SECRET\n");
+    DocumentDiscoveryAnalyzer cappedAnalyzer = new DocumentDiscoveryAnalyzer(
+        new DocumentAnalysisLimits(2, 1024, 100, 100, 10, 10));
+
+    DocumentDiscoveryAnalysis analysis = cappedAnalyzer.analyze(
+        repositoryRoot,
+        List.of(),
+        new DocumentDiscoveryOptions(
+            true,
+            List.of(ScanConfigPathPattern.parse("notes/**/*.md", "documents.include[0]", true)),
+            List.of()));
+
+    assertAll(
+        () -> assertEquals(
+            List.of("notes/a.md", "notes/b.md"),
+            analysis.documents().stream().map(DocumentFileFact::path).toList()),
+        () -> assertEquals(
+            List.of("explicit_include", "explicit_include"),
+            analysis.documents().stream().map(DocumentFileFact::discoverySource).toList()),
+        () -> assertEquals(
+            List.of("local_markdown_document_count_cap_reached"),
+            diagnosticCodes(analysis.diagnostics())),
+        () -> assertFalse(analysis.toString().contains("notes/z.md")),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_INCLUDE_MARKDOWN_SECRET")));
+  }
+
+  @Test
   void capsAggregateDocumentBytesBeforeReadingSkippedDocuments() throws Exception {
     Path repositoryRoot = repository("byte-cap");
     writeFile(repositoryRoot.resolve("README.md"), "# A\n");

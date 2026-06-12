@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.config;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import java.io.IOException;
@@ -7,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +29,7 @@ public final class ResourceConfigAnalyzer {
   private static final String SPRING_APPLICATION_CONFIG_KIND = "spring_application";
   private static final String LOGGING_CONFIG_KIND = "logging_config";
   private static final String FILENAME_ONLY_PROFILE_SOURCE = "filename_only";
+  private static final int DEFAULT_MAX_CONFIG_FILE_CANDIDATES = 4_096;
   private static final List<ResourceRootCandidate> RESOURCE_ROOTS = List.of(
       new ResourceRootCandidate(MAIN_SCOPE, "src/main/resources"),
       new ResourceRootCandidate(TEST_SCOPE, "src/test/resources"));
@@ -52,6 +55,18 @@ public final class ResourceConfigAnalyzer {
       .thenComparing(evidence -> nullSafe(evidence.methodName()))
       .thenComparing(ResourceConfigEvidence::symbolName)
       .thenComparing(ResourceConfigEvidence::id);
+  private final int maxConfigFileCandidates;
+
+  public ResourceConfigAnalyzer() {
+    this(DEFAULT_MAX_CONFIG_FILE_CANDIDATES);
+  }
+
+  ResourceConfigAnalyzer(int maxConfigFileCandidates) {
+    if (maxConfigFileCandidates < 0) {
+      throw new IllegalArgumentException("maxConfigFileCandidates must not be negative.");
+    }
+    this.maxConfigFileCandidates = maxConfigFileCandidates;
+  }
 
   public ResourceConfigAnalysis analyze(Path repositoryRoot, List<MavenModuleItem> modules)
       throws IOException {
@@ -140,43 +155,50 @@ public final class ResourceConfigAnalyzer {
       ResourceRootFact resourceRoot,
       Map<String, ResourceConfigEvidence> evidence) throws IOException {
     Path resourceRootPath = repositoryRoot.resolve(resourceRoot.path()).normalize();
-    List<ConfigFileFact> configFiles = new ArrayList<>();
+    BoundedCandidateSet<Path> candidates = new BoundedCandidateSet<>(
+        maxConfigFileCandidates,
+        Comparator.comparing(candidate -> repositoryRelativePath(repositoryRoot, candidate)),
+        candidate -> repositoryRelativePath(repositoryRoot, candidate));
     try (Stream<Path> paths = Files.walk(resourceRootPath)) {
-      for (Path candidate : paths.toList()) {
+      Iterator<Path> iterator = paths.iterator();
+      while (iterator.hasNext()) {
+        Path candidate = iterator.next();
         if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, candidate)) {
           continue;
         }
-
-        String filename = candidate.getFileName().toString();
-        Optional<ConfigDescriptor> descriptor = configDescriptor(filename);
-        if (descriptor.isEmpty()) {
+        if (configDescriptor(candidate.getFileName().toString()).isEmpty()) {
           continue;
         }
-
-        String sourcePath = repositoryRelativePath(repositoryRoot, candidate);
-        ResourceConfigEvidence configEvidence = new ResourceConfigEvidence(
-            "ev:" + sourcePath + ":unknown:config_file:" + filename,
-            CONFIG_FILE_SOURCE_TYPE,
-            sourcePath,
-            null,
-            null,
-            filename,
-            null,
-            null,
-            "config file detected: " + filename,
-            HIGH_CONFIDENCE);
-        evidence.putIfAbsent(configEvidence.id(), configEvidence);
-        ConfigDescriptor configDescriptor = descriptor.orElseThrow();
-        configFiles.add(new ConfigFileFact(
-            "config_file:" + moduleId + ":" + configDescriptor.kind() + ":" + sourcePath,
-            sourcePath,
-            resourceRoot.scope(),
-            configDescriptor.kind(),
-            configDescriptor.format(),
-            configDescriptor.profileName(),
-            configDescriptor.profileName() == null ? null : FILENAME_ONLY_PROFILE_SOURCE,
-            List.of(configEvidence.id())));
+        candidates.add(candidate.toAbsolutePath().normalize());
       }
+    }
+
+    List<ConfigFileFact> configFiles = new ArrayList<>();
+    for (Path candidate : candidates.sorted()) {
+      String filename = candidate.getFileName().toString();
+      ConfigDescriptor descriptor = configDescriptor(filename).orElseThrow();
+      String sourcePath = repositoryRelativePath(repositoryRoot, candidate);
+      ResourceConfigEvidence configEvidence = new ResourceConfigEvidence(
+          "ev:" + sourcePath + ":unknown:config_file:" + filename,
+          CONFIG_FILE_SOURCE_TYPE,
+          sourcePath,
+          null,
+          null,
+          filename,
+          null,
+          null,
+          "config file detected: " + filename,
+          HIGH_CONFIDENCE);
+      evidence.putIfAbsent(configEvidence.id(), configEvidence);
+      configFiles.add(new ConfigFileFact(
+          "config_file:" + moduleId + ":" + descriptor.kind() + ":" + sourcePath,
+          sourcePath,
+          resourceRoot.scope(),
+          descriptor.kind(),
+          descriptor.format(),
+          descriptor.profileName(),
+          descriptor.profileName() == null ? null : FILENAME_ONLY_PROFILE_SOURCE,
+          List.of(configEvidence.id())));
     }
     return configFiles;
   }

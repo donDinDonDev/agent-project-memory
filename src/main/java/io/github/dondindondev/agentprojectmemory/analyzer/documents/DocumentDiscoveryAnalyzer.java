@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
@@ -136,7 +137,10 @@ public final class DocumentDiscoveryAnalyzer {
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         modules);
-    Map<String, CandidateDocument> candidates = new LinkedHashMap<>();
+    BoundedCandidateSet<CandidateDocument> candidates = new BoundedCandidateSet<>(
+        limits.maxDocuments(),
+        CANDIDATE_ORDER,
+        CandidateDocument::sourcePath);
 
     addReadmeCandidate(
         candidates,
@@ -145,7 +149,8 @@ public final class DocumentDiscoveryAnalyzer {
         normalizedRepositoryRoot.resolve("README.md"),
         null,
         UNSCOPED_DOCUMENT_ORDER,
-        ROOT_README);
+        ROOT_README,
+        options);
     addReadmeCandidate(
         candidates,
         normalizedRepositoryRoot,
@@ -153,7 +158,8 @@ public final class DocumentDiscoveryAnalyzer {
         normalizedRepositoryRoot.resolve("README.markdown"),
         null,
         UNSCOPED_DOCUMENT_ORDER,
-        ROOT_README);
+        ROOT_README,
+        options);
 
     for (SupportedModuleRoot moduleRoot : supportedModuleRoots) {
       if (".".equals(moduleRoot.modulePath())) {
@@ -166,7 +172,8 @@ public final class DocumentDiscoveryAnalyzer {
           moduleRoot.normalizedPath().resolve("README.md"),
           moduleRoot.moduleId(),
           moduleRoot.moduleOrder(),
-          MODULE_README);
+          MODULE_README,
+          options);
       addReadmeCandidate(
           candidates,
           normalizedRepositoryRoot,
@@ -174,7 +181,8 @@ public final class DocumentDiscoveryAnalyzer {
           moduleRoot.normalizedPath().resolve("README.markdown"),
           moduleRoot.moduleId(),
           moduleRoot.moduleOrder(),
-          MODULE_README);
+          MODULE_README,
+          options);
     }
 
     addMarkdownTreeCandidates(
@@ -183,28 +191,30 @@ public final class DocumentDiscoveryAnalyzer {
         canonicalRepositoryRoot,
         normalizedRepositoryRoot.resolve("docs"),
         DOCS_TREE,
-        supportedModuleRoots);
+        supportedModuleRoots,
+        options);
     addMarkdownTreeCandidates(
         candidates,
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         normalizedRepositoryRoot.resolve("adr"),
         ADR_TREE,
-        supportedModuleRoots);
+        supportedModuleRoots,
+        options);
     addMarkdownTreeCandidates(
         candidates,
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         normalizedRepositoryRoot.resolve("adrs"),
         ADR_TREE,
-        supportedModuleRoots);
+        supportedModuleRoots,
+        options);
     addExplicitIncludeCandidates(
         candidates,
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
         supportedModuleRoots,
         options);
-    removeUserExcludedCandidates(candidates, options);
 
     List<ScanDiagnostic> diagnostics = new ArrayList<>();
     List<AnalyzedDocument> analyzedDocuments = new ArrayList<>();
@@ -216,7 +226,7 @@ public final class DocumentDiscoveryAnalyzer {
     int acceptedHeadings = 0;
     int acceptedChunks = 0;
 
-    for (CandidateDocument candidate : candidates.values().stream().sorted(CANDIDATE_ORDER).toList()) {
+    for (CandidateDocument candidate : candidates.sorted()) {
       if (analyzedDocuments.size() >= limits.maxDocuments()) {
         if (!documentCountCapReported) {
           diagnostics.add(documentCountCapDiagnostic());
@@ -255,6 +265,9 @@ public final class DocumentDiscoveryAnalyzer {
       acceptedHeadings += analyzedDocument.document().headings().size();
       acceptedChunks += analyzedDocument.document().chunks().size();
     }
+    if (candidates.capReached() && !documentCountCapReported) {
+      diagnostics.add(documentCountCapDiagnostic());
+    }
 
     analyzedDocuments = analyzedDocuments.stream()
         .sorted(Comparator.comparing(AnalyzedDocument::document, DOCUMENT_ORDER))
@@ -274,7 +287,7 @@ public final class DocumentDiscoveryAnalyzer {
   }
 
   private void addExplicitIncludeCandidates(
-      Map<String, CandidateDocument> candidates,
+      BoundedCandidateSet<CandidateDocument> candidates,
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       List<SupportedModuleRoot> supportedModuleRoots,
@@ -283,7 +296,6 @@ public final class DocumentDiscoveryAnalyzer {
       return;
     }
 
-    List<Path> files = new ArrayList<>();
     Files.walkFileTree(
         repositoryRoot,
         new SimpleFileVisitor<>() {
@@ -300,7 +312,21 @@ public final class DocumentDiscoveryAnalyzer {
           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             acceptedUserMarkdownFile(repositoryRoot, canonicalRepositoryRoot, file)
                 .filter(path -> options.includes().stream().anyMatch(pattern -> pattern.matches(path)))
-                .ifPresent(ignored -> files.add(file.toAbsolutePath().normalize()));
+                .ifPresent(path -> {
+                  Path normalizedFile = file.toAbsolutePath().normalize();
+                  Optional<SupportedModuleRoot> moduleRoot = owningModule(
+                      normalizedFile,
+                      supportedModuleRoots);
+                  addCandidate(
+                      candidates,
+                      new CandidateDocument(
+                          normalizedFile,
+                          path,
+                          moduleRoot.map(SupportedModuleRoot::moduleId).orElse(null),
+                          moduleRoot.map(SupportedModuleRoot::moduleOrder).orElse(UNSCOPED_DOCUMENT_ORDER),
+                          "explicit_include"),
+                      options);
+                });
             return FileVisitResult.CONTINUE;
           }
 
@@ -309,64 +335,41 @@ public final class DocumentDiscoveryAnalyzer {
             return FileVisitResult.CONTINUE;
           }
         });
-
-    files.stream()
-        .sorted(Comparator.comparing(file -> repositoryRelativePath(repositoryRoot, file)))
-        .forEach(file -> {
-          String path = repositoryRelativePath(repositoryRoot, file);
-          Optional<SupportedModuleRoot> moduleRoot = owningModule(file, supportedModuleRoots);
-          candidates.putIfAbsent(
-              path,
-              new CandidateDocument(
-                  file,
-                  path,
-                  moduleRoot.map(SupportedModuleRoot::moduleId).orElse(null),
-                  moduleRoot.map(SupportedModuleRoot::moduleOrder).orElse(UNSCOPED_DOCUMENT_ORDER),
-                  "explicit_include"));
-        });
-  }
-
-  private void removeUserExcludedCandidates(
-      Map<String, CandidateDocument> candidates,
-      DocumentDiscoveryOptions options) {
-    if (options.excludes().isEmpty()) {
-      return;
-    }
-    candidates.entrySet().removeIf(entry ->
-        options.excludes().stream().anyMatch(pattern -> pattern.matches(entry.getKey())));
   }
 
   private void addReadmeCandidate(
-      Map<String, CandidateDocument> candidates,
+      BoundedCandidateSet<CandidateDocument> candidates,
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       Path file,
       String moduleId,
       int moduleOrder,
-      String discoverySource) {
+      String discoverySource,
+      DocumentDiscoveryOptions options) {
     Optional<String> sourcePath = acceptedMarkdownFile(
         repositoryRoot,
         canonicalRepositoryRoot,
         file,
         true);
-    sourcePath.ifPresent(path -> candidates.putIfAbsent(
-        path,
-        new CandidateDocument(file.toAbsolutePath().normalize(), path, moduleId, moduleOrder, discoverySource)));
+    sourcePath.ifPresent(path -> addCandidate(
+        candidates,
+        new CandidateDocument(file.toAbsolutePath().normalize(), path, moduleId, moduleOrder, discoverySource),
+        options));
   }
 
   private void addMarkdownTreeCandidates(
-      Map<String, CandidateDocument> candidates,
+      BoundedCandidateSet<CandidateDocument> candidates,
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       Path treeRoot,
       String discoverySource,
-      List<SupportedModuleRoot> supportedModuleRoots) throws IOException {
+      List<SupportedModuleRoot> supportedModuleRoots,
+      DocumentDiscoveryOptions options) throws IOException {
     if (!safeDirectory(repositoryRoot, treeRoot, canonicalRepositoryRoot)
         || isExcluded(repositoryRoot, treeRoot)) {
       return;
     }
 
-    List<Path> files = new ArrayList<>();
     Files.walkFileTree(
         treeRoot,
         new SimpleFileVisitor<>() {
@@ -382,7 +385,21 @@ public final class DocumentDiscoveryAnalyzer {
           @Override
           public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
             acceptedMarkdownFile(repositoryRoot, canonicalRepositoryRoot, file, false)
-                .ifPresent(ignored -> files.add(file.toAbsolutePath().normalize()));
+                .ifPresent(path -> {
+                  Path normalizedFile = file.toAbsolutePath().normalize();
+                  Optional<SupportedModuleRoot> moduleRoot = owningModule(
+                      normalizedFile,
+                      supportedModuleRoots);
+                  addCandidate(
+                      candidates,
+                      new CandidateDocument(
+                          normalizedFile,
+                          path,
+                          moduleRoot.map(SupportedModuleRoot::moduleId).orElse(null),
+                          moduleRoot.map(SupportedModuleRoot::moduleOrder).orElse(UNSCOPED_DOCUMENT_ORDER),
+                          discoverySource),
+                      options);
+                });
             return FileVisitResult.CONTINUE;
           }
 
@@ -391,21 +408,19 @@ public final class DocumentDiscoveryAnalyzer {
             return FileVisitResult.CONTINUE;
           }
         });
+  }
 
-    files.stream()
-        .sorted(Comparator.comparing(file -> repositoryRelativePath(repositoryRoot, file)))
-        .forEach(file -> {
-          String path = repositoryRelativePath(repositoryRoot, file);
-          Optional<SupportedModuleRoot> moduleRoot = owningModule(file, supportedModuleRoots);
-          candidates.putIfAbsent(
-              path,
-              new CandidateDocument(
-                  file,
-                  path,
-                  moduleRoot.map(SupportedModuleRoot::moduleId).orElse(null),
-                  moduleRoot.map(SupportedModuleRoot::moduleOrder).orElse(UNSCOPED_DOCUMENT_ORDER),
-                  discoverySource));
-        });
+  private void addCandidate(
+      BoundedCandidateSet<CandidateDocument> candidates,
+      CandidateDocument candidate,
+      DocumentDiscoveryOptions options) {
+    if (!isUserExcluded(candidate.sourcePath(), options)) {
+      candidates.add(candidate);
+    }
+  }
+
+  private boolean isUserExcluded(String path, DocumentDiscoveryOptions options) {
+    return options.excludes().stream().anyMatch(pattern -> pattern.matches(path));
   }
 
   private Optional<String> acceptedMarkdownFile(

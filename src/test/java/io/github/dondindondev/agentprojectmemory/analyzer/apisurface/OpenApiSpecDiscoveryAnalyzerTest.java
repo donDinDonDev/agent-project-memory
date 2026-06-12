@@ -208,6 +208,31 @@ final class OpenApiSpecDiscoveryAnalyzerTest {
         () -> assertEquals(null, analysis.specFiles().get(0).moduleId()));
   }
 
+  @Test
+  void boundsSpecFileCandidatesBeforeFactMaterialization() throws Exception {
+    Path repositoryRoot = repository("spec-candidate-cap");
+    writeFile(repositoryRoot.resolve("api/a/openapi.yml"), "openapi: 3.0.0\n");
+    writeFile(repositoryRoot.resolve("api/b/openapi.yml"), "openapi: 3.0.1\n");
+    writeFile(repositoryRoot.resolve("api/z/openapi.yml"), """
+        openapi: 3.0.2
+        x-secret: FAKE_SKIPPED_OPENAPI_SECRET
+        """);
+    OpenApiSpecDiscoveryAnalyzer cappedAnalyzer = new OpenApiSpecDiscoveryAnalyzer(2);
+
+    OpenApiSpecDiscoveryAnalysis analysis = cappedAnalyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".")));
+
+    assertAll(
+        () -> assertEquals(
+            List.of("api/a/openapi.yml", "api/b/openapi.yml"),
+            analysis.specFiles().stream().map(OpenApiSpecFileFact::specPath).toList()),
+        () -> assertEquals(2, analysis.evidence().size()),
+        () -> assertEvidenceIdsResolve(analysis),
+        () -> assertFalse(analysis.toString().contains("api/z/openapi.yml")),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_OPENAPI_SECRET")));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);

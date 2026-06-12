@@ -38,6 +38,10 @@ architecture documents.
   workload for Spring MVC, component, JPA, Spring application surface, warning, test
   inventory, and Spring Boot application analyzers; oversized, symlinked/unreadable, or
   pathological Java files are skipped with deterministic `scan.diagnostics` warnings.
+- Bounded pre-materialization candidate retention for resource config file discovery,
+  OpenAPI/Swagger spec discovery, and local Markdown discovery so large path sets are
+  truncated deterministically before fact or evidence materialization; local Markdown
+  truncation reuses the existing document count cap diagnostic.
 
 ## [0.9.0] - 2026-06-11
 

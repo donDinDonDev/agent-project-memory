@@ -117,6 +117,31 @@ final class ResourceConfigAnalyzerTest {
         () -> assertSensitiveFixtureValuesDoNotAppear(analysis));
   }
 
+  @Test
+  void boundsConfigFileCandidatesBeforeFactMaterialization() throws Exception {
+    Path repositoryRoot = repository("resource-config-candidate-cap");
+    writeFile(repositoryRoot.resolve("src/main/resources/a/application.yml"), "name: a\n");
+    writeFile(repositoryRoot.resolve("src/main/resources/b/application.yml"), "name: b\n");
+    writeFile(repositoryRoot.resolve("src/main/resources/z/application.yml"), """
+        password: FAKE_SKIPPED_RESOURCE_CONFIG_SECRET
+        """);
+    ResourceConfigAnalyzer cappedAnalyzer = new ResourceConfigAnalyzer(2);
+
+    ResourceConfigAnalysis analysis = cappedAnalyzer.analyze(repositoryRoot, List.of(rootModule()));
+    ModuleResourceConfig module = moduleConfig(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals(
+            List.of(
+                "src/main/resources/a/application.yml",
+                "src/main/resources/b/application.yml"),
+            module.configFiles().stream().map(ConfigFileFact::path).toList()),
+        () -> assertEquals(2, analysis.evidence().size()),
+        () -> assertEvidenceIdsResolve(analysis),
+        () -> assertFalse(analysis.toString().contains("src/main/resources/z/application.yml")),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_RESOURCE_CONFIG_SECRET")));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);

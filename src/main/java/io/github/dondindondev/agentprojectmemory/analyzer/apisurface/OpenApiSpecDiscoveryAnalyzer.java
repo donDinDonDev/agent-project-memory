@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.apisurface;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
@@ -27,6 +28,7 @@ public final class OpenApiSpecDiscoveryAnalyzer {
   private static final String MODULE_SUPPORTED = "supported";
   private static final int MAX_HEADER_BYTES = 16 * 1024;
   private static final int MAX_VERSION_LENGTH = 80;
+  private static final int DEFAULT_MAX_SPEC_FILE_CANDIDATES = 4_096;
   private static final Set<String> SUPPORTED_SPEC_FILENAMES = Set.of(
       "openapi.yml",
       "openapi.yaml",
@@ -48,6 +50,18 @@ public final class OpenApiSpecDiscoveryAnalyzer {
       .thenComparing(OpenApiSpecFileFact::specKind)
       .thenComparing(OpenApiSpecFileFact::format)
       .thenComparing(OpenApiSpecFileFact::id);
+  private final int maxSpecFileCandidates;
+
+  public OpenApiSpecDiscoveryAnalyzer() {
+    this(DEFAULT_MAX_SPEC_FILE_CANDIDATES);
+  }
+
+  OpenApiSpecDiscoveryAnalyzer(int maxSpecFileCandidates) {
+    if (maxSpecFileCandidates < 0) {
+      throw new IllegalArgumentException("maxSpecFileCandidates must not be negative.");
+    }
+    this.maxSpecFileCandidates = maxSpecFileCandidates;
+  }
 
   public OpenApiSpecDiscoveryAnalysis analyze(
       Path repositoryRoot,
@@ -139,7 +153,10 @@ public final class OpenApiSpecDiscoveryAnalyzer {
       return List.of();
     }
 
-    List<Path> specFiles = new ArrayList<>();
+    BoundedCandidateSet<Path> specFiles = new BoundedCandidateSet<>(
+        maxSpecFileCandidates,
+        Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)),
+        path -> repositoryRelativePath(repositoryRoot, path));
     Files.walkFileTree(repositoryRoot, new SimpleFileVisitor<>() {
       @Override
       public FileVisitResult preVisitDirectory(Path directory, BasicFileAttributes attributes) {
@@ -158,14 +175,12 @@ public final class OpenApiSpecDiscoveryAnalyzer {
         if (SUPPORTED_SPEC_FILENAMES.contains(fileName)
             && ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, file)
             && !isExcluded(repositoryRoot, file)) {
-          specFiles.add(file);
+          specFiles.add(file.toAbsolutePath().normalize());
         }
         return FileVisitResult.CONTINUE;
       }
     });
-    return specFiles.stream()
-        .sorted(Comparator.comparing(path -> repositoryRelativePath(repositoryRoot, path)))
-        .toList();
+    return specFiles.sorted();
   }
 
   private boolean isExcluded(Path repositoryRoot, Path path) {

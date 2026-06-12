@@ -1251,6 +1251,10 @@ Sensitive config handling rules:
   XML element content, decrypted values, or secret-looking values from config files.
 - `config_file` evidence excerpts for v0.3 config discovery must be bounded path or
   filename observations such as `config file detected: application.yml`.
+- Config file discovery is bounded before fact or evidence materialization. The current
+  implementation keeps at most 4096 supported config file candidates per resource root
+  in normalized repository-relative path order. Candidates outside that bound do not
+  create config facts or `config_file` evidence records.
 - Any future proposal to store config keys, selected safe values, or source excerpts from
   config files requires an explicit contract update, evidence model update if needed,
   sensitive-fixture tests, and risk-based security review.
@@ -1438,6 +1442,10 @@ OpenAPI spec file rules:
   deterministically available and is `null` otherwise.
 - Spec file facts prove only local spec presence and bounded version/kind observations.
   They do not prove runtime APIs, OpenAPI operations, or generated code.
+- Spec file discovery is bounded before fact or evidence materialization. The current
+  implementation keeps at most 4096 supported OpenAPI/Swagger spec file candidates in
+  normalized repository-relative path order. Candidates outside that bound do not create
+  spec file facts, operation parser input, or `api_spec` evidence records.
 
 OpenAPI operation rules:
 
@@ -2862,8 +2870,12 @@ Current v0.8 heading and chunk rules:
 
 Current aggregate local Markdown caps:
 
-- The current v0.9 implementation caps emitted local Markdown inventory at 256 accepted
-  documents and 16 MiB of aggregate accepted Markdown file bytes per scan.
+- The current v0.9 implementation caps local Markdown candidate selection and emitted
+  local Markdown inventory at 256 accepted documents, and caps emitted local Markdown
+  inventory at 16 MiB of aggregate accepted Markdown file bytes per scan.
+- Local Markdown candidate selection is bounded before document fact, document evidence,
+  and structure extraction. Candidates outside the document count bound do not create
+  document facts, document structure, or `document` evidence records.
 - It caps emitted document structure at 4096 heading references and 4096 chunk
   references per scan. Additional headings or chunks are omitted after the cap is
   reached, and omitted structure references do not create `document` evidence records.
