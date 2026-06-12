@@ -9,12 +9,16 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-12
+
 ### Added
 
 - Added a v1.0 evaluation corpus summary for packaged CLI scans over pinned
   representative Java/Spring Maven targets, covering deterministic output stability,
   `schema_version: "1.0"`, evidence reference integrity, normalized paths, module and
   warning references, document/code separation, and configured local Markdown volume.
+- Added v1.0.0 release notes covering compatibility, migration, validation, security
+  boundaries, not-included scope, and expected release assets.
 
 ### Changed
 
@@ -27,6 +31,9 @@ architecture documents.
   including the v0.9-to-v1.0 schema marker migration, JSON/JSONL field and semantic
   stability, Markdown presentation expectations, and future breaking-change,
   deprecation, and migration-note requirements.
+- Aligned the Maven project version, README local build examples, roadmap status, and
+  release notes for the `v1.0.0` release-prep candidate while keeping the latest
+  published release status on `v0.9.0` until publication occurs.
 
 ### Security
 
@@ -42,6 +49,12 @@ architecture documents.
   OpenAPI/Swagger spec discovery, and local Markdown discovery so large path sets are
   truncated deterministically before fact or evidence materialization; local Markdown
   truncation reuses the existing document count cap diagnostic.
+
+### Not Included
+
+- Connectors, network access, telemetry, package-manager publication, SaaS, web UI,
+  repository chat, generic RAG, LLM calls in the core analyzer, generated-source
+  scanning by default, or automatic code modification.
 
 ## [0.9.0] - 2026-06-11
 

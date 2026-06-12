@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-0.9.0.jar
+target/agent-project-memory-1.0.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,17 +74,17 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-0.9.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.0.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-0.9.0.jar --help
-java -jar target/agent-project-memory-0.9.0.jar help
-java -jar target/agent-project-memory-0.9.0.jar scan --help
-java -jar target/agent-project-memory-0.9.0.jar --version
-java -jar target/agent-project-memory-0.9.0.jar version
+java -jar target/agent-project-memory-1.0.0.jar --help
+java -jar target/agent-project-memory-1.0.0.jar help
+java -jar target/agent-project-memory-1.0.0.jar scan --help
+java -jar target/agent-project-memory-1.0.0.jar --version
+java -jar target/agent-project-memory-1.0.0.jar version
 ```
 
 CLI exit codes are stable for automation:
@@ -274,6 +274,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v1.0 release summary: [docs/product/V1_0_RELEASE_NOTES.md](docs/product/V1_0_RELEASE_NOTES.md).
 - v0.9 release summary: [docs/product/V0_9_RELEASE_NOTES.md](docs/product/V0_9_RELEASE_NOTES.md).
 - v0.8 release summary: [docs/product/V0_8_RELEASE_NOTES.md](docs/product/V0_8_RELEASE_NOTES.md).
 - v0.7 release summary: [docs/product/V0_7_RELEASE_NOTES.md](docs/product/V0_7_RELEASE_NOTES.md).
@@ -324,9 +325,10 @@ references.
 ## Project Status
 
 The latest published release is `v0.9.0`. It ships an executable jar and `SHA256SUMS`
-asset. There is not yet a published `v1.0.0` release in this repository state. Current
-post-v0.9 development output uses `schema_version: "1.0"` for normal generated
-`project-map.json` files as a marker and compatibility-policy migration. The v1.0
+asset. There is not yet a published `v1.0.0` release in this repository state. This
+checkout is prepared as the local `v1.0.0` release candidate: `mvn package` builds
+`target/agent-project-memory-1.0.0.jar`, and normal generated `project-map.json` files
+use `schema_version: "1.0"` as a marker and compatibility-policy migration. The v1.0
 schema marker preserves the current v0.9 output shape and evidence semantics unless a
 later release note and architecture update explicitly change them.
 

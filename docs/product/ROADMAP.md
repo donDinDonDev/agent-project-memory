@@ -3,10 +3,12 @@
 ## Current Status
 
 The latest published release is `v0.9.0`, with executable jar and `SHA256SUMS` assets.
-Current post-v0.9 development output uses `schema_version: "1.0"` for normal generated
-`project-map.json` files as a marker and compatibility-policy migration. The v1.0 marker
-preserves the current v0.9 output shape and evidence semantics unless a later release
-note and architecture update explicitly change them.
+The current checkout is prepared as a local `v1.0.0` release candidate, while GitHub
+Release publication remains a separate manual action. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as a marker and
+compatibility-policy migration. The v1.0 marker preserves the current v0.9 output shape
+and evidence semantics unless a later release note and architecture update explicitly
+change them.
 
 The v1.0 compatibility policy treats `project-map.json` and `evidence-index.jsonl` as
 the stable machine-readable surface. `endpoints.md` and `agent-guide.md` remain
@@ -558,6 +560,12 @@ Current development status:
   Java/Spring Maven targets covering single-module, multi-module, OpenAPI/spec,
   JPA-heavy, test-heavy, docs/config-heavy, and moderate-size shapes. The public summary
   is [v1.0 Evaluation Corpus Summary](../development/evaluations/v1.0-evaluation-corpus_SUMMARY.md).
+- Release hardening is complete for bounded Maven POM/root build-file ingestion, Java
+  source discovery and parsing workload, and pre-materialization candidate retention for
+  resource config, OpenAPI/Swagger spec, and local Markdown discovery.
+- Release notes exist in [V1_0_RELEASE_NOTES.md](V1_0_RELEASE_NOTES.md). The local
+  `v1.0.0` release-prep candidate uses the executable jar plus `SHA256SUMS` path;
+  publication is still a separate manual action.
 
 Expected readiness:
 
