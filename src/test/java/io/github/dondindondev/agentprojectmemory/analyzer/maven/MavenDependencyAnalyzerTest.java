@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -276,6 +277,23 @@ final class MavenDependencyAnalyzerTest {
         () -> assertTrue(exception.getMessage().contains("malformed XML")));
   }
 
+  @Test
+  void oversizedPomIsSkippedWithDiagnostic() throws Exception {
+    Path repositoryRoot = repository("oversized-dependency-pom");
+    writeOversizedPom(repositoryRoot.resolve("pom.xml"));
+
+    MavenDependencyAnalysis analysis = analyzer.analyze(repositoryRoot, List.of(rootModule()));
+    MavenModuleDependencies dependencies = moduleDependencies(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals("not_detected", dependencies.analysisStatus()),
+        () -> assertEquals(List.of(), dependencies.dependencies()),
+        () -> assertEquals(List.of(), dependencies.dependencyManagement()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertEquals(1, analysis.diagnostics().size()),
+        () -> assertPomSizeDiagnostic(analysis.diagnostics().get(0), "pom.xml"));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);
@@ -285,6 +303,10 @@ final class MavenDependencyAnalyzerTest {
   private void writePom(Path pom, String xml) throws Exception {
     Files.createDirectories(pom.getParent());
     Files.writeString(pom, xml);
+  }
+
+  private void writeOversizedPom(Path pom) throws Exception {
+    writePom(pom, "<project>\n<!-- " + "x".repeat(MavenPomInput.MAX_POM_BYTES) + " -->\n</project>\n");
   }
 
   private MavenModuleItem rootModule() {
@@ -311,6 +333,17 @@ final class MavenDependencyAnalyzerTest {
   private void assertValue(MavenMetadataValue value, String expectedValue, String expectedKind) {
     assertEquals(expectedValue, value.value());
     assertEquals(expectedKind, value.valueKind());
+  }
+
+  private void assertPomSizeDiagnostic(ScanDiagnostic diagnostic, String sourcePath) {
+    assertAll(
+        () -> assertEquals(
+            MavenPomInput.DIAGNOSTIC_CODE_POM_BYTES_CAP_EXCEEDED,
+            diagnostic.code()),
+        () -> assertEquals("warning", diagnostic.severity()),
+        () -> assertEquals("maven", diagnostic.category()),
+        () -> assertEquals(sourcePath, diagnostic.path()),
+        () -> assertEquals(MavenPomInput.MAX_POM_BYTES, diagnostic.count()));
   }
 
   private void assertEvidenceIdsResolve(MavenDependencyAnalysis analysis) {

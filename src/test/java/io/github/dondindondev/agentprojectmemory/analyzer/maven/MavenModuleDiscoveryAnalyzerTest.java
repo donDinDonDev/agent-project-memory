@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -85,6 +86,51 @@ final class MavenModuleDiscoveryAnalyzerTest {
         () -> assertTrue(exception.getMessage().contains("malformed XML")),
         () -> assertTrue(exception.getMessage().contains("line")),
         () -> assertFalse(exception.getMessage().contains("services/hidden")));
+  }
+
+  @Test
+  void oversizedRootPomIsSkippedWithDiagnostic() throws Exception {
+    Path repositoryRoot = repository("oversized-root-pom");
+    writeOversizedPom(repositoryRoot.resolve("pom.xml"));
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+
+    assertAll(
+        () -> assertEquals("not_detected", analysis.analysisStatus()),
+        () -> assertEquals(List.of(), analysis.items()),
+        () -> assertEquals(List.of(), analysis.warnings()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertEquals(1, analysis.diagnostics().size()),
+        () -> assertPomSizeDiagnostic(analysis.diagnostics().get(0), "pom.xml"));
+  }
+
+  @Test
+  void oversizedChildPomSkipsPomEvidenceAndNestedParsingWithDiagnostic() throws Exception {
+    Path repositoryRoot = repository("oversized-child-pom");
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+          </modules>
+        </project>
+        """);
+    writeOversizedPom(repositoryRoot.resolve("services/orders/pom.xml"));
+    Files.createDirectories(repositoryRoot.resolve("services/orders/src/main/java"));
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem orders = item(analysis, "module:services/orders");
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals("services/orders/pom.xml", orders.pomPath()),
+        () -> assertEquals(List.of("services/orders/src/main/java"), orders.sourceRoots()),
+        () -> assertEquals("supported", orders.supportStatus()),
+        () -> assertEquals(List.of(), orders.pomEvidenceIds()),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> "services/orders/pom.xml".equals(evidence.sourcePath()))),
+        () -> assertEquals(1, analysis.diagnostics().size()),
+        () -> assertPomSizeDiagnostic(analysis.diagnostics().get(0), "services/orders/pom.xml"),
+        () -> assertEvidenceIdsResolve(analysis));
   }
 
   @Test
@@ -475,6 +521,10 @@ final class MavenModuleDiscoveryAnalyzerTest {
     Files.writeString(pom, xml);
   }
 
+  private void writeOversizedPom(Path pom) throws Exception {
+    writePom(pom, "<project>\n<!-- " + "x".repeat(MavenPomInput.MAX_POM_BYTES) + " -->\n</project>\n");
+  }
+
   private void createSymbolicLink(Path link, Path target) throws Exception {
     try {
       Files.createSymbolicLink(link, target);
@@ -495,6 +545,17 @@ final class MavenModuleDiscoveryAnalyzerTest {
         .filter(warning -> warning.signal().equals(signal))
         .findFirst()
         .orElseThrow();
+  }
+
+  private void assertPomSizeDiagnostic(ScanDiagnostic diagnostic, String sourcePath) {
+    assertAll(
+        () -> assertEquals(
+            MavenPomInput.DIAGNOSTIC_CODE_POM_BYTES_CAP_EXCEEDED,
+            diagnostic.code()),
+        () -> assertEquals("warning", diagnostic.severity()),
+        () -> assertEquals("maven", diagnostic.category()),
+        () -> assertEquals(sourcePath, diagnostic.path()),
+        () -> assertEquals(MavenPomInput.MAX_POM_BYTES, diagnostic.count()));
   }
 
   private void assertEvidenceIdsResolve(MavenModuleDiscoveryAnalysis analysis) {

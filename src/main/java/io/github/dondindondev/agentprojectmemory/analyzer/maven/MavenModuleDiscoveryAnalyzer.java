@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import javax.xml.XMLConstants;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -58,9 +60,11 @@ public final class MavenModuleDiscoveryAnalyzer {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Path rootPom = normalizedRepositoryRoot.resolve(ROOT_BUILD_FILE);
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
     if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, rootPom)) {
       return new MavenModuleDiscoveryAnalysis(
           ANALYSIS_STATUS_NOT_DETECTED,
+          List.of(),
           List.of(),
           List.of(),
           List.of());
@@ -70,11 +74,20 @@ public final class MavenModuleDiscoveryAnalyzer {
     List<MavenModuleItem> moduleItems = new ArrayList<>();
     List<MavenModuleWarning> warnings = new ArrayList<>();
 
-    MavenModuleDiscoveryEvidence rootPomEvidence = pomEvidence(
+    Optional<MavenModuleDiscoveryEvidence> rootPomEvidence = pomEvidence(
         normalizedRepositoryRoot,
         rootPom,
-        ROOT_BUILD_FILE);
-    addEvidence(evidence, rootPomEvidence);
+        ROOT_BUILD_FILE,
+        diagnostics);
+    if (rootPomEvidence.isEmpty()) {
+      return new MavenModuleDiscoveryAnalysis(
+          ANALYSIS_STATUS_NOT_DETECTED,
+          List.of(),
+          List.of(),
+          List.of(),
+          diagnostics);
+    }
+    addEvidence(evidence, rootPomEvidence.orElseThrow());
 
     List<String> rootSourceRoots = detectedRoots(
         normalizedRepositoryRoot,
@@ -92,7 +105,8 @@ public final class MavenModuleDiscoveryAnalyzer {
         normalizedRepositoryRoot,
         normalizedRepositoryRoot,
         rootPom,
-        ROOT_BUILD_FILE);
+        ROOT_BUILD_FILE,
+        diagnostics);
     declarations.forEach(declaration -> addEvidence(evidence, declaration.evidence()));
 
     Map<String, ObservedModuleDeclaration> uniqueDeclarations = new LinkedHashMap<>();
@@ -125,7 +139,7 @@ public final class MavenModuleDiscoveryAnalyzer {
           "scan_root",
           ".",
           List.of(),
-          List.of(rootPomEvidence.id())));
+          List.of(rootPomEvidence.orElseThrow().id())));
     }
 
     for (ObservedModuleDeclaration declaration : uniqueDeclarations.values()) {
@@ -157,11 +171,15 @@ public final class MavenModuleDiscoveryAnalyzer {
         continue;
       }
 
-      MavenModuleDiscoveryEvidence childPomEvidence = pomEvidence(
+      Optional<MavenModuleDiscoveryEvidence> childPomEvidence = pomEvidence(
           normalizedRepositoryRoot,
           childPom,
-          childPomPath);
-      addEvidence(evidence, childPomEvidence);
+          childPomPath,
+          diagnostics);
+      childPomEvidence.ifPresent(record -> addEvidence(evidence, record));
+      List<String> childPomEvidenceIds = childPomEvidence
+          .map(record -> List.of(record.id()))
+          .orElseGet(List::of);
 
       List<String> sourceRoots = detectedRoots(
           normalizedRepositoryRoot,
@@ -187,27 +205,32 @@ public final class MavenModuleDiscoveryAnalyzer {
           "root_modules_entry",
           modulePath,
           declarationEvidenceIds,
-          List.of(childPomEvidence.id())));
+          childPomEvidenceIds));
 
-      if (supported) {
+      if (supported && childPomEvidence.isPresent()) {
         List<ObservedModuleDeclaration> nestedDeclarations = observedModuleDeclarations(
             normalizedRepositoryRoot,
             childPom.getParent(),
             childPom,
-            childPomPath);
+            childPomPath,
+            diagnostics);
         if (!nestedDeclarations.isEmpty()) {
           ObservedModuleDeclaration nestedDeclaration = nestedDeclarations.get(0);
           addEvidence(evidence, nestedDeclaration.evidence());
           warnings.add(nestedModuleDeclarationWarning(
               modulePath,
               childPomPath,
-              childPomEvidence,
+              childPomEvidence.orElseThrow(),
               nestedDeclaration));
         }
       }
 
       if (!supported) {
-        warnings.add(unsupportedModuleWarning(modulePath, childPomPath, declaration, childPomEvidence));
+        warnings.add(unsupportedModuleWarning(
+            modulePath,
+            childPomPath,
+            declaration,
+            childPomEvidenceIds));
       }
     }
 
@@ -224,7 +247,8 @@ public final class MavenModuleDiscoveryAnalyzer {
             .toList(),
         evidence.values().stream()
             .sorted(EVIDENCE_ORDER)
-            .toList());
+            .toList(),
+        diagnostics);
   }
 
   private List<String> detectedRoots(
@@ -286,18 +310,25 @@ public final class MavenModuleDiscoveryAnalyzer {
         && ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, path).isEmpty();
   }
 
-  private MavenModuleDiscoveryEvidence pomEvidence(
+  private Optional<MavenModuleDiscoveryEvidence> pomEvidence(
       Path repositoryRoot,
       Path pom,
-      String sourcePath) throws IOException {
-    List<String> lines = ScanPathContainment.readRegularFileLinesNoFollowStable(
-        pom,
-        StandardCharsets.UTF_8,
-        Integer.MAX_VALUE);
+      String sourcePath,
+      List<ScanDiagnostic> diagnostics) throws IOException {
+    List<String> lines;
+    try {
+      lines = MavenPomInput.readPomLines(pom);
+    } catch (IOException exception) {
+      if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+        MavenPomInput.addPomSizeLimitDiagnostic(diagnostics, sourcePath);
+        return Optional.empty();
+      }
+      throw exception;
+    }
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
     String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());
-    return new MavenModuleDiscoveryEvidence(
+    return Optional.of(new MavenModuleDiscoveryEvidence(
         "ev:" + sourcePath + ":" + lineRange + ":build_file:" + ROOT_BUILD_FILE,
         BUILD_FILE_SOURCE_TYPE,
         repositoryRelativePath(repositoryRoot, pom),
@@ -307,15 +338,25 @@ public final class MavenModuleDiscoveryAnalyzer {
         line,
         line,
         excerpt,
-        HIGH_CONFIDENCE);
+        HIGH_CONFIDENCE));
   }
 
   private List<ObservedModuleDeclaration> observedModuleDeclarations(
       Path repositoryRoot,
       Path declarationBaseDirectory,
       Path pom,
-      String sourcePath) throws IOException {
-    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+      String sourcePath,
+      List<ScanDiagnostic> diagnostics) throws IOException {
+    byte[] pomBytes;
+    try {
+      pomBytes = MavenPomInput.readPomBytes(pom);
+    } catch (IOException exception) {
+      if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+        MavenPomInput.addPomSizeLimitDiagnostic(diagnostics, sourcePath);
+        return List.of();
+      }
+      throw exception;
+    }
     List<String> sourceLines = utf8Lines(pomBytes);
     List<ModuleDeclaration> declarations = moduleDeclarations(pom, sourcePath, pomBytes);
     List<PreliminaryObservedModuleDeclaration> preliminary = declarations.stream()
@@ -551,7 +592,10 @@ public final class MavenModuleDiscoveryAnalyzer {
       String modulePath,
       String childPomPath,
       ObservedModuleDeclaration declaration,
-      MavenModuleDiscoveryEvidence childPomEvidence) {
+      List<String> childPomEvidenceIds) {
+    List<String> evidenceIds = new ArrayList<>();
+    evidenceIds.add(declaration.evidence().id());
+    evidenceIds.addAll(childPomEvidenceIds);
     return new MavenModuleWarning(
         "warning:maven_module:unsupported_module:" + modulePath,
         CATEGORY_MAVEN_MODULE,
@@ -559,7 +603,7 @@ public final class MavenModuleDiscoveryAnalyzer {
         moduleId(modulePath),
         "Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.",
         childPomPath,
-        List.of(declaration.evidence().id(), childPomEvidence.id()));
+        evidenceIds);
   }
 
   private Comparator<MavenModuleWarning> warningOrder(Map<String, Integer> moduleOrder) {

@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -87,6 +88,7 @@ public final class MavenPluginAnalyzer {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Map<String, MavenPluginEvidence> evidence = new LinkedHashMap<>();
     List<MavenModulePlugins> modulePlugins = new ArrayList<>();
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
 
     for (MavenModuleItem module : modules) {
       if (module.pomPath() == null || module.pomPath().isBlank()) {
@@ -100,9 +102,18 @@ public final class MavenPluginAnalyzer {
         continue;
       }
 
-      ParsedPomPlugins parsedPom = parsePomPlugins(
-          pom,
-          repositoryRelativePath(normalizedRepositoryRoot, pom));
+      String sourcePath = repositoryRelativePath(normalizedRepositoryRoot, pom);
+      ParsedPomPlugins parsedPom;
+      try {
+        parsedPom = parsePomPlugins(pom, sourcePath);
+      } catch (IOException exception) {
+        if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+          MavenPomInput.addPomSizeLimitDiagnostic(diagnostics, sourcePath);
+          modulePlugins.add(notDetectedPlugins(module.moduleId()));
+          continue;
+        }
+        throw exception;
+      }
       modulePlugins.add(modulePlugins(module.moduleId(), parsedPom));
       parsedPom.evidence().forEach(record -> evidence.putIfAbsent(record.id(), record));
     }
@@ -111,11 +122,12 @@ public final class MavenPluginAnalyzer {
         modulePlugins,
         evidence.values().stream()
             .sorted(EVIDENCE_ORDER)
-            .toList());
+            .toList(),
+        diagnostics);
   }
 
   private ParsedPomPlugins parsePomPlugins(Path pom, String sourcePath) throws IOException {
-    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+    byte[] pomBytes = MavenPomInput.readPomBytes(pom);
     List<String> sourceLines = utf8Lines(pomBytes);
     PluginElementHandler handler = new PluginElementHandler();
     SAXParser parser;

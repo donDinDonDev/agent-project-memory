@@ -70,6 +70,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginDecla
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginExecution;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPluginSignal;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.ModuleSpringBootApplications;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.springboot.SpringBootApplicationAnalyzer;
@@ -568,6 +569,11 @@ public final class SpringMvcEndpointOutputGenerator {
             documentSourceModuleFacts(layout.modules().items()))
         : new DocumentReconciliationAnalysis(ANALYSIS_NOT_ANALYZED, List.of(), List.of(), List.of());
     List<ScanDiagnostic> scanDiagnostics = scanDiagnostics(
+        layout,
+        moduleDiscoveryAnalysis,
+        metadataAnalysis,
+        dependencyAnalysis,
+        pluginAnalysis,
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis);
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
@@ -651,7 +657,12 @@ public final class SpringMvcEndpointOutputGenerator {
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
+        || !layout.diagnostics().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
+        || !moduleDiscoveryAnalysis.diagnostics().isEmpty()
+        || !metadataAnalysis.diagnostics().isEmpty()
+        || !dependencyAnalysis.diagnostics().isEmpty()
+        || !pluginAnalysis.diagnostics().isEmpty()
         || metadataAnalysis.modules().stream()
             .anyMatch(metadata -> ANALYSIS_ANALYZED.equals(metadata.analysisStatus()))
         || dependencyAnalysis.modules().stream()
@@ -674,10 +685,10 @@ public final class SpringMvcEndpointOutputGenerator {
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis) throws IOException {
-    Optional<EvidenceRecord> buildFileEvidence = buildFileEvidence(
+    BuildFileEvidenceResult buildFileEvidence = buildFileEvidence(
         repositoryRoot,
         canonicalRepositoryRoot);
-    BuildMetadata build = buildFileEvidence
+    BuildMetadata build = buildFileEvidence.evidence()
         .map(evidence -> new BuildMetadata("maven", ROOT_BUILD_FILE, List.of(evidence.id())))
         .orElseGet(() -> new BuildMetadata("not_detected", null, List.of()));
 
@@ -694,7 +705,13 @@ public final class SpringMvcEndpointOutputGenerator {
         .sorted()
         .toList();
 
-    return new ProjectLayout(build, sourceRoots, testRoots, modules, buildFileEvidence);
+    return new ProjectLayout(
+        build,
+        sourceRoots,
+        testRoots,
+        modules,
+        buildFileEvidence.evidence(),
+        buildFileEvidence.diagnostics());
   }
 
   private ProjectModules projectModules(
@@ -1214,22 +1231,29 @@ public final class SpringMvcEndpointOutputGenerator {
         + ordinalText(plugin.declarationOrdinal());
   }
 
-  private Optional<EvidenceRecord> buildFileEvidence(
+  private BuildFileEvidenceResult buildFileEvidence(
       Path repositoryRoot,
       Path canonicalRepositoryRoot) throws IOException {
     Path buildFile = repositoryRoot.resolve(ROOT_BUILD_FILE);
     if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, buildFile)) {
-      return Optional.empty();
+      return new BuildFileEvidenceResult(Optional.empty(), List.of());
     }
 
-    List<String> lines = ScanPathContainment.readRegularFileLinesNoFollowStable(
-        buildFile,
-        StandardCharsets.UTF_8,
-        Integer.MAX_VALUE);
+    List<String> lines;
+    try {
+      lines = MavenPomInput.readPomLines(buildFile);
+    } catch (IOException exception) {
+      if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+        return new BuildFileEvidenceResult(
+            Optional.empty(),
+            List.of(MavenPomInput.pomSizeLimitDiagnostic(ROOT_BUILD_FILE)));
+      }
+      throw exception;
+    }
     Integer line = lines.isEmpty() ? null : 1;
     String lineRange = line == null ? "unknown" : line + "-" + line;
     String excerpt = lines.isEmpty() ? "" : EvidenceExcerpts.bounded(lines.get(0).trim());
-    return Optional.of(new EvidenceRecord(
+    return new BuildFileEvidenceResult(Optional.of(new EvidenceRecord(
         "ev:" + ROOT_BUILD_FILE + ":" + lineRange + ":build_file:" + ROOT_BUILD_FILE,
         BUILD_FILE_SOURCE_TYPE,
         ROOT_BUILD_FILE,
@@ -1239,7 +1263,7 @@ public final class SpringMvcEndpointOutputGenerator {
         line,
         line,
         excerpt,
-        HIGH_CONFIDENCE));
+        HIGH_CONFIDENCE)), List.of());
   }
 
   private List<String> detectedRoots(
@@ -1650,12 +1674,28 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private List<ScanDiagnostic> scanDiagnostics(
+      ProjectLayout layout,
+      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      MavenMetadataAnalysis metadataAnalysis,
+      MavenDependencyAnalysis dependencyAnalysis,
+      MavenPluginAnalysis pluginAnalysis,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis) {
-    List<ScanDiagnostic> diagnostics = new ArrayList<>();
-    diagnostics.addAll(documentDiscoveryAnalysis.diagnostics());
-    diagnostics.addAll(documentReconciliationAnalysis.diagnostics());
-    return diagnostics;
+    Map<String, ScanDiagnostic> diagnostics = new LinkedHashMap<>();
+    addScanDiagnostics(diagnostics, layout.diagnostics());
+    addScanDiagnostics(diagnostics, moduleDiscoveryAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, metadataAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, dependencyAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, pluginAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, documentDiscoveryAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, documentReconciliationAnalysis.diagnostics());
+    return new ArrayList<>(diagnostics.values());
+  }
+
+  private void addScanDiagnostics(
+      Map<String, ScanDiagnostic> diagnostics,
+      List<ScanDiagnostic> newDiagnostics) {
+    newDiagnostics.forEach(diagnostic -> diagnostics.putIfAbsent(diagnostic.id(), diagnostic));
   }
 
   private void appendScanDiagnosticItems(
@@ -5846,11 +5886,21 @@ public final class SpringMvcEndpointOutputGenerator {
       List<String> sourceRoots,
       List<String> testRoots,
       ProjectModules modules,
-      Optional<EvidenceRecord> buildFileEvidence) {
+      Optional<EvidenceRecord> buildFileEvidence,
+      List<ScanDiagnostic> diagnostics) {
     private ProjectLayout {
       sourceRoots = List.copyOf(sourceRoots);
       testRoots = List.copyOf(testRoots);
       modules = Objects.requireNonNull(modules, "modules");
+      diagnostics = List.copyOf(diagnostics);
+    }
+  }
+
+  private record BuildFileEvidenceResult(
+      Optional<EvidenceRecord> evidence,
+      List<ScanDiagnostic> diagnostics) {
+    private BuildFileEvidenceResult {
+      diagnostics = List.copyOf(diagnostics);
     }
   }
 

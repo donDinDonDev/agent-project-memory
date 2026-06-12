@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -254,6 +255,43 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Capped project-map evidence_ids must resolve in evidence-index.jsonl"));
+  }
+
+  @Test
+  void projectMapRendersOversizedMavenPomDiagnosticAndSkipsBuildEvidence() throws Exception {
+    Path projectPath = tempDir.resolve("oversized-maven-pom-diagnostics");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    writeOversizedPom(projectPath.resolve("pom.xml"));
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    JsonNode root = JSON.readTree(projectMap);
+    JsonNode diagnostics = root.path("scan").path("diagnostics").path("items");
+    JsonNode build = root.path("project").path("build");
+    Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(1, result.diagnosticCount()),
+        () -> assertEquals(1, diagnostics.size()),
+        () -> assertEquals(
+            MavenPomInput.DIAGNOSTIC_CODE_POM_BYTES_CAP_EXCEEDED,
+            diagnostics.get(0).path("code").asText()),
+        () -> assertEquals("warning", diagnostics.get(0).path("severity").asText()),
+        () -> assertEquals("maven", diagnostics.get(0).path("category").asText()),
+        () -> assertEquals("pom.xml", diagnostics.get(0).path("path").asText()),
+        () -> assertEquals(MavenPomInput.MAX_POM_BYTES, diagnostics.get(0).path("count").asInt()),
+        () -> assertEquals("not_detected", build.path("system").asText()),
+        () -> assertTrue(build.path("root_build_file").isNull()),
+        () -> assertEquals(0, build.path("evidence_ids").size()),
+        () -> assertFalse(evidenceIndex.contains("ev:pom.xml:1-1:build_file:pom.xml")),
+        () -> assertTrue(evidenceIndexIds.containsAll(projectMapEvidenceIds)));
   }
 
   @Test
@@ -2468,6 +2506,10 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private void writeFile(Path path, String content) throws Exception {
     Files.createDirectories(path.getParent());
     Files.writeString(path, content);
+  }
+
+  private void writeOversizedPom(Path path) throws Exception {
+    writeFile(path, "<project>\n<!-- " + "x".repeat(MavenPomInput.MAX_POM_BYTES) + " -->\n</project>\n");
   }
 
   private void createSymbolicLink(Path link, Path target) throws Exception {

@@ -218,10 +218,11 @@ Field rules:
 - `schema_version` is the string `"0.1"` for the v0.1 output contract slice.
 - `project.root` is `"."` because the output is relative to the scanned repository root.
 - `project.build.system` is `"maven"` when a root `pom.xml` file is detected and
-  `"not_detected"` otherwise.
-- `project.build.root_build_file` is `"pom.xml"` when detected and `null` otherwise.
+  accepted within the Maven POM byte limit, and `"not_detected"` otherwise.
+- `project.build.root_build_file` is `"pom.xml"` when detected and accepted, and
+  `null` otherwise.
 - `project.build.evidence_ids` references `build_file` evidence for the root `pom.xml`
-  when present and is an empty array otherwise.
+  when present and accepted, and is an empty array otherwise.
 - `project.source_roots` contains detected standard production source roots. The v0.1
   implementation supports `src/main/java`.
 - `project.test_roots` contains detected standard test source roots. The v0.1
@@ -611,7 +612,8 @@ Single-module compatibility rules:
 Module inventory rules:
 
 - `project.modules.analysis_status` is `"analyzed"` when module discovery runs. It may
-  be `"not_detected"` only when no Maven build input is available for module discovery.
+  be `"not_detected"` when no Maven build input is available for module discovery or
+  when the root `pom.xml` is skipped because it exceeds the Maven POM byte limit.
 - `project.modules.items` contains the scan root when the scan is single-module or when
   the root has supported production, test, or resource roots, plus valid unique child
   module paths declared by the root `<modules>` section.
@@ -636,8 +638,9 @@ Module inventory rules:
   `module_path`; it is `"."` for the scan root.
 - `declaration_evidence_ids` references root `<module>` declaration evidence for child
   modules and is an empty array for the scan root.
-- `pom_evidence_ids` references `build_file` evidence for the detected root or child
-  `pom.xml`. It is an empty array for a valid declaration whose child POM is missing.
+- `pom_evidence_ids` references `build_file` evidence for the detected and accepted
+  root or child `pom.xml`. It is an empty array for a valid declaration whose child POM
+  is missing or whose child POM is skipped because it exceeds the Maven POM byte limit.
 
 Fact-level module identity rules:
 
@@ -3261,7 +3264,7 @@ Current `scan.diagnostics` rules:
 - `scan.diagnostics.analysis_status` is `"analyzed"`.
 - `scan.diagnostics.items[]` is empty when no bounded non-fatal diagnostic condition was
   observed. The current implementation emits warning items when aggregate local Markdown
-  caps are reached.
+  caps are reached or oversized Maven POM/root build-file inputs are skipped.
 - Diagnostic items contain `id`, `severity`, `code`, `category`, `message`, nullable
   `path`, and nullable `count`. For current local Markdown aggregate cap diagnostics,
   `severity` is `"warning"`, `category` is `"documents"`, `path` is `null`, and `count`
@@ -3273,6 +3276,12 @@ Current `scan.diagnostics` rules:
   `"local_markdown_chunk_count_cap_reached"`,
   `"local_markdown_mention_count_cap_reached"`, and
   `"local_markdown_reconciliation_output_cap_reached"`.
+- Current Maven POM/root build-file cap diagnostics use
+  `code: "maven_pom_file_bytes_cap_exceeded"`, `severity: "warning"`,
+  `category: "maven"`, `path` set to the normalized repository-relative POM path, and
+  `count: 1048576`. The affected POM/root build-file input is skipped fail-closed: no
+  Maven module declaration, Maven metadata, dependency, plugin, or root build-file
+  evidence is emitted from skipped oversized POM bytes.
 - Later v0.9 diagnostics may add other bounded scan metadata for non-fatal conditions
   such as config defaults in use, user path rules accepted, user path rules matching no
   candidate, files skipped by built-in safety exclusions, disabled local docs, or

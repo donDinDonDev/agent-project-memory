@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -69,6 +70,7 @@ public final class MavenDependencyAnalyzer {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Map<String, MavenDependencyEvidence> evidence = new LinkedHashMap<>();
     List<MavenModuleDependencies> moduleDependencies = new ArrayList<>();
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
 
     for (MavenModuleItem module : modules) {
       if (module.pomPath() == null || module.pomPath().isBlank()) {
@@ -82,9 +84,18 @@ public final class MavenDependencyAnalyzer {
         continue;
       }
 
-      ParsedPomDependencies parsedPom = parsePomDependencies(
-          pom,
-          repositoryRelativePath(normalizedRepositoryRoot, pom));
+      String sourcePath = repositoryRelativePath(normalizedRepositoryRoot, pom);
+      ParsedPomDependencies parsedPom;
+      try {
+        parsedPom = parsePomDependencies(pom, sourcePath);
+      } catch (IOException exception) {
+        if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+          MavenPomInput.addPomSizeLimitDiagnostic(diagnostics, sourcePath);
+          moduleDependencies.add(notDetectedDependencies(module.moduleId()));
+          continue;
+        }
+        throw exception;
+      }
       moduleDependencies.add(moduleDependencies(module.moduleId(), parsedPom));
       parsedPom.evidence().forEach(record -> evidence.putIfAbsent(record.id(), record));
     }
@@ -93,11 +104,12 @@ public final class MavenDependencyAnalyzer {
         moduleDependencies,
         evidence.values().stream()
             .sorted(EVIDENCE_ORDER)
-            .toList());
+            .toList(),
+        diagnostics);
   }
 
   private ParsedPomDependencies parsePomDependencies(Path pom, String sourcePath) throws IOException {
-    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+    byte[] pomBytes = MavenPomInput.readPomBytes(pom);
     List<String> sourceLines = utf8Lines(pomBytes);
     DependencyElementHandler handler = new DependencyElementHandler();
     SAXParser parser;

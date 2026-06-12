@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -49,6 +50,7 @@ public final class MavenMetadataAnalyzer {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     Map<String, MavenMetadataEvidence> evidence = new LinkedHashMap<>();
     List<MavenModuleMetadata> moduleMetadata = new ArrayList<>();
+    List<ScanDiagnostic> diagnostics = new ArrayList<>();
 
     for (MavenModuleItem module : modules) {
       if (module.pomPath() == null || module.pomPath().isBlank()) {
@@ -62,9 +64,18 @@ public final class MavenMetadataAnalyzer {
         continue;
       }
 
-      ParsedPomMetadata parsedPom = parsePomMetadata(
-          pom,
-          repositoryRelativePath(normalizedRepositoryRoot, pom));
+      String sourcePath = repositoryRelativePath(normalizedRepositoryRoot, pom);
+      ParsedPomMetadata parsedPom;
+      try {
+        parsedPom = parsePomMetadata(pom, sourcePath);
+      } catch (IOException exception) {
+        if (MavenPomInput.isPomSizeLimitExceeded(exception)) {
+          MavenPomInput.addPomSizeLimitDiagnostic(diagnostics, sourcePath);
+          moduleMetadata.add(notDetectedMetadata(module.moduleId()));
+          continue;
+        }
+        throw exception;
+      }
       moduleMetadata.add(moduleMetadata(module.moduleId(), parsedPom));
       parsedPom.evidence().forEach(record -> evidence.putIfAbsent(record.id(), record));
     }
@@ -73,11 +84,12 @@ public final class MavenMetadataAnalyzer {
         moduleMetadata,
         evidence.values().stream()
             .sorted(EVIDENCE_ORDER)
-            .toList());
+            .toList(),
+        diagnostics);
   }
 
   private ParsedPomMetadata parsePomMetadata(Path pom, String sourcePath) throws IOException {
-    byte[] pomBytes = ScanPathContainment.readRegularFileBytesNoFollowStable(pom, Integer.MAX_VALUE);
+    byte[] pomBytes = MavenPomInput.readPomBytes(pom);
     List<String> sourceLines = utf8Lines(pomBytes);
     MetadataElementHandler handler = new MetadataElementHandler();
     SAXParser parser;

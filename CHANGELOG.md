@@ -28,6 +28,13 @@ architecture documents.
   stability, Markdown presentation expectations, and future breaking-change,
   deprecation, and migration-note requirements.
 
+### Security
+
+- Bounded Maven POM/root build-file ingestion at 1 MiB for module discovery, Maven
+  metadata, dependency, plugin, and root build-file evidence paths; oversized POM inputs
+  are skipped with deterministic `scan.diagnostics` warnings instead of being fully
+  materialized.
+
 ## [0.9.0] - 2026-06-11
 
 ### Added
