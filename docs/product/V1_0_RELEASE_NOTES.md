@@ -123,7 +123,7 @@ The v1.0 validation records bounded future work that is not required for this re
 - Keep package-manager distribution channels parked until separate channel-specific
   designs cover installation, update, checksum, signing, and release-process behavior.
 
-## Expected Release Assets
+## Release Assets
 
 - `agent-project-memory-1.0.0.jar`
 - `SHA256SUMS`

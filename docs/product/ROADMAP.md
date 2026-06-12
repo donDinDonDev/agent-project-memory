@@ -2,10 +2,8 @@
 
 ## Current Status
 
-The latest published release is `v0.9.0`, with executable jar and `SHA256SUMS` assets.
-The current checkout is prepared as a local `v1.0.0` release candidate, while GitHub
-Release publication remains a separate manual action. Normal generated
-`project-map.json` files use `schema_version: "1.0"` as a marker and
+The latest published release is `v1.0.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as a marker and
 compatibility-policy migration. The v1.0 marker preserves the current v0.9 output shape
 and evidence semantics unless a later release note and architecture update explicitly
 change them.
@@ -563,9 +561,9 @@ Current development status:
 - Release hardening is complete for bounded Maven POM/root build-file ingestion, Java
   source discovery and parsing workload, and pre-materialization candidate retention for
   resource config, OpenAPI/Swagger spec, and local Markdown discovery.
-- Release notes exist in [V1_0_RELEASE_NOTES.md](V1_0_RELEASE_NOTES.md). The local
-  `v1.0.0` release-prep candidate uses the executable jar plus `SHA256SUMS` path;
-  publication is still a separate manual action.
+- The `v1.0.0` tag and GitHub release are published with the packaged jar and checksum
+  assets. Release notes are available in
+  [V1_0_RELEASE_NOTES.md](V1_0_RELEASE_NOTES.md).
 
 Expected readiness:
 

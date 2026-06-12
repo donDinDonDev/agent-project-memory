@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v0.9.0`. Its release artifact is
-`agent-project-memory-0.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.0.0`. Its release artifact is
+`agent-project-memory-1.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-0.9.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.0.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -324,13 +324,12 @@ references.
 
 ## Project Status
 
-The latest published release is `v0.9.0`. It ships an executable jar and `SHA256SUMS`
-asset. There is not yet a published `v1.0.0` release in this repository state. This
-checkout is prepared as the local `v1.0.0` release candidate: `mvn package` builds
-`target/agent-project-memory-1.0.0.jar`, and normal generated `project-map.json` files
-use `schema_version: "1.0"` as a marker and compatibility-policy migration. The v1.0
-schema marker preserves the current v0.9 output shape and evidence semantics unless a
-later release note and architecture update explicitly change them.
+The latest published release is `v1.0.0`. It ships an executable jar and `SHA256SUMS`
+asset. This checkout builds `target/agent-project-memory-1.0.0.jar`, and normal
+generated `project-map.json` files use `schema_version: "1.0"` as a marker and
+compatibility-policy migration. The v1.0 schema marker preserves the current v0.9 output
+shape and evidence semantics unless a later release note and architecture update
+explicitly change them.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, source-visible Spring MVC and application-surface signals, declared OpenAPI

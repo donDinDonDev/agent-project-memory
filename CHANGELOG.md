@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Fixed
+
+- Updated post-release documentation status to mark `v1.0.0` as published with release
+  assets and checksums.
+
 ## [1.0.0] - 2026-06-12
 
 ### Added
@@ -32,8 +37,7 @@ architecture documents.
   stability, Markdown presentation expectations, and future breaking-change,
   deprecation, and migration-note requirements.
 - Aligned the Maven project version, README local build examples, roadmap status, and
-  release notes for the `v1.0.0` release-prep candidate while keeping the latest
-  published release status on `v0.9.0` until publication occurs.
+  release notes for the `v1.0.0` release materials.
 
 ### Security
 
