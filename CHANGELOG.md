@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v1.1 Gradle Java/Spring support contract boundary as an
+  additive `schema_version: "1.0"` compatibility expansion, including supported Gradle
+  layouts, static settings include parsing, mixed Maven/Gradle behavior, Gradle warning
+  and diagnostic taxonomy, Gradle `build_file` evidence semantics, guide wording,
+  validation expectations, and deferred custom `sourceSets` support.
+
 ### Fixed
 
 - Updated post-release documentation status to mark `v1.0.0` as published with release

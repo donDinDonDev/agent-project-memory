@@ -14,6 +14,7 @@ Evidence may point to:
 - a Java method,
 - an annotation,
 - a Maven build file,
+- a Gradle build file when Gradle support is explicitly enabled by a later release,
 - a Spring configuration file,
 - a test file,
 - a local Markdown document from local document ingestion,
@@ -28,7 +29,9 @@ Evidence types defined by the model:
 - `config_file`: a configuration file such as `application.yml`,
   `application.properties`, XML configuration, or legacy bounded filename-only
   OpenAPI/Swagger spec presence warning evidence.
-- `build_file`: a build file such as `pom.xml`.
+- `build_file`: a build file such as `pom.xml`, or Gradle build files such as
+  `settings.gradle`, `settings.gradle.kts`, `build.gradle`, or `build.gradle.kts`
+  when a later release explicitly documents Gradle support.
 - `test_file`: a test source file or test resource.
 - `api_spec`: a local OpenAPI/Swagger specification file, bounded version/kind
   observation, extracted operation evidence, or bounded operation parser status
@@ -141,6 +144,13 @@ Examples:
   prove code structure, runtime behavior, API implementation, test coverage,
   configuration semantics, documentation completeness, stale documentation, or
   source/document agreement. Current output does not serialize document bodies.
+- Planned v1.1 Gradle build layout observations, when implemented, may extract accepted
+  Gradle root and project build-file presence, simple static settings include
+  declarations, default Java source/test/resource root paths, and unsupported Gradle
+  layout warnings. These observations support local build-layout orientation only; they
+  do not prove Gradle execution, effective Gradle models, dependency resolution, plugin
+  resolution, task graphs, generated-source graphs, Kotlin source facts, or runtime
+  Spring behavior.
 
 Extracted facts should use strong evidence references and high confidence.
 
@@ -1058,6 +1068,50 @@ Markdown observations.
 Any later v1.x evidence shape or semantic change must update this document,
 `OUTPUT_CONTRACT.md`, focused tests or goldens, changelog entries, and release notes in
 the same logical change.
+
+### Planned v1.1 Gradle Build File Evidence
+
+The planned v1.1 Gradle support reuses the existing evidence field set and the existing
+`build_file` evidence type. It does not add global evidence fields, confidence labels,
+runtime evidence types, tool-config evidence, dependency evidence, task evidence, or
+Kotlin source evidence.
+
+Gradle build-file evidence scope:
+
+- Accepted `settings.gradle`, `settings.gradle.kts`, `build.gradle`, and
+  `build.gradle.kts` files should use `source_type: "build_file"` and normalized
+  repository-relative `path` values.
+- File-presence evidence should use `symbol_name` values such as `gradle:settings` for
+  settings files and `gradle:build` for project build files. `class_name` and
+  `method_name` should be `null`, and confidence should be `high`.
+- Static Gradle include evidence should use `symbol_name` values shaped like
+  `gradle:include:decl:<zero-padded-ordinal>` or another bounded deterministic
+  declaration key. It should point to the line or line range containing the supported
+  literal include declaration when stable line mapping is available.
+- Evidence excerpts must be bounded source snippets. They may identify the accepted
+  Gradle file or literal include declaration, but must not serialize whole build
+  scripts, arbitrary plugin configuration, dependency blocks, task bodies, repository
+  declarations, credentials, tokens, environment values, or generated output contents.
+- If two Gradle evidence IDs would otherwise collide, the implementation must add a
+  deterministic `decl:<zero-padded-ordinal>` discriminator or degrade the colliding
+  observation to a warning.
+
+Gradle evidence supports only deterministic local file and literal declaration
+observations. It does not prove Gradle execution, effective project models, plugin
+application, dependency resolution, repository availability, task graphs, generated
+source contents, custom source-set semantics, Kotlin source structure, or runtime
+Spring behavior.
+
+Simple static `settings.gradle.kts` include declarations may be evidence only when the
+supported string literals are directly visible in the settings file. Broader Kotlin DSL
+semantic parsing, variables, loops, conditionals, function indirection, `includeBuild`,
+and custom `projectDir` assignment semantics are out of scope for v1.1 evidence.
+
+Static `sourceSets` declarations are not evidence for custom source roots in the planned
+v1.1 boundary. A directly visible `sourceSets` block may support a warning or
+not-analyzed status when a later implementation records that limitation, but it must not
+create custom source-root facts until a separate output/evidence contract explicitly
+defines that behavior.
 
 ## Evidence Discipline
 

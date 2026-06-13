@@ -25,7 +25,9 @@ documented release-jar verification path.
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started.
+started. The next planned v1.x product expansion is Gradle Java/Spring support, scoped
+as an additive v1.0-compatible output-contract expansion rather than a schema marker
+migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -578,6 +580,65 @@ Expected readiness:
 - Changelog, release checklist, and public release discipline.
 
 ## v1.x: Stable Product Expansion
+
+### v1.1.0: Gradle Java/Spring Support (Planned)
+
+Product outcome: add static/source-visible Gradle Java/Spring layout support while
+preserving the stable Maven v1.0 behavior and evidence semantics.
+
+Planned contract boundary:
+
+- Keep normal generated `project-map.json` output on `schema_version: "1.0"` as an
+  additive compatibility expansion. Gradle support does not require a
+  `schema_version: "1.1"` migration when fields remain additive and the existing Maven
+  semantics are preserved.
+- Support root `settings.gradle`, `settings.gradle.kts`, `build.gradle`, and
+  `build.gradle.kts` as bounded local build-file inputs.
+- Support Gradle single-project layouts and simple multi-project layouts declared by
+  static string-literal `include` declarations in root settings files, including the
+  same bounded literal subset in `settings.gradle.kts`.
+- Detect standard Gradle Java/Spring roots only:
+  `src/main/java`, `src/test/java`, `src/main/resources`, and `src/test/resources`.
+- Represent Gradle project/module identity through normalized repository-relative
+  module paths and Gradle project paths without using Gradle execution, project names,
+  plugin output, dependency coordinates, or task output as identity.
+- Represent mixed Maven/Gradle checkouts as a supported detected state without
+  reconstructing an effective unified build model. Module records are de-duplicated by
+  normalized module path, and Java/Spring facts are emitted once per supported source
+  root.
+- Reuse `build_file` evidence for accepted Gradle build files and static settings
+  include declarations, with bounded excerpts and repository-relative paths.
+- Keep custom Gradle `sourceSets`, custom `projectDir` mappings, `includeBuild`,
+  `includeFlat`, variables, loops, conditionals, function indirection, convention
+  plugins, plugin/dependency/task resolution, generated-source graphs, and Kotlin source
+  analysis out of the v1.1 analyzer scope.
+- Degrade unsupported or unsafe Gradle inputs to bounded warnings or scan diagnostics
+  rather than dynamic claims.
+
+Planned validation:
+
+- Focused Gradle fixtures for single-project, multi-project, simple Kotlin settings
+  include declarations, unsupported dynamic includes, visible but not-analyzed
+  `sourceSets`, missing project directories, duplicate project paths, and mixed
+  Maven/Gradle roots.
+- Golden output coverage for Gradle output shape, warning IDs, diagnostics, evidence
+  reference integrity, deterministic sorting, and guide wording.
+- Maven regression coverage proving pure Maven output and evidence behavior remain
+  stable.
+- Packaged CLI evaluation on pinned Gradle Java/Spring projects before release, plus
+  selected Maven regression scans.
+
+Non-goals:
+
+- Gradle execution.
+- Dynamic buildscript evaluation.
+- Gradle Tooling API, wrapper execution, daemon/task execution, plugin resolution,
+  dependency resolution, repository access, lockfile interpretation, or effective Gradle
+  model reconstruction.
+- Kotlin source analysis or broad Kotlin DSL semantic parsing.
+- Custom source-set root emission in v1.1.
+- Connectors, network/auth, SaaS, web UI, repository chat, generic RAG, LLM calls in the
+  core analyzer, or automatic code modification.
 
 Possible tracks:
 
