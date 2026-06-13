@@ -1,0 +1,371 @@
+{
+  "schema_version": "1.0",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "gradle",
+      "root_build_file": "settings.gradle.kts",
+      "root_build_files": [
+        {
+          "path": "settings.gradle.kts",
+          "build_system": "gradle",
+          "role": "settings",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+          ]
+        },
+        {
+          "path": "build.gradle.kts",
+          "build_system": "gradle",
+          "role": "root_project_build",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:build.gradle.kts:1-1:build_file:gradle:build"
+          ]
+        }
+      ],
+      "evidence_ids": [
+        "ev:settings.gradle.kts:1-1:build_file:gradle:settings",
+        "ev:build.gradle.kts:1-1:build_file:gradle:build"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": null,
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [
+            "src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+                  ]
+                },
+                {
+                  "path": "build.gradle.kts",
+                  "role": "project_build",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:build.gradle.kts:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:main:src/main/resources",
+                  "scope": "main",
+                  "path": "src/main/resources",
+                  "evidence_ids": []
+                },
+                {
+                  "id": "resource_root:module:.:test:src/test/resources",
+                  "scope": "test",
+                  "path": "src/test/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "documents": {
+    "analysis_status": "not_detected",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "quality": {
+    "analysis_status": "not_detected",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  }
+}

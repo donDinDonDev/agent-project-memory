@@ -80,6 +80,7 @@ public final class AgentGuideGenerator {
       markdown.append("- Root build file: Detected ").append(code(rootBuildFile)).append("\n");
     }
     appendEvidenceLine(markdown, build.path("evidence_ids"), evidenceById);
+    appendRootBuildFiles(markdown, build.path("root_build_files"), evidenceById);
 
     List<String> sourceRoots = stringValues(project.path("source_roots"));
     if (sourceRoots.isEmpty()) {
@@ -133,6 +134,14 @@ public final class AgentGuideGenerator {
       markdown.append("  - Support status: ").append(code(module.supportStatus())).append("\n");
       markdown.append("  - Declaration kind: ").append(code(module.declarationKind())).append("\n");
       markdown.append("  - Declared path: ").append(code(module.declaredPath())).append("\n");
+      if (!module.buildSystems().isEmpty()) {
+        markdown.append("  - Build systems: ").append(codeList(module.buildSystems())).append("\n");
+      }
+      if (module.gradleProjectPath() != null && !module.gradleProjectPath().isBlank()) {
+        markdown.append("  - Gradle project path: ")
+            .append(code(module.gradleProjectPath()))
+            .append("\n");
+      }
       appendModuleRootsLine(markdown, "Source roots", module.sourceRoots(), "production");
       appendModuleRootsLine(markdown, "Test roots", module.testRoots(), "test");
       appendEvidenceLine(
@@ -141,7 +150,38 @@ public final class AgentGuideGenerator {
           evidenceById,
           "Declaration evidence");
       appendEvidenceLine(markdown, module.pomEvidenceIds(), evidenceById, "POM evidence");
+      if (!module.gradleBuildFileEvidenceIds().isEmpty()) {
+        appendEvidenceLine(
+            markdown,
+            module.gradleBuildFileEvidenceIds(),
+            evidenceById,
+            "Gradle build-file evidence");
+      }
     }
+  }
+
+  private void appendRootBuildFiles(
+      StringBuilder markdown,
+      JsonNode rootBuildFiles,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!rootBuildFiles.isArray() || rootBuildFiles.isEmpty()) {
+      return;
+    }
+
+    List<String> labels = new ArrayList<>();
+    List<String> evidenceIds = new ArrayList<>();
+    for (JsonNode buildFile : rootBuildFiles) {
+      labels.add(text(buildFile, "build_system")
+          + ":"
+          + text(buildFile, "role")
+          + ":"
+          + text(buildFile, "path"));
+      evidenceIds.addAll(stringValues(buildFile.path("evidence_ids")));
+    }
+    markdown.append("- Root build files: Detected ")
+        .append(codeList(labels))
+        .append("\n");
+    appendEvidenceLine(markdown, evidenceIds, evidenceById, "Root build-file evidence");
   }
 
   private void appendModuleRootsLine(
@@ -204,6 +244,7 @@ public final class AgentGuideGenerator {
           .append(code(text(buildConfig, "analysis_status")))
           .append("\n");
       appendMavenOrientation(markdown, buildConfig.path("maven"), evidenceById);
+      appendGradleOrientation(markdown, buildConfig.path("gradle"), evidenceById);
       appendResourceOrientation(markdown, buildConfig.path("resources"));
       appendConfigFileOrientation(markdown, buildConfig.path("config_files"), evidenceById);
       appendSpringBootApplicationOrientation(
@@ -435,6 +476,58 @@ public final class AgentGuideGenerator {
             ? "none recorded"
             : cappedCodeList(signalNames, MAX_INLINE_BUILD_CONFIG_ITEMS, "signals"))
         .append("\n");
+  }
+
+  private void appendGradleOrientation(
+      StringBuilder markdown,
+      JsonNode gradle,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!gradle.isObject()) {
+      return;
+    }
+
+    JsonNode buildFiles = gradle.path("build_files");
+    String analysisStatus = text(gradle, "analysis_status");
+    if (!"analyzed".equals(analysisStatus)) {
+      markdown.append("- Source-visible Gradle build files: Not analyzed; status ")
+          .append(code(analysisStatus))
+          .append(".\n");
+      return;
+    }
+
+    List<String> evidenceIds = new ArrayList<>();
+    int buildFileCount = buildFiles.isArray() ? buildFiles.size() : 0;
+    markdown.append("- Source-visible Gradle build files: Detected ")
+        .append(buildFileCount)
+        .append(" local build-file input")
+        .append(buildFileCount == 1 ? "" : "s")
+        .append(" for Gradle project path ")
+        .append(code(text(gradle, "project_path")))
+        .append(".\n");
+    if (buildFiles.isArray()) {
+      int visibleCount = Math.min(buildFiles.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+      for (int index = 0; index < visibleCount; index++) {
+        JsonNode buildFile = buildFiles.get(index);
+        markdown.append("  - Gradle build file: ")
+            .append(code(text(buildFile, "path")))
+            .append(" role ")
+            .append(code(text(buildFile, "role")))
+            .append(", language ")
+            .append(code(text(buildFile, "language")))
+            .append(".\n");
+        evidenceIds.addAll(stringValues(buildFile.path("evidence_ids")));
+      }
+      appendOmittedBuildConfigItems(
+          markdown,
+          buildFiles.size() - visibleCount,
+          "Gradle build files");
+    }
+    appendEvidenceLine(markdown, evidenceIds, evidenceById);
+
+    JsonNode sourceSets = gradle.path("source_sets");
+    markdown.append("- Static Gradle sourceSets: Not analyzed; status ")
+        .append(code(text(sourceSets, "analysis_status")))
+        .append(". Standard Java and resource roots are represented by module roots and resources.\n");
   }
 
   private void appendResourceOrientation(StringBuilder markdown, JsonNode resources) {
@@ -2298,7 +2391,17 @@ public final class AgentGuideGenerator {
           .append("contents, MockMvc setup, database access, Mockito behavior, and slice ")
           .append("correctness are not claimed.\n");
     }
-    if (projectMap.path("project").path("modules").isObject()) {
+    String buildSystem = text(projectMap.path("project").path("build"), "system");
+    boolean gradleDetected = "gradle".equals(buildSystem) || "mixed".equals(buildSystem);
+    if (projectMap.path("project").path("modules").isObject() && gradleDetected) {
+      markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
+          .append("Maven profiles, effective POM reconstruction, Gradle execution, dynamic ")
+          .append("buildscript evaluation, dependency graphs, and recursive nested Maven modules ")
+          .append("are outside this guide.\n");
+      markdown.append("- Not analyzed: Gradle dependency resolution, plugin resolution, task graphs, ")
+          .append("custom `sourceSets`, `projectDir` remapping, included builds, and Kotlin source ")
+          .append("analysis are outside this guide.\n");
+    } else if (projectMap.path("project").path("modules").isObject()) {
       markdown.append("- Not analyzed: connectors, LLM summaries, repository chat, generic RAG, ")
           .append("Gradle/Kotlin support, Maven profiles, effective POM reconstruction, ")
           .append("dependency graphs, and recursive nested Maven modules are outside this guide.\n");
@@ -2656,10 +2759,13 @@ public final class AgentGuideGenerator {
           text(item, "support_status"),
           text(item, "declaration_kind"),
           text(item, "declared_path"),
+          stringValues(item.path("build_systems")),
+          nullableText(item, "gradle_project_path"),
           stringValues(item.path("source_roots")),
           stringValues(item.path("test_roots")),
           stringValues(item.path("declaration_evidence_ids")),
-          stringValues(item.path("pom_evidence_ids"))));
+          stringValues(item.path("pom_evidence_ids")),
+          evidenceIdsInSubtree(item.path("build_config").path("gradle").path("build_files"))));
     }
     return List.copyOf(modules);
   }
@@ -3111,15 +3217,20 @@ public final class AgentGuideGenerator {
       String supportStatus,
       String declarationKind,
       String declaredPath,
+      List<String> buildSystems,
+      String gradleProjectPath,
       List<String> sourceRoots,
       List<String> testRoots,
       List<String> declarationEvidenceIds,
-      List<String> pomEvidenceIds) {
+      List<String> pomEvidenceIds,
+      List<String> gradleBuildFileEvidenceIds) {
     private ModuleInfo {
+      buildSystems = List.copyOf(buildSystems);
       sourceRoots = List.copyOf(sourceRoots);
       testRoots = List.copyOf(testRoots);
       declarationEvidenceIds = List.copyOf(declarationEvidenceIds);
       pomEvidenceIds = List.copyOf(pomEvidenceIds);
+      gradleBuildFileEvidenceIds = List.copyOf(gradleBuildFileEvidenceIds);
     }
   }
 }

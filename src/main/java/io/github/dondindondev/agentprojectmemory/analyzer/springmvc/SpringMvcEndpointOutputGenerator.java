@@ -32,6 +32,11 @@ import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentReco
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentReconciliationSignal;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentSourceApiFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.documents.DocumentSourceModuleFact;
+import io.github.dondindondev.agentprojectmemory.analyzer.gradle.GradleBuildFileEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.gradle.GradleBuildFileItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.gradle.GradleModuleDiscoveryAnalysis;
+import io.github.dondindondev.agentprojectmemory.analyzer.gradle.GradleModuleDiscoveryAnalyzer;
+import io.github.dondindondev.agentprojectmemory.analyzer.gradle.GradleModuleWarning;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddableFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEmbeddedFact;
 import io.github.dondindondev.agentprojectmemory.analyzer.jpa.JpaEntityAnalysis;
@@ -370,6 +375,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final TestInventoryAnalyzer testInventoryAnalyzer;
   private final AnalysisWarningAnalyzer warningAnalyzer;
   private final MavenModuleDiscoveryAnalyzer moduleDiscoveryAnalyzer;
+  private final GradleModuleDiscoveryAnalyzer gradleModuleDiscoveryAnalyzer =
+      new GradleModuleDiscoveryAnalyzer();
   private final MavenMetadataAnalyzer mavenMetadataAnalyzer;
   private final MavenDependencyAnalyzer mavenDependencyAnalyzer;
   private final MavenPluginAnalyzer mavenPluginAnalyzer = new MavenPluginAnalyzer();
@@ -510,10 +517,13 @@ public final class SpringMvcEndpointOutputGenerator {
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
     MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis = moduleDiscoveryAnalyzer.analyze(
         normalizedRepositoryRoot);
+    GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis = gradleModuleDiscoveryAnalyzer.analyze(
+        normalizedRepositoryRoot);
     ProjectLayout layout = detectLayout(
         normalizedRepositoryRoot,
         canonicalRepositoryRoot,
-        moduleDiscoveryAnalysis);
+        moduleDiscoveryAnalysis,
+        gradleDiscoveryAnalysis);
     MavenMetadataAnalysis metadataAnalysis = mavenMetadataAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
@@ -550,6 +560,7 @@ public final class SpringMvcEndpointOutputGenerator {
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
+        gradleDiscoveryAnalysis,
         metadataAnalysis,
         dependencyAnalysis,
         pluginAnalysis,
@@ -567,7 +578,7 @@ public final class SpringMvcEndpointOutputGenerator {
             normalizedRepositoryRoot,
             canonicalRepositoryRoot,
             layout.modules(),
-            moduleDiscoveryAnalysis.warnings(),
+            mergedModuleWarnings(moduleDiscoveryAnalysis.warnings(), gradleDiscoveryAnalysis.warnings()),
             pluginAnalysis,
             openApiOperationAnalysis));
     DocumentReconciliationAnalysis documentReconciliationAnalysis = scanConfiguration.localMarkdownEnabled()
@@ -580,6 +591,7 @@ public final class SpringMvcEndpointOutputGenerator {
     List<ScanDiagnostic> scanDiagnostics = scanDiagnostics(
         layout,
         moduleDiscoveryAnalysis,
+        gradleDiscoveryAnalysis,
         metadataAnalysis,
         dependencyAnalysis,
         pluginAnalysis,
@@ -589,6 +601,7 @@ public final class SpringMvcEndpointOutputGenerator {
     List<EvidenceRecord> evidenceRecords = evidenceRecords(
         layout,
         moduleDiscoveryAnalysis.evidence(),
+        gradleDiscoveryAnalysis.evidence(),
         metadataAnalysis.evidence(),
         dependencyAnalysis.evidence(),
         pluginAnalysis.evidence(),
@@ -657,6 +670,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private boolean shouldGenerate(
       ProjectLayout layout,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis,
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
@@ -670,6 +684,9 @@ public final class SpringMvcEndpointOutputGenerator {
         || !layout.diagnostics().isEmpty()
         || !moduleDiscoveryAnalysis.warnings().isEmpty()
         || !moduleDiscoveryAnalysis.diagnostics().isEmpty()
+        || !gradleDiscoveryAnalysis.warnings().isEmpty()
+        || !gradleDiscoveryAnalysis.diagnostics().isEmpty()
+        || !gradleDiscoveryAnalysis.rootBuildFiles().isEmpty()
         || !metadataAnalysis.diagnostics().isEmpty()
         || !dependencyAnalysis.diagnostics().isEmpty()
         || !pluginAnalysis.diagnostics().isEmpty()
@@ -694,18 +711,18 @@ public final class SpringMvcEndpointOutputGenerator {
   private ProjectLayout detectLayout(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
-      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis) throws IOException {
+      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis) throws IOException {
     BuildFileEvidenceResult buildFileEvidence = buildFileEvidence(
         repositoryRoot,
         canonicalRepositoryRoot);
-    BuildMetadata build = buildFileEvidence.evidence()
-        .map(evidence -> new BuildMetadata("maven", ROOT_BUILD_FILE, List.of(evidence.id())))
-        .orElseGet(() -> new BuildMetadata("not_detected", null, List.of()));
+    BuildMetadata build = buildMetadata(buildFileEvidence, gradleDiscoveryAnalysis);
 
     ProjectModules modules = projectModules(
         repositoryRoot,
         canonicalRepositoryRoot,
-        moduleDiscoveryAnalysis);
+        moduleDiscoveryAnalysis,
+        gradleDiscoveryAnalysis);
     List<String> sourceRoots = modules.items().stream()
         .flatMap(module -> module.sourceRoots().stream())
         .sorted()
@@ -720,16 +737,71 @@ public final class SpringMvcEndpointOutputGenerator {
         sourceRoots,
         testRoots,
         modules,
-        buildFileEvidence.evidence(),
+        buildFileEvidence.evidence().stream().toList(),
         buildFileEvidence.diagnostics());
+  }
+
+  private BuildMetadata buildMetadata(
+      BuildFileEvidenceResult buildFileEvidence,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis) {
+    Optional<EvidenceRecord> mavenBuildEvidence = buildFileEvidence.evidence();
+    boolean mavenDetected = mavenBuildEvidence.isPresent();
+    boolean gradleDetected = !gradleDiscoveryAnalysis.rootBuildFiles().isEmpty();
+    String system;
+    if (mavenDetected && gradleDetected) {
+      system = "mixed";
+    } else if (mavenDetected) {
+      system = "maven";
+    } else if (gradleDetected) {
+      system = "gradle";
+    } else {
+      system = "not_detected";
+    }
+
+    String rootBuildFile = null;
+    if (mavenDetected) {
+      rootBuildFile = ROOT_BUILD_FILE;
+    } else if (gradleDetected) {
+      rootBuildFile = gradleDiscoveryAnalysis.rootBuildFiles().get(0).path();
+    }
+
+    List<String> evidenceIds = new ArrayList<>();
+    mavenBuildEvidence.map(EvidenceRecord::id).ifPresent(evidenceIds::add);
+    gradleDiscoveryAnalysis.rootBuildFiles().stream()
+        .flatMap(buildFile -> buildFile.evidenceIds().stream())
+        .forEach(evidenceIds::add);
+
+    List<RootBuildFileItem> rootBuildFiles = List.of();
+    if (gradleDetected) {
+      List<RootBuildFileItem> items = new ArrayList<>();
+      mavenBuildEvidence.ifPresent(evidence -> items.add(new RootBuildFileItem(
+          ROOT_BUILD_FILE,
+          "maven",
+          "root_pom",
+          "xml",
+          List.of(evidence.id()))));
+      gradleDiscoveryAnalysis.rootBuildFiles().forEach(buildFile -> items.add(new RootBuildFileItem(
+          buildFile.path(),
+          "gradle",
+          buildFile.role(),
+          buildFile.language(),
+          buildFile.evidenceIds())));
+      rootBuildFiles = List.copyOf(items);
+    }
+
+    return new BuildMetadata(system, rootBuildFile, evidenceIds, rootBuildFiles);
   }
 
   private ProjectModules projectModules(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
-      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis) {
-    if (!MODULE_ANALYSIS_NOT_DETECTED.equals(moduleDiscoveryAnalysis.analysisStatus())) {
-      return new ProjectModules(moduleDiscoveryAnalysis.analysisStatus(), moduleDiscoveryAnalysis.items());
+      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis) {
+    if (!MODULE_ANALYSIS_NOT_DETECTED.equals(moduleDiscoveryAnalysis.analysisStatus())
+        || !MODULE_ANALYSIS_NOT_DETECTED.equals(gradleDiscoveryAnalysis.analysisStatus())) {
+      return new ProjectModules(
+          mergedModuleAnalysisStatus(moduleDiscoveryAnalysis, gradleDiscoveryAnalysis),
+          mergedModules(moduleDiscoveryAnalysis.items(), gradleDiscoveryAnalysis.items()));
     }
 
     List<String> sourceRoots = detectedRoots(
@@ -761,6 +833,98 @@ public final class SpringMvcEndpointOutputGenerator {
             ".",
             List.of(),
             List.of())));
+  }
+
+  private String mergedModuleAnalysisStatus(
+      MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis) {
+    if (!MODULE_ANALYSIS_NOT_DETECTED.equals(moduleDiscoveryAnalysis.analysisStatus())
+        || !MODULE_ANALYSIS_NOT_DETECTED.equals(gradleDiscoveryAnalysis.analysisStatus())) {
+      return ANALYSIS_ANALYZED;
+    }
+    return MODULE_ANALYSIS_NOT_DETECTED;
+  }
+
+  private List<MavenModuleItem> mergedModules(
+      List<MavenModuleItem> mavenModules,
+      List<MavenModuleItem> gradleModules) {
+    Map<String, MavenModuleItem> modulesByPath = new LinkedHashMap<>();
+    mavenModules.forEach(module -> modulesByPath.put(module.modulePath(), module));
+    for (MavenModuleItem gradleModule : gradleModules) {
+      MavenModuleItem existing = modulesByPath.get(gradleModule.modulePath());
+      if (existing == null) {
+        modulesByPath.put(gradleModule.modulePath(), gradleModule);
+      } else {
+        modulesByPath.put(gradleModule.modulePath(), mergeModule(existing, gradleModule));
+      }
+    }
+    return modulesByPath.values().stream()
+        .sorted(Comparator
+            .comparingInt((MavenModuleItem module) -> ".".equals(module.modulePath()) ? 0 : 1)
+            .thenComparing(MavenModuleItem::modulePath))
+        .toList();
+  }
+
+  private MavenModuleItem mergeModule(MavenModuleItem existing, MavenModuleItem gradleModule) {
+    return new MavenModuleItem(
+        existing.moduleId(),
+        existing.modulePath(),
+        existing.pomPath(),
+        mergedStrings(existing.sourceRoots(), gradleModule.sourceRoots()),
+        mergedStrings(existing.testRoots(), gradleModule.testRoots()),
+        mergedSupportStatus(existing.supportStatus(), gradleModule.supportStatus()),
+        existing.declarationKind(),
+        existing.declaredPath(),
+        mergedStrings(existing.declarationEvidenceIds(), gradleModule.declarationEvidenceIds()),
+        existing.pomEvidenceIds(),
+        mergedBuildSystems(existing, gradleModule),
+        gradleModule.gradleProjectPath(),
+        gradleModule.gradleBuildFiles());
+  }
+
+  private List<String> mergedBuildSystems(MavenModuleItem existing, MavenModuleItem gradleModule) {
+    List<String> buildSystems = new ArrayList<>();
+    if (existing.pomPath() != null && !existing.pomPath().isBlank()) {
+      buildSystems.add("maven");
+    }
+    existing.buildSystems().forEach(buildSystem -> addIfAbsent(buildSystems, buildSystem));
+    gradleModule.buildSystems().forEach(buildSystem -> addIfAbsent(buildSystems, buildSystem));
+    return buildSystems.stream()
+        .sorted(Comparator.comparingInt(this::buildSystemOrder).thenComparing(buildSystem -> buildSystem))
+        .toList();
+  }
+
+  private int buildSystemOrder(String buildSystem) {
+    if ("maven".equals(buildSystem)) {
+      return 0;
+    }
+    if ("gradle".equals(buildSystem)) {
+      return 1;
+    }
+    return 2;
+  }
+
+  private String mergedSupportStatus(String existingStatus, String gradleStatus) {
+    if (MODULE_SUPPORTED.equals(existingStatus) || MODULE_SUPPORTED.equals(gradleStatus)) {
+      return MODULE_SUPPORTED;
+    }
+    if (existingStatus != null && !existingStatus.isBlank()) {
+      return existingStatus;
+    }
+    return gradleStatus;
+  }
+
+  private List<String> mergedStrings(List<String> first, List<String> second) {
+    List<String> merged = new ArrayList<>();
+    first.forEach(value -> addIfAbsent(merged, value));
+    second.forEach(value -> addIfAbsent(merged, value));
+    return merged.stream().sorted().toList();
+  }
+
+  private void addIfAbsent(List<String> values, String value) {
+    if (value != null && !value.isBlank() && !values.contains(value)) {
+      values.add(value);
+    }
   }
 
   private ModuleAwareScan analyzeModules(
@@ -1017,6 +1181,23 @@ public final class SpringMvcEndpointOutputGenerator {
         entityEvidence,
         testEvidence,
         warningEvidence);
+  }
+
+  private List<MavenModuleWarning> mergedModuleWarnings(
+      List<MavenModuleWarning> mavenWarnings,
+      List<GradleModuleWarning> gradleWarnings) {
+    List<MavenModuleWarning> warnings = new ArrayList<>(mavenWarnings);
+    gradleWarnings.stream()
+        .map(warning -> new MavenModuleWarning(
+            warning.id(),
+            warning.category(),
+            warning.signal(),
+            warning.moduleId(),
+            warning.message(),
+            warning.sourcePath(),
+            warning.evidenceIds()))
+        .forEach(warnings::add);
+    return warnings;
   }
 
   private List<ModuleScopedSpringRepositoryFact> inferRepositoryEntityRelations(
@@ -1522,6 +1703,12 @@ public final class SpringMvcEndpointOutputGenerator {
     return moduleById;
   }
 
+  private boolean hasGradleContribution(MavenModuleItem module) {
+    return module.gradleProjectPath() != null
+        || !module.gradleBuildFiles().isEmpty()
+        || module.buildSystems().stream().anyMatch("gradle"::equals);
+  }
+
   private void appendEndpointModuleHeading(
       StringBuilder markdown,
       String headingPrefix,
@@ -1567,6 +1754,9 @@ public final class SpringMvcEndpointOutputGenerator {
         "root_build_file",
         layout.build().rootBuildFile(),
         true);
+    if (!layout.build().rootBuildFiles().isEmpty()) {
+      appendRootBuildFiles(json, layout.build().rootBuildFiles(), true);
+    }
     appendIndentedStringArrayField(json, 3, "evidence_ids", layout.build().evidenceIds(), false);
     json.append("    },\n");
     appendIndentedStringArrayField(json, 2, "source_roots", layout.sourceRoots(), true);
@@ -1683,9 +1873,44 @@ public final class SpringMvcEndpointOutputGenerator {
     appendLineEnding(json, trailingComma);
   }
 
+  private void appendRootBuildFiles(
+      StringBuilder json,
+      List<RootBuildFileItem> rootBuildFiles,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"root_build_files\": [");
+    if (rootBuildFiles.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < rootBuildFiles.size(); index++) {
+      RootBuildFileItem buildFile = rootBuildFiles.get(index);
+      indent(json, 4);
+      json.append("{\n");
+      appendIndentedStringField(json, 5, "path", buildFile.path(), true);
+      appendIndentedStringField(json, 5, "build_system", buildFile.buildSystem(), true);
+      appendIndentedStringField(json, 5, "role", buildFile.role(), true);
+      appendIndentedStringField(json, 5, "language", buildFile.language(), true);
+      appendIndentedStringArrayField(json, 5, "evidence_ids", buildFile.evidenceIds(), false);
+      indent(json, 4);
+      json.append("}");
+      if (index < rootBuildFiles.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 3);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
   private List<ScanDiagnostic> scanDiagnostics(
       ProjectLayout layout,
       MavenModuleDiscoveryAnalysis moduleDiscoveryAnalysis,
+      GradleModuleDiscoveryAnalysis gradleDiscoveryAnalysis,
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
@@ -1695,6 +1920,7 @@ public final class SpringMvcEndpointOutputGenerator {
     Map<String, ScanDiagnostic> diagnostics = new LinkedHashMap<>();
     addScanDiagnostics(diagnostics, layout.diagnostics());
     addScanDiagnostics(diagnostics, moduleDiscoveryAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, gradleDiscoveryAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, metadataAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, dependencyAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, pluginAnalysis.diagnostics());
@@ -1989,6 +2215,9 @@ public final class SpringMvcEndpointOutputGenerator {
       List<String> evidenceIds = new ArrayList<>();
       evidenceIds.addAll(module.declarationEvidenceIds());
       evidenceIds.addAll(module.pomEvidenceIds());
+      module.gradleBuildFiles().stream()
+          .flatMap(buildFile -> buildFile.evidenceIds().stream())
+          .forEach(evidenceIds::add);
       facts.add(new DocumentSourceModuleFact(
           module.moduleId(),
           module.moduleId(),
@@ -2079,8 +2308,13 @@ public final class SpringMvcEndpointOutputGenerator {
           module.declarationEvidenceIds(),
           true);
       appendIndentedStringArrayField(json, 5, "pom_evidence_ids", module.pomEvidenceIds(), true);
+      if (hasGradleContribution(module)) {
+        appendIndentedStringArrayField(json, 5, "build_systems", module.buildSystems(), true);
+        appendIndentedNullableStringField(json, 5, "gradle_project_path", module.gradleProjectPath(), true);
+      }
       appendBuildConfig(
           json,
+          module,
           metadataForModule(module, metadataByModuleId),
           dependenciesForModule(module, dependenciesByModuleId),
           pluginsForModule(module, pluginsByModuleId),
@@ -2198,6 +2432,7 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private void appendBuildConfig(
       StringBuilder json,
+      MavenModuleItem module,
       MavenModuleMetadata metadata,
       MavenModuleDependencies dependencies,
       MavenModulePlugins plugins,
@@ -2210,9 +2445,12 @@ public final class SpringMvcEndpointOutputGenerator {
         json,
         6,
         "analysis_status",
-        buildConfigAnalysisStatus(metadata, dependencies, plugins, resourceConfig, springBootApplications),
+        buildConfigAnalysisStatus(module, metadata, dependencies, plugins, resourceConfig, springBootApplications),
         true);
     appendMavenBuildConfig(json, metadata, dependencies, plugins);
+    if (hasGradleContribution(module)) {
+      appendGradleBuildConfig(json, module, true);
+    }
     appendResourceRootSection(json, resourceConfig, true);
     appendConfigFileSection(json, resourceConfig, true);
     appendSpringBootApplicationSection(json, springBootApplications, false);
@@ -2222,12 +2460,14 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private String buildConfigAnalysisStatus(
+      MavenModuleItem module,
       MavenModuleMetadata metadata,
       MavenModuleDependencies dependencies,
       MavenModulePlugins plugins,
       ModuleResourceConfig resourceConfig,
       ModuleSpringBootApplications springBootApplications) {
-    if (ANALYSIS_ANALYZED.equals(metadata.analysisStatus())
+    if (hasGradleContribution(module)
+        || ANALYSIS_ANALYZED.equals(metadata.analysisStatus())
         || ANALYSIS_ANALYZED.equals(dependencies.analysisStatus())
         || ANALYSIS_ANALYZED.equals(plugins.analysisStatus())
         || ANALYSIS_ANALYZED.equals(resourceConfig.resourceAnalysisStatus())
@@ -2276,6 +2516,60 @@ public final class SpringMvcEndpointOutputGenerator {
         false);
     indent(json, 6);
     json.append("},\n");
+  }
+
+  private void appendGradleBuildConfig(
+      StringBuilder json,
+      MavenModuleItem module,
+      boolean trailingComma) {
+    indent(json, 6);
+    json.append("\"gradle\": {\n");
+    appendIndentedStringField(json, 7, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedNullableStringField(json, 7, "project_path", module.gradleProjectPath(), true);
+    appendGradleBuildFiles(json, module.gradleBuildFiles(), true);
+    indent(json, 7);
+    json.append("\"source_sets\": {\n");
+    appendIndentedStringField(json, 8, "analysis_status", ANALYSIS_NOT_ANALYZED, true);
+    indent(json, 8);
+    json.append("\"items\": []\n");
+    indent(json, 7);
+    json.append("}\n");
+    indent(json, 6);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendGradleBuildFiles(
+      StringBuilder json,
+      List<GradleBuildFileItem> buildFiles,
+      boolean trailingComma) {
+    indent(json, 7);
+    json.append("\"build_files\": [");
+    if (buildFiles.isEmpty()) {
+      json.append("]");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < buildFiles.size(); index++) {
+      GradleBuildFileItem buildFile = buildFiles.get(index);
+      indent(json, 8);
+      json.append("{\n");
+      appendIndentedStringField(json, 9, "path", buildFile.path(), true);
+      appendIndentedStringField(json, 9, "role", buildFile.role(), true);
+      appendIndentedStringField(json, 9, "language", buildFile.language(), true);
+      appendIndentedStringArrayField(json, 9, "evidence_ids", buildFile.evidenceIds(), false);
+      indent(json, 8);
+      json.append("}");
+      if (index < buildFiles.size() - 1) {
+        json.append(",");
+      }
+      json.append("\n");
+    }
+    indent(json, 7);
+    json.append("]");
+    appendLineEnding(json, trailingComma);
   }
 
   private void appendMavenMetadata(StringBuilder json, MavenModuleMetadata metadata) {
@@ -5154,6 +5448,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private List<EvidenceRecord> evidenceRecords(
       ProjectLayout layout,
       List<MavenModuleDiscoveryEvidence> moduleEvidenceRecords,
+      List<GradleBuildFileEvidence> gradleEvidenceRecords,
       List<MavenMetadataEvidence> metadataEvidenceRecords,
       List<MavenDependencyEvidence> dependencyEvidenceRecords,
       List<MavenPluginEvidence> pluginEvidenceRecords,
@@ -5172,8 +5467,11 @@ public final class SpringMvcEndpointOutputGenerator {
       List<TestInventoryEvidence> testEvidenceRecords,
       List<AnalysisWarningEvidence> warningEvidenceRecords) {
     Map<String, EvidenceRecord> uniqueRecords = new LinkedHashMap<>();
-    layout.buildFileEvidence().ifPresent(evidence -> uniqueRecords.put(evidence.id(), evidence));
+    layout.buildFileEvidence().forEach(evidence -> uniqueRecords.put(evidence.id(), evidence));
     moduleEvidenceRecords.stream()
+        .map(this::evidenceRecord)
+        .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    gradleEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     metadataEvidenceRecords.stream()
@@ -5248,6 +5546,20 @@ public final class SpringMvcEndpointOutputGenerator {
   }
 
   private EvidenceRecord evidenceRecord(MavenModuleDiscoveryEvidence evidence) {
+    return new EvidenceRecord(
+        evidence.id(),
+        evidence.sourceType(),
+        evidence.sourcePath(),
+        evidence.className(),
+        evidence.methodName(),
+        evidence.symbolName(),
+        evidence.lineStart(),
+        evidence.lineEnd(),
+        evidence.excerpt(),
+        evidence.confidence());
+  }
+
+  private EvidenceRecord evidenceRecord(GradleBuildFileEvidence evidence) {
     return new EvidenceRecord(
         evidence.id(),
         evidence.sourceType(),
@@ -5898,12 +6210,13 @@ public final class SpringMvcEndpointOutputGenerator {
       List<String> sourceRoots,
       List<String> testRoots,
       ProjectModules modules,
-      Optional<EvidenceRecord> buildFileEvidence,
+      List<EvidenceRecord> buildFileEvidence,
       List<ScanDiagnostic> diagnostics) {
     private ProjectLayout {
       sourceRoots = List.copyOf(sourceRoots);
       testRoots = List.copyOf(testRoots);
       modules = Objects.requireNonNull(modules, "modules");
+      buildFileEvidence = List.copyOf(buildFileEvidence);
       diagnostics = List.copyOf(diagnostics);
     }
   }
@@ -5922,9 +6235,25 @@ public final class SpringMvcEndpointOutputGenerator {
     }
   }
 
-  private record BuildMetadata(String system, String rootBuildFile, List<String> evidenceIds) {
+  private record RootBuildFileItem(
+      String path,
+      String buildSystem,
+      String role,
+      String language,
+      List<String> evidenceIds) {
+    private RootBuildFileItem {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record BuildMetadata(
+      String system,
+      String rootBuildFile,
+      List<String> evidenceIds,
+      List<RootBuildFileItem> rootBuildFiles) {
     private BuildMetadata {
       evidenceIds = List.copyOf(evidenceIds);
+      rootBuildFiles = List.copyOf(rootBuildFiles);
     }
   }
 
