@@ -9,7 +9,7 @@ import com.github.javaparser.ast.type.Type;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceOrigins;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
-import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -47,7 +47,7 @@ public final class SpringBootApplicationAnalyzer {
       .thenComparing(SpringBootApplicationEvidence::symbolName)
       .thenComparing(SpringBootApplicationEvidence::id);
 
-  public SpringBootApplicationAnalysis analyze(Path repositoryRoot, List<MavenModuleItem> modules)
+  public SpringBootApplicationAnalysis analyze(Path repositoryRoot, List<? extends BuildModule> modules)
       throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(modules, "modules");
@@ -57,7 +57,7 @@ public final class SpringBootApplicationAnalyzer {
     Map<String, SpringBootApplicationEvidence> evidence = new LinkedHashMap<>();
     List<ModuleSpringBootApplications> moduleApplications = new ArrayList<>();
 
-    for (MavenModuleItem module : modules) {
+    for (BuildModule module : modules) {
       if (!MODULE_SUPPORTED.equals(module.supportStatus()) || module.sourceRoots().isEmpty()) {
         moduleApplications.add(notDetected(module.moduleId()));
         continue;

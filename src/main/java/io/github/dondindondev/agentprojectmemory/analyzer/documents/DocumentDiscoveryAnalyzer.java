@@ -3,7 +3,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
-import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
@@ -106,13 +106,13 @@ public final class DocumentDiscoveryAnalyzer {
 
   public DocumentDiscoveryAnalysis analyze(
       Path repositoryRoot,
-      List<MavenModuleItem> modules) throws IOException {
+      List<? extends BuildModule> modules) throws IOException {
     return analyze(repositoryRoot, modules, DocumentDiscoveryOptions.defaults());
   }
 
   public DocumentDiscoveryAnalysis analyze(
       Path repositoryRoot,
-      List<MavenModuleItem> modules,
+      List<? extends BuildModule> modules,
       DocumentDiscoveryOptions options) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(modules, "modules");
@@ -540,10 +540,10 @@ public final class DocumentDiscoveryAnalyzer {
   private List<SupportedModuleRoot> supportedModuleRoots(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
-      List<MavenModuleItem> modules) {
+      List<? extends BuildModule> modules) {
     List<SupportedModuleRoot> roots = new ArrayList<>();
     for (int index = 0; index < modules.size(); index++) {
-      MavenModuleItem module = modules.get(index);
+      BuildModule module = modules.get(index);
       if (!MODULE_SUPPORTED.equals(module.supportStatus())) {
         continue;
       }

@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.maven;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.util.List;
 
 public record MavenModuleItem(
@@ -12,7 +13,7 @@ public record MavenModuleItem(
     String declarationKind,
     String declaredPath,
     List<String> declarationEvidenceIds,
-    List<String> pomEvidenceIds) {
+    List<String> pomEvidenceIds) implements BuildModule {
   public MavenModuleItem {
     sourceRoots = List.copyOf(sourceRoots);
     testRoots = List.copyOf(testRoots);

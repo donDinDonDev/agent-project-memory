@@ -2,7 +2,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer.config;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
-import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -68,7 +68,7 @@ public final class ResourceConfigAnalyzer {
     this.maxConfigFileCandidates = maxConfigFileCandidates;
   }
 
-  public ResourceConfigAnalysis analyze(Path repositoryRoot, List<MavenModuleItem> modules)
+  public ResourceConfigAnalysis analyze(Path repositoryRoot, List<? extends BuildModule> modules)
       throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(modules, "modules");
@@ -78,7 +78,7 @@ public final class ResourceConfigAnalyzer {
     Map<String, ResourceConfigEvidence> evidence = new LinkedHashMap<>();
     List<ModuleResourceConfig> moduleConfigs = new ArrayList<>();
 
-    for (MavenModuleItem module : modules) {
+    for (BuildModule module : modules) {
       if (!MODULE_SUPPORTED.equals(module.supportStatus())) {
         moduleConfigs.add(notDetected(module.moduleId()));
         continue;
@@ -128,7 +128,7 @@ public final class ResourceConfigAnalyzer {
   private List<ResourceRootFact> detectedResourceRoots(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
-      MavenModuleItem module) {
+      BuildModule module) {
     List<ResourceRootFact> resourceRoots = new ArrayList<>();
     for (ResourceRootCandidate candidate : RESOURCE_ROOTS) {
       String path = ".".equals(module.modulePath())

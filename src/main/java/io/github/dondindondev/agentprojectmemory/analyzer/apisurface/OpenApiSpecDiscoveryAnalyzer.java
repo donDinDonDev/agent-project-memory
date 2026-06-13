@@ -3,7 +3,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer.apisurface;
 import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
-import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
@@ -65,7 +65,7 @@ public final class OpenApiSpecDiscoveryAnalyzer {
 
   public OpenApiSpecDiscoveryAnalysis analyze(
       Path repositoryRoot,
-      List<MavenModuleItem> modules) throws IOException {
+      List<? extends BuildModule> modules) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(modules, "modules");
 
@@ -117,10 +117,10 @@ public final class OpenApiSpecDiscoveryAnalyzer {
   private List<SupportedModuleRoot> supportedModuleRoots(
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
-      List<MavenModuleItem> modules) {
+      List<? extends BuildModule> modules) {
     List<SupportedModuleRoot> roots = new ArrayList<>();
     for (int index = 0; index < modules.size(); index++) {
-      MavenModuleItem module = modules.get(index);
+      BuildModule module = modules.get(index);
       if (!MODULE_SUPPORTED.equals(module.supportStatus())) {
         continue;
       }

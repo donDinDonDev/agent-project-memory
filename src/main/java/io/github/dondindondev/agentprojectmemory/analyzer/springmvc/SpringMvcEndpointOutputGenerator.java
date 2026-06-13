@@ -5,6 +5,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.ApiSpecEvidence;
+import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiOperationAnalysis;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiOperationAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.apisurface.OpenApiOperationFact;
@@ -832,11 +833,11 @@ public final class SpringMvcEndpointOutputGenerator {
         || !openApiOperationAnalysis.warnings().isEmpty();
 
     List<String> childModulePaths = modules.items().stream()
-        .map(MavenModuleItem::modulePath)
+        .map(BuildModule::modulePath)
         .filter(modulePath -> !".".equals(modulePath))
         .toList();
 
-    for (MavenModuleItem module : modules.items()) {
+    for (BuildModule module : modules.items()) {
       if (!MODULE_SUPPORTED.equals(module.supportStatus())) {
         continue;
       }
@@ -1105,7 +1106,7 @@ public final class SpringMvcEndpointOutputGenerator {
         relation);
   }
 
-  private Map<String, Integer> moduleOrder(List<MavenModuleItem> modules) {
+  private Map<String, Integer> moduleOrder(List<? extends BuildModule> modules) {
     Map<String, Integer> order = new LinkedHashMap<>();
     for (int index = 0; index < modules.size(); index++) {
       order.put(modules.get(index).moduleId(), index);
@@ -5092,7 +5093,7 @@ public final class SpringMvcEndpointOutputGenerator {
         .toList();
   }
 
-  private String moduleLabel(String moduleId, MavenModuleItem module) {
+  private String moduleLabel(String moduleId, BuildModule module) {
     if (moduleId == null || moduleId.isBlank()) {
       return code("unscoped") + " (module path not recorded)";
     }
