@@ -1,0 +1,922 @@
+{
+  "schema_version": "1.0",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "gradle",
+      "root_build_file": "settings.gradle.kts",
+      "root_build_files": [
+        {
+          "path": "settings.gradle.kts",
+          "build_system": "gradle",
+          "role": "settings",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+          ]
+        },
+        {
+          "path": "build.gradle.kts",
+          "build_system": "gradle",
+          "role": "root_project_build",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:build.gradle.kts:1-1:build_file:gradle:build"
+          ]
+        }
+      ],
+      "evidence_ids": [
+        "ev:settings.gradle.kts:1-1:build_file:gradle:settings",
+        "ev:build.gradle.kts:1-1:build_file:gradle:build"
+      ]
+    },
+    "source_roots": [
+      "app/src/main/java",
+      "src/main/java"
+    ],
+    "test_roots": [
+      "app/src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": null,
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+                  ]
+                },
+                {
+                  "path": "build.gradle.kts",
+                  "role": "project_build",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:build.gradle.kts:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:test:src/test/resources",
+                  "scope": "test",
+                  "path": "src/test/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:app",
+          "module_path": "app",
+          "pom_path": null,
+          "source_roots": [
+            "app/src/main/java"
+          ],
+          "test_roots": [
+            "app/src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "gradle_settings_include",
+          "declared_path": "app",
+          "declaration_evidence_ids": [
+            "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000001"
+          ],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":app",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":app",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000001"
+                  ]
+                },
+                {
+                  "path": "app/build.gradle.kts",
+                  "role": "project_build",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:app/build.gradle.kts:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:libs/empty",
+          "module_path": "libs/empty",
+          "pom_path": null,
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "unsupported",
+          "declaration_kind": "gradle_settings_include",
+          "declared_path": "libs/empty",
+          "declaration_evidence_ids": [
+            "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000004"
+          ],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":libs:empty",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":libs:empty",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000004"
+                  ]
+                },
+                {
+                  "path": "libs/empty/build.gradle.kts",
+                  "role": "project_build",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:libs/empty/build.gradle.kts:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:libs/missing",
+          "module_path": "libs/missing",
+          "pom_path": null,
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "missing_project_directory",
+          "declaration_kind": "gradle_settings_include",
+          "declared_path": "libs/missing",
+          "declaration_evidence_ids": [
+            "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000003"
+          ],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":libs:missing",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":libs:missing",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000003"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        },
+        {
+          "module_id": "module:services/orders",
+          "module_path": "services/orders",
+          "pom_path": null,
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "supported",
+          "declaration_kind": "gradle_settings_include",
+          "declared_path": "services/orders",
+          "declaration_evidence_ids": [
+            "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000002"
+          ],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":services:orders",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":services:orders",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000002"
+                  ]
+                },
+                {
+                  "path": "services/orders/build.gradle",
+                  "role": "project_build",
+                  "language": "groovy_dsl",
+                  "evidence_ids": [
+                    "ev:services/orders/build.gradle:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:services/orders:main:services/orders/src/main/resources",
+                  "scope": "main",
+                  "path": "services/orders/src/main/resources",
+                  "evidence_ids": []
+                },
+                {
+                  "id": "resource_root:module:services/orders:test:services/orders/src/test/resources",
+                  "scope": "test",
+                  "path": "services/orders/src/test/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:gradle_module:duplicate_project_path:app:decl:000005",
+        "category": "gradle_module",
+        "signal": "duplicate_project_path",
+        "module_id": "module:app",
+        "message": "Duplicate Gradle settings include ignored; v1.1 analyzes each normalized Gradle project path once.",
+        "source_path": "settings.gradle.kts",
+        "evidence_ids": [
+          "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000005"
+        ]
+      },
+      {
+        "id": "warning:gradle_module:missing_project_directory:libs/missing",
+        "category": "gradle_module",
+        "signal": "missing_project_directory",
+        "module_id": "module:libs/missing",
+        "message": "Gradle settings include uses the default project directory mapping, but the project directory is absent; this module is not inspected.",
+        "source_path": "settings.gradle.kts",
+        "evidence_ids": [
+          "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000003"
+        ]
+      },
+      {
+        "id": "warning:gradle_module:unsupported_dynamic_include:decl:000006",
+        "category": "gradle_module",
+        "signal": "unsupported_dynamic_include",
+        "module_id": null,
+        "message": "Gradle settings declaration is directly visible but outside the v1.1 literal include subset; dynamic or composite-build declarations are not analyzed.",
+        "source_path": "settings.gradle.kts",
+        "evidence_ids": [
+          "ev:settings.gradle.kts:3-3:build_file:gradle:include:decl:000006"
+        ]
+      },
+      {
+        "id": "warning:gradle_module:unsupported_module:libs/empty",
+        "category": "gradle_module",
+        "signal": "unsupported_module",
+        "module_id": "module:libs/empty",
+        "message": "Gradle project has no supported Java source, test, or resource roots; the analyzer does not inspect this module.",
+        "source_path": "libs/empty/build.gradle.kts",
+        "evidence_ids": [
+          "ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000004",
+          "ev:libs/empty/build.gradle.kts:1-1:build_file:gradle:build"
+        ]
+      },
+      {
+        "id": "warning:gradle_module:unsupported_project_dir_mapping:decl:000007",
+        "category": "gradle_module",
+        "signal": "unsupported_project_dir_mapping",
+        "module_id": null,
+        "message": "Gradle projectDir remapping is directly visible but outside the v1.1 default project-directory mapping subset; remapped directories are not analyzed.",
+        "source_path": "settings.gradle.kts",
+        "evidence_ids": [
+          "ev:settings.gradle.kts:4-4:build_file:gradle:projectDir:decl:000007"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "documents": {
+    "analysis_status": "not_detected",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "quality": {
+    "analysis_status": "not_detected",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  }
+}

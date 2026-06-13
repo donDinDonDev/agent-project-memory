@@ -62,6 +62,142 @@ final class GradleModuleDiscoveryAnalyzerTest {
   }
 
   @Test
+  void settingsLiteralIncludesDiscoverSupportedChildProjectsInDeterministicOrder() throws Exception {
+    Path repositoryRoot = repository("multi-project-gradle");
+    writeFile(
+        repositoryRoot.resolve("settings.gradle.kts"),
+        """
+        rootProject.name = "multi-project-gradle"
+        include(":services:orders", "app")
+        include("libs:common")
+        """);
+    writeFile(repositoryRoot.resolve("build.gradle.kts"), "plugins { java }\n");
+    writeFile(repositoryRoot.resolve("app/build.gradle.kts"), "plugins { java }\n");
+    writeFile(repositoryRoot.resolve("services/orders/build.gradle"), "plugins { id 'java' }\n");
+    Files.createDirectories(repositoryRoot.resolve("src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("app/src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("app/src/test/java"));
+    Files.createDirectories(repositoryRoot.resolve("services/orders/src/test/resources"));
+    Files.createDirectories(repositoryRoot.resolve("libs/common/src/main/resources"));
+
+    GradleModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem rootModule = moduleById(analysis, "module:.");
+    MavenModuleItem appModule = moduleById(analysis, "module:app");
+    MavenModuleItem commonModule = moduleById(analysis, "module:libs/common");
+    MavenModuleItem ordersModule = moduleById(analysis, "module:services/orders");
+
+    assertAll(
+        () -> assertEquals("analyzed", analysis.analysisStatus()),
+        () -> assertEquals(
+            List.of("module:.", "module:app", "module:libs/common", "module:services/orders"),
+            analysis.items().stream().map(MavenModuleItem::moduleId).toList()),
+        () -> assertEquals(List.of("src/main/java"), rootModule.sourceRoots()),
+        () -> assertEquals(":", rootModule.gradleProjectPath()),
+        () -> assertEquals("gradle_settings_include", appModule.declarationKind()),
+        () -> assertEquals("app", appModule.declaredPath()),
+        () -> assertEquals(":app", appModule.gradleProjectPath()),
+        () -> assertEquals(List.of("app/src/main/java"), appModule.sourceRoots()),
+        () -> assertEquals(List.of("app/src/test/java"), appModule.testRoots()),
+        () -> assertEquals(
+            List.of("settings.gradle.kts", "app/build.gradle.kts"),
+            appModule.gradleBuildFiles().stream().map(GradleBuildFileItem::path).toList()),
+        () -> assertEquals("settings", appModule.gradleBuildFiles().get(0).role()),
+        () -> assertEquals("project_build", appModule.gradleBuildFiles().get(1).role()),
+        () -> assertEquals(":libs:common", commonModule.gradleProjectPath()),
+        () -> assertEquals(List.of(), commonModule.sourceRoots()),
+        () -> assertEquals(
+            List.of("settings.gradle.kts"),
+            commonModule.gradleBuildFiles().stream().map(GradleBuildFileItem::path).toList()),
+        () -> assertEquals(":services:orders", ordersModule.gradleProjectPath()),
+        () -> assertEquals(List.of(), ordersModule.sourceRoots()),
+        () -> assertEquals(List.of(), ordersModule.testRoots()),
+        () -> assertEquals(List.of(), analysis.warnings()),
+        () -> assertEquals(List.of(), analysis.diagnostics()),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void settingsWarningsCoverInvalidDuplicateMissingUnsupportedDynamicAndProjectDirMapping()
+      throws Exception {
+    Path repositoryRoot = repository("gradle-settings-warnings");
+    writeFile(
+        repositoryRoot.resolve("settings.gradle"),
+        """
+        include(":app", "app", "../escape", "bad::path", ":missing", ":empty")
+        include(projectName)
+        includeBuild("../external")
+        project(":app").projectDir = file("custom/app")
+        """);
+    writeFile(repositoryRoot.resolve("build.gradle"), "plugins { id 'java' }\n");
+    writeFile(repositoryRoot.resolve("app/build.gradle"), "plugins { id 'java' }\n");
+    writeFile(repositoryRoot.resolve("empty/build.gradle.kts"), "plugins { java }\n");
+    Files.createDirectories(repositoryRoot.resolve("src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("app/src/main/java"));
+
+    GradleModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem appModule = moduleById(analysis, "module:app");
+    MavenModuleItem missingModule = moduleById(analysis, "module:missing");
+    MavenModuleItem emptyModule = moduleById(analysis, "module:empty");
+
+    assertAll(
+        () -> assertEquals(
+            List.of("module:.", "module:app", "module:empty", "module:missing"),
+            analysis.items().stream().map(MavenModuleItem::moduleId).toList()),
+        () -> assertEquals("supported", appModule.supportStatus()),
+        () -> assertEquals("missing_project_directory", missingModule.supportStatus()),
+        () -> assertEquals("unsupported", emptyModule.supportStatus()),
+        () -> assertEquals(
+            List.of(
+                "duplicate_project_path",
+                "invalid_project_path",
+                "invalid_project_path",
+                "missing_project_directory",
+                "unsupported_dynamic_include",
+                "unsupported_dynamic_include",
+                "unsupported_module",
+                "unsupported_project_dir_mapping"),
+            analysis.warnings().stream().map(GradleModuleWarning::signal).toList()),
+        () -> assertEquals(
+            "warning:gradle_module:duplicate_project_path:app:decl:000002",
+            analysis.warnings().get(0).id()),
+        () -> assertTrue(analysis.warnings().stream()
+            .filter(warning -> "invalid_project_path".equals(warning.signal()))
+            .allMatch(warning -> warning.moduleId() == null)),
+        () -> assertEquals(List.of(), analysis.diagnostics()),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void settingsStringInterpolationIsNotAcceptedAsStaticProjectPath() throws Exception {
+    Path repositoryRoot = repository("gradle-interpolation");
+    writeFile(
+        repositoryRoot.resolve("settings.gradle.kts"),
+        """
+        include(":app")
+        include("$module")
+        include(":${module}")
+        """);
+    writeFile(repositoryRoot.resolve("build.gradle.kts"), "plugins { java }\n");
+    Files.createDirectories(repositoryRoot.resolve("src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("app/src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("$module/src/main/java"));
+    Files.createDirectories(repositoryRoot.resolve("${module}/src/main/java"));
+
+    GradleModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+
+    assertAll(
+        () -> assertEquals(
+            List.of("module:.", "module:app"),
+            analysis.items().stream().map(MavenModuleItem::moduleId).toList()),
+        () -> assertEquals(
+            List.of("unsupported_dynamic_include", "unsupported_dynamic_include"),
+            analysis.warnings().stream().map(GradleModuleWarning::signal).toList()),
+        () -> assertTrue(analysis.warnings().stream().allMatch(warning -> warning.moduleId() == null)),
+        () -> assertEquals(List.of(), analysis.diagnostics()),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
   void rootGradleBuildWithoutSupportedRootsCreatesUnsupportedWarning() throws Exception {
     Path repositoryRoot = repository("unsupported-gradle");
     writeFile(repositoryRoot.resolve("build.gradle"), "plugins { id 'java' }\n");
@@ -144,6 +280,13 @@ final class GradleModuleDiscoveryAnalyzerTest {
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
     }
+  }
+
+  private MavenModuleItem moduleById(GradleModuleDiscoveryAnalysis analysis, String moduleId) {
+    return analysis.items().stream()
+        .filter(item -> item.moduleId().equals(moduleId))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing module " + moduleId));
   }
 
   private void assertGradleSizeDiagnostic(ScanDiagnostic diagnostic, String sourcePath) {

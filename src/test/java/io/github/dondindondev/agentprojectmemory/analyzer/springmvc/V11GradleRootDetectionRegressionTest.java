@@ -27,6 +27,7 @@ final class V11GradleRootDetectionRegressionTest {
   private static final Pattern JSON_STRING = Pattern.compile("\"((?:\\\\.|[^\"\\\\])*)\"");
   private static final Pattern EVIDENCE_INDEX_ID = Pattern.compile("^\\{\"id\":\"([^\"]+)\"");
   private static final String FIXTURE_NAME = "v1-1-gradle-single-project";
+  private static final String MULTI_PROJECT_FIXTURE_NAME = "v1-1-gradle-multi-project";
 
   @TempDir
   private Path tempDir;
@@ -35,17 +36,17 @@ final class V11GradleRootDetectionRegressionTest {
 
   @Test
   void singleProjectGradleRootDetectionMatchesGoldenOutput() throws Exception {
-    GeneratedOutput output = generateFromFixture();
+    GeneratedOutput output = generateFromFixture(FIXTURE_NAME);
     JsonNode projectMap = JSON.readTree(output.projectMap());
     JsonNode build = projectMap.path("project").path("build");
     JsonNode module = projectMap.path("project").path("modules").path("items").get(0);
     JsonNode gradle = module.path("build_config").path("gradle");
 
     assertAll(
-        () -> assertEquals(expected("project-map.json"), output.projectMap()),
-        () -> assertEquals(expected("evidence-index.jsonl"), output.evidenceIndex()),
-        () -> assertEquals(expected("endpoints.md"), output.endpoints()),
-        () -> assertEquals(expected("agent-guide.md"), output.agentGuide()),
+        () -> assertEquals(expected(FIXTURE_NAME, "project-map.json"), output.projectMap()),
+        () -> assertEquals(expected(FIXTURE_NAME, "evidence-index.jsonl"), output.evidenceIndex()),
+        () -> assertEquals(expected(FIXTURE_NAME, "endpoints.md"), output.endpoints()),
+        () -> assertEquals(expected(FIXTURE_NAME, "agent-guide.md"), output.agentGuide()),
         () -> assertEquals("1.0", projectMap.path("schema_version").asText()),
         () -> assertEquals("gradle", build.path("system").asText()),
         () -> assertEquals("settings.gradle.kts", build.path("root_build_file").asText()),
@@ -63,6 +64,48 @@ final class V11GradleRootDetectionRegressionTest {
         () -> assertEquals(
             List.of("settings.gradle.kts", "build.gradle.kts"),
             textValues(gradle.path("build_files"), "path")),
+        () -> assertEvidenceIdsResolve(output));
+  }
+
+  @Test
+  void multiProjectGradleSettingsIncludesMatchGoldenOutput() throws Exception {
+    GeneratedOutput output = generateFromFixture(MULTI_PROJECT_FIXTURE_NAME);
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode modules = projectMap.path("project").path("modules").path("items");
+    JsonNode warnings = projectMap.path("warnings").path("items");
+    JsonNode app = moduleNode(projectMap, "module:app");
+    JsonNode missing = moduleNode(projectMap, "module:libs/missing");
+    JsonNode empty = moduleNode(projectMap, "module:libs/empty");
+    JsonNode orders = moduleNode(projectMap, "module:services/orders");
+
+    assertAll(
+        () -> assertEquals(expected(MULTI_PROJECT_FIXTURE_NAME, "project-map.json"), output.projectMap()),
+        () -> assertEquals(expected(MULTI_PROJECT_FIXTURE_NAME, "evidence-index.jsonl"), output.evidenceIndex()),
+        () -> assertEquals(expected(MULTI_PROJECT_FIXTURE_NAME, "endpoints.md"), output.endpoints()),
+        () -> assertEquals(expected(MULTI_PROJECT_FIXTURE_NAME, "agent-guide.md"), output.agentGuide()),
+        () -> assertEquals("1.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals("gradle", projectMap.path("project").path("build").path("system").asText()),
+        () -> assertEquals(
+            List.of("module:.", "module:app", "module:libs/empty", "module:libs/missing", "module:services/orders"),
+            textValues(modules, "module_id")),
+        () -> assertEquals(List.of("app/src/main/java", "src/main/java"),
+            stringValues(projectMap.path("project").path("source_roots"))),
+        () -> assertEquals("gradle_settings_include", app.path("declaration_kind").asText()),
+        () -> assertEquals(":app", app.path("gradle_project_path").asText()),
+        () -> assertEquals(
+            List.of("settings.gradle.kts", "app/build.gradle.kts"),
+            textValues(app.path("build_config").path("gradle").path("build_files"), "path")),
+        () -> assertEquals("missing_project_directory", missing.path("support_status").asText()),
+        () -> assertEquals("unsupported", empty.path("support_status").asText()),
+        () -> assertEquals(":services:orders", orders.path("gradle_project_path").asText()),
+        () -> assertEquals(
+            List.of(
+                "duplicate_project_path",
+                "missing_project_directory",
+                "unsupported_dynamic_include",
+                "unsupported_module",
+                "unsupported_project_dir_mapping"),
+            textValues(warnings, "signal")),
         () -> assertEvidenceIdsResolve(output));
   }
 
@@ -102,10 +145,10 @@ final class V11GradleRootDetectionRegressionTest {
         () -> assertEvidenceIdsResolve(new GeneratedOutput(projectMap, evidenceIndex, "", "")));
   }
 
-  private GeneratedOutput generateFromFixture() throws Exception {
-    Path projectPath = tempDir.resolve(FIXTURE_NAME);
+  private GeneratedOutput generateFromFixture(String fixtureName) throws Exception {
+    Path projectPath = tempDir.resolve(fixtureName);
     Path outputDirectory = projectPath.resolve(".project-memory");
-    copyDirectory(fixtureRoot(), projectPath);
+    copyDirectory(fixtureRoot(fixtureName), projectPath);
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
@@ -164,18 +207,28 @@ final class V11GradleRootDetectionRegressionTest {
     return values;
   }
 
-  private String expected(String fileName) throws Exception {
-    return Files.readString(goldenRoot().resolve(fileName));
+  private JsonNode moduleNode(JsonNode projectMap, String moduleId) {
+    JsonNode modules = projectMap.path("project").path("modules").path("items");
+    for (JsonNode module : modules) {
+      if (moduleId.equals(module.path("module_id").asText())) {
+        return module;
+      }
+    }
+    throw new AssertionError("Missing module block for " + moduleId);
   }
 
-  private Path fixtureRoot() throws Exception {
-    return Path.of(Objects.requireNonNull(
-        getClass().getResource("/fixtures/" + FIXTURE_NAME)).toURI());
+  private String expected(String fixtureName, String fileName) throws Exception {
+    return Files.readString(goldenRoot(fixtureName).resolve(fileName));
   }
 
-  private Path goldenRoot() throws Exception {
+  private Path fixtureRoot(String fixtureName) throws Exception {
     return Path.of(Objects.requireNonNull(
-        getClass().getResource("/golden/" + FIXTURE_NAME)).toURI());
+        getClass().getResource("/fixtures/" + fixtureName)).toURI());
+  }
+
+  private Path goldenRoot(String fixtureName) throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/golden/" + fixtureName)).toURI());
   }
 
   private void copyDirectory(Path source, Path target) throws Exception {
