@@ -1,0 +1,13 @@
+openapi: 3.0.3
+info:
+  title: Orders API
+  version: 1.0.0
+paths:
+  /orders/{id}:
+    get:
+      operationId: getOrderDocumented
+      tags:
+        - Orders
+      responses:
+        '200':
+          description: ok

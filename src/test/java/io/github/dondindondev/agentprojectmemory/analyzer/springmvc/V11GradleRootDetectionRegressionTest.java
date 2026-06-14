@@ -28,6 +28,7 @@ final class V11GradleRootDetectionRegressionTest {
   private static final Pattern EVIDENCE_INDEX_ID = Pattern.compile("^\\{\"id\":\"([^\"]+)\"");
   private static final String FIXTURE_NAME = "v1-1-gradle-single-project";
   private static final String MULTI_PROJECT_FIXTURE_NAME = "v1-1-gradle-multi-project";
+  private static final String ANALYZER_INTEGRATION_FIXTURE_NAME = "v1-1-gradle-analyzer-integration";
 
   @TempDir
   private Path tempDir;
@@ -106,6 +107,47 @@ final class V11GradleRootDetectionRegressionTest {
                 "unsupported_module",
                 "unsupported_project_dir_mapping"),
             textValues(warnings, "signal")),
+        () -> assertEvidenceIdsResolve(output));
+  }
+
+  @Test
+  void gradleAnalyzerIntegrationMatchesGoldenOutput() throws Exception {
+    GeneratedOutput output = generateFromFixture(ANALYZER_INTEGRATION_FIXTURE_NAME);
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode module = projectMap.path("project").path("modules").path("items").get(0);
+
+    assertAll(
+        () -> assertEquals(expected(ANALYZER_INTEGRATION_FIXTURE_NAME, "project-map.json"), output.projectMap()),
+        () -> assertEquals(expected(ANALYZER_INTEGRATION_FIXTURE_NAME, "evidence-index.jsonl"), output.evidenceIndex()),
+        () -> assertEquals(expected(ANALYZER_INTEGRATION_FIXTURE_NAME, "endpoints.md"), output.endpoints()),
+        () -> assertEquals(expected(ANALYZER_INTEGRATION_FIXTURE_NAME, "agent-guide.md"), output.agentGuide()),
+        () -> assertEquals("gradle", projectMap.path("project").path("build").path("system").asText()),
+        () -> assertEquals(1, projectMap.path("endpoints").size()),
+        () -> assertEquals(
+            1,
+            projectMap.path("api_surface").path("openapi").path("operations").path("items").size()),
+        () -> assertFalse(
+            module.path("build_config").path("config_files").path("items").isEmpty(),
+            "Gradle resource roots should feed config/resource analysis"),
+        () -> assertFalse(
+            module.path("build_config").path("spring_boot_applications").path("items").isEmpty(),
+            "Gradle source roots should feed Spring Boot application analysis"),
+        () -> assertFalse(projectMap.path("components").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("entities").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("spring_application_surface").path("repositories").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("tests").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("documents").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("quality").path("test_gap_signals").path("items").isEmpty()),
+        () -> assertFalse(projectMap.path("quality").path("change_risk_signals").path("items").isEmpty()),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.GradleApplication\"")),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.service.OrderService\"")),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.domain.Order\"")),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.repository.OrderRepository\"")),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.config.GradleConfiguration\"")),
+        () -> assertTrue(output.projectMap().contains("\"class_name\": \"com.example.gradle.web.OrderControllerTest\"")),
+        () -> assertTrue(output.agentGuide().contains("Source-visible Gradle build files")),
+        () -> assertTrue(output.agentGuide().contains("## Quality And Change-Risk Signals")),
+        () -> assertTrue(output.endpoints().contains("GET /orders/{id}")),
         () -> assertEvidenceIdsResolve(output));
   }
 

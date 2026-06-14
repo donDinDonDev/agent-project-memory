@@ -1,0 +1,1369 @@
+{
+  "schema_version": "1.0",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "gradle",
+      "root_build_file": "settings.gradle.kts",
+      "root_build_files": [
+        {
+          "path": "settings.gradle.kts",
+          "build_system": "gradle",
+          "role": "settings",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+          ]
+        },
+        {
+          "path": "build.gradle.kts",
+          "build_system": "gradle",
+          "role": "root_project_build",
+          "language": "kotlin_dsl",
+          "evidence_ids": [
+            "ev:build.gradle.kts:1-1:build_file:gradle:build"
+          ]
+        }
+      ],
+      "evidence_ids": [
+        "ev:settings.gradle.kts:1-1:build_file:gradle:settings",
+        "ev:build.gradle.kts:1-1:build_file:gradle:build"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": null,
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [
+            "src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [],
+          "build_systems": [
+            "gradle"
+          ],
+          "gradle_project_path": ":",
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "not_detected",
+                "group_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "artifact_id": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "version": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "not_detected",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "not_detected",
+                "items": []
+              }
+            },
+            "gradle": {
+              "analysis_status": "analyzed",
+              "project_path": ":",
+              "build_files": [
+                {
+                  "path": "settings.gradle.kts",
+                  "role": "settings",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:settings.gradle.kts:1-1:build_file:gradle:settings"
+                  ]
+                },
+                {
+                  "path": "build.gradle.kts",
+                  "role": "project_build",
+                  "language": "kotlin_dsl",
+                  "evidence_ids": [
+                    "ev:build.gradle.kts:1-1:build_file:gradle:build"
+                  ]
+                }
+              ],
+              "source_sets": {
+                "analysis_status": "not_analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:main:src/main/resources",
+                  "scope": "main",
+                  "path": "src/main/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "config_file:module:.:spring_application:src/main/resources/application.yml",
+                  "path": "src/main/resources/application.yml",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:src/main/resources/application.yml:unknown:config_file:application.yml"
+                  ]
+                }
+              ]
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_boot_application:module:.:com.example.gradle.GradleApplication",
+                  "class_name": "com.example.gradle.GradleApplication",
+                  "source_path": "src/main/java/com/example/gradle/GradleApplication.java",
+                  "application_signal": "spring_boot_application_with_main_method",
+                  "main_method": {
+                    "present": true,
+                    "evidence_ids": [
+                      "ev:src/main/java/com/example/gradle/GradleApplication.java:9-9:com.example.gradle.GradleApplication#main:code_symbol"
+                    ]
+                  },
+                  "evidence_ids": [
+                    "ev:src/main/java/com/example/gradle/GradleApplication.java:6-6:com.example.gradle.GradleApplication:@SpringBootApplication",
+                    "ev:src/main/java/com/example/gradle/GradleApplication.java:9-9:com.example.gradle.GradleApplication#main:code_symbol"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "endpoint:com.example.gradle.web.OrderController#getOrder",
+      "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "controller_class": "com.example.gradle.web.OrderController",
+      "handler_method": "getOrder",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/orders/{id}"
+      ],
+      "request_parameters": [
+        {
+          "name": "id",
+          "source": "path_variable",
+          "java_type": "Long",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/web/OrderController.java:20-20:com.example.gradle.web.OrderController#getOrder:@PathVariable:parameter:0:id"
+          ]
+        }
+      ],
+      "request_body_type": null,
+      "response_type": "OrderDto",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.gradle.web.OrderController",
+        "declaring_method": "getOrder",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/web/OrderController.java:10-10:com.example.gradle.web.OrderController:@RequestMapping",
+          "ev:src/main/java/com/example/gradle/web/OrderController.java:19-19:com.example.gradle.web.OrderController#getOrder:@GetMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/gradle/web/OrderController.java:9-9:com.example.gradle.web.OrderController:@RestController",
+        "ev:src/main/java/com/example/gradle/web/OrderController.java:10-10:com.example.gradle.web.OrderController:@RequestMapping",
+        "ev:src/main/java/com/example/gradle/web/OrderController.java:19-19:com.example.gradle.web.OrderController#getOrder:@GetMapping",
+        "ev:src/main/java/com/example/gradle/web/OrderController.java:20-20:com.example.gradle.web.OrderController#getOrder:@PathVariable:parameter:0:id"
+      ]
+    }
+  ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:com.example.gradle.web.OrderController#getOrder"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_spec:module:.:path:src/main/resources/openapi.yml",
+            "module_id": "module:.",
+            "spec_path": "src/main/resources/openapi.yml",
+            "format": "yaml",
+            "spec_kind": "openapi",
+            "version": "3.0.3",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:1-1:api_spec:openapi"
+            ]
+          }
+        ]
+      },
+      "operations": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:get:/orders/{id}",
+            "module_id": "module:.",
+            "api_surface_category": "openapi_declared_operation",
+            "spec_path": "src/main/resources/openapi.yml",
+            "http_method": "GET",
+            "path": "/orders/{id}",
+            "operation_id": "getOrderDocumented",
+            "tags": [
+              "Orders"
+            ],
+            "implementation_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/resources/openapi.yml:7-7:api_spec:operation%3Aget%3A/orders/{id}"
+            ]
+          }
+        ]
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_data_repository_interface_signal:module:.:com.example.gradle.repository.OrderRepository",
+          "module_id": "module:.",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.gradle.repository.OrderRepository",
+          "source_path": "src/main/java/com/example/gradle/repository/OrderRepository.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:com.example.gradle.domain.Order",
+            "target_module_id": "module:.",
+            "target_class_name": "com.example.gradle.domain.Order",
+            "generic_type": "com.example.gradle.domain.Order",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:8-8:com.example.gradle.repository.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:src/main/java/com/example/gradle/domain/Order.java:12-12:com.example.gradle.domain.Order:@Entity",
+              "ev:src/main/java/com/example/gradle/domain/Order.java:13-13:com.example.gradle.domain.Order:@Table"
+            ]
+          },
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:7-8:com.example.gradle.repository.OrderRepository:com.example.gradle.repository.OrderRepository",
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:8-8:com.example.gradle.repository.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "spring_repository_stereotype:module:.:com.example.gradle.repository.OrderRepository",
+          "module_id": "module:.",
+          "surface_category": "spring_repository_stereotype",
+          "support_type": "extracted",
+          "class_name": "com.example.gradle.repository.OrderRepository",
+          "source_path": "src/main/java/com/example/gradle/repository/OrderRepository.java",
+          "repository_signal": "direct_repository_stereotype",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:7-7:com.example.gradle.repository.OrderRepository:@Repository"
+          ]
+        }
+      ]
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:.:com.example.gradle.config.GradleConfiguration",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.config.GradleConfiguration",
+            "source_path": "src/main/java/com/example/gradle/config/GradleConfiguration.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:9-9:com.example.gradle.config.GradleConfiguration:@Configuration"
+            ]
+          },
+          {
+            "id": "spring_configuration_class:module:.:com.example.gradle.security.SecurityConfig",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.security.SecurityConfig",
+            "source_path": "src/main/java/com/example/gradle/security/SecurityConfig.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:9-9:com.example.gradle.security.SecurityConfig:@Configuration"
+            ]
+          }
+        ]
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_properties_type:module:.:com.example.gradle.config.GradleConfiguration.OrderProperties",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_properties_type",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.config.GradleConfiguration.OrderProperties",
+            "source_path": "src/main/java/com/example/gradle/config/GradleConfiguration.java",
+            "configuration_properties_signal": "direct_configuration_properties_type",
+            "binding_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:20-20:com.example.gradle.config.GradleConfiguration.OrderProperties:@ConfigurationProperties"
+            ]
+          }
+        ]
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_bean_method:module:.:com.example.gradle.config.GradleConfiguration#orderClock:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.config.GradleConfiguration",
+            "method_name": "orderClock",
+            "source_path": "src/main/java/com/example/gradle/config/GradleConfiguration.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:12-12:com.example.gradle.config.GradleConfiguration#orderClock:@Bean"
+            ]
+          },
+          {
+            "id": "spring_bean_method:module:.:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_bean_method",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.security.SecurityConfig",
+            "method_name": "filterChain",
+            "source_path": "src/main/java/com/example/gradle/security/SecurityConfig.java",
+            "bean_signal": "direct_bean_method",
+            "bean_name_status": "not_analyzed",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:13-13:com.example.gradle.security.SecurityConfig#filterChain:@Bean"
+            ]
+          }
+        ]
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_transaction_boundary:module:.:com.example.gradle.service.OrderService#load:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_transaction_boundary",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.service.OrderService",
+            "method_name": "load",
+            "source_path": "src/main/java/com/example/gradle/service/OrderService.java",
+            "target_kind": "method",
+            "annotation_symbol": "@Transactional",
+            "transaction_signal": "direct_transactional_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/service/OrderService.java:11-11:com.example.gradle.service.OrderService#load:@Transactional"
+            ]
+          }
+        ]
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_scheduled_method:module:.:com.example.gradle.config.GradleConfiguration#refreshOrderCache:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_scheduled_method",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.config.GradleConfiguration",
+            "method_name": "refreshOrderCache",
+            "source_path": "src/main/java/com/example/gradle/config/GradleConfiguration.java",
+            "target_kind": "method",
+            "annotation_symbol": "@Scheduled",
+            "scheduled_signal": "direct_scheduled_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:17-17:com.example.gradle.config.GradleConfiguration#refreshOrderCache:@Scheduled"
+            ]
+          }
+        ]
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_event_listener:module:.:com.example.gradle.service.OrderService#onOrderEvent:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "spring_event_listener",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.service.OrderService",
+            "method_name": "onOrderEvent",
+            "source_path": "src/main/java/com/example/gradle/service/OrderService.java",
+            "target_kind": "method",
+            "annotation_symbol": "@EventListener",
+            "event_listener_signal": "direct_event_listener_method",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/service/OrderService.java:16-16:com.example.gradle.service.OrderService#onOrderEvent:@EventListener"
+            ]
+          }
+        ]
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "messaging_listener_signal:module:.:com.example.gradle.messaging.OrderListener#handleOrderMessage:annotation:kafka_listener:decl:000001",
+            "module_id": "module:.",
+            "surface_category": "messaging_listener_signal",
+            "support_type": "extracted",
+            "class_name": "com.example.gradle.messaging.OrderListener",
+            "method_name": "handleOrderMessage",
+            "source_path": "src/main/java/com/example/gradle/messaging/OrderListener.java",
+            "target_kind": "method",
+            "annotation_symbol": "@KafkaListener",
+            "listener_framework": "kafka",
+            "listener_signal": "direct_kafka_listener_annotation",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/messaging/OrderListener.java:9-9:com.example.gradle.messaging.OrderListener#handleOrderMessage:@KafkaListener"
+            ]
+          }
+        ]
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": [
+          "warning:spring_security:security_configuration_annotation:com.example.gradle.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "warning:spring_security:security_filter_chain_bean:com.example.gradle.security.SecurityConfig#filterChain:decl:000001"
+        ]
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "warning:hidden_http_surface:openapi_spec_file:src/main/resources/openapi.yml",
+        "category": "hidden_http_surface",
+        "signal": "openapi_spec_file",
+        "module_id": "module:.",
+        "message": "OpenAPI/Swagger spec file detected by filename; declared operations, when supported, are reported separately under api_surface.openapi.operations, and this warning does not reconstruct generated APIs.",
+        "source_path": "src/main/resources/openapi.yml",
+        "evidence_ids": [
+          "ev:src/main/resources/openapi.yml:unknown:config_file:openapi.yml"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_configuration_annotation:com.example.gradle.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+        "category": "spring_security",
+        "signal": "security_configuration_annotation",
+        "module_id": "module:.",
+        "message": "Spring Security configuration annotation detected as a source-visible inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/gradle/security/SecurityConfig.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:10-10:com.example.gradle.security.SecurityConfig:@EnableWebSecurity"
+        ]
+      },
+      {
+        "id": "warning:spring_security:security_filter_chain_bean:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+        "category": "spring_security",
+        "signal": "security_filter_chain_bean",
+        "module_id": "module:.",
+        "message": "SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.",
+        "source_path": "src/main/java/com/example/gradle/security/SecurityConfig.java",
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:13-13:com.example.gradle.security.SecurityConfig#filterChain:@Bean",
+          "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:14-14:com.example.gradle.security.SecurityConfig#filterChain:return:SecurityFilterChain"
+        ]
+      }
+    ]
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.gradle.config.GradleConfiguration",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.config.GradleConfiguration",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:9-9:com.example.gradle.config.GradleConfiguration:@Configuration"
+        ]
+      },
+      {
+        "id": "component:com.example.gradle.messaging.OrderListener",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.messaging.OrderListener",
+        "stereotypes": [
+          "@Component"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/messaging/OrderListener.java:6-6:com.example.gradle.messaging.OrderListener:@Component"
+        ]
+      },
+      {
+        "id": "component:com.example.gradle.repository.OrderRepository",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.repository.OrderRepository",
+        "stereotypes": [
+          "@Repository"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:7-7:com.example.gradle.repository.OrderRepository:@Repository"
+        ]
+      },
+      {
+        "id": "component:com.example.gradle.security.SecurityConfig",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.security.SecurityConfig",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:9-9:com.example.gradle.security.SecurityConfig:@Configuration"
+        ]
+      },
+      {
+        "id": "component:com.example.gradle.service.OrderService",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.service.OrderService",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/service/OrderService.java:8-8:com.example.gradle.service.OrderService:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.gradle.web.OrderController",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.web.OrderController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/web/OrderController.java:9-9:com.example.gradle.web.OrderController:@RestController"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:com.example.gradle.domain.Customer",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.domain.Customer",
+        "table_name": "customers",
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.gradle.domain.Customer",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/domain/Customer.java:11-11:com.example.gradle.domain.Customer:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/domain/Customer.java:7-7:com.example.gradle.domain.Customer:@Entity",
+          "ev:src/main/java/com/example/gradle/domain/Customer.java:8-8:com.example.gradle.domain.Customer:@Table"
+        ]
+      },
+      {
+        "id": "entity:com.example.gradle.domain.Order",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.domain.Order",
+        "table_name": "orders",
+        "id_class": null,
+        "fields": [
+          {
+            "field_name": "externalId",
+            "java_type": "String",
+            "declaring_class": "com.example.gradle.domain.Order",
+            "source_kind": "declared",
+            "persistence_role": "basic",
+            "annotations": [
+              "@Column"
+            ],
+            "column": {
+              "name": "external_id",
+              "nullable": false,
+              "unique": null,
+              "length": null,
+              "precision": null,
+              "scale": null,
+              "insertable": null,
+              "updatable": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/gradle/domain/Order.java:20-20:com.example.gradle.domain.Order:@Column:field:externalId"
+              ]
+            },
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/domain/Order.java:20-20:com.example.gradle.domain.Order:@Column:field:externalId"
+            ]
+          },
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.gradle.domain.Order",
+            "source_kind": "declared",
+            "persistence_role": "simple_id",
+            "annotations": [
+              "@GeneratedValue"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": {
+              "strategy": null,
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/gradle/domain/Order.java:17-17:com.example.gradle.domain.Order:@GeneratedValue:field:id"
+              ]
+            },
+            "version": null,
+            "embedded": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/domain/Order.java:17-17:com.example.gradle.domain.Order:@GeneratedValue:field:id"
+            ]
+          }
+        ],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.gradle.domain.Order",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": {
+              "strategy": null,
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/gradle/domain/Order.java:17-17:com.example.gradle.domain.Order:@GeneratedValue:field:id"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/domain/Order.java:16-16:com.example.gradle.domain.Order:@Id:field:id",
+              "ev:src/main/java/com/example/gradle/domain/Order.java:17-17:com.example.gradle.domain.Order:@GeneratedValue:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "cardinality": "many_to_one",
+            "java_type": "Customer",
+            "target": {
+              "declared_type": "Customer",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "join_metadata_present",
+            "optional": false,
+            "fetch": "FetchType.LAZY",
+            "cascade": [],
+            "orphan_removal": null,
+            "join_columns": [
+              {
+                "name": "customer_id",
+                "referenced_column_name": null,
+                "nullable": null,
+                "unique": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/gradle/domain/Order.java:24-24:com.example.gradle.domain.Order:@JoinColumn:field:customer"
+                ]
+              }
+            ],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/gradle/domain/Order.java:23-23:com.example.gradle.domain.Order:@ManyToOne:field:customer",
+              "ev:src/main/java/com/example/gradle/domain/Order.java:24-24:com.example.gradle.domain.Order:@JoinColumn:field:customer"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/gradle/domain/Order.java:12-12:com.example.gradle.domain.Order:@Entity",
+          "ev:src/main/java/com/example/gradle/domain/Order.java:13-13:com.example.gradle.domain.Order:@Table"
+        ]
+      }
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "test:com.example.gradle.web.OrderControllerTest",
+        "module_id": "module:.",
+        "class_name": "com.example.gradle.web.OrderControllerTest",
+        "source_path": "src/test/java/com/example/gradle/web/OrderControllerTest.java",
+        "framework_signals": [
+          {
+            "name": "JUnit Jupiter",
+            "signal_kind": "framework",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:14-14:com.example.gradle.web.OrderControllerTest#returnsOrder:@Test",
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:4-4:com.example.gradle.web.OrderControllerTest:import:org.junit.jupiter.api.Test"
+            ]
+          },
+          {
+            "name": "Spring Test",
+            "signal_kind": "framework",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:5-5:com.example.gradle.web.OrderControllerTest:import:org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest",
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:6-6:com.example.gradle.web.OrderControllerTest:import:org.springframework.boot.test.mock.mockito.MockBean",
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:8-8:com.example.gradle.web.OrderControllerTest:@WebMvcTest"
+            ]
+          }
+        ],
+        "spring_test_slices": [
+          {
+            "annotation": "@WebMvcTest",
+            "slice_kind": "web_mvc_test",
+            "signal_kind": "spring_test_slice",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:8-8:com.example.gradle.web.OrderControllerTest:@WebMvcTest"
+            ]
+          }
+        ],
+        "mock_signals": [
+          {
+            "annotation": "@MockBean",
+            "mock_signal": "spring_boot_mockbean_annotation",
+            "signal_kind": "mock_annotation",
+            "target_kind": "field",
+            "target_name": "orderService",
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:11-11:com.example.gradle.web.OrderControllerTest:field:orderService:@MockBean"
+            ]
+          }
+        ],
+        "methods": [
+          {
+            "method_name": "returnsOrder",
+            "test_annotation": "@Test",
+            "method_kind": "test",
+            "display_name": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:14-14:com.example.gradle.web.OrderControllerTest#returnsOrder:@Test"
+            ]
+          }
+        ],
+        "tested_subjects": [
+          {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
+            "class_name": "com.example.gradle.web.OrderController",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:9-9:com.example.gradle.web.OrderControllerTest:test_file",
+              "ev:src/main/java/com/example/gradle/web/OrderController.java:11-11:com.example.gradle.web.OrderController:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "spring_test_slice_class_literal",
+            "class_name": "com.example.gradle.web.OrderController",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:8-8:com.example.gradle.web.OrderControllerTest:@WebMvcTest",
+              "ev:src/main/java/com/example/gradle/web/OrderController.java:11-11:com.example.gradle.web.OrderController:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "test_field_type",
+            "class_name": "com.example.gradle.service.OrderService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:12-12:com.example.gradle.web.OrderControllerTest:field:orderService:type:OrderService",
+              "ev:src/main/java/com/example/gradle/service/OrderService.java:9-9:com.example.gradle.service.OrderService:code_symbol"
+            ]
+          },
+          {
+            "relation_status": "inferred",
+            "relation_type": "test_import",
+            "class_name": "com.example.gradle.service.OrderService",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:3-3:com.example.gradle.web.OrderControllerTest:import:com.example.gradle.service.OrderService",
+              "ev:src/main/java/com/example/gradle/service/OrderService.java:9-9:com.example.gradle.service.OrderService:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/gradle/web/OrderControllerTest.java:9-9:com.example.gradle.web.OrderControllerTest:test_file"
+        ]
+      }
+    ]
+  },
+  "documents": {
+    "analysis_status": "analyzed",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [
+      {
+        "id": "document:README.md",
+        "document_kind": "local_markdown",
+        "format": "markdown",
+        "module_id": null,
+        "path": "README.md",
+        "title": "Gradle Analyzer Integration",
+        "title_source": "first_heading",
+        "discovery_source": "root_readme",
+        "headings": [
+          {
+            "id": "document_heading:README.md:heading:Gradle%20Analyzer%20Integration:occ:000001",
+            "level": 1,
+            "title": "Gradle Analyzer Integration",
+            "anchor": "gradle-analyzer-integration",
+            "line_start": 1,
+            "line_end": 1,
+            "evidence_ids": [
+              "ev:README.md:1-1:document:heading:Gradle%20Analyzer%20Integration:decl:000001"
+            ]
+          }
+        ],
+        "chunks": [
+          {
+            "id": "document_chunk:README.md:chunk:000001",
+            "heading_id": "document_heading:README.md:heading:Gradle%20Analyzer%20Integration:occ:000001",
+            "line_start": 1,
+            "line_end": 5,
+            "content_status": "not_serialized",
+            "evidence_ids": [
+              "ev:README.md:1-5:document:chunk:000001"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:README.md:unknown:document:file:README.md"
+        ]
+      }
+    ],
+    "reconciliation": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.gradle.domain.Customer",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.gradle.domain.Customer",
+          "subject_name": "com.example.gradle.domain.Customer",
+          "subject_class_name": "com.example.gradle.domain.Customer",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/domain/Customer.java:7-7:com.example.gradle.domain.Customer:@Entity",
+            "ev:src/main/java/com/example/gradle/domain/Customer.java:8-8:com.example.gradle.domain.Customer:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.gradle.domain.Order",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.gradle.domain.Order",
+          "subject_name": "com.example.gradle.domain.Order",
+          "subject_class_name": "com.example.gradle.domain.Order",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/domain/Order.java:12-12:com.example.gradle.domain.Order:@Entity",
+            "ev:src/main/java/com/example/gradle/domain/Order.java:13-13:com.example.gradle.domain.Order:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:.:com.example.gradle.repository.OrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:.:com.example.gradle.repository.OrderRepository",
+          "subject_name": "com.example.gradle.repository.OrderRepository",
+          "subject_class_name": "com.example.gradle.repository.OrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:7-8:com.example.gradle.repository.OrderRepository:com.example.gradle.repository.OrderRepository",
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:8-8:com.example.gradle.repository.OrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_repository_stereotype:module:.:com.example.gradle.repository.OrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_repository_stereotype:module:.:com.example.gradle.repository.OrderRepository",
+          "subject_name": "com.example.gradle.repository.OrderRepository",
+          "subject_class_name": "com.example.gradle.repository.OrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/repository/OrderRepository.java:7-7:com.example.gradle.repository.OrderRepository:@Repository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:event_listener_change_surface:spring_event_listener:module:.:com.example.gradle.service.OrderService#onOrderEvent:decl:000001",
+          "module_id": "module:.",
+          "signal": "event_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_event_listener",
+          "subject_id": "spring_event_listener:module:.:com.example.gradle.service.OrderService#onOrderEvent:decl:000001",
+          "subject_name": "com.example.gradle.service.OrderService#onOrderEvent",
+          "subject_class_name": "com.example.gradle.service.OrderService",
+          "subject_member_name": "onOrderEvent",
+          "risk_basis": "source_visible_event_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/service/OrderService.java:16-16:com.example.gradle.service.OrderService#onOrderEvent:@EventListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.gradle.domain.Order#relationship:customer",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.gradle.domain.Order#relationship:customer",
+          "subject_name": "com.example.gradle.domain.Order#customer",
+          "subject_class_name": "com.example.gradle.domain.Order",
+          "subject_member_name": "customer",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/domain/Order.java:23-23:com.example.gradle.domain.Order:@ManyToOne:field:customer",
+            "ev:src/main/java/com/example/gradle/domain/Order.java:24-24:com.example.gradle.domain.Order:@JoinColumn:field:customer"
+          ]
+        },
+        {
+          "id": "quality:change_risk:messaging_listener_change_surface:messaging_listener_signal:module:.:com.example.gradle.messaging.OrderListener#handleOrderMessage:annotation:kafka_listener:decl:000001",
+          "module_id": "module:.",
+          "signal": "messaging_listener_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_messaging_listener",
+          "subject_id": "messaging_listener_signal:module:.:com.example.gradle.messaging.OrderListener#handleOrderMessage:annotation:kafka_listener:decl:000001",
+          "subject_name": "com.example.gradle.messaging.OrderListener#handleOrderMessage",
+          "subject_class_name": "com.example.gradle.messaging.OrderListener",
+          "subject_member_name": "handleOrderMessage",
+          "risk_basis": "source_visible_messaging_listener",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/messaging/OrderListener.java:9-9:com.example.gradle.messaging.OrderListener#handleOrderMessage:@KafkaListener"
+          ]
+        },
+        {
+          "id": "quality:change_risk:scheduled_method_change_surface:spring_scheduled_method:module:.:com.example.gradle.config.GradleConfiguration#refreshOrderCache:decl:000001",
+          "module_id": "module:.",
+          "signal": "scheduled_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_scheduled_method",
+          "subject_id": "spring_scheduled_method:module:.:com.example.gradle.config.GradleConfiguration#refreshOrderCache:decl:000001",
+          "subject_name": "com.example.gradle.config.GradleConfiguration#refreshOrderCache",
+          "subject_class_name": "com.example.gradle.config.GradleConfiguration",
+          "subject_member_name": "refreshOrderCache",
+          "risk_basis": "source_visible_scheduled_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:17-17:com.example.gradle.config.GradleConfiguration#refreshOrderCache:@Scheduled"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.gradle.config.GradleConfiguration#orderClock:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.gradle.config.GradleConfiguration#orderClock:decl:000001",
+          "subject_name": "com.example.gradle.config.GradleConfiguration#orderClock",
+          "subject_class_name": "com.example.gradle.config.GradleConfiguration",
+          "subject_member_name": "orderClock",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:12-12:com.example.gradle.config.GradleConfiguration#orderClock:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_bean_method_change_surface:spring_bean_method:module:.:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_bean_method_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_bean_method",
+          "subject_id": "spring_bean_method:module:.:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+          "subject_name": "com.example.gradle.security.SecurityConfig#filterChain",
+          "subject_class_name": "com.example.gradle.security.SecurityConfig",
+          "subject_member_name": "filterChain",
+          "risk_basis": "source_visible_bean_method",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:13-13:com.example.gradle.security.SecurityConfig#filterChain:@Bean"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.gradle.config.GradleConfiguration",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.gradle.config.GradleConfiguration",
+          "subject_name": "com.example.gradle.config.GradleConfiguration",
+          "subject_class_name": "com.example.gradle.config.GradleConfiguration",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:9-9:com.example.gradle.config.GradleConfiguration:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.gradle.security.SecurityConfig",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.gradle.security.SecurityConfig",
+          "subject_name": "com.example.gradle.security.SecurityConfig",
+          "subject_class_name": "com.example.gradle.security.SecurityConfig",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:9-9:com.example.gradle.security.SecurityConfig:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_properties_change_surface:spring_configuration_properties_type:module:.:com.example.gradle.config.GradleConfiguration.OrderProperties",
+          "module_id": "module:.",
+          "signal": "spring_configuration_properties_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_properties",
+          "subject_id": "spring_configuration_properties_type:module:.:com.example.gradle.config.GradleConfiguration.OrderProperties",
+          "subject_name": "com.example.gradle.config.GradleConfiguration.OrderProperties",
+          "subject_class_name": "com.example.gradle.config.GradleConfiguration.OrderProperties",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_configuration_properties",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/config/GradleConfiguration.java:20-20:com.example.gradle.config.GradleConfiguration.OrderProperties:@ConfigurationProperties"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_configuration_annotation:com.example.gradle.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_configuration_annotation:com.example.gradle.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "subject_name": "warning:spring_security:security_configuration_annotation:com.example.gradle.security.SecurityConfig:annotation:enable_web_security:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:10-10:com.example.gradle.security.SecurityConfig:@EnableWebSecurity"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_security_warning_change_surface:warning:spring_security:security_filter_chain_bean:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+          "module_id": "module:.",
+          "signal": "spring_security_warning_change_surface",
+          "status": "warning_oriented_planning_hint",
+          "subject_kind": "spring_security_warning",
+          "subject_id": "warning:spring_security:security_filter_chain_bean:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+          "subject_name": "warning:spring_security:security_filter_chain_bean:com.example.gradle.security.SecurityConfig#filterChain:decl:000001",
+          "subject_class_name": null,
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_security_warning",
+          "confidence": "low",
+          "uncertainty": "warning_signal_only_not_vulnerability_or_correctness",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:13-13:com.example.gradle.security.SecurityConfig#filterChain:@Bean",
+            "ev:src/main/java/com/example/gradle/security/SecurityConfig.java:14-14:com.example.gradle.security.SecurityConfig#filterChain:return:SecurityFilterChain"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_service_change_surface:component:com.example.gradle.service.OrderService",
+          "module_id": "module:.",
+          "signal": "spring_service_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_service",
+          "subject_id": "component:com.example.gradle.service.OrderService",
+          "subject_name": "com.example.gradle.service.OrderService",
+          "subject_class_name": "com.example.gradle.service.OrderService",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_service_stereotype",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/service/OrderService.java:8-8:com.example.gradle.service.OrderService:@Service"
+          ]
+        },
+        {
+          "id": "quality:change_risk:transaction_boundary_change_surface:spring_transaction_boundary:module:.:com.example.gradle.service.OrderService#load:decl:000001",
+          "module_id": "module:.",
+          "signal": "transaction_boundary_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_transaction_boundary",
+          "subject_id": "spring_transaction_boundary:module:.:com.example.gradle.service.OrderService#load:decl:000001",
+          "subject_name": "com.example.gradle.service.OrderService#load",
+          "subject_class_name": "com.example.gradle.service.OrderService",
+          "subject_member_name": "load",
+          "risk_basis": "source_visible_transaction_boundary",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/gradle/service/OrderService.java:11-11:com.example.gradle.service.OrderService#load:@Transactional"
+          ]
+        }
+      ]
+    }
+  }
+}
