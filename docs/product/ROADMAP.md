@@ -2,12 +2,11 @@
 
 ## Current Status
 
-The latest published release is `v1.0.0`, with executable jar and `SHA256SUMS` assets.
-The current checkout prepares the `v1.1.0` release candidate. Normal generated
-`project-map.json` files use `schema_version: "1.0"` as the stable-line marker. The
-v1.1 Gradle expansion is additive: Maven output and evidence semantics are preserved,
-while Gradle and mixed Maven/Gradle scans may add documented Gradle build and module
-fields.
+The latest published release is `v1.1.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as the
+stable-line marker. The v1.1 Gradle expansion is additive: Maven output and evidence
+semantics are preserved, while Gradle and mixed Maven/Gradle scans may add documented
+Gradle build and module fields.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -27,9 +26,9 @@ CLI help/version behavior, and a documented release-jar verification path.
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The current v1.1 release-candidate expansion is Gradle Java/Spring support,
-scoped as an additive v1.0-compatible output-contract expansion rather than a schema
-marker migration.
+started. The current v1.1 released expansion is Gradle Java/Spring support, scoped as
+an additive v1.0-compatible output-contract expansion rather than a schema marker
+migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -583,12 +582,12 @@ Expected readiness:
 
 ## v1.x: Stable Product Expansion
 
-### v1.1.0: Gradle Java/Spring Support (Release Candidate)
+### v1.1.0: Gradle Java/Spring Support (Published)
 
 Product outcome: add static/source-visible Gradle Java/Spring layout support while
 preserving the stable Maven v1.0 behavior and evidence semantics.
 
-Release-candidate contract boundary:
+Released contract boundary:
 
 - Keep normal generated `project-map.json` output on `schema_version: "1.0"` as an
   additive compatibility expansion. Gradle support does not require a
@@ -631,7 +630,7 @@ Completed validation:
   selected Maven regression scans. (complete; public summary:
   [v1.1 Gradle Java/Spring Evaluation Summary](../development/evaluations/v1.1-gradle-java-spring_SUMMARY.md))
 
-Release-candidate readiness notes:
+Release status:
 
 - Release notes exist in [V1_1_RELEASE_NOTES.md](V1_1_RELEASE_NOTES.md).
 - Release validation passed with `mvn test`, `mvn package`, Maven and Gradle packaged
@@ -639,8 +638,8 @@ Release-candidate readiness notes:
   risk-based security verification.
 - No release-blocking security finding or bounded security-fix goal remains open for
   `v1.1.0`.
-- No tag, push, GitHub Release, asset upload, or publication action has been performed
-  by release-prep automation; publication remains a manual maintainer action.
+- The `v1.1.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 Non-goals:
 

@@ -30,19 +30,19 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.0.0`. Its release artifact is
-`agent-project-memory-1.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.1.0`. Its release artifact is
+`agent-project-memory-1.1.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.0.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.1.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
 GitHub Releases: download the jar, optionally verify `SHA256SUMS`, and run it with
-`java -jar`. The v1.0 stabilization track keeps this release-jar path as the minimum
-planned distribution path. Package-manager installs and a first-party installed
+`java -jar`. The v1.x stable line keeps this release-jar path as the minimum planned
+distribution path. Package-manager installs and a first-party installed
 `agent-project-memory` command are future distribution work and should not be assumed
 available until a release note documents them.
 
@@ -339,9 +339,9 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.0.0`. It ships an executable jar and `SHA256SUMS`
-asset. This checkout prepares the `v1.1.0` release candidate and builds
-`target/agent-project-memory-1.1.0.jar`. Normal generated `project-map.json` files use
+The latest published release is `v1.1.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds from this checkout produce `target/agent-project-memory-1.1.0.jar`.
+Normal generated `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.1 Gradle expansion is additive:
 Maven output and evidence semantics are preserved, while Gradle and mixed
 Maven/Gradle scans may add the documented Gradle build and module fields.

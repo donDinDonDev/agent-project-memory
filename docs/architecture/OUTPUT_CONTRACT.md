@@ -3059,8 +3059,8 @@ or goldens, changelog entries, and release notes in the same logical change.
 ### v1.1 Gradle Compatibility Expansion
 
 This section defines the public output boundary for the v1.1 Gradle Java/Spring
-release. It started as a design contract and is now the release-candidate contract for
-the implemented v1.1 Gradle support.
+release. It started as a design contract and is now the released contract for the
+implemented v1.1 Gradle support.
 
 Schema and compatibility decisions:
 

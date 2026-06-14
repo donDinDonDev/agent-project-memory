@@ -40,6 +40,8 @@ architecture documents.
 - Clarified that `schema_version: "1.0"` remains the stable-line marker for v1.1;
   Gradle and mixed Maven/Gradle fields are additive, while existing Maven output and
   evidence semantics are preserved.
+- Updated post-release documentation status to mark `v1.1.0` as published with release
+  jar and checksum assets.
 
 ### Fixed
 
