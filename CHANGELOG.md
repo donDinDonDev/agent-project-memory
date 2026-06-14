@@ -9,18 +9,62 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-06-14
+
 ### Added
 
-- Documented the planned v1.1 Gradle Java/Spring support contract boundary as an
+- Added bounded static Gradle Java/Spring layout support as an
   additive `schema_version: "1.0"` compatibility expansion, including supported Gradle
-  layouts, static settings include parsing, mixed Maven/Gradle behavior, Gradle warning
-  and diagnostic taxonomy, Gradle `build_file` evidence semantics, guide wording,
+  root build files, project build files, standard Java/test/resource roots, simple
+  static settings include parsing, mixed Maven/Gradle detection, Gradle warning and
+  diagnostic taxonomy, Gradle `build_file` evidence semantics, guide wording,
   validation expectations, and deferred custom `sourceSets` support.
+- Added Gradle module inventory fields for Gradle and mixed builds, including
+  `project.build.root_build_files[]`, module `build_systems`, `gradle_project_path`,
+  and module-owned `build_config.gradle` build-file orientation.
+- Added focused Gradle fixtures and golden output coverage for single-project Gradle
+  layouts, simple multi-project Gradle layouts, static `settings.gradle.kts` includes,
+  unsupported dynamic includes, duplicate project paths, missing project directories,
+  unsupported Gradle modules, and Gradle analyzer integration over existing Java/Spring
+  analyzers.
+- Added a v1.1 Gradle evaluation summary for packaged CLI scans over pinned Gradle
+  Java/Spring targets and a selected Maven regression target.
+- Added v1.1.0 release notes covering Gradle compatibility, validation, security
+  boundaries, not-included scope, and expected release assets.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  release notes, output/evidence contract wording, and public architecture overview for
+  the `v1.1.0` release materials.
+- Clarified that `schema_version: "1.0"` remains the stable-line marker for v1.1;
+  Gradle and mixed Maven/Gradle fields are additive, while existing Maven output and
+  evidence semantics are preserved.
 
 ### Fixed
 
 - Updated post-release documentation status to mark `v1.0.0` as published with release
   assets and checksums.
+
+### Security
+
+- Completed risk-based review for the accumulated Gradle parser, path, evidence, and
+  output changes with no release-blocking findings remaining.
+- Kept Gradle support local-only and static: the analyzer does not execute Gradle,
+  invoke wrappers, use the Gradle Tooling API, evaluate build scripts, resolve plugins
+  or dependencies, fetch remote metadata, follow symlinks, or serialize raw build-script
+  bodies, dependency blocks, plugin configuration, credentials, tokens, local absolute
+  paths, or generated output contents.
+
+### Not Included
+
+- Gradle execution, dynamic buildscript evaluation, Gradle Tooling API usage, wrapper or
+  daemon execution, plugin/dependency/task/repository resolution, effective Gradle model
+  reconstruction, custom `sourceSets` root emission, `projectDir` remapping,
+  `includeBuild`, `includeFlat`, Kotlin source analysis, generated-source scanning by
+  default, connectors, network access, telemetry, package-manager publication, SaaS,
+  web UI, repository chat, generic RAG, LLM calls in the core analyzer, or automatic
+  code modification.
 
 ## [1.0.0] - 2026-06-12
 

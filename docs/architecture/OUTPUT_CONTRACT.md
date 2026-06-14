@@ -17,9 +17,9 @@ The current scan output uses the same four files introduced in v0.1:
 ```
 
 In the current implementation, `scan <path>` writes all four files when supported Maven
-module roots, supported root source, test, or resource roots, supported config files, or
-Maven module warnings are detected. Unsupported directories still only get a prepared
-`.project-memory/` directory and do not get contract output files.
+or Gradle module roots, supported root source, test, or resource roots, supported config
+files, or Maven/Gradle module warnings are detected. Unsupported directories still only
+get a prepared `.project-memory/` directory and do not get contract output files.
 
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
@@ -40,11 +40,12 @@ v0.7 contract also emits direct Spring test slice and mock annotation signals an
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current v1.0 implementation emits `schema_version: "1.0"` with a top-level `scan`
+The current v1.x implementation emits `schema_version: "1.0"` with a top-level `scan`
 owner for redacted config, feature, path-policy, and diagnostic metadata. The v1.0
-marker preserves the current v0.9 output field shape and evidence semantics; it does
-not add, remove, rename, or redesign output fields and does not change
-`evidence-index.jsonl` semantics. It discovers a root-local
+marker preserves the current v0.9 output field shape and evidence semantics; v1.1 adds
+bounded Gradle and mixed Maven/Gradle fields as an additive compatibility expansion. The
+v1.1 expansion does not remove, rename, or reinterpret existing Maven fields and does
+not change `evidence-index.jsonl` field semantics. It discovers a root-local
 `agent-project-memory.yml` config file or an explicitly selected
 repository-relative YAML config, validates the bounded config schema, applies safe
 defaults, and applies user include/exclude rules only to local Markdown discovery while
@@ -3055,15 +3056,15 @@ Any later v1.x field addition, field removal, field rename, evidence shape chang
 evidence semantic change must update this document, `EVIDENCE_MODEL.md`, focused tests
 or goldens, changelog entries, and release notes in the same logical change.
 
-### Planned v1.1 Gradle Compatibility Expansion
+### v1.1 Gradle Compatibility Expansion
 
-This section defines the planned public output boundary for a future Gradle
-Java/Spring release. It is a design contract until a release note and implementation
-state that the behavior has shipped.
+This section defines the public output boundary for the v1.1 Gradle Java/Spring
+release. It started as a design contract and is now the release-candidate contract for
+the implemented v1.1 Gradle support.
 
 Schema and compatibility decisions:
 
-- Planned v1.1 Gradle support is an additive `schema_version: "1.0"` compatibility
+- v1.1 Gradle support is an additive `schema_version: "1.0"` compatibility
   expansion, not a `schema_version: "1.1"` migration.
 - The same four output files remain under `.project-memory/`.
 - Pure Maven scans should preserve the current v1.0 output and evidence semantics.
@@ -3094,7 +3095,7 @@ Supported Gradle build inputs:
 Build-system summary rules:
 
 - `project.build.system` may be `"maven"`, `"gradle"`, `"mixed"`, or
-  `"not_detected"` in the planned v1.1 boundary.
+  `"not_detected"` in the v1.1 boundary.
 - `"maven"` keeps the current meaning: an accepted root `pom.xml` is the detected build
   input and no accepted root Gradle build input participates in the scan summary.
 - `"gradle"` means one or more accepted root Gradle build inputs participate in the scan
@@ -3111,7 +3112,7 @@ Build-system summary rules:
   `settings.gradle.kts`, `build.gradle`, `build.gradle.kts`. For mixed scans it remains
   `"pom.xml"` when the root POM is accepted; consumers should use `root_build_files`
   for the complete build-input list.
-- Planned Gradle or mixed output adds `project.build.root_build_files[]` as the
+- Gradle or mixed output adds `project.build.root_build_files[]` as the
   authoritative accepted root build-file list. Each item contains `path`,
   `build_system`, `role`, `language`, and `evidence_ids`.
 - In mixed output, `root_build_files[]` includes the accepted root `pom.xml` item with
@@ -3122,7 +3123,7 @@ Build-system summary rules:
   with `pom.xml` first when present, followed by accepted root Gradle files in the
   deterministic `root_build_file` priority order.
 
-Example planned Gradle build summary:
+Example Gradle build summary:
 
 ```json
 {
@@ -3155,7 +3156,7 @@ Example planned Gradle build summary:
 }
 ```
 
-Planned Gradle module inventory rules:
+Gradle module inventory rules:
 
 - Module identity remains path-based. `module_id` is still `module:.` for the scan root
   and `module:<module_path>` for child modules. Gradle project names, display names,
@@ -3166,7 +3167,7 @@ Planned Gradle module inventory rules:
 - `project.modules.items[]` keeps existing fields. For Gradle-only modules,
   `pom_path` is `null` and `pom_evidence_ids` is an empty array. These fields must not
   point to Gradle build files.
-- Planned Gradle or mixed module items add:
+- Gradle or mixed module items add:
   - `build_systems`: sorted build-system labels that contributed to the module, such as
     `["gradle"]` or `["maven", "gradle"]`.
   - `gradle_project_path`: the Gradle project path such as `":"` or
@@ -3179,7 +3180,7 @@ Planned Gradle module inventory rules:
   modules. It remains an empty array for the scan root unless another supported
   declaration produced the module.
 - `source_roots` and `test_roots` remain repository-relative Java roots under the
-  module. Planned v1.1 Gradle support includes only standard Java roots:
+  module. v1.1 Gradle support includes only standard Java roots:
   `src/main/java` and `src/test/java`.
 - `build_config.resources` continues to represent standard resource roots, including
   `src/main/resources` and `src/test/resources`, under supported Gradle modules.
@@ -3188,11 +3189,11 @@ Planned Gradle module inventory rules:
   include whose default project directory is missing may be emitted with
   `support_status: "missing_project_directory"` and a Gradle warning.
 
-Planned Gradle `build_config` rules:
+Gradle `build_config` rules:
 
 - Gradle module-owned build orientation lives under
   `project.modules.items[].build_config.gradle`.
-- The planned v1.1 `gradle` subsection is intentionally small:
+- The v1.1 `gradle` subsection is intentionally small:
 
 ```json
 {
@@ -3227,14 +3228,14 @@ Planned Gradle `build_config` rules:
   files.
 - `build_config.gradle` must not contain dependency inventory, plugin inventory, task
   inventory, repository declarations, arbitrary build-script values, or generated-source
-  roots in the planned v1.1 boundary.
+  roots in the v1.1 boundary.
 - `source_sets.analysis_status: "not_analyzed"` records the v1.1 decision to defer
   custom static `sourceSets` support. Standard roots are still represented by
   `source_roots`, `test_roots`, and `build_config.resources`.
 
 Static Gradle settings parsing boundary:
 
-- Planned v1.1 supports only simple string-literal Gradle settings includes in the root
+- v1.1 supports only simple string-literal Gradle settings includes in the root
   `settings.gradle` or `settings.gradle.kts`.
 - Supported include forms are limited to direct literal project paths such as
   `include "app"`, `include ":app"`, `include("app")`, `include(":app")`, and
@@ -3262,10 +3263,10 @@ Mixed Maven/Gradle behavior:
 - Mixed output must not infer cross-build dependencies, task ordering, publication
   relationships, generated-source availability, or runtime Spring behavior.
 
-Planned Gradle warning taxonomy:
+Gradle warning taxonomy:
 
 - Gradle layout warnings live in `warnings.items` with `category: "gradle_module"`.
-- Supported planned warning signals:
+- Supported warning signals:
   - `"invalid_project_path"` for literal include paths that cannot normalize safely.
   - `"duplicate_project_path"` for repeated static includes that normalize to the same
     module path after the first declaration.
@@ -3286,10 +3287,10 @@ Planned Gradle warning taxonomy:
 - Gradle warnings are not endpoint, component, entity, test, dependency, plugin, task,
   generated-source, or runtime facts.
 
-Planned Gradle diagnostics:
+Gradle diagnostics:
 
 - Gradle build-file cap and read-skip conditions are scan diagnostics, not evidence.
-- Planned diagnostic codes include `"gradle_build_file_bytes_cap_exceeded"` and
+- Gradle diagnostic codes include `"gradle_build_file_bytes_cap_exceeded"` and
   `"gradle_build_file_read_skipped"` with `severity: "warning"`,
   `category: "gradle"`, `path` set to the normalized repository-relative Gradle file
   path when safe, and `count` set to the applicable byte cap when relevant.
@@ -3299,7 +3300,7 @@ Planned Gradle diagnostics:
   script bodies, dependency blocks, plugin configuration, credentials, tokens, local
   absolute paths, stack traces, or generated output contents.
 
-Planned Gradle guide wording:
+Gradle guide wording:
 
 - `agent-guide.md` should render Gradle project layout as local build-file and
   conventional Java root observations only.
@@ -3310,9 +3311,9 @@ Planned Gradle guide wording:
 - Known limits should explicitly say that Gradle execution, dynamic buildscript
   evaluation, dependency resolution, plugin resolution, task graphs, custom
   `sourceSets`, `projectDir` remapping, included builds, and Kotlin source analysis are
-  not analyzed in the planned v1.1 boundary.
+  not analyzed in the v1.1 boundary.
 
-Planned v1.1 validation requirements:
+v1.1 validation requirements:
 
 - Focused fixtures for single-project Gradle layouts, simple multi-project Gradle
   layouts, simple `settings.gradle.kts` include declarations, unsupported dynamic
@@ -3910,9 +3911,10 @@ Content rules:
 - The known-limits section must explicitly call out `Not analyzed`, `Inferred`, and
   `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
   execution/coverage/assertion behavior, call graphs, complete subject mapping,
-  connectors, LLM summaries, repository chat, generic RAG, Gradle/Kotlin support, Maven
-  profiles, effective POM reconstruction, dependency graphs, and recursive nested Maven
-  modules. It should also call out that generated sources, OpenAPI operations, generated API
+  connectors, LLM summaries, repository chat, generic RAG, Gradle execution, dynamic
+  buildscript evaluation, effective Gradle model reconstruction, Kotlin source
+  analysis, Maven profiles, effective POM reconstruction, dependency graphs, and
+  recursive nested Maven modules. It should also call out that generated sources, OpenAPI operations, generated API
   reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings
   are not analyzed for the v0.1 interface-mapping decision, and that mapped-superclass identifier
   traversal skips unresolved, ambiguous, cyclic, and non-source-visible branches.

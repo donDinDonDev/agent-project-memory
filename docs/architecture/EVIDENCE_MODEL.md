@@ -14,7 +14,7 @@ Evidence may point to:
 - a Java method,
 - an annotation,
 - a Maven build file,
-- a Gradle build file when Gradle support is explicitly enabled by a later release,
+- a Gradle build file when v1.1 Gradle support is in scope,
 - a Spring configuration file,
 - a test file,
 - a local Markdown document from local document ingestion,
@@ -31,7 +31,7 @@ Evidence types defined by the model:
   OpenAPI/Swagger spec presence warning evidence.
 - `build_file`: a build file such as `pom.xml`, or Gradle build files such as
   `settings.gradle`, `settings.gradle.kts`, `build.gradle`, or `build.gradle.kts`
-  when a later release explicitly documents Gradle support.
+  under the v1.1 Gradle support contract.
 - `test_file`: a test source file or test resource.
 - `api_spec`: a local OpenAPI/Swagger specification file, bounded version/kind
   observation, extracted operation evidence, or bounded operation parser status
@@ -144,8 +144,8 @@ Examples:
   prove code structure, runtime behavior, API implementation, test coverage,
   configuration semantics, documentation completeness, stale documentation, or
   source/document agreement. Current output does not serialize document bodies.
-- Planned v1.1 Gradle build layout observations, when implemented, may extract accepted
-  Gradle root and project build-file presence, simple static settings include
+- v1.1 Gradle build layout observations extract accepted Gradle root and project
+  build-file presence, simple static settings include
   declarations, default Java source/test/resource root paths, and unsupported Gradle
   layout warnings. These observations support local build-layout orientation only; they
   do not prove Gradle execution, effective Gradle models, dependency resolution, plugin
@@ -1069,9 +1069,9 @@ Any later v1.x evidence shape or semantic change must update this document,
 `OUTPUT_CONTRACT.md`, focused tests or goldens, changelog entries, and release notes in
 the same logical change.
 
-### Planned v1.1 Gradle Build File Evidence
+### v1.1 Gradle Build File Evidence
 
-The planned v1.1 Gradle support reuses the existing evidence field set and the existing
+The v1.1 Gradle support reuses the existing evidence field set and the existing
 `build_file` evidence type. It does not add global evidence fields, confidence labels,
 runtime evidence types, tool-config evidence, dependency evidence, task evidence, or
 Kotlin source evidence.
@@ -1107,8 +1107,8 @@ supported string literals are directly visible in the settings file. Broader Kot
 semantic parsing, variables, loops, conditionals, function indirection, `includeBuild`,
 and custom `projectDir` assignment semantics are out of scope for v1.1 evidence.
 
-Static `sourceSets` declarations are not evidence for custom source roots in the planned
-v1.1 boundary. A directly visible `sourceSets` block may support a warning or
+Static `sourceSets` declarations are not evidence for custom source roots in the v1.1
+boundary. A directly visible `sourceSets` block may support a warning or
 not-analyzed status when a later implementation records that limitation, but it must not
 create custom source-root facts until a separate output/evidence contract explicitly
 defines that behavior.

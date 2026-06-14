@@ -1,12 +1,13 @@
 # Ingestion Architecture
 
 The current product focuses on local repository Java/Spring source files, Maven build
-files, standard Maven source/test/resource roots, bounded local OpenAPI/Swagger spec
-inputs, conservative default-scope local Markdown discovery, and deterministic
-generated project-memory output. The current v1.0 development line emits local Markdown
-document inventory, deterministic ATX heading references, bounded chunk references,
-resolving document evidence, conservative code-doc reconciliation signals, and compact
-local documentation guide rendering from structured document facts and evidence only.
+files, bounded static Gradle build files, standard Maven or Gradle source/test/resource
+roots, bounded local OpenAPI/Swagger spec inputs, conservative default-scope local
+Markdown discovery, and deterministic generated project-memory output. The current v1.x
+line emits local Markdown document inventory, deterministic ATX heading references,
+bounded chunk references, resolving document evidence, conservative code-doc
+reconciliation signals, and compact local documentation guide rendering from structured
+document facts and evidence only.
 
 External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
 
@@ -50,7 +51,7 @@ document evidence, and conservative reconciliation signals.
 Default discovery should be conservative:
 
 - root `README.md` or `README.markdown`;
-- README files directly under supported Maven module roots;
+- README files directly under supported Maven or Gradle module roots;
 - root `docs/**/*.md`;
 - root `adr/**/*.md` or `adrs/**/*.md`.
 

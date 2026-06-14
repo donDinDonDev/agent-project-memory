@@ -3,31 +3,33 @@
 ## Current Status
 
 The latest published release is `v1.0.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as a marker and
-compatibility-policy migration. The v1.0 marker preserves the current v0.9 output shape
-and evidence semantics unless a later release note and architecture update explicitly
-change them.
+The current checkout prepares the `v1.1.0` release candidate. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as the stable-line marker. The
+v1.1 Gradle expansion is additive: Maven output and evidence semantics are preserved,
+while Gradle and mixed Maven/Gradle scans may add documented Gradle build and module
+fields.
 
-The v1.0 compatibility policy treats `project-map.json` and `evidence-index.jsonl` as
-the stable machine-readable surface. `endpoints.md` and `agent-guide.md` remain
+The v1.x stable-line compatibility policy treats `project-map.json` and
+`evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
+`agent-guide.md` remain
 deterministic human-readable outputs with stable evidence visibility and cautious fact
 boundaries, while exact Markdown presentation may evolve. Future breaking changes,
 deprecations, and required migration steps must be documented in architecture docs, the
 changelog, and release notes.
 
-The current v0.x release line includes module-aware Maven analysis, build/config
-orientation, source-visible Spring MVC and application-surface signals, declared
-OpenAPI operations, bounded JPA/domain metadata, source-visible test and quality
-planning signals, default-scope local Markdown document inventory, redacted scan
-metadata, safe root-local YAML config support, stable CLI help/version behavior, and a
-documented release-jar verification path.
+The current release line includes module-aware Maven analysis, build/config
+orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
+MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
+metadata, source-visible test and quality planning signals, default-scope local Markdown
+document inventory, redacted scan metadata, safe root-local YAML config support, stable
+CLI help/version behavior, and a documented release-jar verification path.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The next planned v1.x product expansion is Gradle Java/Spring support, scoped
-as an additive v1.0-compatible output-contract expansion rather than a schema marker
-migration.
+started. The current v1.1 release-candidate expansion is Gradle Java/Spring support,
+scoped as an additive v1.0-compatible output-contract expansion rather than a schema
+marker migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -581,12 +583,12 @@ Expected readiness:
 
 ## v1.x: Stable Product Expansion
 
-### v1.1.0: Gradle Java/Spring Support (Planned)
+### v1.1.0: Gradle Java/Spring Support (Release Candidate)
 
 Product outcome: add static/source-visible Gradle Java/Spring layout support while
 preserving the stable Maven v1.0 behavior and evidence semantics.
 
-Planned contract boundary:
+Release-candidate contract boundary:
 
 - Keep normal generated `project-map.json` output on `schema_version: "1.0"` as an
   additive compatibility expansion. Gradle support does not require a
@@ -615,18 +617,30 @@ Planned contract boundary:
 - Degrade unsupported or unsafe Gradle inputs to bounded warnings or scan diagnostics
   rather than dynamic claims.
 
-Planned validation:
+Completed validation:
 
 - Focused Gradle fixtures for single-project, multi-project, simple Kotlin settings
   include declarations, unsupported dynamic includes, visible but not-analyzed
   `sourceSets`, missing project directories, duplicate project paths, and mixed
-  Maven/Gradle roots.
+  Maven/Gradle roots. (complete)
 - Golden output coverage for Gradle output shape, warning IDs, diagnostics, evidence
-  reference integrity, deterministic sorting, and guide wording.
+  reference integrity, deterministic sorting, and guide wording. (complete)
 - Maven regression coverage proving pure Maven output and evidence behavior remain
-  stable.
+  stable. (complete)
 - Packaged CLI evaluation on pinned Gradle Java/Spring projects before release, plus
-  selected Maven regression scans.
+  selected Maven regression scans. (complete; public summary:
+  [v1.1 Gradle Java/Spring Evaluation Summary](../development/evaluations/v1.1-gradle-java-spring_SUMMARY.md))
+
+Release-candidate readiness notes:
+
+- Release notes exist in [V1_1_RELEASE_NOTES.md](V1_1_RELEASE_NOTES.md).
+- Release validation passed with `mvn test`, `mvn package`, Maven and Gradle packaged
+  CLI smoke, checksum dry-run, whitespace checks, public marker audit, and final
+  risk-based security verification.
+- No release-blocking security finding or bounded security-fix goal remains open for
+  `v1.1.0`.
+- No tag, push, GitHub Release, asset upload, or publication action has been performed
+  by release-prep automation; publication remains a manual maintainer action.
 
 Non-goals:
 

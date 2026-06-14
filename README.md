@@ -4,16 +4,16 @@
 project memory for Java/Spring codebases.
 
 The goal is to help developers and AI coding agents understand a legacy Java/Spring
-project before changing it. The tool scans local Java source, standard Maven layout,
-standard Maven test roots, and bounded local API-surface inputs, extracts deterministic
-facts, attaches evidence references, and writes Markdown/JSON artifacts that can be
-reviewed, versioned, and reused.
+project before changing it. The tool scans local Java source, standard Maven and bounded
+static Gradle Java/Spring layouts, standard Maven or Gradle test roots, and bounded
+local API-surface inputs, extracts deterministic facts, attaches evidence references,
+and writes Markdown/JSON artifacts that can be reviewed, versioned, and reused.
 
 The current product focus is intentionally narrow:
 
 - Java/Spring codebases first.
 - Local repository analysis first.
-- Maven projects first.
+- Maven projects first, with bounded static Gradle Java/Spring layout support.
 - Deterministic source analysis as the source of truth.
 - Optional AI assistance later, outside the core analyzer.
 
@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.0.0.jar
+target/agent-project-memory-1.1.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,17 +74,17 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.0.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.1.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.0.0.jar --help
-java -jar target/agent-project-memory-1.0.0.jar help
-java -jar target/agent-project-memory-1.0.0.jar scan --help
-java -jar target/agent-project-memory-1.0.0.jar --version
-java -jar target/agent-project-memory-1.0.0.jar version
+java -jar target/agent-project-memory-1.1.0.jar --help
+java -jar target/agent-project-memory-1.1.0.jar help
+java -jar target/agent-project-memory-1.1.0.jar scan --help
+java -jar target/agent-project-memory-1.1.0.jar --version
+java -jar target/agent-project-memory-1.1.0.jar version
 ```
 
 CLI exit codes are stable for automation:
@@ -109,16 +109,21 @@ a bounded diagnostics summary.
 
 Existing unrelated contents inside `.project-memory/` are preserved. Generated files are
 rewritten deterministically when supported Maven module roots, source-visible Maven
-metadata from module POMs, supported root source, test, or resource roots, supported
-config files, local OpenAPI/Swagger spec files, safe default-scope local Markdown
-documents, Spring repository signals, Spring configuration surface signals, Spring
-behavior or messaging listener signals, or Maven module warnings are detected.
+metadata from module POMs, supported Gradle build files or static settings includes,
+supported root source, test, or resource roots, supported config files, local
+OpenAPI/Swagger spec files, safe default-scope local Markdown documents, Spring
+repository signals, Spring configuration surface signals, Spring behavior or messaging
+listener signals, or Maven/Gradle module warnings are detected.
 
 When the scanned path has a root `pom.xml`, the current implementation discovers the
 scan root and root-declared Maven child modules, then runs the Spring MVC endpoint,
 Spring component, Spring repository signal, Spring configuration surface, Spring
 behavior/messaging signal, Spring Security configuration warning, JPA entity, hidden
 HTTP surface warning, and tests inventory analyzers per supported module. For
+Gradle inputs, the current implementation discovers accepted root Gradle build files,
+simple static `settings.gradle` or `settings.gradle.kts` include declarations, and
+standard Gradle Java/source/test/resource roots without executing Gradle or resolving an
+effective Gradle model. For
 compatibility with earlier local source-root scans, a
 repository without a root `pom.xml` but with supported root source, test, or resource roots is
 represented as the scan-root module with module discovery marked `not_detected`.
@@ -127,9 +132,10 @@ The analyzer extracts Spring MVC controllers and source-visible interface-declar
 Spring MVC mappings that can be uniquely bound to concrete handlers, direct Spring
 stereotype components on classes and interfaces, deterministic hidden HTTP surface
 warnings, direct JPA entity annotations with conservative source-visible
-mapped-superclass identifier fields, standard Maven test-root classes with conservative
-helper filtering, direct source-visible Maven metadata from module POMs, and direct
-source-visible Maven dependency and plugin declarations from module POMs, plus
+mapped-superclass identifier fields, standard Maven or Gradle test-root classes with
+conservative helper filtering, direct source-visible Maven metadata from module POMs,
+direct source-visible Maven dependency and plugin declarations from module POMs, and
+bounded Gradle build layout observations, plus
 path-only standard resource-root and supported application/logging config-file
 inventory. It also emits direct source-visible `@Repository` repository surface facts
 and inferred source-visible Spring Data repository interface extension signals in a
@@ -165,13 +171,16 @@ reconciliation hints, then writes:
 `project-map.json` is the minimal stable machine-readable project map. Current
 development output uses `schema_version: "1.0"` and includes redacted scan metadata for
 safe root-local config selection, detected root `pom.xml` build metadata when present,
-Maven module inventory,
+accepted Gradle build-file summary fields when present, Maven or Gradle module
+inventory,
 module-owned source-visible Maven metadata under
 `project.modules.items[].build_config.maven.metadata`, module-owned source-visible Maven
 dependency inventory under `project.modules.items[].build_config.maven.dependencies` and
 `dependency_management`, module-owned source-visible Maven plugin inventory under
-`project.modules.items[].build_config.maven.plugins` and `plugin_management`, compatibility
-source and test root summaries, module-owned standard resource-root inventory under
+`project.modules.items[].build_config.maven.plugins` and `plugin_management`,
+module-owned bounded Gradle build-file orientation under
+`project.modules.items[].build_config.gradle`, compatibility source and test root
+summaries, module-owned standard resource-root inventory under
 `project.modules.items[].build_config.resources`, module-owned path-only supported
 application/logging config-file inventory under
 `project.modules.items[].build_config.config_files`, module-owned direct source-visible
@@ -224,6 +233,9 @@ Compatibility and migration notes:
 - The v0.9-to-v1.0 output migration is limited to the normal generated
   `project-map.json` marker moving from `schema_version: "0.9"` to `"1.0"`. The current
   JSON shape and evidence semantics are preserved.
+- The v1.1 Gradle expansion keeps `schema_version: "1.0"` and adds Gradle and mixed
+  Maven/Gradle fields only where Gradle inputs are detected. Existing Maven fields and
+  evidence semantics are preserved.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
   evidence IDs, and Markdown evidence references stay aligned.
@@ -274,6 +286,7 @@ These files are meant to give humans and coding agents a compact, evidence-backe
 
 Start here:
 
+- v1.1 release summary: [docs/product/V1_1_RELEASE_NOTES.md](docs/product/V1_1_RELEASE_NOTES.md).
 - v1.0 release summary: [docs/product/V1_0_RELEASE_NOTES.md](docs/product/V1_0_RELEASE_NOTES.md).
 - v0.9 release summary: [docs/product/V0_9_RELEASE_NOTES.md](docs/product/V0_9_RELEASE_NOTES.md).
 - v0.8 release summary: [docs/product/V0_8_RELEASE_NOTES.md](docs/product/V0_8_RELEASE_NOTES.md).
@@ -286,6 +299,8 @@ Start here:
 - v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
 - v1.0 evaluation corpus summary:
   [docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md](docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md).
+- v1.1 Gradle evaluation summary:
+  [docs/development/evaluations/v1.1-gradle-java-spring_SUMMARY.md](docs/development/evaluations/v1.1-gradle-java-spring_SUMMARY.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
 - Product direction and release tracks:
@@ -325,29 +340,31 @@ references.
 ## Project Status
 
 The latest published release is `v1.0.0`. It ships an executable jar and `SHA256SUMS`
-asset. This checkout builds `target/agent-project-memory-1.0.0.jar`, and normal
-generated `project-map.json` files use `schema_version: "1.0"` as a marker and
-compatibility-policy migration. The v1.0 schema marker preserves the current v0.9 output
-shape and evidence semantics unless a later release note and architecture update
-explicitly change them.
+asset. This checkout prepares the `v1.1.0` release candidate and builds
+`target/agent-project-memory-1.1.0.jar`. Normal generated `project-map.json` files use
+`schema_version: "1.0"` as a stable-line marker. The v1.1 Gradle expansion is additive:
+Maven output and evidence semantics are preserved, while Gradle and mixed
+Maven/Gradle scans may add the documented Gradle build and module fields.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
-orientation, source-visible Spring MVC and application-surface signals, declared OpenAPI
-operations, bounded JPA/domain metadata, source-visible test and quality planning
-signals, default-scope local Markdown document inventory, redacted scan metadata, safe
-root-local YAML config support, stable CLI help/version behavior, and documented
-release-jar verification.
+orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
+MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
+metadata, source-visible test and quality planning signals, default-scope local Markdown
+document inventory, redacted scan metadata, safe root-local YAML config support, stable
+CLI help/version behavior, and documented release-jar verification.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future connector/import work remains a later optional adapter track
 and is not started.
 
-The current implementation includes a Java 21 Maven CLI, root-declared Maven module
-discovery, JavaParser-backed Spring MVC endpoint extraction, source-visible interface
-mapping support when uniquely bindable, stable `project-map.json` and
-`evidence-index.jsonl` outputs, deterministic module-owned source-visible Maven
-metadata, dependency, and plugin extraction, deterministic direct Spring component and
-JPA entity inventories, deterministic path-only resource-root and supported config-file
+The current implementation includes a Java 21 Maven-built CLI, root-declared Maven
+module discovery, bounded static Gradle root and multi-project discovery,
+JavaParser-backed Spring MVC endpoint extraction, source-visible interface mapping
+support when uniquely bindable, stable `project-map.json` and `evidence-index.jsonl`
+outputs, deterministic module-owned source-visible Maven metadata, dependency, and
+plugin extraction, deterministic bounded Gradle build-file and standard-root
+orientation, deterministic direct Spring component and JPA entity inventories,
+deterministic path-only resource-root and supported config-file
 discovery, deterministic hidden HTTP surface, generated-source, and Maven module
 warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
 inputs, minimal deterministic OpenAPI/Swagger operation extraction as spec-backed
@@ -416,6 +433,13 @@ Current limitations:
   values. It does not resolve plugin versions, reconstruct lifecycle bindings, inherit
   executions, execute plugins, scan generated sources by default, parse OpenAPI
   operations, or create generated API/endpoint facts from plugin signals.
+- Gradle support is limited to accepted root `settings.gradle`, `settings.gradle.kts`,
+  `build.gradle`, and `build.gradle.kts` files, project `build.gradle` or
+  `build.gradle.kts` files under supported Gradle project directories, simple static
+  string-literal settings includes, and standard Java/test/resource roots. It does not
+  execute Gradle, invoke the wrapper, use the Gradle Tooling API, evaluate build
+  scripts, resolve plugins, dependencies, repositories, tasks, effective models, custom
+  `sourceSets`, `projectDir` remapping, included builds, or Kotlin source structure.
 - Resource-root discovery is limited to standard `src/main/resources` and
   `src/test/resources` roots under supported modules. Config-file discovery is limited
   to supported Spring `application.properties`, `application.yml`, `application.yaml`,
@@ -531,8 +555,8 @@ Current limitations:
   generation, scan `target/generated-sources` by default, or reconstruct generated APIs.
 - Relationship facts preserve the declared field type and direct source-visible
   relationship metadata only; target type resolution is explicitly marked uncertain.
-- Tests inventory is limited to test-like Java classes under supported standard Maven
-  `src/test/java` roots; helper/support/configuration declarations without clear test
+- Tests inventory is limited to test-like Java classes under supported standard Maven or
+  Gradle `src/test/java` roots; helper/support/configuration declarations without clear test
   naming or direct test-class marker annotations are omitted. Test method inventory is
   limited to directly declared methods with supported directly visible JUnit Jupiter or
   JUnit 4 test annotations resolved from a fully qualified annotation name or explicit
@@ -590,6 +614,7 @@ Current limitations:
   override built-in safety exclusions, and are summarized only through redacted counts
   and statuses in `scan` metadata.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
+  evidence when present, accepted Gradle build-file and static include `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
   module declaration `build_file` evidence, path-oriented `config_file` evidence,
   bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring

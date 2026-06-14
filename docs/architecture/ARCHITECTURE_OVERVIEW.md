@@ -25,20 +25,23 @@ Walks the local repository, applies ignore rules, identifies candidate project f
 
 ### Build Detector
 
-Detects Maven project structure and build metadata needed by analyzers. The current
-implementation detects a root `pom.xml` when present, root-declared Maven child modules
-from the root `<modules>` section, child `pom.xml` files for supported modules, and
+Detects supported local build structure and build metadata needed by analyzers. The
+current implementation detects a root `pom.xml` when present, root-declared Maven child
+modules from the root `<modules>` section, child `pom.xml` files for supported modules,
 standard Maven source, test, and resource roots such as `src/main/java`,
-`src/test/java`, and `src/main/resources`. It
-also extracts direct source-visible Maven metadata from module POMs for `groupId`,
-`artifactId`, `version`, `packaging`, and parent coordinates, plus direct
-source-visible dependency/dependency-management declarations and
-plugin/plugin-management declarations.
+`src/test/java`, and `src/main/resources`, accepted Gradle root build files, simple
+static Gradle settings includes, supported Gradle project build files, and standard
+Gradle Java/test/resource roots. It also extracts direct source-visible Maven metadata
+from module POMs for `groupId`, `artifactId`, `version`, `packaging`, and parent
+coordinates, plus direct source-visible dependency/dependency-management declarations
+and plugin/plugin-management declarations.
 
 The current implementation does not resolve Maven profiles, recursively discover nested
-modules, reconstruct effective POMs, fill missing metadata from Maven defaults or parent
-inheritance, resolve dependencies or plugins, run Maven, scan generated source roots by
-default, or discover Gradle projects.
+Maven modules, reconstruct effective POMs, fill missing metadata from Maven defaults or
+parent inheritance, resolve dependencies or plugins, run Maven, execute Gradle, evaluate
+Gradle build scripts, use the Gradle Tooling API, reconstruct effective Gradle models,
+emit custom Gradle `sourceSets`, scan generated source roots by default, or analyze
+Kotlin source.
 
 ### Build And Configuration Analyzer
 
@@ -53,6 +56,8 @@ observations:
 
 - direct Maven metadata, dependency declarations, dependency-management declarations,
   plugin declarations, plugin-management declarations, and bounded generator signals;
+- bounded Gradle build-file and static include observations, standard Gradle roots, and
+  `sourceSets` not-analyzed status without Gradle execution or effective model claims;
 - standard resource roots and supported Spring application or logging config filenames;
 - direct `@SpringBootApplication` application class and source-visible `main` method
   signals;
@@ -69,7 +74,8 @@ facts.
 Uses JavaParser first to inspect Java source files. The current analyzer family
 extracts source-visible Spring MVC endpoint facts, deterministic hidden HTTP surface
 warnings, direct Spring stereotype component facts, Spring application-surface signals,
-direct JPA/domain facts, and bounded test inventory facts from supported Maven roots.
+direct JPA/domain facts, and bounded test inventory facts from supported Maven or Gradle
+standard roots.
 
 The v0.1 endpoint contract includes Spring MVC mappings declared on Java interface
 methods only when those interfaces are visible under supported production source roots
@@ -107,20 +113,21 @@ single-type imports, and same-package references; unresolved, ambiguous, cyclic,
 non-source-visible hierarchy branches are skipped. It does not solve classpaths or claim
 ORM runtime behavior.
 
-The tests inventory analyzer records test-like Java class declarations under standard
-Maven `src/test/java` roots, directly visible test framework signals from imports and
-annotations, and conservative tested-subject relation/status rows inferred or statused
-from supported naming, exact production imports, direct field types, and direct Spring
-test slice class literals against production classes under `src/main/java`. Helper,
+The tests inventory analyzer records test-like Java class declarations under supported
+standard Maven or Gradle `src/test/java` roots, directly visible test framework signals
+from imports and annotations, and conservative tested-subject relation/status rows
+inferred or statused from supported naming, exact production imports, direct field
+types, and direct Spring test slice class literals against production classes under
+`src/main/java`. Helper,
 support, or configuration declarations without clear test naming and without direct
 test-class marker annotations are omitted. Import evidence is attached only to top-level
 emitted test classes; nested emitted test classes use their own class or method
 annotation evidence. Tested-subject rows are explicitly marked with relation status,
-confidence, and uncertainty. Duplicate
-production class simple-name matches are emitted with low confidence and explicit
-uncertainty. The analyzer does not perform coverage analysis, test execution analysis,
-behavioral assertion analysis, call graph construction, symbol solving, Gradle/Kotlin
-test-root discovery, or complete subject mapping.
+confidence, and uncertainty. Duplicate production class simple-name matches are emitted
+with low confidence and explicit uncertainty. The analyzer does not perform coverage
+analysis, test execution analysis, behavioral assertion analysis, call graph
+construction, symbol solving, custom Gradle/Kotlin test-root discovery, or complete
+subject mapping.
 
 Future deeper analyzers may be added, but they must preserve deterministic evidence-backed behavior.
 

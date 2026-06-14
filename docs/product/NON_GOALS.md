@@ -35,7 +35,9 @@ These may become useful after the deterministic Java/Spring core is proven:
 - Optional LLM-assisted summaries generated from already extracted facts.
 - YouTrack, Jira, Confluence, GitHub, and GitLab import adapters.
 - Broader document ingestion.
-- Gradle support.
+- Gradle behavior beyond the bounded v1.1 static Java/Spring layout support, such as
+  execution, dependency resolution, task graphs, custom source sets, or effective model
+  reconstruction.
 - Kotlin support for Spring projects.
 - Deeper Spring Boot auto-configuration analysis.
 - Full JPA/ORM relationship mapping and runtime persistence semantics beyond direct
