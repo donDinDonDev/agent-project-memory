@@ -1161,6 +1161,33 @@ generated-source-backed facts distinguishable from human-authored source facts,
 spec-backed facts, document-backed hints, inferred relations, uncertain signals, and
 metadata-only observations.
 
+### v1.3 Agent Profile Presentation Evidence Decision
+
+The planned v1.3 agent output profile layer does not add evidence types, evidence
+fields, evidence records, confidence labels, excerpt semantics, path semantics, or
+tool-config evidence.
+
+Agent profile artifacts are generated presentations, not evidence:
+
+- Profile Markdown files may reference existing evidence IDs and resolved evidence
+  locations from `evidence-index.jsonl`.
+- `agent-profiles/manifest.json` may identify which profile artifacts were generated,
+  but the manifest is generated-output metadata only. It is not project evidence.
+- Profile text, profile headings, profile-specific snippets, generated Markdown, copied
+  instructions, downstream agent responses, release notes, chat output, and LLM output
+  are not evidence for project facts or relations.
+- Profiles must not create evidence for source-visible Java facts, OpenAPI operations,
+  local Markdown documents, generated-source contents, runtime behavior, test coverage,
+  security correctness, vulnerabilities, or business priority.
+- A profile may make existing evidence easier to follow, but it must not turn
+  document-backed hints, spec-backed declared operations, inferred relations, uncertain
+  signals, generated-source metadata-only observations, warnings, or not-analyzed areas
+  into stronger facts.
+
+Any future profile feature that changes evidence shape or treats profile output as an
+evidence source must update this document and `OUTPUT_CONTRACT.md` before
+implementation.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

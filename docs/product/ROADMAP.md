@@ -735,9 +735,85 @@ Validation expectations:
 - Public documentation, output contract, evidence model, changelog, and release notes
   must agree before release.
 
+### v1.3.0: Agent Output Profiles (Planned)
+
+Product outcome: add deterministic, opt-in agent-consumption profile artifacts while
+preserving the local-first core analyzer and the existing project-memory facts.
+
+Planned contract decisions:
+
+- Supported canonical profile names are `codex`, `claude`, `cursor`, and `generic`.
+  The selector value `all` may request every supported profile. No other aliases are
+  part of the initial v1.3 contract.
+- Profile generation is opt-in. A normal scan with no profile selector keeps the
+  current default generated output set and does not create profile artifacts.
+- The planned CLI surface is a repeatable `scan <path> --agent-profile <profile>`
+  selector, with `--agent-profile all` as a convenience for the full supported set.
+  Profile selection is not part of root-local YAML config in the initial v1.3 design.
+- Opt-in profile artifacts are planned under `.project-memory/agent-profiles/`, with
+  one Markdown file per selected profile and a small `manifest.json` inventory for
+  generated-profile detection. The profile manifest is profile-output metadata, not
+  project evidence.
+- Existing `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and
+  `agent-guide.md` behavior remains stable when profiles are not requested.
+  `agent-guide.md` remains the generic deterministic orientation guide rather than
+  becoming a selected profile.
+- The v1.3 profile surface is an additive `schema_version: "1.0"` compatibility
+  expansion. The design does not add profile-generation fields to `project-map.json`,
+  does not change `evidence-index.jsonl`, and does not create new evidence records.
+
+Profile content boundary:
+
+- Profiles are deterministic Markdown presentations generated from existing structured
+  project facts and existing evidence references, or from the same in-memory facts used
+  to write the base outputs.
+- Profiles may differ by reading order, section labels, and copyable prompt or
+  instruction snippets tailored to the selected agent, but they must preserve the same
+  underlying fact meanings and evidence discipline.
+- Profile wording must keep extracted facts, inferred relations, uncertain signals,
+  document-backed hints, spec-backed declared operations, generated-source
+  metadata-only observations, warnings, and not-analyzed areas distinct.
+- Profile snippets are copyable guidance only. The mainline v1.3 design must not modify
+  root repository instruction files such as `AGENTS.md`, `CLAUDE.md`, Cursor rule files,
+  IDE settings, source files, docs, or config files.
+- Profiles must not call LLMs, external services, editors, connectors, or local agent
+  runtimes. They must not summarize source or document bodies, create tasks, invent
+  architecture, claim runtime behavior, or treat downstream agent output as evidence.
+
+Validation expectations:
+
+- Focused CLI and output-path tests for profile selection, `all`, unsupported profile
+  names, default no-profile behavior, and stable profile artifact names.
+- Golden Markdown outputs for every supported profile plus a manifest golden.
+- Regression tests proving existing default outputs remain stable when no profile is
+  requested.
+- Evidence-reference integrity checks for profile Markdown, including capped
+  presentation of long reference lists and pointers back to `evidence-index.jsonl`.
+- Repeated-output determinism checks on representative generated project-memory
+  outputs, plus evaluation for concise usefulness and claim separation before release.
+
+Planned implementation sequence:
+
+- Add the opt-in profile artifact and invocation foundation while preserving the default
+  no-profile scan behavior.
+- Add deterministic profile content generation for the supported profile set from
+  existing structured facts and evidence references.
+- Evaluate profile outputs on representative generated project-memory outputs, then
+  prepare release documentation only after artifact, content, compatibility, and
+  validation expectations are satisfied.
+
+Non-goals:
+
+- LLM calls, AI-generated summaries, source upload, connectors, network/auth, editor
+  integrations, MCP/server surfaces, plugin platforms, repository chat, generic RAG,
+  automatic repository-file modification, generated-source content scanning, or build
+  execution.
+- Writing or updating repository root agent instruction/config files by default.
+- Adding profile-driven project facts, evidence records, runtime claims, security
+  correctness claims, or source/document body summaries.
+
 Possible later tracks:
 
-- Agent output profiles.
 - Incremental scan and performance.
 - Lightweight relation graph.
 - Local query/read-only explorer.

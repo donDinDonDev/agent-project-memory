@@ -9,6 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v1.3 deterministic agent output profile contract, including
+  supported `codex`, `claude`, `cursor`, and `generic` profiles, opt-in profile
+  generation, planned profile artifact names under `.project-memory/agent-profiles/`,
+  no default repository-file modification, profile validation expectations, and the
+  evidence decision that profile artifacts reference existing evidence without creating
+  new evidence records.
+
 ## [1.2.0] - 2026-06-15
 
 ### Added

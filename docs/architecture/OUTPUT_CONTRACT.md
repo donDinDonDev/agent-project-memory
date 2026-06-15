@@ -3541,6 +3541,192 @@ Stop conditions for implementation:
   cap, evidence cap, or Markdown cap behavior is unclear.
 - Disabled-mode Maven or Gradle output semantics cannot be preserved.
 
+### v1.3 Agent Output Profiles Contract (Planned)
+
+This section defines the planned public v1.3 agent output profile boundary before
+implementation. It is not current generated behavior until a release note documents the
+implemented profile surface.
+
+The v1.3 policy decision is deterministic, opt-in profile presentation:
+
+- Profiles are derived presentations over existing structured project facts and existing
+  evidence references. They do not create project facts or evidence.
+- Supported canonical profile names are `codex`, `claude`, `cursor`, and `generic`.
+  The selector value `all` may request every supported profile. No other aliases are
+  part of the initial v1.3 contract.
+- Profile generation is opt-in. A normal scan with no profile selector keeps the current
+  default generated output set and does not create profile artifacts.
+- The planned CLI surface is a repeatable `scan <path> --agent-profile <profile>`
+  selector. `--agent-profile all` selects every supported profile. Unknown profile names
+  should be usage errors.
+- Duplicate profile selectors are idempotent: each canonical profile is generated at
+  most once and appears at most once in `generated_profiles[]`.
+- Root-local YAML config does not select agent profiles in the initial v1.3 design. A
+  later config-based profile selector would require a separate config and output
+  contract update.
+- Profiles must not call LLMs, external services, editors, connectors, local agent
+  runtimes, build tools, or generated-source scanners.
+- Profiles must not automatically modify root repository instruction/config files such
+  as `AGENTS.md`, `CLAUDE.md`, Cursor rule files, IDE settings, source files, docs, or
+  config files. Any repository-file-writing feature would require a separate explicit
+  opt-in design.
+
+Schema and compatibility decisions:
+
+- v1.3 profile artifacts are an additive `schema_version: "1.0"` compatibility
+  expansion, not a schema marker migration.
+- Existing default output behavior remains the same when no profile selector is used:
+  `.project-memory/project-map.json`, `.project-memory/evidence-index.jsonl`,
+  `.project-memory/endpoints.md`, and `.project-memory/agent-guide.md`.
+- Profile generation does not add fields to `project-map.json`, does not change
+  `evidence-index.jsonl`, and does not reinterpret existing evidence IDs, evidence
+  types, confidence labels, excerpt boundaries, or path rules.
+- `agent-guide.md` remains the generic deterministic orientation guide. Profile
+  artifacts are additional opt-in files, not a replacement mode for `agent-guide.md`.
+- Consumers that understand the v1.0 through v1.2 output shape should ignore the
+  optional `.project-memory/agent-profiles/` directory when they do not use profile
+  outputs.
+
+Planned profile artifact layout when at least one profile is selected:
+
+```text
+.project-memory/
+  project-map.json
+  evidence-index.jsonl
+  endpoints.md
+  agent-guide.md
+  agent-profiles/
+    manifest.json
+    codex.md
+    claude.md
+    cursor.md
+    generic.md
+```
+
+Only selected profile Markdown files are written. For example, selecting only `codex`
+writes `agent-profiles/manifest.json` and `agent-profiles/codex.md`, not the other
+profile Markdown files. Selecting `all` writes all supported profile Markdown files.
+
+Profile artifact rules:
+
+- Profile paths are fixed `.project-memory`-relative paths under `agent-profiles/`.
+  They must not be configurable to arbitrary repository paths in the initial v1.3
+  design.
+- Profile artifact paths must remain normalized slash-separated relative paths. They
+  must not be absolute, start with `./`, contain `.` or `..` path segments, use
+  backslash separators, or escape `.project-memory/agent-profiles/`.
+- Profile generation should run only when the normal scan has enough supported input to
+  write the base contract output files. Unsupported directories that only prepare
+  `.project-memory/` should not create orphan profile files.
+- Existing unrelated contents inside `.project-memory/` remain preserved. Profile
+  generation owns only the documented generated profile artifact paths.
+- Profile Markdown is deterministic human-readable presentation, not a stable parser
+  interface. Downstream automation should use `manifest.json` and documented file names
+  to detect generated profiles, not parse profile Markdown.
+
+Planned `agent-profiles/manifest.json` shape:
+
+```json
+{
+  "manifest_version": "1.0",
+  "project_map_schema_version": "1.0",
+  "source_artifacts": [
+    "project-map.json",
+    "evidence-index.jsonl"
+  ],
+  "generated_profiles": [
+    {
+      "name": "codex",
+      "artifact_path": "agent-profiles/codex.md",
+      "content_kind": "markdown_presentation",
+      "evidence_policy": "references_existing_evidence_only"
+    }
+  ]
+}
+```
+
+Manifest rules:
+
+- `manifest_version` is `"1.0"` for the initial profile manifest contract.
+- `project_map_schema_version` records the `project-map.json` schema marker that the
+  profile files were generated from. It does not define a new project-map schema.
+- `source_artifacts` lists the base `.project-memory` artifacts used to generate
+  profiles. The initial contract uses `project-map.json` and `evidence-index.jsonl`, or
+  the same in-memory facts and evidence records used to write those files.
+- `generated_profiles[]` contains one item per written profile Markdown file, sorted in
+  canonical profile order: `codex`, `claude`, `cursor`, then `generic`.
+- `artifact_path` is `.project-memory`-relative and must point under `agent-profiles/`.
+- `content_kind` is `"markdown_presentation"` for the initial profile files.
+- `evidence_policy` is `"references_existing_evidence_only"` because profile files do
+  not create evidence records.
+- The manifest is generated-output metadata only. It must not include source excerpts,
+  document bodies, raw config values, local absolute paths, command output, credentials,
+  tokens, environment values, generated-source contents, or downstream agent output.
+
+Profile Markdown content boundary:
+
+- Common content may include a profile-specific reading order for generated
+  project-memory artifacts, a copyable prompt or instruction snippet, concise
+  evidence-visible orientation, known limits, and practical inspection guidance.
+- Profile-specific differences are limited to wording, heading structure, reading order,
+  and copyable snippets tailored to the selected agent. They must not alter underlying
+  fact meanings or evidence requirements.
+- Profile snippets are copyable text only. They must not be described as automatically
+  applied edits to repository instruction files.
+- Profiles must keep source-visible endpoint facts, interface-declared endpoint facts,
+  OpenAPI declared operations, generated-source metadata-only observations, Spring/JPA
+  facts, tests inventory, quality planning hints, local-document hints, warnings,
+  inferred relations, uncertain signals, and not-analyzed areas visibly distinct.
+- Profiles may cap long evidence-reference lists for readability, but the cap must point
+  readers back to `evidence-index.jsonl` for the complete evidence records and must not
+  remove evidence IDs from the base JSON outputs.
+- Profile Markdown must follow the existing Markdown-safe presentation policy for
+  source-derived inline text, paths, identifiers, evidence references, and messages. The
+  v1.3 design does not introduce new Markdown escaping semantics.
+- Profiles must not serialize source bodies, local document bodies, config contents,
+  arbitrary build-script bodies, generated-source contents, raw command transcripts,
+  stack traces, local absolute paths, credentials, tokens, or secret-looking values.
+- Profiles must not invent architecture layers, summarize code or documents with AI,
+  create implementation tasks, claim runtime behavior, claim test coverage or CI state,
+  claim security correctness or vulnerabilities, or treat generated Markdown as
+  evidence.
+
+Validation requirements:
+
+- Focused CLI tests for no-profile default behavior, single-profile selection,
+  repeated-profile selection, `all`, duplicate selectors, unsupported profile names, and
+  unchanged exit-code behavior for unrelated scan errors.
+- Focused output-path tests proving profile files are written only under
+  `.project-memory/agent-profiles/`, cannot escape that directory, and do not overwrite
+  repository root instruction/config files.
+- Golden outputs for `manifest.json` and every supported profile Markdown file.
+- Regression goldens proving `project-map.json`, `evidence-index.jsonl`, `endpoints.md`,
+  and `agent-guide.md` remain stable when no profile is requested.
+- Evidence-reference integrity checks for profile Markdown, including resolving
+  referenced evidence IDs and preserving claim separation.
+- Repeated-output digest checks on representative profile-generation scans before
+  release, plus evaluation for concise usefulness without relying on chat-only
+  impressions.
+- Risk-based review is required before release for any implementation that changes CLI
+  selection, generated output paths, filesystem writes, Markdown rendering, evidence
+  reference rendering, config behavior, or repository-file-writing surfaces.
+
+Stop conditions for implementation:
+
+- Profile generation requires LLM output, AI summarization, external services, editor
+  integration, connectors, local agent runtime calls, network/auth, credentials, or
+  telemetry.
+- Profile artifacts create project facts, evidence records, generated-source content
+  facts, runtime claims, implementation tasks, security claims, or source/document
+  summaries outside the existing deterministic fact model.
+- Profile wording cannot keep extracted, inferred, uncertain, document-backed,
+  spec-backed, generated-source metadata-only, warning, and not-analyzed claims distinct.
+- Default behavior would create profile artifacts or modify repository root
+  instruction/config files without an explicit profile selector.
+- Profile output paths, overwrite ownership, `.project-memory/` containment, symlink or
+  hardlink handling, evidence-reference rendering, or Markdown-safe rendering are
+  unclear.
+
 ### v0.9 CLI And Scan Configuration Contract
 
 This section defines the v0.9 public output boundary for CLI/config behavior. The v0.9
