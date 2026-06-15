@@ -1,0 +1,34 @@
+{
+  "manifest_version": "1.0",
+  "project_map_schema_version": "1.0",
+  "source_artifacts": [
+    "project-map.json",
+    "evidence-index.jsonl"
+  ],
+  "generated_profiles": [
+    {
+      "name": "codex",
+      "artifact_path": "agent-profiles/codex.md",
+      "content_kind": "markdown_presentation",
+      "evidence_policy": "references_existing_evidence_only"
+    },
+    {
+      "name": "claude",
+      "artifact_path": "agent-profiles/claude.md",
+      "content_kind": "markdown_presentation",
+      "evidence_policy": "references_existing_evidence_only"
+    },
+    {
+      "name": "cursor",
+      "artifact_path": "agent-profiles/cursor.md",
+      "content_kind": "markdown_presentation",
+      "evidence_policy": "references_existing_evidence_only"
+    },
+    {
+      "name": "generic",
+      "artifact_path": "agent-profiles/generic.md",
+      "content_kind": "markdown_presentation",
+      "evidence_policy": "references_existing_evidence_only"
+    }
+  ]
+}

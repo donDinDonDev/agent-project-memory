@@ -17,6 +17,11 @@ architecture documents.
   no default repository-file modification, profile validation expectations, and the
   evidence decision that profile artifacts reference existing evidence without creating
   new evidence records.
+- Implemented the opt-in agent profile artifact foundation with repeatable
+  `scan <path> --agent-profile <profile>` selection for `codex`, `claude`, `cursor`,
+  `generic`, and `all`, idempotent duplicate selectors, `agent-profiles/manifest.json`,
+  minimal selected profile Markdown placeholders, unchanged no-profile default output,
+  and no `project-map.json` or `evidence-index.jsonl` semantic changes.
 
 ## [1.2.0] - 2026-06-15
 

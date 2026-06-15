@@ -119,6 +119,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningFact;
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
+import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -169,6 +170,12 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
   private static final String AGENT_GUIDE_FILE_NAME = "agent-guide.md";
+  private static final String AGENT_PROFILE_MANIFEST_FILE_NAME =
+      "agent-profiles/manifest.json";
+  private static final String AGENT_PROFILE_MANIFEST_VERSION = "1.0";
+  private static final String AGENT_PROFILE_CONTENT_KIND = "markdown_presentation";
+  private static final String AGENT_PROFILE_EVIDENCE_POLICY =
+      "references_existing_evidence_only";
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String HIGH_CONFIDENCE = "high";
@@ -559,9 +566,18 @@ public final class SpringMvcEndpointOutputGenerator {
       Path repositoryRoot,
       Path outputDirectory,
       ScanConfiguration scanConfiguration) throws IOException {
+    return generate(repositoryRoot, outputDirectory, scanConfiguration, List.of());
+  }
+
+  public Result generate(
+      Path repositoryRoot,
+      Path outputDirectory,
+      ScanConfiguration scanConfiguration,
+      List<AgentOutputProfile> agentProfiles) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(outputDirectory, "outputDirectory");
     Objects.requireNonNull(scanConfiguration, "scanConfiguration");
+    List<AgentOutputProfile> selectedAgentProfiles = canonicalAgentProfiles(agentProfiles);
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
     Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
@@ -697,26 +713,29 @@ public final class SpringMvcEndpointOutputGenerator {
         scanConfiguration,
         scanDiagnostics);
 
+    List<GeneratedOutputFile> generatedOutputFiles = new ArrayList<>();
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        ENDPOINTS_FILE_NAME,
+        endpointsMarkdown(
+            layout.modules(),
+            scan.endpoints(),
+            openApiOperationAnalysis.operations(),
+            scan.warnings())));
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        EVIDENCE_INDEX_FILE_NAME,
+        evidenceIndexJsonl));
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        PROJECT_MAP_FILE_NAME,
+        projectMapJson));
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        AGENT_GUIDE_FILE_NAME,
+        agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl)));
+    generatedOutputFiles.addAll(agentProfileOutputFiles(selectedAgentProfiles));
+
     writeGeneratedFiles(
         canonicalRepositoryRoot,
         outputDirectory,
-        List.of(
-            new GeneratedOutputFile(
-                ENDPOINTS_FILE_NAME,
-                endpointsMarkdown(
-                    layout.modules(),
-                    scan.endpoints(),
-                    openApiOperationAnalysis.operations(),
-                    scan.warnings())),
-            new GeneratedOutputFile(
-                EVIDENCE_INDEX_FILE_NAME,
-                evidenceIndexJsonl),
-            new GeneratedOutputFile(
-                PROJECT_MAP_FILE_NAME,
-                projectMapJson),
-            new GeneratedOutputFile(
-                AGENT_GUIDE_FILE_NAME,
-                agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl))));
+        generatedOutputFiles);
 
     return new Result(
         true,
@@ -726,7 +745,8 @@ public final class SpringMvcEndpointOutputGenerator {
         scan.tests().size(),
         documentDiscoveryAnalysis.documents().size(),
         evidenceRecords.size(),
-        scanDiagnostics.size());
+        scanDiagnostics.size(),
+        selectedAgentProfiles.size());
   }
 
   private boolean shouldGenerate(
@@ -6565,14 +6585,96 @@ public final class SpringMvcEndpointOutputGenerator {
     return String.format("%06d", ordinal);
   }
 
+  private List<AgentOutputProfile> canonicalAgentProfiles(List<AgentOutputProfile> profiles) {
+    Objects.requireNonNull(profiles, "profiles");
+    Set<AgentOutputProfile> selected = new LinkedHashSet<>();
+    for (AgentOutputProfile profile : profiles) {
+      selected.add(Objects.requireNonNull(profile, "profile"));
+    }
+
+    List<AgentOutputProfile> canonicalProfiles = new ArrayList<>();
+    for (AgentOutputProfile profile : AgentOutputProfile.canonicalOrder()) {
+      if (selected.contains(profile)) {
+        canonicalProfiles.add(profile);
+      }
+    }
+    return List.copyOf(canonicalProfiles);
+  }
+
+  private List<GeneratedOutputFile> agentProfileOutputFiles(List<AgentOutputProfile> profiles) {
+    if (profiles.isEmpty()) {
+      return List.of();
+    }
+
+    List<GeneratedOutputFile> files = new ArrayList<>();
+    files.add(new GeneratedOutputFile(
+        AGENT_PROFILE_MANIFEST_FILE_NAME,
+        agentProfileManifestJson(profiles)));
+    for (AgentOutputProfile profile : profiles) {
+      files.add(new GeneratedOutputFile(
+          profile.artifactPath(),
+          agentProfilePlaceholderMarkdown(profile)));
+    }
+    return List.copyOf(files);
+  }
+
+  private String agentProfileManifestJson(List<AgentOutputProfile> profiles) {
+    StringBuilder manifest = new StringBuilder();
+    manifest.append("{\n");
+    manifest.append("  \"manifest_version\": \"").append(AGENT_PROFILE_MANIFEST_VERSION)
+        .append("\",\n");
+    manifest.append("  \"project_map_schema_version\": \"").append(SCHEMA_VERSION)
+        .append("\",\n");
+    manifest.append("  \"source_artifacts\": [\n");
+    manifest.append("    \"").append(PROJECT_MAP_FILE_NAME).append("\",\n");
+    manifest.append("    \"").append(EVIDENCE_INDEX_FILE_NAME).append("\"\n");
+    manifest.append("  ],\n");
+    manifest.append("  \"generated_profiles\": [\n");
+    for (int index = 0; index < profiles.size(); index++) {
+      AgentOutputProfile profile = profiles.get(index);
+      manifest.append("    {\n");
+      manifest.append("      \"name\": \"").append(profile.selector()).append("\",\n");
+      manifest.append("      \"artifact_path\": \"").append(profile.artifactPath()).append("\",\n");
+      manifest.append("      \"content_kind\": \"").append(AGENT_PROFILE_CONTENT_KIND)
+          .append("\",\n");
+      manifest.append("      \"evidence_policy\": \"").append(AGENT_PROFILE_EVIDENCE_POLICY)
+          .append("\"\n");
+      manifest.append("    }");
+      if (index + 1 < profiles.size()) {
+        manifest.append(',');
+      }
+      manifest.append('\n');
+    }
+    manifest.append("  ]\n");
+    manifest.append("}\n");
+    return manifest.toString();
+  }
+
+  private String agentProfilePlaceholderMarkdown(AgentOutputProfile profile) {
+    return """
+        # %s Agent Profile
+
+        Generated deterministically as an opt-in agent profile artifact foundation.
+
+        This placeholder establishes the stable artifact path for `%s`. Full deterministic
+        profile content generation is planned for a later v1.3 implementation step.
+
+        ## Evidence Policy
+
+        - References existing evidence only.
+        - Does not create project facts or evidence records.
+        - Use `project-map.json` and `evidence-index.jsonl` as the machine-readable source artifacts.
+        """.formatted(profile.displayName(), profile.selector());
+  }
+
   private void writeGeneratedFiles(
       Path canonicalRepositoryRoot,
       Path outputDirectory,
       List<GeneratedOutputFile> files) throws IOException {
     for (GeneratedOutputFile file : files) {
-      validateGeneratedOutputTarget(
-          canonicalRepositoryRoot,
-          outputDirectory.resolve(file.fileName()));
+      Path target = outputDirectory.resolve(file.fileName());
+      ensureGeneratedOutputParent(canonicalRepositoryRoot, outputDirectory, target);
+      validateGeneratedOutputTarget(canonicalRepositoryRoot, target);
     }
 
     for (GeneratedOutputFile file : files) {
@@ -6590,9 +6692,12 @@ public final class SpringMvcEndpointOutputGenerator {
       String fileName,
       String content) throws IOException {
     Path target = outputDirectory.resolve(fileName);
+    ensureGeneratedOutputParent(canonicalRepositoryRoot, outputDirectory, target);
     validateGeneratedOutputTarget(canonicalRepositoryRoot, target);
 
-    Path tempFile = Files.createTempFile(outputDirectory, "." + fileName + ".", ".tmp");
+    Path targetParent = target.getParent();
+    String tempPrefix = "." + target.getFileName() + ".";
+    Path tempFile = Files.createTempFile(targetParent, tempPrefix, ".tmp");
     boolean moved = false;
     try {
       if (!isRegularFileUnderRoot(canonicalRepositoryRoot, tempFile)) {
@@ -6637,6 +6742,43 @@ public final class SpringMvcEndpointOutputGenerator {
     }
   }
 
+  private void ensureGeneratedOutputParent(
+      Path canonicalRepositoryRoot,
+      Path outputDirectory,
+      Path target) throws IOException {
+    Path parent = target.getParent();
+    if (parent == null) {
+      throw new IOException("Output directory is not contained under scan root: " + target);
+    }
+
+    Path normalizedOutputDirectory = outputDirectory.toAbsolutePath().normalize();
+    Path normalizedParent = parent.toAbsolutePath().normalize();
+    if (!normalizedParent.startsWith(normalizedOutputDirectory)) {
+      throw new IOException("Output directory is not contained under scan root: " + parent);
+    }
+
+    if (Files.isSymbolicLink(parent)) {
+      throw new IOException("Output directory must not be a symbolic link: " + parent);
+    }
+
+    if (Files.exists(parent, LinkOption.NOFOLLOW_LINKS)
+        && !Files.isDirectory(parent, LinkOption.NOFOLLOW_LINKS)) {
+      throw new IOException("Output directory path exists and is not a directory: " + parent);
+    }
+
+    Files.createDirectories(parent);
+
+    if (Files.isSymbolicLink(parent)) {
+      throw new IOException("Output directory must not be a symbolic link: " + parent);
+    }
+
+    if (!ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, parent)
+        .filter(Files::isDirectory)
+        .isPresent()) {
+      throw new IOException("Output directory is not contained under scan root: " + parent);
+    }
+  }
+
   private void moveGeneratedFile(Path tempFile, Path target) throws IOException {
     try {
       Files.move(
@@ -6675,7 +6817,28 @@ public final class SpringMvcEndpointOutputGenerator {
       int testCount,
       int documentCount,
       int evidenceCount,
-      int diagnosticCount) {
+      int diagnosticCount,
+      int profileCount) {
+    public Result(
+        boolean generated,
+        int endpointCount,
+        int componentCount,
+        int entityCount,
+        int testCount,
+        int documentCount,
+        int evidenceCount,
+        int diagnosticCount) {
+      this(
+          generated,
+          endpointCount,
+          componentCount,
+          entityCount,
+          testCount,
+          documentCount,
+          evidenceCount,
+          diagnosticCount,
+          0);
+    }
   }
 
   private record GeneratedOutputFile(String fileName, String content) {

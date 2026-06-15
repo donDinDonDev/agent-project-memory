@@ -761,6 +761,9 @@ Planned contract decisions:
 - The v1.3 profile surface is an additive `schema_version: "1.0"` compatibility
   expansion. The design does not add profile-generation fields to `project-map.json`,
   does not change `evidence-index.jsonl`, and does not create new evidence records.
+- The current development foundation implements the opt-in profile selector and writes
+  `agent-profiles/manifest.json` plus minimal selected profile Markdown placeholders.
+  Full deterministic profile content generation remains a separate planned step.
 
 Profile content boundary:
 
@@ -795,7 +798,8 @@ Validation expectations:
 Planned implementation sequence:
 
 - Add the opt-in profile artifact and invocation foundation while preserving the default
-  no-profile scan behavior.
+  no-profile scan behavior. (implemented in current development for manifest and
+  minimal selected profile placeholders)
 - Add deterministic profile content generation for the supported profile set from
   existing structured facts and evidence references.
 - Evaluate profile outputs on representative generated project-memory outputs, then

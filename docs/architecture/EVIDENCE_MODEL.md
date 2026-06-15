@@ -1163,9 +1163,9 @@ metadata-only observations.
 
 ### v1.3 Agent Profile Presentation Evidence Decision
 
-The planned v1.3 agent output profile layer does not add evidence types, evidence
-fields, evidence records, confidence labels, excerpt semantics, path semantics, or
-tool-config evidence.
+The v1.3 agent output profile layer does not add evidence types, evidence fields,
+evidence records, confidence labels, excerpt semantics, path semantics, or tool-config
+evidence.
 
 Agent profile artifacts are generated presentations, not evidence:
 

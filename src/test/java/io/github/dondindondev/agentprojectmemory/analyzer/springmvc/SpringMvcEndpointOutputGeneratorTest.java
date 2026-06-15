@@ -11,6 +11,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
+import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -101,6 +103,59 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
         () -> assertTrue(Files.readString(outputDirectory.resolve("agent-guide.md"))
             .contains("# Agent Guide")));
+  }
+
+  @Test
+  void defaultScanDoesNotWriteAgentProfileArtifacts() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(0, result.profileCount()),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
+  }
+
+  @Test
+  void agentProfileArtifactFoundationMatchesGoldenFiles() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Path profileDirectory = outputDirectory.resolve("agent-profiles");
+    Path expectedProfileDirectory = goldenRoot("v1-3-agent-profiles-foundation")
+        .resolve("agent-profiles");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory,
+        ScanConfiguration.defaultsOnly(),
+        AgentOutputProfile.canonicalOrder());
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals(4, result.profileCount()),
+        () -> assertEquals(
+            Files.readString(expectedProfileDirectory.resolve("manifest.json")),
+            Files.readString(profileDirectory.resolve("manifest.json"))),
+        () -> assertEquals(
+            Files.readString(expectedProfileDirectory.resolve("codex.md")),
+            Files.readString(profileDirectory.resolve("codex.md"))),
+        () -> assertEquals(
+            Files.readString(expectedProfileDirectory.resolve("claude.md")),
+            Files.readString(profileDirectory.resolve("claude.md"))),
+        () -> assertEquals(
+            Files.readString(expectedProfileDirectory.resolve("cursor.md")),
+            Files.readString(profileDirectory.resolve("cursor.md"))),
+        () -> assertEquals(
+            Files.readString(expectedProfileDirectory.resolve("generic.md")),
+            Files.readString(profileDirectory.resolve("generic.md"))));
   }
 
   @Test

@@ -20,6 +20,12 @@ In the current implementation, `scan <path>` writes all four files when supporte
 or Gradle module roots, supported root source, test, or resource roots, supported config
 files, or Maven/Gradle module warnings are detected. Unsupported directories still only
 get a prepared `.project-memory/` directory and do not get contract output files.
+When `--agent-profile` is selected and the scan writes the base contract files, the
+current v1.3 development profile foundation also writes
+`.project-memory/agent-profiles/manifest.json` and minimal selected profile Markdown
+placeholders under `.project-memory/agent-profiles/`. A scan without
+`--agent-profile` does not create profile artifacts, and unsupported directories that
+only prepare `.project-memory/` do not create orphan profile artifacts.
 
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
@@ -3541,11 +3547,13 @@ Stop conditions for implementation:
   cap, evidence cap, or Markdown cap behavior is unclear.
 - Disabled-mode Maven or Gradle output semantics cannot be preserved.
 
-### v1.3 Agent Output Profiles Contract (Planned)
+### v1.3 Agent Output Profiles Contract
 
-This section defines the planned public v1.3 agent output profile boundary before
-implementation. It is not current generated behavior until a release note documents the
-implemented profile surface.
+This section defines the current v1.3 development agent profile artifact foundation and
+the planned profile content boundary. The implemented foundation supports deterministic,
+opt-in profile selection, writes a generated-profile manifest, and writes minimal
+selected profile Markdown placeholders. Full deterministic profile content generation is
+future v1.3 work until a release note documents that content surface.
 
 The v1.3 policy decision is deterministic, opt-in profile presentation:
 
@@ -3556,9 +3564,9 @@ The v1.3 policy decision is deterministic, opt-in profile presentation:
   part of the initial v1.3 contract.
 - Profile generation is opt-in. A normal scan with no profile selector keeps the current
   default generated output set and does not create profile artifacts.
-- The planned CLI surface is a repeatable `scan <path> --agent-profile <profile>`
-  selector. `--agent-profile all` selects every supported profile. Unknown profile names
-  should be usage errors.
+- The implemented CLI surface is a repeatable
+  `scan <path> --agent-profile <profile>` selector. `--agent-profile all` selects every
+  supported profile. Unknown profile names are usage errors.
 - Duplicate profile selectors are idempotent: each canonical profile is generated at
   most once and appears at most once in `generated_profiles[]`.
 - Root-local YAML config does not select agent profiles in the initial v1.3 design. A
@@ -3587,7 +3595,7 @@ Schema and compatibility decisions:
   optional `.project-memory/agent-profiles/` directory when they do not use profile
   outputs.
 
-Planned profile artifact layout when at least one profile is selected:
+Current profile artifact layout when at least one profile is selected:
 
 ```text
 .project-memory/
@@ -3624,7 +3632,7 @@ Profile artifact rules:
   interface. Downstream automation should use `manifest.json` and documented file names
   to detect generated profiles, not parse profile Markdown.
 
-Planned `agent-profiles/manifest.json` shape:
+Current `agent-profiles/manifest.json` shape:
 
 ```json
 {
@@ -3664,6 +3672,13 @@ Manifest rules:
   tokens, environment values, generated-source contents, or downstream agent output.
 
 Profile Markdown content boundary:
+
+- The current foundation profile Markdown files are minimal deterministic placeholders.
+  They establish stable artifact paths, state that full deterministic profile content is
+  future work, and restate the existing-evidence-only policy.
+- The planned content generator may add profile-specific reading order, copyable
+  snippets, concise evidence-visible orientation, known limits, and practical
+  inspection guidance within the boundaries below.
 
 - Common content may include a profile-specific reading order for generated
   project-memory artifacts, a copyable prompt or instruction snippet, concise
@@ -4023,7 +4038,8 @@ Current v0.9 CLI behavior:
   emitted.
 - Normal stdout remains concise: `.project-memory` preparation, generated output file
   names, stable fact counts when outputs are written, a no-output line when no supported
-  contract inputs are detected, and a bounded diagnostic summary such as
+  contract inputs are detected, a bounded generated profile artifact count when profile
+  artifacts are written, and a bounded diagnostic summary such as
   `Diagnostics: none.` or `Diagnostics: N item(s).` Detailed diagnostics, when a flag is
   added, should still follow the redaction rules above.
 

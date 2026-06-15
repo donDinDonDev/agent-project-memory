@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
+import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoader;
@@ -12,21 +13,26 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.EnumSet;
+import java.util.List;
 import java.util.Objects;
 import java.util.Properties;
 
 public final class AgentProjectMemoryCli {
-  public static final String USAGE = "Usage: agent-project-memory scan <path> [--config <path>]";
+  public static final String USAGE =
+      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]";
   private static final String GENERAL_HELP = """
       agent-project-memory - local evidence-backed project memory for Java/Spring projects
 
       Usage:
-        agent-project-memory scan <path> [--config <path>]
+        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]
         agent-project-memory help
         agent-project-memory version
 
       Commands:
-        scan <path> [--config <path>]  Generate .project-memory output for a local repository.
+        scan <path> [--config <path>] [--agent-profile <profile>]
+                                       Generate .project-memory output for a local repository.
         help                           Show this help.
         version                        Show the CLI version.
 
@@ -35,13 +41,15 @@ public final class AgentProjectMemoryCli {
         --version                      Show the CLI version.
       """;
   private static final String SCAN_HELP = """
-      Usage: agent-project-memory scan <path> [--config <path>]
+      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]
 
       Generate local evidence-backed project memory under <path>/.project-memory/.
 
       Options:
-        --config <path>  Use a repository-relative YAML config file under the scan root.
-        --help           Show this help.
+        --config <path>            Use a repository-relative YAML config file under the scan root.
+        --agent-profile <profile>  Generate opt-in profile artifacts for codex, claude, cursor,
+                                   generic, or all. May be repeated.
+        --help                     Show this help.
       """;
   private static final String VERSION_RESOURCE = "/agent-project-memory-version.properties";
   private static final String OUTPUT_DIRECTORY_NAME = ".project-memory";
@@ -121,7 +129,7 @@ public final class AgentProjectMemoryCli {
       out.print(SCAN_HELP);
       return SUCCESS;
     }
-    return scan(scanArgs.path(), scanArgs.configPath());
+    return scan(scanArgs.path(), scanArgs.configPath(), scanArgs.agentProfiles());
   }
 
   private ScanArgs scanArgs(String[] args) {
@@ -140,30 +148,62 @@ public final class AgentProjectMemoryCli {
       return ScanArgs.scanInputError("Scan path must not be blank.");
     }
     if (scanPath.startsWith("--")) {
-      return "--config".equals(scanPath)
+      return "--config".equals(scanPath) || "--agent-profile".equals(scanPath)
           ? ScanArgs.usageError("Missing scan path.")
           : ScanArgs.usageError("Unknown flag.");
     }
     String configPath = null;
+    EnumSet<AgentOutputProfile> agentProfiles = EnumSet.noneOf(AgentOutputProfile.class);
     int index = 2;
     while (index < args.length) {
       String argument = args[index];
-      if (!"--config".equals(argument)) {
-        return ScanArgs.usageError("Unexpected extra arguments.");
+      if ("--config".equals(argument)) {
+        if (configPath != null) {
+          return ScanArgs.usageError("Duplicate --config flag.");
+        }
+        if (index + 1 >= args.length) {
+          return ScanArgs.usageError("Missing --config value.");
+        }
+        configPath = args[index + 1];
+        index += 2;
+        continue;
       }
-      if (configPath != null) {
-        return ScanArgs.usageError("Duplicate --config flag.");
+      if ("--agent-profile".equals(argument)) {
+        if (index + 1 >= args.length) {
+          return ScanArgs.usageError("Missing --agent-profile value.");
+        }
+        String selector = args[index + 1];
+        if ("all".equals(selector)) {
+          agentProfiles.addAll(AgentOutputProfile.canonicalOrder());
+        } else {
+          AgentOutputProfile profile = AgentOutputProfile.fromSelector(selector).orElse(null);
+          if (profile == null) {
+            return ScanArgs.usageError("Unsupported --agent-profile value.");
+          }
+          agentProfiles.add(profile);
+        }
+        index += 2;
+        continue;
       }
-      if (index + 1 >= args.length) {
-        return ScanArgs.usageError("Missing --config value.");
-      }
-      configPath = args[index + 1];
-      index += 2;
+      return ScanArgs.usageError("Unexpected extra arguments.");
     }
-    return ScanArgs.valid(scanPath, configPath);
+    return ScanArgs.valid(scanPath, configPath, canonicalProfiles(agentProfiles));
   }
 
-  private int scan(String rawPath, String explicitConfigPath) {
+  private List<AgentOutputProfile> canonicalProfiles(EnumSet<AgentOutputProfile> profiles) {
+    List<AgentOutputProfile> selectedProfiles = new ArrayList<>();
+    for (AgentOutputProfile profile : AgentOutputProfile.canonicalOrder()) {
+      if (profiles.contains(profile)) {
+        selectedProfiles.add(profile);
+      }
+    }
+    return List.copyOf(selectedProfiles);
+  }
+
+  private int scan(
+      String rawPath,
+      String explicitConfigPath,
+      List<AgentOutputProfile> agentProfiles) {
     if (rawPath == null) {
       return scanInputError("Missing scan path.");
     }
@@ -234,7 +274,8 @@ public final class AgentProjectMemoryCli {
       SpringMvcEndpointOutputGenerator.Result result = outputGenerator.generate(
           normalizedProjectPath,
           containedOutputDirectory,
-          scanConfiguration);
+          scanConfiguration,
+          agentProfiles);
       if (result.generated()) {
         out.println(
             "Generated project-map.json with "
@@ -254,6 +295,9 @@ public final class AgentProjectMemoryCli {
                 + result.evidenceCount()
                 + " evidence records.");
         out.println("Generated agent-guide.md.");
+        if (result.profileCount() > 0) {
+          out.println("Generated agent profile artifacts: " + result.profileCount() + ".");
+        }
       } else {
         out.println("No project memory output generated.");
       }
@@ -302,7 +346,10 @@ public final class AgentProjectMemoryCli {
   private boolean isOutputPathValidationError(String message) {
     return message.startsWith("Output file must not be a symbolic link:")
         || message.startsWith("Output file target is not a regular file under scan root:")
-        || message.startsWith("Output file must not have multiple hard links:");
+        || message.startsWith("Output file must not have multiple hard links:")
+        || message.startsWith("Output directory must not be a symbolic link:")
+        || message.startsWith("Output directory path exists and is not a directory:")
+        || message.startsWith("Output directory is not contained under scan root:");
   }
 
   private String boundedExceptionMessage(IOException exception, Path scanRoot) {
@@ -356,29 +403,34 @@ public final class AgentProjectMemoryCli {
     SpringMvcEndpointOutputGenerator.Result generate(
         Path repositoryRoot,
         Path outputDirectory,
-        ScanConfiguration scanConfiguration) throws IOException;
+        ScanConfiguration scanConfiguration,
+        List<AgentOutputProfile> agentProfiles) throws IOException;
   }
 
   private record ScanArgs(
       String path,
       String configPath,
+      List<AgentOutputProfile> agentProfiles,
       boolean help,
       String errorMessage,
       int errorExitCode) {
-    static ScanArgs valid(String path, String configPath) {
-      return new ScanArgs(path, configPath, false, null, SUCCESS);
+    static ScanArgs valid(
+        String path,
+        String configPath,
+        List<AgentOutputProfile> agentProfiles) {
+      return new ScanArgs(path, configPath, agentProfiles, false, null, SUCCESS);
     }
 
     static ScanArgs helpRequested() {
-      return new ScanArgs(null, null, true, null, SUCCESS);
+      return new ScanArgs(null, null, List.of(), true, null, SUCCESS);
     }
 
     static ScanArgs usageError(String message) {
-      return new ScanArgs(null, null, false, message, USAGE_ERROR);
+      return new ScanArgs(null, null, List.of(), false, message, USAGE_ERROR);
     }
 
     static ScanArgs scanInputError(String message) {
-      return new ScanArgs(null, null, false, message, SCAN_INPUT_ERROR);
+      return new ScanArgs(null, null, List.of(), false, message, SCAN_INPUT_ERROR);
     }
   }
 }

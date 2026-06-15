@@ -53,7 +53,8 @@ final class AgentProjectMemoryCliTest {
           () -> assertEquals(0, result.exitCode()),
           () -> assertTrue(result.stdout().contains("agent-project-memory - local evidence-backed")),
           () -> assertTrue(result.stdout().contains("Usage:")),
-          () -> assertTrue(result.stdout().contains("agent-project-memory scan <path> [--config <path>]")),
+          () -> assertTrue(result.stdout().contains(
+              "agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]")),
           () -> assertTrue(result.stderr().isEmpty()),
           () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
     }
@@ -67,6 +68,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains(AgentProjectMemoryCli.USAGE)),
         () -> assertTrue(result.stdout().contains("--config <path>")),
+        () -> assertTrue(result.stdout().contains("--agent-profile <profile>")),
         () -> assertTrue(result.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
@@ -207,7 +209,8 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
   }
 
   @Test
@@ -233,6 +236,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))),
         () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"scan\": {")),
         () -> assertTrue(projectMap.contains("\"source\": \"defaults_only\"")),
@@ -247,9 +251,120 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanWithSingleAgentProfileWritesManifestAndSelectedPlaceholderOnly() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--agent-profile", "codex");
+    Path profileDirectory = tempDir.resolve(".project-memory/agent-profiles");
+    String manifest = Files.readString(profileDirectory.resolve("manifest.json"));
+    String codexProfile = Files.readString(profileDirectory.resolve("codex.md"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated agent profile artifacts: 1.")),
+        () -> assertTrue(Files.exists(tempDir.resolve(".project-memory/project-map.json"))),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("manifest.json"))),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("codex.md"))),
+        () -> assertFalse(Files.exists(profileDirectory.resolve("claude.md"))),
+        () -> assertFalse(Files.exists(profileDirectory.resolve("cursor.md"))),
+        () -> assertFalse(Files.exists(profileDirectory.resolve("generic.md"))),
+        () -> assertTrue(manifest.contains("\"manifest_version\": \"1.0\"")),
+        () -> assertTrue(manifest.contains("\"project_map_schema_version\": \"1.0\"")),
+        () -> assertTrue(manifest.contains("\"name\": \"codex\"")),
+        () -> assertTrue(manifest.contains("\"artifact_path\": \"agent-profiles/codex.md\"")),
+        () -> assertTrue(manifest.contains(
+            "\"evidence_policy\": \"references_existing_evidence_only\"")),
+        () -> assertTrue(codexProfile.contains("# Codex Agent Profile")),
+        () -> assertTrue(codexProfile.contains("Does not create project facts or evidence records.")));
+  }
+
+  @Test
+  void scanAllAndDuplicateAgentProfileSelectorsAreIdempotentAndCanonical() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--agent-profile",
+        "generic",
+        "--agent-profile",
+        "codex",
+        "--agent-profile",
+        "codex",
+        "--agent-profile",
+        "all");
+    Path profileDirectory = tempDir.resolve(".project-memory/agent-profiles");
+    String manifest = Files.readString(profileDirectory.resolve("manifest.json"));
+
+    int codex = manifest.indexOf("\"name\": \"codex\"");
+    int claude = manifest.indexOf("\"name\": \"claude\"");
+    int cursor = manifest.indexOf("\"name\": \"cursor\"");
+    int generic = manifest.indexOf("\"name\": \"generic\"");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated agent profile artifacts: 4.")),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("codex.md"))),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("claude.md"))),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("cursor.md"))),
+        () -> assertTrue(Files.exists(profileDirectory.resolve("generic.md"))),
+        () -> assertEquals(1, countOccurrences(manifest, "\"name\": \"codex\"")),
+        () -> assertEquals(1, countOccurrences(manifest, "\"name\": \"claude\"")),
+        () -> assertEquals(1, countOccurrences(manifest, "\"name\": \"cursor\"")),
+        () -> assertEquals(1, countOccurrences(manifest, "\"name\": \"generic\"")),
+        () -> assertTrue(codex >= 0),
+        () -> assertTrue(codex < claude),
+        () -> assertTrue(claude < cursor),
+        () -> assertTrue(cursor < generic));
+  }
+
+  @Test
+  void scanUnsupportedAgentProfileReturnsUsageExitCodeWithoutScanning() {
+    CliResult result = runCli("scan", tempDir.toString(), "--agent-profile", "unknown");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Unsupported --agent-profile value.")),
+        () -> assertFalse(result.stderr().contains("unknown")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void scanAgentProfileFlagBeforePathReturnsUsageExitCodeWithoutScanning() {
+    CliResult result = runCli("scan", "--agent-profile", "codex");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Usage error: Missing scan path.")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void scanWithAgentProfileDoesNotCreateOrphanArtifactsForUnsupportedDirectory() {
+    CliResult result = runCli("scan", tempDir.toString(), "--agent-profile", "codex");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(Files.isDirectory(outputDirectory)),
+        () -> assertTrue(result.stdout().contains("No project memory output generated.")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
+  }
+
+  @Test
   void scanSummarizesReportedDiagnostics() throws Exception {
     CliResult result = runCliWithGenerator(
-        (repositoryRoot, outputDirectory, scanConfiguration) ->
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles) ->
             new SpringMvcEndpointOutputGenerator.Result(true, 0, 0, 0, 0, 0, 0, 2),
         "scan",
         tempDir.toString());
@@ -585,6 +700,64 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRejectsAgentProfileDirectorySymlinkAndDoesNotWriteOutsideScanRoot()
+      throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    Path outsideProfileDirectory = tempDir.resolve("outside-profiles");
+    Files.createDirectories(outsideProfileDirectory);
+    createSymbolicLink(outputDirectory.resolve("agent-profiles"), outsideProfileDirectory);
+
+    CliResult result = runCli(
+        "scan",
+        projectPath.toString(),
+        "--agent-profile",
+        "codex");
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output directory must not be a symbolic link")),
+        () -> assertFalse(result.stderr().contains(projectPath.toString())),
+        () -> assertFalse(Files.exists(outsideProfileDirectory.resolve("manifest.json"))),
+        () -> assertFalse(Files.exists(outsideProfileDirectory.resolve("codex.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanRejectsAgentProfileFileSymlinkAndDoesNotWriteOutsideScanRoot() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Path profileDirectory = outputDirectory.resolve("agent-profiles");
+    Files.createDirectories(profileDirectory);
+    Path outsideProfileFile = tempDir.resolve("outside-codex.md");
+    Files.writeString(outsideProfileFile, "outside content");
+    createSymbolicLink(profileDirectory.resolve("codex.md"), outsideProfileFile);
+
+    CliResult result = runCli(
+        "scan",
+        projectPath.toString(),
+        "--agent-profile",
+        "codex");
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output file must not be a symbolic link")),
+        () -> assertFalse(result.stderr().contains(projectPath.toString())),
+        () -> assertEquals("outside content", Files.readString(outsideProfileFile)),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertFalse(Files.exists(profileDirectory.resolve("manifest.json"))));
+  }
+
+  @Test
   void scanReturnsNonZeroWhenProjectMemoryPathIsAFile() throws Exception {
     Path conflictingOutputPath = tempDir.resolve(".project-memory");
     Files.writeString(conflictingOutputPath, "not a directory");
@@ -605,7 +778,7 @@ final class AgentProjectMemoryCliTest {
         """);
 
     CliResult result = runCliWithGenerator(
-        (repositoryRoot, outputDirectory, scanConfiguration) -> {
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles) -> {
           throw new IllegalStateException("INTERNAL_SECRET_DETAIL");
         },
         "scan",
@@ -669,6 +842,16 @@ final class AgentProjectMemoryCliTest {
     } catch (IOException | SecurityException | UnsupportedOperationException ex) {
       assumeTrue(false, "Hard links are unavailable: " + ex.getMessage());
     }
+  }
+
+  private int countOccurrences(String value, String needle) {
+    int count = 0;
+    int index = value.indexOf(needle);
+    while (index >= 0) {
+      count++;
+      index = value.indexOf(needle, index + needle.length());
+    }
+    return count;
   }
 
   private record CliResult(int exitCode, String stdout, String stderr) {
