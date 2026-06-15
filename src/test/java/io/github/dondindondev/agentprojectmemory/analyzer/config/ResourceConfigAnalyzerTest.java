@@ -118,6 +118,74 @@ final class ResourceConfigAnalyzerTest {
   }
 
   @Test
+  void resourceRootSymlinkInsideRepositoryRootIsIgnored() throws Exception {
+    Path repositoryRoot = repository("resource-root-symlink-inside-root");
+    writeFile(repositoryRoot.resolve("shared-resources/application.yml"), """
+        api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+    Files.createDirectories(repositoryRoot.resolve("src/main"));
+    createSymbolicLink(
+        repositoryRoot.resolve("src/main/resources"),
+        repositoryRoot.resolve("shared-resources"));
+
+    ResourceConfigAnalysis analysis = analyzer.analyze(repositoryRoot, List.of(rootModule()));
+    ModuleResourceConfig module = moduleConfig(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals("not_detected", module.resourceAnalysisStatus()),
+        () -> assertEquals("not_detected", module.configFileAnalysisStatus()),
+        () -> assertEquals(List.of(), module.resourceRoots()),
+        () -> assertEquals(List.of(), module.configFiles()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertSensitiveFixtureValuesDoNotAppear(analysis));
+  }
+
+  @Test
+  void resourceRootWithSymlinkedParentSegmentInsideRepositoryRootIsIgnored() throws Exception {
+    Path repositoryRoot = repository("resource-root-symlink-parent-inside-root");
+    writeFile(repositoryRoot.resolve("real-src/main/resources/application.yml"), """
+        api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+    createSymbolicLink(repositoryRoot.resolve("src"), repositoryRoot.resolve("real-src"));
+
+    ResourceConfigAnalysis analysis = analyzer.analyze(repositoryRoot, List.of(rootModule()));
+    ModuleResourceConfig module = moduleConfig(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals("not_detected", module.resourceAnalysisStatus()),
+        () -> assertEquals("not_detected", module.configFileAnalysisStatus()),
+        () -> assertEquals(List.of(), module.resourceRoots()),
+        () -> assertEquals(List.of(), module.configFiles()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertSensitiveFixtureValuesDoNotAppear(analysis));
+  }
+
+  @Test
+  void symlinkedResourceConfigFileInsideRepositoryRootIsIgnored() throws Exception {
+    Path repositoryRoot = repository("resource-config-file-symlink");
+    writeFile(repositoryRoot.resolve("shared/application.yml"), """
+        api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+    Files.createDirectories(repositoryRoot.resolve("src/main/resources"));
+    createSymbolicLink(
+        repositoryRoot.resolve("src/main/resources/application.yml"),
+        repositoryRoot.resolve("shared/application.yml"));
+
+    ResourceConfigAnalysis analysis = analyzer.analyze(repositoryRoot, List.of(rootModule()));
+    ModuleResourceConfig module = moduleConfig(analysis, "module:.");
+
+    assertAll(
+        () -> assertEquals("analyzed", module.resourceAnalysisStatus()),
+        () -> assertEquals("analyzed", module.configFileAnalysisStatus()),
+        () -> assertEquals(
+            List.of("src/main/resources"),
+            module.resourceRoots().stream().map(ResourceRootFact::path).toList()),
+        () -> assertEquals(List.of(), module.configFiles()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertSensitiveFixtureValuesDoNotAppear(analysis));
+  }
+
+  @Test
   void boundsConfigFileCandidatesBeforeFactMaterialization() throws Exception {
     Path repositoryRoot = repository("resource-config-candidate-cap");
     writeFile(repositoryRoot.resolve("src/main/resources/a/application.yml"), "name: a\n");
@@ -209,7 +277,8 @@ final class ResourceConfigAnalyzerTest {
         () -> assertFalse(serializedFacts.contains("FAKE_BOOTSTRAP_SECRET")),
         () -> assertFalse(serializedFacts.contains("FAKE_TEST_CONFIG_SECRET")),
         () -> assertFalse(serializedFacts.contains("FAKE_LOG4J_SECRET")),
-        () -> assertFalse(serializedFacts.contains("FAKE_OUTSIDE_RESOURCE_SECRET")));
+        () -> assertFalse(serializedFacts.contains("FAKE_OUTSIDE_RESOURCE_SECRET")),
+        () -> assertFalse(serializedFacts.contains("FAKE_SYMLINK_RESOURCE_CONFIG_SECRET")));
   }
 
   private void createSymbolicLink(Path link, Path target) throws Exception {

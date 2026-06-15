@@ -909,6 +909,147 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanIncrementalMatchesFullScanWhenSymlinkedResourceConfigIsRemoved()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Files.createDirectories(repositoryRoot);
+    Files.writeString(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeSymlinkedResourceConfig(repositoryRoot, repositoryRoot.resolve("shared/application.yml"));
+    Path symlinkedConfig = repositoryRoot.resolve("src/main/resources/application.yml");
+
+    assertFullIncrementalRefresh(runCli("scan", repositoryRoot.toString(), "--incremental"));
+    Path outputDirectory = repositoryRoot.resolve(".project-memory");
+    Path cacheDirectory = outputDirectory.resolve("cache/v1");
+    String cacheMetadata = Files.readString(cacheDirectory.resolve("manifest.json"))
+        + Files.readString(cacheDirectory.resolve("inputs.jsonl"))
+        + Files.readString(cacheDirectory.resolve("outputs.jsonl"));
+
+    Files.delete(symlinkedConfig);
+
+    CliResult incrementalAfterRemoval = runCli("scan", repositoryRoot.toString(), "--incremental");
+    String incrementalProjectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String incrementalEvidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String incrementalEndpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String incrementalAgentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    CliResult fullAfterRemoval = runCli("scan", repositoryRoot.toString());
+
+    assertAll(
+        () -> assertEquals(0, incrementalAfterRemoval.exitCode()),
+        () -> assertEquals(0, fullAfterRemoval.exitCode()),
+        () -> assertFalse(hasCacheInput(
+            jsonLines(cacheDirectory.resolve("inputs.jsonl")),
+            "resource_config_file",
+            "src/main/resources/application.yml")),
+        () -> assertFalse(cacheMetadata.contains("FAKE_SYMLINK_RESOURCE_CONFIG_SECRET")),
+        () -> assertFalse(cacheMetadata.contains("api-token")),
+        () -> assertFalse(incrementalProjectMap.contains("src/main/resources/application.yml")),
+        () -> assertEquals(incrementalProjectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(incrementalEvidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(incrementalEndpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(incrementalAgentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanIncrementalMatchesFullScanWhenSymlinkedResourceConfigTargetBecomesUnsafe()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Files.createDirectories(repositoryRoot);
+    Files.writeString(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeSymlinkedResourceConfig(repositoryRoot, repositoryRoot.resolve("shared/application.yml"));
+    Path symlinkedConfig = repositoryRoot.resolve("src/main/resources/application.yml");
+    Path outsideConfig = tempDir.resolve("outside-resource-config.yml");
+    Files.writeString(outsideConfig, """
+        api-token: FAKE_OUTSIDE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+
+    assertFullIncrementalRefresh(runCli("scan", repositoryRoot.toString(), "--incremental"));
+    Files.delete(symlinkedConfig);
+    createSymbolicLink(symlinkedConfig, outsideConfig);
+
+    CliResult incrementalAfterTargetChange = runCli("scan", repositoryRoot.toString(), "--incremental");
+    Path outputDirectory = repositoryRoot.resolve(".project-memory");
+    String incrementalProjectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String incrementalEvidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String incrementalEndpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String incrementalAgentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    CliResult fullAfterTargetChange = runCli("scan", repositoryRoot.toString());
+    String cacheMetadata = Files.readString(outputDirectory.resolve("cache/v1/manifest.json"))
+        + Files.readString(outputDirectory.resolve("cache/v1/inputs.jsonl"))
+        + Files.readString(outputDirectory.resolve("cache/v1/outputs.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, incrementalAfterTargetChange.exitCode()),
+        () -> assertEquals(0, fullAfterTargetChange.exitCode()),
+        () -> assertFalse(incrementalProjectMap.contains("src/main/resources/application.yml")),
+        () -> assertFalse(cacheMetadata.contains("FAKE_OUTSIDE_SYMLINK_RESOURCE_CONFIG_SECRET")),
+        () -> assertFalse(cacheMetadata.contains(outsideConfig.toString())),
+        () -> assertEquals(incrementalProjectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(incrementalEvidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(incrementalEndpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(incrementalAgentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanIncrementalMatchesFullScanWhenSymlinkedResourceRootParentSegmentIsRemoved()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Files.createDirectories(repositoryRoot);
+    Files.writeString(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeResourceConfigBehindSymlinkedMainParent(repositoryRoot);
+    Path symlinkedParent = repositoryRoot.resolve("src/main");
+
+    assertFullIncrementalRefresh(runCli("scan", repositoryRoot.toString(), "--incremental"));
+    Path outputDirectory = repositoryRoot.resolve(".project-memory");
+    Path cacheDirectory = outputDirectory.resolve("cache/v1");
+    String cacheMetadata = Files.readString(cacheDirectory.resolve("manifest.json"))
+        + Files.readString(cacheDirectory.resolve("inputs.jsonl"))
+        + Files.readString(cacheDirectory.resolve("outputs.jsonl"));
+
+    Files.delete(symlinkedParent);
+
+    CliResult incrementalAfterRemoval = runCli("scan", repositoryRoot.toString(), "--incremental");
+    String incrementalProjectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String incrementalEvidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String incrementalEndpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String incrementalAgentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    CliResult fullAfterRemoval = runCli("scan", repositoryRoot.toString());
+
+    assertAll(
+        () -> assertEquals(0, incrementalAfterRemoval.exitCode()),
+        () -> assertEquals(0, fullAfterRemoval.exitCode()),
+        () -> assertFalse(hasCacheInput(
+            jsonLines(cacheDirectory.resolve("inputs.jsonl")),
+            "resource_root_path",
+            "src/main/resources")),
+        () -> assertFalse(hasCacheInput(
+            jsonLines(cacheDirectory.resolve("inputs.jsonl")),
+            "resource_config_file",
+            "src/main/resources/application.yml")),
+        () -> assertFalse(cacheMetadata.contains("FAKE_SYMLINK_RESOURCE_CONFIG_SECRET")),
+        () -> assertFalse(cacheMetadata.contains("api-token")),
+        () -> assertFalse(incrementalProjectMap.contains("src/main/resources/application.yml")),
+        () -> assertEquals(incrementalProjectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(incrementalEvidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(incrementalEndpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(incrementalAgentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanIncrementalSkipsCacheRefreshWhenCacheDirectoryIsSymlink() throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
@@ -1515,6 +1656,25 @@ final class AgentProjectMemoryCliTest {
         }
       }
     }
+  }
+
+  private void writeSymlinkedResourceConfig(Path repositoryRoot, Path target) throws Exception {
+    Files.createDirectories(target.getParent());
+    Files.writeString(target, """
+        api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+    Files.createDirectories(repositoryRoot.resolve("src/main/resources"));
+    createSymbolicLink(repositoryRoot.resolve("src/main/resources/application.yml"), target);
+  }
+
+  private void writeResourceConfigBehindSymlinkedMainParent(Path repositoryRoot) throws Exception {
+    Files.createDirectories(repositoryRoot.resolve("src/test/java"));
+    Path target = repositoryRoot.resolve("real-main/resources/application.yml");
+    Files.createDirectories(target.getParent());
+    Files.writeString(target, """
+        api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
+        """);
+    createSymbolicLink(repositoryRoot.resolve("src/main"), repositoryRoot.resolve("real-main"));
   }
 
   private void createSymbolicLink(Path link, Path target) throws Exception {

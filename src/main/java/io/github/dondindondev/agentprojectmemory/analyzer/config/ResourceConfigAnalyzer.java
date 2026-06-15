@@ -5,6 +5,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.build.BuildModule;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -135,7 +136,9 @@ public final class ResourceConfigAnalyzer {
           ? candidate.path()
           : module.modulePath() + "/" + candidate.path();
       Path resourceRoot = repositoryRoot.resolve(path).normalize();
-      if (!ScanPathContainment.isDirectoryUnderRoot(canonicalRepositoryRoot, resourceRoot)) {
+      if (hasSymbolicLinkSegment(repositoryRoot, resourceRoot)
+          || !Files.isDirectory(resourceRoot, LinkOption.NOFOLLOW_LINKS)
+          || !ScanPathContainment.isDirectoryUnderRoot(canonicalRepositoryRoot, resourceRoot)) {
         continue;
       }
 
@@ -163,7 +166,8 @@ public final class ResourceConfigAnalyzer {
       Iterator<Path> iterator = paths.iterator();
       while (iterator.hasNext()) {
         Path candidate = iterator.next();
-        if (!ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, candidate)) {
+        if (hasSymbolicLinkSegment(repositoryRoot, candidate)
+            || !ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, candidate)) {
           continue;
         }
         if (configDescriptor(candidate.getFileName().toString()).isEmpty()) {
@@ -253,6 +257,22 @@ public final class ResourceConfigAnalyzer {
 
   private String repositoryRelativePath(Path repositoryRoot, Path path) {
     return repositoryRoot.relativize(path.normalize()).toString().replace('\\', '/');
+  }
+
+  private boolean hasSymbolicLinkSegment(Path root, Path path) {
+    Path normalizedRoot = root.toAbsolutePath().normalize();
+    Path normalizedPath = path.toAbsolutePath().normalize();
+    if (!normalizedPath.startsWith(normalizedRoot)) {
+      return true;
+    }
+    Path current = normalizedRoot;
+    for (Path segment : normalizedRoot.relativize(normalizedPath)) {
+      current = current.resolve(segment);
+      if (Files.isSymbolicLink(current)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   private static String nullSafe(String value) {

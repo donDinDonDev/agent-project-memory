@@ -42,6 +42,11 @@ architecture documents.
   overwritten, generated-source roots remain path-only metadata, output digest
   mismatches and unsafe generated-source child path changes fall back to full analysis,
   and cache files remain non-evidence execution metadata.
+- Fixed an incremental cache/resource-config parity edge case by keeping standard
+  resource roots and supported resource config files reached through symlinked path
+  segments out of full resource-config discovery. This preserves the documented
+  no-symlink policy and prevents validated cache hits from retaining stale config-file
+  facts after symlink removal or retargeting.
 
 ## [1.3.0] - 2026-06-15
 
