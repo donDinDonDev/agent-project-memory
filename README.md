@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.3.0`. Its release artifact is
-`agent-project-memory-1.3.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.4.0`. Its release artifact is
+`agent-project-memory-1.4.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.3.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.4.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -102,7 +102,7 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
-v1.4.0 release-candidate builds also support opt-in incremental scan mode:
+v1.4.0 release builds also support opt-in incremental scan mode:
 
 ```sh
 java -jar target/agent-project-memory-1.4.0.jar scan /path/to/java-spring-project --incremental
@@ -417,14 +417,13 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.3.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current source tree is prepared for `v1.4.0` release-candidate review, and
-local builds produce `target/agent-project-memory-1.4.0.jar`. Normal generated
-`project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.4
-incremental cache expansion is additive: existing Maven, Gradle, source-visible output,
-generated-source metadata, agent profile artifacts, and evidence semantics are
-preserved, while opt-in `--incremental` scans may reuse an unchanged generated output
-set after strict metadata validation.
+The latest published release is `v1.4.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds also produce `target/agent-project-memory-1.4.0.jar`. Normal
+generated `project-map.json` files use `schema_version: "1.0"` as a stable-line marker.
+The v1.4 incremental cache expansion is additive: existing Maven, Gradle,
+source-visible output, generated-source metadata, agent profile artifacts, and evidence
+semantics are preserved, while opt-in `--incremental` scans may reuse an unchanged
+generated output set after strict metadata validation.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring

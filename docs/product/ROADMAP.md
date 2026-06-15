@@ -2,10 +2,9 @@
 
 ## Current Status
 
-The latest published release is `v1.3.0`, with executable jar and `SHA256SUMS` assets.
-The current source tree is prepared for `v1.4.0` release-candidate review. Normal
-generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
-marker. The v1.4 incremental cache expansion is additive: Maven, Gradle,
+The latest published release is `v1.4.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as the
+stable-line marker. The v1.4 incremental cache expansion is additive: Maven, Gradle,
 source-visible output, generated-source metadata, agent profile artifacts, and evidence
 semantics are preserved, while opt-in `--incremental` scans may reuse an unchanged
 generated output set after strict metadata validation.
@@ -836,7 +835,7 @@ Non-goals:
 - Adding profile-driven project facts, evidence records, runtime claims, security
   correctness claims, or source/document body summaries.
 
-### v1.4.0: Incremental Scan And Performance (Release Candidate)
+### v1.4.0: Incremental Scan And Performance (Published)
 
 Product outcome: improve repeat scans for larger local Java/Spring repositories while
 preserving full-scan correctness, deterministic outputs, local-only operation, and the
@@ -844,7 +843,7 @@ existing evidence model.
 
 Current implementation status:
 
-- The incremental cache implementation is active in development builds. Opt-in
+- The incremental cache implementation is published in v1.4.0. Opt-in
   `scan <path> --incremental` validates `.project-memory/cache/v1/manifest.json`,
   `inputs.jsonl`, and `outputs.jsonl`; unchanged repository states can reuse the
   existing generated output set, while missing, stale, unsafe, corrupted, or mismatched
@@ -928,6 +927,8 @@ Release readiness notes:
   for the final release-prep diff.
 - No release-blocking security finding or bounded security-fix goal remains open for
   `v1.4.0`.
+- The `v1.4.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 Possible later tracks:
 

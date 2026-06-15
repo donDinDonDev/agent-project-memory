@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated post-release documentation status to mark `v1.4.0` as published with release
+  jar and checksum assets.
+
 ## [1.4.0] - 2026-06-15
 
 ### Added
