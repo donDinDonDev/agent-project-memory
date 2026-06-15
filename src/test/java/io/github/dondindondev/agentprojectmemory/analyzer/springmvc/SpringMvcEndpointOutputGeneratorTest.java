@@ -33,6 +33,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
       Pattern.DOTALL);
   private static final Pattern JSON_STRING = Pattern.compile("\"((?:\\\\.|[^\"\\\\])*)\"");
   private static final Pattern EVIDENCE_INDEX_ID = Pattern.compile("^\\{\"id\":\"([^\"]+)\"");
+  private static final Pattern MARKDOWN_EVIDENCE_ID = Pattern.compile("`(ev:[^`]+)`");
 
   @TempDir
   private Path tempDir;
@@ -106,7 +107,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
-  void defaultScanDoesNotWriteAgentProfileArtifacts() throws Exception {
+  void defaultScanDoesNotWriteAgentProfileArtifactsAndKeepsBaseOutputsStable() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
     copyDirectory(fixtureRoot(), projectPath);
@@ -119,11 +120,23 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(0, result.profileCount()),
+        () -> assertEquals(
+            expected("project-map.json"),
+            Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(
+            expected("evidence-index.jsonl"),
+            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(
+            expected("endpoints.md"),
+            Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(
+            expected("agent-guide.md"),
+            Files.readString(outputDirectory.resolve("agent-guide.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
   }
 
   @Test
-  void agentProfileArtifactFoundationMatchesGoldenFiles() throws Exception {
+  void agentProfileDeterministicContentMatchesGoldenFiles() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
     Path profileDirectory = outputDirectory.resolve("agent-profiles");
@@ -156,6 +169,34 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             Files.readString(expectedProfileDirectory.resolve("generic.md")),
             Files.readString(profileDirectory.resolve("generic.md"))));
+  }
+
+  @Test
+  void agentProfileMarkdownReferencesOnlyExistingEvidenceRecords() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(
+        projectPath,
+        outputDirectory,
+        ScanConfiguration.defaultsOnly(),
+        AgentOutputProfile.canonicalOrder());
+
+    Set<String> evidenceIndexIds = evidenceIndexIds(
+        Files.readString(outputDirectory.resolve("evidence-index.jsonl")));
+    Set<String> profileEvidenceIds = new HashSet<>();
+    for (AgentOutputProfile profile : AgentOutputProfile.canonicalOrder()) {
+      profileEvidenceIds.addAll(markdownEvidenceIds(
+          Files.readString(outputDirectory.resolve(profile.artifactPath()))));
+    }
+
+    assertAll(
+        () -> assertFalse(profileEvidenceIds.isEmpty()),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(profileEvidenceIds),
+            "Every profile Markdown evidence reference must exist in evidence-index.jsonl"));
   }
 
   @Test
@@ -2482,6 +2523,15 @@ final class SpringMvcEndpointOutputGeneratorTest {
       if (matcher.find()) {
         ids.add(matcher.group(1));
       }
+    }
+    return ids;
+  }
+
+  private Set<String> markdownEvidenceIds(String markdown) {
+    Set<String> ids = new HashSet<>();
+    var matcher = MARKDOWN_EVIDENCE_ID.matcher(markdown);
+    while (matcher.find()) {
+      ids.add(matcher.group(1));
     }
     return ids;
   }

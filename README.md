@@ -97,9 +97,10 @@ java -jar target/agent-project-memory-1.2.0.jar scan /path/to/java-spring-projec
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
 `--agent-profile` may be repeated, and duplicate selectors are idempotent. Profile
 selection is optional; a scan without `--agent-profile` keeps the default output set.
-The current profile foundation writes a generated-profile manifest and minimal selected
-profile placeholders under `.project-memory/agent-profiles/`. Full deterministic
-profile content generation remains future work.
+Current development builds write a generated-profile manifest and selected deterministic
+profile Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
+generated only from existing structured project facts and existing evidence references;
+it does not add project facts or evidence records.
 
 CLI exit codes are stable for automation:
 
@@ -191,8 +192,8 @@ also writes:
 <path>/.project-memory/agent-profiles/<selected-profile>.md
 ```
 
-Only selected profile Markdown placeholders are written. Unsupported directories that
-only prepare `.project-memory/` do not create orphan profile artifacts.
+Only selected profile Markdown files are written. Unsupported directories that only
+prepare `.project-memory/` do not create orphan profile artifacts.
 
 `project-map.json` is the minimal stable machine-readable project map. Current
 development output uses `schema_version: "1.0"` and includes redacted scan metadata for

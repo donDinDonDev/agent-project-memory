@@ -11,17 +11,18 @@ architecture documents.
 
 ### Added
 
-- Documented the planned v1.3 deterministic agent output profile contract, including
+- Documented the v1.3 deterministic agent output profile contract, including
   supported `codex`, `claude`, `cursor`, and `generic` profiles, opt-in profile
-  generation, planned profile artifact names under `.project-memory/agent-profiles/`,
+  generation, profile artifact names under `.project-memory/agent-profiles/`,
   no default repository-file modification, profile validation expectations, and the
   evidence decision that profile artifacts reference existing evidence without creating
   new evidence records.
-- Implemented the opt-in agent profile artifact foundation with repeatable
+- Implemented opt-in deterministic agent profile artifacts with repeatable
   `scan <path> --agent-profile <profile>` selection for `codex`, `claude`, `cursor`,
   `generic`, and `all`, idempotent duplicate selectors, `agent-profiles/manifest.json`,
-  minimal selected profile Markdown placeholders, unchanged no-profile default output,
-  and no `project-map.json` or `evidence-index.jsonl` semantic changes.
+  selected profile-specific Markdown content generated from existing structured facts
+  and evidence references, unchanged no-profile default output, and no
+  `project-map.json` or `evidence-index.jsonl` semantic changes.
 
 ## [1.2.0] - 2026-06-15
 

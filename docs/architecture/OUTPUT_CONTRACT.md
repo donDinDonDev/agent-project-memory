@@ -21,11 +21,13 @@ or Gradle module roots, supported root source, test, or resource roots, supporte
 files, or Maven/Gradle module warnings are detected. Unsupported directories still only
 get a prepared `.project-memory/` directory and do not get contract output files.
 When `--agent-profile` is selected and the scan writes the base contract files, the
-current v1.3 development profile foundation also writes
-`.project-memory/agent-profiles/manifest.json` and minimal selected profile Markdown
-placeholders under `.project-memory/agent-profiles/`. A scan without
-`--agent-profile` does not create profile artifacts, and unsupported directories that
-only prepare `.project-memory/` do not create orphan profile artifacts.
+current v1.3 development profile layer also writes
+`.project-memory/agent-profiles/manifest.json` and selected deterministic profile
+Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is generated
+from existing structured project facts and existing evidence references only. A scan
+without `--agent-profile` does not create profile artifacts, and unsupported
+directories that only prepare `.project-memory/` do not create orphan profile
+artifacts.
 
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
@@ -3549,11 +3551,11 @@ Stop conditions for implementation:
 
 ### v1.3 Agent Output Profiles Contract
 
-This section defines the current v1.3 development agent profile artifact foundation and
-the planned profile content boundary. The implemented foundation supports deterministic,
-opt-in profile selection, writes a generated-profile manifest, and writes minimal
-selected profile Markdown placeholders. Full deterministic profile content generation is
-future v1.3 work until a release note documents that content surface.
+This section defines the current v1.3 development agent profile artifact layer and
+profile content boundary. The implemented layer supports deterministic, opt-in profile
+selection, writes a generated-profile manifest, and writes selected profile-specific
+Markdown presentations generated from existing structured facts and evidence
+references.
 
 The v1.3 policy decision is deterministic, opt-in profile presentation:
 
@@ -3673,16 +3675,13 @@ Manifest rules:
 
 Profile Markdown content boundary:
 
-- The current foundation profile Markdown files are minimal deterministic placeholders.
-  They establish stable artifact paths, state that full deterministic profile content is
-  future work, and restate the existing-evidence-only policy.
-- The planned content generator may add profile-specific reading order, copyable
-  snippets, concise evidence-visible orientation, known limits, and practical
-  inspection guidance within the boundaries below.
-
+- Profile Markdown files include profile-specific operating notes, generated artifact
+  reading order, source artifact orientation, a compact project snapshot,
+  evidence-visible fact pointers, a fact-boundary map, and profile-specific checklist
+  guidance.
 - Common content may include a profile-specific reading order for generated
-  project-memory artifacts, a copyable prompt or instruction snippet, concise
-  evidence-visible orientation, known limits, and practical inspection guidance.
+  project-memory artifacts, concise evidence-visible orientation, known limits, and
+  practical inspection guidance.
 - Profile-specific differences are limited to wording, heading structure, reading order,
   and copyable snippets tailored to the selected agent. They must not alter underlying
   fact meanings or evidence requirements.

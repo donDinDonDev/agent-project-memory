@@ -118,6 +118,7 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningFact;
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
+import io.github.dondindondev.agentprojectmemory.generator.AgentProfileMarkdownGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -454,6 +455,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final DocumentReconciliationAnalyzer documentReconciliationAnalyzer =
       new DocumentReconciliationAnalyzer();
   private final AgentGuideGenerator agentGuideGenerator;
+  private final AgentProfileMarkdownGenerator agentProfileMarkdownGenerator =
+      new AgentProfileMarkdownGenerator();
 
   public SpringMvcEndpointOutputGenerator() {
     this(
@@ -730,7 +733,10 @@ public final class SpringMvcEndpointOutputGenerator {
     generatedOutputFiles.add(new GeneratedOutputFile(
         AGENT_GUIDE_FILE_NAME,
         agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl)));
-    generatedOutputFiles.addAll(agentProfileOutputFiles(selectedAgentProfiles));
+    generatedOutputFiles.addAll(agentProfileOutputFiles(
+        selectedAgentProfiles,
+        projectMapJson,
+        evidenceIndexJsonl));
 
     writeGeneratedFiles(
         canonicalRepositoryRoot,
@@ -6601,7 +6607,10 @@ public final class SpringMvcEndpointOutputGenerator {
     return List.copyOf(canonicalProfiles);
   }
 
-  private List<GeneratedOutputFile> agentProfileOutputFiles(List<AgentOutputProfile> profiles) {
+  private List<GeneratedOutputFile> agentProfileOutputFiles(
+      List<AgentOutputProfile> profiles,
+      String projectMapJson,
+      String evidenceIndexJsonl) throws IOException {
     if (profiles.isEmpty()) {
       return List.of();
     }
@@ -6613,7 +6622,7 @@ public final class SpringMvcEndpointOutputGenerator {
     for (AgentOutputProfile profile : profiles) {
       files.add(new GeneratedOutputFile(
           profile.artifactPath(),
-          agentProfilePlaceholderMarkdown(profile)));
+          agentProfileMarkdownGenerator.generate(profile, projectMapJson, evidenceIndexJsonl)));
     }
     return List.copyOf(files);
   }
@@ -6648,23 +6657,6 @@ public final class SpringMvcEndpointOutputGenerator {
     manifest.append("  ]\n");
     manifest.append("}\n");
     return manifest.toString();
-  }
-
-  private String agentProfilePlaceholderMarkdown(AgentOutputProfile profile) {
-    return """
-        # %s Agent Profile
-
-        Generated deterministically as an opt-in agent profile artifact foundation.
-
-        This placeholder establishes the stable artifact path for `%s`. Full deterministic
-        profile content generation is planned for a later v1.3 implementation step.
-
-        ## Evidence Policy
-
-        - References existing evidence only.
-        - Does not create project facts or evidence records.
-        - Use `project-map.json` and `evidence-index.jsonl` as the machine-readable source artifacts.
-        """.formatted(profile.displayName(), profile.selector());
   }
 
   private void writeGeneratedFiles(

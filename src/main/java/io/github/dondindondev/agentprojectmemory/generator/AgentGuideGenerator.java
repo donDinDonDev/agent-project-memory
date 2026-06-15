@@ -10,11 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.StringJoiner;
 
 public final class AgentGuideGenerator {
   private static final ObjectMapper JSON = new ObjectMapper();
-  private static final int MAX_INLINE_EVIDENCE_REFERENCES = 5;
   private static final int MAX_INLINE_INSPECTION_PATHS = 5;
   private static final int MAX_INLINE_BUILD_CONFIG_ITEMS = 5;
   private static final int MAX_INLINE_DOCUMENT_REFS = 3;
@@ -2937,29 +2935,7 @@ public final class AgentGuideGenerator {
   }
 
   private List<String> evidenceIdsInSubtree(JsonNode node) {
-    LinkedHashSet<String> ids = new LinkedHashSet<>();
-    collectEvidenceIds(node, ids);
-    return List.copyOf(ids);
-  }
-
-  private void collectEvidenceIds(JsonNode node, LinkedHashSet<String> ids) {
-    if (node == null || node.isMissingNode() || node.isNull()) {
-      return;
-    }
-    if (node.isObject()) {
-      node.fields().forEachRemaining(entry -> {
-        if (entry.getKey().endsWith("evidence_ids") && entry.getValue().isArray()) {
-          ids.addAll(stringValues(entry.getValue()));
-        }
-        collectEvidenceIds(entry.getValue(), ids);
-      });
-      return;
-    }
-    if (node.isArray()) {
-      for (JsonNode child : node) {
-        collectEvidenceIds(child, ids);
-      }
-    }
+    return EvidenceReferenceRenderer.evidenceIdsInSubtree(node);
   }
 
   private void appendOmittedBuildConfigItems(
@@ -2979,44 +2955,7 @@ public final class AgentGuideGenerator {
   }
 
   private Map<String, EvidenceRecord> evidenceById(String evidenceIndexJsonl) throws IOException {
-    Map<String, EvidenceRecord> evidenceById = new LinkedHashMap<>();
-    for (String line : physicalJsonlLines(evidenceIndexJsonl)) {
-      if (line.isBlank()) {
-        continue;
-      }
-      JsonNode evidence = JSON.readTree(line);
-      EvidenceRecord record = new EvidenceRecord(
-          text(evidence, "id"),
-          nullableText(evidence, "path"),
-          nullableInteger(evidence, "line_start"),
-          nullableInteger(evidence, "line_end"),
-          nullableText(evidence, "symbol_name"));
-      evidenceById.put(record.id(), record);
-    }
-    return evidenceById;
-  }
-
-  private List<String> physicalJsonlLines(String jsonl) {
-    List<String> lines = new ArrayList<>();
-    int start = 0;
-    for (int index = 0; index < jsonl.length(); index++) {
-      if (jsonl.charAt(index) == '\n') {
-        int end = index;
-        if (end > start && jsonl.charAt(end - 1) == '\r') {
-          end--;
-        }
-        lines.add(jsonl.substring(start, end));
-        start = index + 1;
-      }
-    }
-    if (start < jsonl.length()) {
-      int end = jsonl.length();
-      if (end > start && jsonl.charAt(end - 1) == '\r') {
-        end--;
-      }
-      lines.add(jsonl.substring(start, end));
-    }
-    return lines;
+    return EvidenceReferenceRenderer.evidenceById(evidenceIndexJsonl);
   }
 
   private List<String> evidenceIdsWithSymbol(
@@ -3061,9 +3000,7 @@ public final class AgentGuideGenerator {
   }
 
   private List<String> evidencePaths(JsonNode node, Map<String, EvidenceRecord> evidenceById) {
-    LinkedHashSet<String> paths = new LinkedHashSet<>();
-    collectEvidencePaths(node, evidenceById, paths);
-    return List.copyOf(paths);
+    return EvidenceReferenceRenderer.evidencePaths(node, evidenceById);
   }
 
   private List<String> hiddenHttpWarningEvidencePaths(
@@ -3076,38 +3013,10 @@ public final class AgentGuideGenerator {
     }
     for (JsonNode warning : items) {
       if ("hidden_http_surface".equals(text(warning, "category"))) {
-        collectEvidencePaths(warning, evidenceById, paths);
+        paths.addAll(EvidenceReferenceRenderer.evidencePaths(warning, evidenceById));
       }
     }
     return List.copyOf(paths);
-  }
-
-  private void collectEvidencePaths(
-      JsonNode node,
-      Map<String, EvidenceRecord> evidenceById,
-      LinkedHashSet<String> paths) {
-    if (node == null || node.isMissingNode() || node.isNull()) {
-      return;
-    }
-    if (node.isObject()) {
-      node.fields().forEachRemaining(entry -> {
-        if (entry.getKey().endsWith("evidence_ids") && entry.getValue().isArray()) {
-          for (String id : stringValues(entry.getValue())) {
-            EvidenceRecord evidence = evidenceById.get(id);
-            if (evidence != null && evidence.path() != null && !evidence.path().isBlank()) {
-              paths.add(evidence.path());
-            }
-          }
-        }
-        collectEvidencePaths(entry.getValue(), evidenceById, paths);
-      });
-      return;
-    }
-    if (node.isArray()) {
-      for (JsonNode child : node) {
-        collectEvidencePaths(child, evidenceById, paths);
-      }
-    }
   }
 
   private void appendPathHint(StringBuilder markdown, List<String> paths) {
@@ -3119,16 +3028,6 @@ public final class AgentGuideGenerator {
         paths,
         MAX_INLINE_INSPECTION_PATHS,
         "evidence paths"));
-  }
-
-  private void appendOmittedEvidenceSuffix(StringBuilder markdown, int omittedCount) {
-    if (omittedCount <= 0) {
-      return;
-    }
-    markdown.append(", ... and ")
-        .append(omittedCount)
-        .append(" more evidence references in ")
-        .append(code("evidence-index.jsonl"));
   }
 
   private String cappedCodeList(
@@ -3149,29 +3048,10 @@ public final class AgentGuideGenerator {
         + code("evidence-index.jsonl");
   }
 
-  private String evidenceReference(String id, Map<String, EvidenceRecord> evidenceById) {
-    EvidenceRecord evidence = evidenceById.get(id);
-    if (evidence == null) {
-      return code(id) + " (unresolved evidence record)";
-    }
-    return code(evidence.location()) + " (" + code(id) + ")";
-  }
-
   private String evidenceReferenceList(
       List<String> ids,
       Map<String, EvidenceRecord> evidenceById) {
-    if (ids.isEmpty()) {
-      return "none recorded";
-    }
-
-    int visibleCount = Math.min(ids.size(), MAX_INLINE_EVIDENCE_REFERENCES);
-    StringJoiner joiner = new StringJoiner(", ");
-    for (int i = 0; i < visibleCount; i++) {
-      joiner.add(evidenceReference(ids.get(i), evidenceById));
-    }
-    StringBuilder references = new StringBuilder(joiner.toString());
-    appendOmittedEvidenceSuffix(references, ids.size() - visibleCount);
-    return references.toString();
+    return EvidenceReferenceRenderer.evidenceReferenceList(ids, evidenceById);
   }
 
   private String text(JsonNode node, String fieldName) {
@@ -3188,14 +3068,6 @@ public final class AgentGuideGenerator {
       return null;
     }
     return value.asText();
-  }
-
-  private Integer nullableInteger(JsonNode node, String fieldName) {
-    JsonNode value = node.path(fieldName);
-    if (value.isMissingNode() || value.isNull()) {
-      return null;
-    }
-    return value.asInt();
   }
 
   private List<String> stringValues(JsonNode values) {
@@ -3279,26 +3151,6 @@ public final class AgentGuideGenerator {
   private record SpringSurfaceWarningFact(
       String warningId,
       JsonNode warning) {
-  }
-
-  private record EvidenceRecord(
-      String id,
-      String path,
-      Integer lineStart,
-      Integer lineEnd,
-      String symbolName) {
-    private String location() {
-      if (path == null || path.isBlank()) {
-        return "unknown-source";
-      }
-      if (lineStart == null) {
-        return path;
-      }
-      if (lineEnd == null || lineEnd.equals(lineStart)) {
-        return path + ":" + lineStart;
-      }
-      return path + ":" + lineStart + "-" + lineEnd;
-    }
   }
 
   private record ModuleInfo(

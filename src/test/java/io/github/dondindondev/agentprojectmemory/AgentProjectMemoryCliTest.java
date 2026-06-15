@@ -251,7 +251,7 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanWithSingleAgentProfileWritesManifestAndSelectedPlaceholderOnly() throws Exception {
+  void scanWithSingleAgentProfileWritesManifestAndSelectedDeterministicContent() throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
           <modelVersion>4.0.0</modelVersion>
@@ -279,7 +279,9 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(manifest.contains(
             "\"evidence_policy\": \"references_existing_evidence_only\"")),
         () -> assertTrue(codexProfile.contains("# Codex Agent Profile")),
-        () -> assertTrue(codexProfile.contains("Does not create project facts or evidence records.")));
+        () -> assertTrue(codexProfile.contains("## Project Snapshot")),
+        () -> assertTrue(codexProfile.contains("## Evidence-Visible Fact Pointers")),
+        () -> assertTrue(codexProfile.contains("does not add evidence records")));
   }
 
   @Test
