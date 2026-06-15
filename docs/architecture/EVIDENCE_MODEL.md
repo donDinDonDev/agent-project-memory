@@ -1188,6 +1188,58 @@ Any future profile feature that changes evidence shape or treats profile output 
 evidence source must update this document and `OUTPUT_CONTRACT.md` before
 implementation.
 
+### Planned v1.4 Incremental Cache Evidence Decision
+
+The planned v1.4 incremental cache layer does not add evidence types, evidence fields,
+evidence records, confidence labels, excerpt semantics, path semantics, or tool-config
+evidence.
+
+Cache state is execution metadata, not project evidence:
+
+- Cache files under `.project-memory/cache/v1/` are not evidence sources.
+- Cache manifests, input fingerprints, output fingerprints, cache hits, cache misses,
+  invalidation decisions, output digests, cache corruption observations, unsafe-cache
+  observations, generated Markdown, diagnostics, timing observations, downstream agent
+  output, chat output, and LLM output are not evidence for project facts or relations.
+- Cache metadata may help decide whether existing generated output files can be reused
+  for an unchanged repository state, but it must not create, strengthen, replace,
+  suppress, or weaken evidence for generated facts.
+- A generated fact reused through a validated cache hit must still point to the same
+  source-backed `evidence-index.jsonl` records that a full scan for the same repository
+  state and selected options would emit.
+- Cache metadata must not be referenced from `evidence_ids`, and diagnostic item IDs
+  for cache miss, corruption, or unsafe-cache conditions must not appear in
+  `evidence_ids`.
+
+Allowed cache metadata remains non-evidence:
+
+- Normalized repository-relative paths, `.project-memory`-relative output paths,
+  SHA-256 hashes, byte counts, schema markers, tool-version matching metadata,
+  canonical selected profile names, and redacted config/option matching status are
+  cache validation inputs only.
+- A file hash or output digest does not prove a Java symbol, annotation, endpoint,
+  OpenAPI operation, document heading, test relation, configuration value, generated
+  source content, runtime behavior, security correctness, vulnerability, business
+  priority, or source/document agreement.
+- The selected scan config remains execution metadata. Its path and hash may participate
+  in cache invalidation, but the config file still does not create tool-config evidence.
+
+Cache-sensitive-data boundaries:
+
+- Cache metadata must not store source bodies, local document bodies, config contents,
+  raw build-script bodies, generated-source contents, generated Markdown bodies, raw
+  command logs, stack traces, raw include/exclude patterns, environment variables,
+  decrypted values, credentials, tokens, secret-looking values, local absolute paths,
+  downstream agent output, or LLM output.
+- Generated-source roots remain metadata-only in the planned v1.4 cache boundary. Cache
+  fingerprints must not read or cite files under generated-source roots unless a later
+  explicit generated-source content scan contract updates this document and
+  `OUTPUT_CONTRACT.md`.
+
+Any future cache feature that treats cache entries, generated outputs, timing data,
+diagnostics, or output digests as evidence must update this document and
+`OUTPUT_CONTRACT.md` before implementation.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

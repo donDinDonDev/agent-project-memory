@@ -3741,6 +3741,280 @@ Stop conditions for implementation:
   hardlink handling, evidence-reference rendering, or Markdown-safe rendering are
   unclear.
 
+### Planned v1.4 Incremental Cache Contract
+
+This section defines the planned v1.4 incremental cache boundary before implementation.
+The current v1.3 implementation does not have persistent cache files, a cache command,
+or incremental reuse behavior.
+
+The v1.4 policy decision is optional metadata-only cache-assisted reuse:
+
+- Full scan remains the compatibility baseline. A normal `scan <path>` without the
+  incremental selector runs full analysis and does not require, read, write, delete, or
+  trust cache state.
+- The planned public selector is `scan <path> --incremental`. Root-local YAML config
+  does not enable incremental scans in the initial v1.4 design, and there is no separate
+  cache command, clean command, daemon, background service, remote cache, telemetry,
+  network access, or connector behavior.
+- The first incremental run for a repository state is a cache miss and warm-up: it runs
+  normal full analysis, writes the normal generated output set, then writes cache
+  metadata only after successful output generation.
+- A later incremental run may skip full analysis only when cache schema, tool version,
+  selected CLI options, selected config, selected agent profiles, input fingerprints,
+  and existing generated output fingerprints all match the current repository state.
+- The initial v1.4 reuse granularity is the whole generated output set for an unchanged
+  repository state. Partial per-module, per-analyzer, per-source-file, or per-section
+  fact reuse is out of scope for the initial v1.4 contract.
+- Any changed, added, deleted, renamed, unreadable, unsafe, unsupported, stale,
+  corrupted, schema-mismatched, option-mismatched, config-mismatched,
+  profile-mismatched, tool-version-mismatched, or otherwise unclear cache state fails
+  closed to normal full analysis. A successful full analysis may refresh cache metadata.
+
+Schema and compatibility decisions:
+
+- v1.4 incremental cache support is an additive `schema_version: "1.0"`
+  compatibility expansion, not a project-map schema marker migration.
+- The same base generated files remain under `.project-memory/`:
+  `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`.
+- Optional profile artifacts remain governed by the v1.3 profile contract under
+  `.project-memory/agent-profiles/`.
+- `project-map.json` does not gain cache-hit, cache-miss, timing, output-digest, or
+  incremental-reuse fields in the planned v1.4 design. This keeps byte-for-byte output
+  parity possible between full scan output and a validated incremental cache hit.
+- `evidence-index.jsonl` field shape and evidence semantics are unchanged. Cache files,
+  cache hits or misses, fingerprints, invalidation decisions, output digests, generated
+  Markdown, diagnostics, timing observations, and LLM output are not evidence.
+- Incremental cache metadata is implementation-owned generated metadata for
+  `agent-project-memory`; downstream consumers should keep using `project-map.json` and
+  `evidence-index.jsonl` as the stable machine-readable project-memory surface.
+
+Planned cache artifact layout:
+
+```text
+.project-memory/
+  cache/
+    v1/
+      manifest.json
+      inputs.jsonl
+      outputs.jsonl
+```
+
+Cache path and ownership rules:
+
+- The generator owns only `.project-memory/cache/v1/manifest.json`,
+  `.project-memory/cache/v1/inputs.jsonl`, and
+  `.project-memory/cache/v1/outputs.jsonl` for the initial v1.4 cache contract.
+- Implementations may use temporary files under `.project-memory/cache/v1/` while
+  writing those three owned files, but temporary files must not become part of the
+  stable cache contract and should be removed after successful replacement or failure
+  cleanup.
+- Cache paths are fixed. They must not be configurable to arbitrary repository paths,
+  absolute paths, paths outside `.project-memory/`, or paths outside the scanned
+  repository root.
+- Cache paths must remain normalized slash-separated `.project-memory`-relative paths.
+  They must not be absolute, start with `./`, contain `.` or `..` path segments after
+  normalization, use backslash separators, or escape `.project-memory/cache/v1/`.
+- Cache files and parent directories must not be followed through symlinks. Unsafe,
+  symlinked, escaping, or multi-link cache targets must not be read as trusted cache
+  state and must not be overwritten as cache files. Incremental mode should fall back
+  to full analysis and skip cache refresh until the unsafe cache path is removed or made
+  safe.
+- Existing unrelated contents inside `.project-memory/` remain preserved. Unknown files
+  under `.project-memory/cache/` are ignored unless a later explicit cache cleanup
+  contract defines removal behavior.
+- Non-incremental full scans ignore existing cache state. They do not update cache
+  metadata unless a later explicit contract changes the default behavior.
+
+Planned `cache/v1/manifest.json` shape:
+
+```json
+{
+  "cache_schema_version": "1.0",
+  "project_map_schema_version": "1.0",
+  "cache_kind": "incremental_scan_metadata",
+  "reuse_granularity": "whole_output_set",
+  "fingerprint_algorithm": "sha256",
+  "input_fingerprints_path": "cache/v1/inputs.jsonl",
+  "output_fingerprints_path": "cache/v1/outputs.jsonl",
+  "tool_version": "1.4.0",
+  "option_fingerprint": "sha256:...",
+  "config_fingerprint": {
+    "status": "not_detected",
+    "path": null,
+    "sha256": null
+  },
+  "selected_profiles": [],
+  "evidence_policy": "cache_is_not_evidence",
+  "raw_values_serialized": false
+}
+```
+
+Manifest rules:
+
+- `cache_schema_version` is `"1.0"` for the initial cache metadata contract. Missing,
+  unknown, older, or newer cache schema versions are cache misses.
+- `project_map_schema_version` records the `project-map.json` schema marker expected by
+  the cached metadata. It does not define a new project-map schema.
+- `cache_kind` is `"incremental_scan_metadata"` for the initial cache files.
+- `reuse_granularity` is `"whole_output_set"` for the initial v1.4 design.
+- `fingerprint_algorithm` is `"sha256"`. Content-affecting file fingerprints must be
+  SHA-256 hashes over the exact file bytes read through the existing no-follow,
+  bounded, repository-contained input policy.
+- `input_fingerprints_path` and `output_fingerprints_path` are `.project-memory`-
+  relative paths to the two cache JSONL files.
+- `tool_version` records the CLI version used to write the cache metadata. A mismatch is
+  a cache miss.
+- `option_fingerprint` is a SHA-256 digest over a canonical representation of
+  cache-relevant CLI option state. It must not serialize raw command lines, local
+  absolute paths, raw config values, raw include/exclude patterns, credentials, tokens,
+  or environment values.
+- `config_fingerprint` records only redacted config matching metadata: selected config
+  status, safe normalized repository-relative config path when one is selected, and a
+  SHA-256 hash of the selected config file bytes when applicable. It must not serialize
+  config contents, YAML nodes, raw path rules, environment values, decrypted values,
+  credentials, tokens, or secret-looking values.
+- `selected_profiles` contains the canonical selected profile names after duplicate
+  selector normalization, sorted in the v1.3 canonical order. It is empty when no
+  profile artifacts are selected.
+- `raw_values_serialized` must be `false`.
+
+Planned `cache/v1/inputs.jsonl` shape:
+
+```json
+{"cache_schema_version":"1.0","path":"pom.xml","input_kind":"maven_pom","content_sha256":"sha256:...","size_bytes":123}
+{"cache_schema_version":"1.0","path":"src/main/java/com/example/App.java","input_kind":"java_source","content_sha256":"sha256:...","size_bytes":4567}
+{"cache_schema_version":"1.0","path":"target/generated-sources/openapi","input_kind":"generated_source_root_path","content_sha256":null,"size_bytes":null}
+```
+
+Input fingerprint rules:
+
+- `path` is a normalized repository-relative path. It must not be absolute, start with
+  `./`, contain `.` or `..` path segments after normalization, use backslash
+  separators, or escape the scan root.
+- `input_kind` identifies the cache-relevant input family, such as `maven_pom`,
+  `gradle_build_file`, `java_source`, `java_test_source`, `resource_config_file`,
+  `openapi_spec`, `local_markdown_document`, `scan_config`, or
+  `generated_source_root_path`.
+- Content-affecting regular-file inputs use `content_sha256` and `size_bytes`.
+  Directory or path-presence observations that are already metadata-only, such as
+  generated-source root path presence, use `content_sha256: null` and
+  `size_bytes: null`.
+- File modification times are not part of the serialized cache contract and must not be
+  the sole authority for cache hits.
+- The fingerprinted input set must include every source, build, spec, local Markdown,
+  supported config, selected scan config, generated-source path observation, and other
+  local input class that can affect the generated output set or bounded diagnostics
+  under the selected options.
+- Generated-source root fingerprints remain path-presence metadata only. The cache
+  contract must not read or fingerprint files under generated-source roots.
+
+Planned `cache/v1/outputs.jsonl` shape:
+
+```json
+{"cache_schema_version":"1.0","path":"project-map.json","output_kind":"project_map","content_sha256":"sha256:...","size_bytes":12345}
+{"cache_schema_version":"1.0","path":"agent-profiles/codex.md","output_kind":"agent_profile_markdown","content_sha256":"sha256:...","size_bytes":6789}
+```
+
+Output fingerprint rules:
+
+- `path` is `.project-memory`-relative and must point only to artifacts generated for
+  the selected scan option set.
+- Base output fingerprints cover `project-map.json`, `evidence-index.jsonl`,
+  `endpoints.md`, and `agent-guide.md`.
+- When agent profiles are selected, output fingerprints also cover
+  `agent-profiles/manifest.json` and the selected profile Markdown files.
+- Unselected profile files are not part of the selected generated output set. They
+  remain governed by the existing `.project-memory/` preservation behavior and must not
+  influence cache hits for no-profile scans.
+- Cache hit validation must verify that every selected output file exists, is safe to
+  read, and has the expected SHA-256 digest and size before skipping full analysis.
+
+Invalidation and fallback rules:
+
+- Cache validation must compare exact input fingerprint sets, exact selected output
+  fingerprint sets, cache schema, project-map schema marker, tool version, cache
+  relevant option fingerprint, selected config fingerprint, selected profile set, and
+  path-policy assumptions.
+- Cache validation must fail closed to full analysis on missing files, extra or missing
+  fingerprint records, duplicate fingerprint keys, invalid JSON, unknown fields whose
+  semantics are required for validation, hash mismatch, size mismatch, unsafe paths,
+  unreadable cache files, unreadable current inputs, path containment uncertainty,
+  symlink or hardlink uncertainty, candidate cap uncertainty, or any mismatch that the
+  implementation cannot prove safe.
+- A cache miss must not weaken source analysis, diagnostics, evidence resolution,
+  Markdown rendering, profile generation, or output writing. It should run the same full
+  analysis path as a non-incremental scan for the same selected options.
+- A scan that fails before normal output generation must not refresh cache metadata.
+- A cache hit must not rewrite generated project-memory outputs unless a later explicit
+  contract defines safe rewrite behavior. It may report a bounded CLI cache-hit summary.
+- Cache miss, invalidation, corruption, or unsafe-cache conditions may be reported in
+  concise CLI output, but generated `project-map.json`, `evidence-index.jsonl`,
+  `endpoints.md`, `agent-guide.md`, and profile Markdown must not serialize cache status
+  or timing data in the initial v1.4 design.
+
+Sensitive-data policy:
+
+- Cache metadata must not serialize source bodies, local document bodies, config
+  contents, raw build-script bodies, generated-source contents, generated Markdown
+  bodies, raw command logs, raw stack traces, raw include/exclude patterns, environment
+  variables, decrypted values, credentials, tokens, secret-looking values, local
+  absolute paths, timing measurements, downstream agent output, or LLM output.
+- Repository-relative paths, byte counts, SHA-256 digests, schema markers, tool version,
+  canonical profile names, redacted option/config matching status, and safe
+  `.project-memory`-relative cache/output paths are the maximum planned cache metadata
+  surface.
+
+CLI behavior:
+
+- Unknown `--incremental` combinations or malformed incremental usage should remain
+  usage errors with exit code `2`.
+- Invalid config remains exit code `4`; output generation or write errors remain exit
+  code `5`; unexpected internal errors remain exit code `1`.
+- Cache miss, cache corruption, stale cache, unsafe cache path, or output digest
+  mismatch should not be fatal by itself when full analysis can proceed safely. The scan
+  exits `0` if the fallback full analysis and output generation succeed.
+- CLI cache summaries must be deterministic and bounded. They must not print timing
+  measurements, local absolute paths, raw config values, raw command lines, source
+  excerpts, document bodies, generated output contents, credentials, tokens, or
+  secret-looking values.
+
+Validation requirements:
+
+- Focused tests for explicit incremental selection, normal no-incremental behavior,
+  cache path containment, symlink and hardlink cache paths, cache schema mismatch,
+  cache corruption, missing cache files, input fingerprint changes, file additions,
+  edits, deletions and renames, config/option/profile mismatch, output digest mismatch,
+  unsupported or unsafe paths, and unchanged-state cache hits.
+- Regression tests proving non-incremental full scan output remains stable and does not
+  depend on cache state.
+- Full scan versus incremental scan parity checks over the same repository state and
+  selected options, including selected profile artifacts where profiles are requested.
+- Cache content checks proving cache files contain only the allowed metadata surface.
+- Packaged CLI smoke for cache miss/warm-up, validated cache hit, stale cache fallback,
+  no-profile scans, and selected profile scans.
+- Risk-based review is required before release for implementation that changes cache
+  files, path containment, filesystem handling, CLI/config behavior, output paths,
+  output rendering, evidence references, or generated artifact ownership.
+
+Stop conditions for implementation:
+
+- Cache content would include source bodies, local document bodies, config contents,
+  raw build-script bodies, generated-source contents, generated Markdown bodies, raw
+  command logs, local absolute paths, credentials, tokens, secret-looking values, timing
+  measurements, downstream agent output, or LLM output.
+- Cache state could become evidence, replace source-backed evidence, suppress required
+  evidence generation, or strengthen extracted, inferred, uncertain, document-backed,
+  spec-backed, generated-source metadata-only, warning, or not-analyzed claims.
+- Incremental output cannot be proven byte-for-byte equal to full scan output for the
+  same repository state and selected options.
+- Cache path ownership, containment, symlink/hardlink behavior, overwrite behavior,
+  cleanup behavior, schema mismatch behavior, corruption handling, or invalidation is
+  unclear.
+- The implementation requires partial fact reuse, generated-source content scanning,
+  build execution, network access, remote cache, daemon/background service, telemetry,
+  connectors, repository chat, generic RAG, LLM calls in the core analyzer, automatic
+  code modification, or release automation.
+
 ### v0.9 CLI And Scan Configuration Contract
 
 This section defines the v0.9 public output boundary for CLI/config behavior. The v0.9

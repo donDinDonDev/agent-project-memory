@@ -835,9 +835,75 @@ Non-goals:
 - Adding profile-driven project facts, evidence records, runtime claims, security
   correctness claims, or source/document body summaries.
 
+### v1.4.0: Incremental Scan And Performance (Planned)
+
+Product outcome: improve repeat scans for larger local Java/Spring repositories while
+preserving full-scan correctness, deterministic outputs, local-only operation, and the
+existing evidence model.
+
+Planned contract boundary:
+
+- Full scan remains the compatibility baseline. A scan without the incremental selector
+  should continue to run normal full analysis and should not depend on cache state.
+- Incremental behavior is explicit and opt-in through the planned
+  `scan <path> --incremental` selector. Root-local YAML config does not enable
+  incremental scans in the initial design, and there is no daemon, remote cache, or
+  background service.
+- The initial v1.4 cache is metadata-only and repository-contained under
+  `.project-memory/cache/v1/`. It is not a new source of project facts.
+- The initial reuse model is whole-output-set reuse for unchanged repository states.
+  When cache metadata, selected CLI options, selected config, selected agent profiles,
+  input fingerprints, output fingerprints, schema, or tool-version expectations do not
+  match, incremental mode falls back to full analysis and refreshes cache metadata after
+  successful output generation.
+- Incremental output for the same repository state and selected options must byte-match
+  full scan output for the same generated artifact set. The planned contract does not
+  add cache-hit or timing fields to `project-map.json`.
+- Cache metadata may store normalized repository-relative paths, SHA-256 fingerprints,
+  byte counts, schema/tool/option/config/profile matching metadata, and generated output
+  digests. It must not store source bodies, local document bodies, config contents, raw
+  build-script bodies, generated-source contents, generated Markdown bodies, raw command
+  logs, timing measurements, local absolute paths, credentials, tokens, or
+  secret-looking values.
+- Cache files, fingerprints, cache hits or misses, invalidation decisions, output
+  digests, generated Markdown, diagnostics, timing observations, and LLM output are not
+  evidence. Generated project facts must continue to reference source-backed records in
+  `evidence-index.jsonl`.
+- Corrupt, missing, stale, unsafe, schema-mismatched, option-mismatched,
+  config-mismatched, profile-mismatched, tool-version-mismatched, or otherwise unclear
+  cache state must fail closed to full analysis.
+
+Non-goals:
+
+- Partial per-module, per-analyzer, or per-source-file fact reuse in the initial v1.4
+  design.
+- Source content caches, document body caches, config value caches, generated-source
+  content caches, raw output transcript caches, or cache files outside `.project-memory/`.
+- Generated-source content scanning, generator execution, Maven lifecycle execution,
+  Gradle task execution, dependency/plugin/task/repository resolution, effective build
+  model reconstruction, or source/spec implementation matching.
+- Connectors, network/auth, telemetry, SaaS, web UI, repository chat, generic RAG, LLM
+  calls in the core analyzer, automatic code modification, package-manager
+  publication, release automation, or artifact upload automation.
+
+Validation expectations before release:
+
+- Focused tests for cache path containment, schema/version mismatches, fingerprint
+  changes, file additions, edits, deletions and renames, unsafe paths, corruption,
+  config/option/profile mismatches, output digest mismatches, and unchanged-state cache
+  hits.
+- Regression tests proving normal full scan output remains stable when incremental mode
+  is not selected.
+- Full scan versus incremental scan parity checks for base outputs and selected agent
+  profile artifacts.
+- Cache content inspection proving cache metadata stays within the documented
+  sensitive-data boundary.
+- Packaged CLI evaluation on representative fixtures and larger local targets before
+  release, plus risk-based review for cache, path, filesystem, config, output, and
+  evidence-boundary behavior.
+
 Possible later tracks:
 
-- Incremental scan and performance.
 - Lightweight relation graph.
 - Local query/read-only explorer.
 - Security and secrets safety.

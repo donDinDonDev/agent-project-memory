@@ -11,6 +11,11 @@ architecture documents.
 
 ### Changed
 
+- Documented the planned v1.4 incremental cache design boundary: optional
+  cache-assisted incremental scans, fixed repository-local cache metadata paths,
+  fail-closed invalidation, full-scan output parity, cache-sensitive-data limits, and
+  the evidence decision that cache state is execution metadata rather than project
+  evidence.
 - Updated post-release documentation status to mark `v1.3.0` as published with release
   jar and checksum assets.
 
