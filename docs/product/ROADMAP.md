@@ -2,11 +2,11 @@
 
 ## Current Status
 
-The latest published release is `v1.2.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v1.3.0`, with executable jar and `SHA256SUMS` assets.
 Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The current v1.3.0 release-candidate profile expansion is
-additive: Maven, Gradle, source-visible output, generated-source metadata, and evidence
-semantics are preserved, while opt-in agent profile artifacts are generated as
+stable-line marker. The published v1.3.0 profile expansion is additive: Maven, Gradle,
+source-visible output, generated-source metadata, and evidence semantics are preserved,
+while opt-in agent profile artifacts are generated as
 deterministic presentations under `.project-memory/agent-profiles/`.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
@@ -21,18 +21,16 @@ The current release line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
 MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
 metadata, source-visible test and quality planning signals, default-scope local Markdown
-document inventory, generated-source/codegen metadata-only inventory, redacted scan
-metadata, safe root-local YAML config support, stable CLI help/version behavior, and a
-documented release-jar verification path. Current local release-candidate builds also
-include opt-in deterministic agent profile artifacts for supported coding-agent
-consumption.
+document inventory, generated-source/codegen metadata-only inventory, opt-in
+deterministic agent profile artifacts for supported coding-agent consumption, redacted
+scan metadata, safe root-local YAML config support, stable CLI help/version behavior,
+and a documented release-jar verification path.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The current v1.3 release-candidate expansion is agent output profiles, scoped
-as an additive v1.0-compatible output-contract expansion rather than a schema marker
-migration.
+started. The published v1.3 expansion is agent output profiles, scoped as an additive
+v1.0-compatible output-contract expansion rather than a schema marker migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -737,12 +735,12 @@ Validation expectations:
 - Public documentation, output contract, evidence model, changelog, and release notes
   must agree before release.
 
-### v1.3.0: Agent Output Profiles (Release Candidate)
+### v1.3.0: Agent Output Profiles (Published)
 
 Product outcome: add deterministic, opt-in agent-consumption profile artifacts while
 preserving the local-first core analyzer and the existing project-memory facts.
 
-Release-candidate contract decisions:
+Release contract decisions:
 
 - Supported canonical profile names are `codex`, `claude`, `cursor`, and `generic`.
   The selector value `all` may request every supported profile. No other aliases are
@@ -764,7 +762,7 @@ Release-candidate contract decisions:
 - The v1.3 profile surface is an additive `schema_version: "1.0"` compatibility
   expansion. The design does not add profile-generation fields to `project-map.json`,
   does not change `evidence-index.jsonl`, and does not create new evidence records.
-- The current implementation supports the opt-in profile selector, writes
+- The v1.3.0 implementation supports the opt-in profile selector, writes
   `agent-profiles/manifest.json`, and writes selected deterministic profile Markdown
   content generated from existing structured facts and evidence references.
 
@@ -801,10 +799,9 @@ Validation expectations:
 Implementation sequence:
 
 - Add the opt-in profile artifact and invocation foundation while preserving the default
-  no-profile scan behavior. (implemented in current development)
+  no-profile scan behavior. (implemented in v1.3.0)
 - Add deterministic profile content generation for the supported profile set from
-  existing structured facts and evidence references. (implemented in current
-  development)
+  existing structured facts and evidence references. (implemented in v1.3.0)
 - Evaluate profile outputs on representative generated project-memory outputs, then
   prepare release documentation only after artifact, content, compatibility, and
   validation expectations are satisfied. (complete)
@@ -825,6 +822,8 @@ Release readiness notes:
   audit, and risk-based release review for the final release-prep diff.
 - No release-blocking security finding or bounded security-fix goal remains open for
   `v1.3.0`.
+- The `v1.3.0` tag and GitHub release are published with the packaged jar and checksum
+  assets.
 
 Non-goals:
 

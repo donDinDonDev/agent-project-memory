@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.2.0`. Its release artifact is
-`agent-project-memory-1.2.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.3.0`. Its release artifact is
+`agent-project-memory-1.3.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.2.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.3.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -87,7 +87,7 @@ java -jar target/agent-project-memory-1.3.0.jar --version
 java -jar target/agent-project-memory-1.3.0.jar version
 ```
 
-Current v1.3 release-candidate builds also support opt-in agent profile artifact
+Published v1.3.0 builds also support opt-in agent profile artifact
 selection:
 
 ```sh
@@ -98,8 +98,8 @@ java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-projec
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
 `--agent-profile` may be repeated, and duplicate selectors are idempotent. Profile
 selection is optional; a scan without `--agent-profile` keeps the default output set.
-Current development builds write a generated-profile manifest and selected deterministic
-profile Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
+Profile selection writes a generated-profile manifest and selected deterministic profile
+Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
@@ -322,7 +322,7 @@ fact.
 
 Start here:
 
-- v1.3 release-candidate summary:
+- v1.3 release summary:
   [docs/product/V1_3_RELEASE_NOTES.md](docs/product/V1_3_RELEASE_NOTES.md).
 - v1.2 release summary: [docs/product/V1_2_RELEASE_NOTES.md](docs/product/V1_2_RELEASE_NOTES.md).
 - v1.1 release summary: [docs/product/V1_1_RELEASE_NOTES.md](docs/product/V1_1_RELEASE_NOTES.md).
@@ -378,13 +378,13 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.2.0`. It ships an executable jar and `SHA256SUMS`
-asset. Current local release-candidate builds produce
-`target/agent-project-memory-1.3.0.jar`. Normal generated `project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.3 agent profile expansion is
-additive: existing Maven, Gradle, source-visible output, generated-source metadata, and
-evidence semantics are preserved, while opt-in profile selection writes deterministic
-generated presentations under `.project-memory/agent-profiles/`.
+The latest published release is `v1.3.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds produce `target/agent-project-memory-1.3.0.jar`. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.3
+agent profile expansion is additive: existing Maven, Gradle, source-visible output,
+generated-source metadata, and evidence semantics are preserved, while opt-in profile
+selection writes deterministic generated presentations under
+`.project-memory/agent-profiles/`.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
