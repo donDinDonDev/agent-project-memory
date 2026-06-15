@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.springmvc;
 
+import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
@@ -120,6 +121,7 @@ import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.AtomicMoveNotSupportedException;
 import java.nio.file.Files;
@@ -196,6 +198,54 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String WARNING_CATEGORY_SPRING_SECURITY = "spring_security";
   private static final String WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED =
       "generated_source_root_path_detected";
+  private static final String GENERATED_SOURCE_CONTENT_STATUS_NOT_SCANNED = "not_scanned";
+  private static final String GENERATED_SOURCE_ORIGIN_METADATA_ONLY = "metadata_only";
+  private static final String GENERATED_SOURCE_DETECTION_BASIS_KNOWN_ROOT_PATH =
+      "known_generated_root_path";
+  private static final String GENERATED_SOURCE_MAVEN_ROOT_KIND = "maven_generated_sources";
+  private static final String GENERATED_SOURCE_MAVEN_TEST_ROOT_KIND = "maven_generated_test_sources";
+  private static final String GENERATED_SOURCE_GRADLE_ROOT_KIND = "gradle_generated_sources";
+  private static final String GENERATED_SOURCE_GRADLE_TEST_ROOT_KIND = "gradle_generated_test_sources";
+  private static final int MAX_GENERATED_SOURCE_ROOT_CANDIDATES = 256;
+  private static final String DIAGNOSTIC_GENERATED_SOURCE_ROOT_COUNT_CAP_REACHED =
+      "generated_source_root_count_cap_reached";
+  private static final String DIAGNOSTIC_GENERATED_SOURCE_ROOT_SKIPPED_UNSAFE_PATH =
+      "generated_source_root_skipped_unsafe_path";
+  private static final List<GeneratedSourceRootFamily> GENERATED_SOURCE_ROOT_FAMILIES = List.of(
+      new GeneratedSourceRootFamily(
+          "target/generated-sources",
+          GENERATED_SOURCE_MAVEN_ROOT_KIND,
+          GENERATED_SOURCE_MAVEN_TEST_ROOT_KIND,
+          "main",
+          "maven"),
+      new GeneratedSourceRootFamily(
+          "target/generated-test-sources",
+          GENERATED_SOURCE_MAVEN_TEST_ROOT_KIND,
+          GENERATED_SOURCE_MAVEN_TEST_ROOT_KIND,
+          "test",
+          "maven"),
+      new GeneratedSourceRootFamily(
+          "build/generated/sources",
+          GENERATED_SOURCE_GRADLE_ROOT_KIND,
+          GENERATED_SOURCE_GRADLE_TEST_ROOT_KIND,
+          "main",
+          "gradle"),
+      new GeneratedSourceRootFamily(
+          "build/generated/source",
+          GENERATED_SOURCE_GRADLE_ROOT_KIND,
+          GENERATED_SOURCE_GRADLE_TEST_ROOT_KIND,
+          "main",
+          "gradle"));
+  private static final Comparator<GeneratedSourceRootCandidate> GENERATED_SOURCE_ROOT_CANDIDATE_ORDER =
+      Comparator
+          .comparingInt(GeneratedSourceRootCandidate::moduleOrder)
+          .thenComparing(GeneratedSourceRootCandidate::path)
+          .thenComparing(GeneratedSourceRootCandidate::id);
+  private static final Comparator<GeneratedSourceRootItem> GENERATED_SOURCE_ROOT_ITEM_ORDER =
+      Comparator
+          .comparingInt(GeneratedSourceRootItem::moduleOrder)
+          .thenComparing(GeneratedSourceRootItem::path)
+          .thenComparing(GeneratedSourceRootItem::id);
   private static final Comparator<EvidenceRecord> EVIDENCE_ORDER = Comparator
       .comparing(EvidenceRecord::path)
       .thenComparing(record -> record.lineStart() == null ? Integer.MAX_VALUE : record.lineStart())
@@ -544,6 +594,10 @@ public final class SpringMvcEndpointOutputGenerator {
             () -> springBootApplicationAnalyzer.analyze(
                 normalizedRepositoryRoot,
                 layout.modules().items()));
+    GeneratedSourceRootDetection generatedSourceRootDetection = generatedSourceRootDetection(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        layout.modules());
     OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis = openApiSpecDiscoveryAnalyzer.analyze(
         normalizedRepositoryRoot,
         layout.modules().items());
@@ -566,6 +620,7 @@ public final class SpringMvcEndpointOutputGenerator {
         pluginAnalysis,
         resourceConfigAnalysis,
         springBootApplicationAnalysis,
+        generatedSourceRootDetection,
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
         documentDiscoveryAnalysis)) {
@@ -581,6 +636,10 @@ public final class SpringMvcEndpointOutputGenerator {
             mergedModuleWarnings(moduleDiscoveryAnalysis.warnings(), gradleDiscoveryAnalysis.warnings()),
             pluginAnalysis,
             openApiOperationAnalysis));
+    GeneratedSourceMetadata generatedSourceMetadata = generatedSourceMetadata(
+        generatedSourceRootDetection,
+        scan.warnings(),
+        pluginAnalysis);
     DocumentReconciliationAnalysis documentReconciliationAnalysis = scanConfiguration.localMarkdownEnabled()
         ? documentReconciliationAnalyzer.analyze(
             normalizedRepositoryRoot,
@@ -595,6 +654,7 @@ public final class SpringMvcEndpointOutputGenerator {
         metadataAnalysis,
         dependencyAnalysis,
         pluginAnalysis,
+        generatedSourceMetadata,
         javaSourceContext.diagnostics(),
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis);
@@ -609,6 +669,7 @@ public final class SpringMvcEndpointOutputGenerator {
         springBootApplicationAnalysis.evidence(),
         openApiSpecDiscoveryAnalysis.evidence(),
         openApiOperationAnalysis.evidence(),
+        generatedSourceMetadata.evidence(),
         documentDiscoveryAnalysis.evidence(),
         documentReconciliationAnalysis.evidence(),
         scan.endpointEvidence(),
@@ -630,6 +691,7 @@ public final class SpringMvcEndpointOutputGenerator {
         springBootApplicationAnalysis,
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
+        generatedSourceMetadata,
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis,
         scanConfiguration,
@@ -676,6 +738,7 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenPluginAnalysis pluginAnalysis,
       ResourceConfigAnalysis resourceConfigAnalysis,
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
+      GeneratedSourceRootDetection generatedSourceRootDetection,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
@@ -701,6 +764,8 @@ public final class SpringMvcEndpointOutputGenerator {
                 || ANALYSIS_ANALYZED.equals(resources.configFileAnalysisStatus()))
         || springBootApplicationAnalysis.modules().stream()
             .anyMatch(applications -> ANALYSIS_ANALYZED.equals(applications.analysisStatus()))
+        || !generatedSourceRootDetection.candidates().isEmpty()
+        || !generatedSourceRootDetection.diagnostics().isEmpty()
         || !openApiSpecDiscoveryAnalysis.specFiles().isEmpty()
         || !openApiOperationAnalysis.operations().isEmpty()
         || !openApiOperationAnalysis.warnings().isEmpty()
@@ -925,6 +990,420 @@ public final class SpringMvcEndpointOutputGenerator {
     if (value != null && !value.isBlank() && !values.contains(value)) {
       values.add(value);
     }
+  }
+
+  private GeneratedSourceRootDetection generatedSourceRootDetection(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      ProjectModules modules) {
+    BoundedCandidateSet<GeneratedSourceRootCandidate> candidates = new BoundedCandidateSet<>(
+        MAX_GENERATED_SOURCE_ROOT_CANDIDATES,
+        GENERATED_SOURCE_ROOT_CANDIDATE_ORDER,
+        candidate -> candidate.moduleId() + "|" + candidate.path());
+    Map<String, ScanDiagnostic> diagnostics = new LinkedHashMap<>();
+    Map<String, Integer> moduleOrder = moduleOrder(modules.items());
+    boolean analysisRan = false;
+
+    for (MavenModuleItem module : modules.items()) {
+      if (!MODULE_SUPPORTED.equals(module.supportStatus())) {
+        continue;
+      }
+      analysisRan = true;
+      for (GeneratedSourceRootFamily family : GENERATED_SOURCE_ROOT_FAMILIES) {
+        if (!familyAppliesToModule(family, module)) {
+          continue;
+        }
+        Path familyRoot = modulePath(repositoryRoot, module).resolve(family.path()).normalize();
+        addGeneratedSourceRootCandidate(
+            repositoryRoot,
+            canonicalRepositoryRoot,
+            module,
+            moduleOrder,
+            family,
+            familyRoot,
+            candidates,
+            diagnostics);
+        for (Path child : immediateGeneratedSourceChildDirectories(
+            repositoryRoot,
+            canonicalRepositoryRoot,
+            familyRoot,
+            diagnostics)) {
+          addGeneratedSourceRootCandidate(
+              repositoryRoot,
+              canonicalRepositoryRoot,
+              module,
+              moduleOrder,
+              family,
+              child,
+              candidates,
+              diagnostics);
+        }
+      }
+    }
+
+    if (candidates.capReached()) {
+      ScanDiagnostic diagnostic = generatedSourceRootCountCapDiagnostic();
+      diagnostics.putIfAbsent(diagnostic.id(), diagnostic);
+    }
+
+    List<GeneratedSourceRootCandidate> sortedCandidates = candidates.sorted();
+    Map<String, EvidenceRecord> evidence = new LinkedHashMap<>();
+    sortedCandidates.stream()
+        .map(candidate -> generatedSourceRootPathEvidence(candidate.path()))
+        .forEach(record -> evidence.putIfAbsent(record.id(), record));
+
+    return new GeneratedSourceRootDetection(
+        sortedCandidates,
+        evidence.values().stream().sorted(EVIDENCE_ORDER).toList(),
+        diagnostics.values().stream()
+            .sorted(Comparator.comparing(ScanDiagnostic::id))
+            .toList(),
+        analysisRan);
+  }
+
+  private boolean familyAppliesToModule(GeneratedSourceRootFamily family, MavenModuleItem module) {
+    if ("gradle".equals(family.buildSystem())) {
+      return hasGradleContribution(module);
+    }
+    return true;
+  }
+
+  private Path modulePath(Path repositoryRoot, MavenModuleItem module) {
+    if (".".equals(module.modulePath())) {
+      return repositoryRoot;
+    }
+    return repositoryRoot.resolve(module.modulePath()).normalize();
+  }
+
+  private void addGeneratedSourceRootCandidate(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      MavenModuleItem module,
+      Map<String, Integer> moduleOrder,
+      GeneratedSourceRootFamily family,
+      Path root,
+      BoundedCandidateSet<GeneratedSourceRootCandidate> candidates,
+      Map<String, ScanDiagnostic> diagnostics) {
+    Optional<GeneratedSourceRootCandidate> candidate = generatedSourceRootCandidate(
+        repositoryRoot,
+        canonicalRepositoryRoot,
+        module,
+        moduleOrder,
+        family,
+        root,
+        diagnostics);
+    if (candidate.isEmpty()) {
+      return;
+    }
+    GeneratedSourceRootCandidate detected = candidate.orElseThrow();
+    candidates.add(detected);
+  }
+
+  private Optional<GeneratedSourceRootCandidate> generatedSourceRootCandidate(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      MavenModuleItem module,
+      Map<String, Integer> moduleOrder,
+      GeneratedSourceRootFamily family,
+      Path root,
+      Map<String, ScanDiagnostic> diagnostics) {
+    if (!Files.exists(root, LinkOption.NOFOLLOW_LINKS)) {
+      return Optional.empty();
+    }
+    String relativePath = safeRepositoryRelativePath(repositoryRoot, root).orElse(null);
+    if (hasSymbolicLinkSegment(repositoryRoot, root)
+        || !ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, root)
+            .filter(Files::isDirectory)
+            .isPresent()) {
+      if (relativePath != null) {
+        ScanDiagnostic diagnostic = generatedSourceRootSkippedUnsafePathDiagnostic(relativePath);
+        diagnostics.putIfAbsent(diagnostic.id(), diagnostic);
+      }
+      return Optional.empty();
+    }
+    if (!Files.isDirectory(root, LinkOption.NOFOLLOW_LINKS) || relativePath == null) {
+      return Optional.empty();
+    }
+
+    String scope = generatedSourceScope(family, root);
+    String rootKind = generatedSourceRootKind(family, scope);
+    return Optional.of(new GeneratedSourceRootCandidate(
+        generatedSourceRootId(module.modulePath(), relativePath),
+        module.moduleId(),
+        moduleOrder.getOrDefault(module.moduleId(), Integer.MAX_VALUE),
+        module.modulePath(),
+        relativePath,
+        rootKind,
+        scope));
+  }
+
+  private List<Path> immediateGeneratedSourceChildDirectories(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path familyRoot,
+      Map<String, ScanDiagnostic> diagnostics) {
+    if (!Files.isDirectory(familyRoot, LinkOption.NOFOLLOW_LINKS)
+        || hasSymbolicLinkSegment(repositoryRoot, familyRoot)
+        || ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, familyRoot).isEmpty()) {
+      return List.of();
+    }
+    BoundedCandidateSet<Path> childDirectories = new BoundedCandidateSet<>(
+        MAX_GENERATED_SOURCE_ROOT_CANDIDATES,
+        Comparator.comparing(path -> safeRepositoryRelativePath(repositoryRoot, path).orElse("")),
+        path -> safeRepositoryRelativePath(repositoryRoot, path)
+            .orElseGet(() -> path.toAbsolutePath().normalize().toString()));
+    try (var paths = Files.list(familyRoot)) {
+      paths.forEach(path -> {
+        Optional<String> relativePath = safeRepositoryRelativePath(repositoryRoot, path);
+        if (relativePath.isEmpty()) {
+          return;
+        }
+        if (Files.isSymbolicLink(path)
+            || hasSymbolicLinkSegment(repositoryRoot, path)
+            || ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, path).isEmpty()) {
+          ScanDiagnostic diagnostic = generatedSourceRootSkippedUnsafePathDiagnostic(relativePath.orElseThrow());
+          diagnostics.putIfAbsent(diagnostic.id(), diagnostic);
+          return;
+        }
+        if (Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)) {
+          childDirectories.add(path);
+        }
+      });
+    } catch (IOException | SecurityException | UncheckedIOException exception) {
+      return List.of();
+    }
+    if (childDirectories.capReached()) {
+      ScanDiagnostic diagnostic = generatedSourceRootCountCapDiagnostic();
+      diagnostics.putIfAbsent(diagnostic.id(), diagnostic);
+    }
+    return childDirectories.sorted();
+  }
+
+  private String generatedSourceScope(GeneratedSourceRootFamily family, Path root) {
+    if ("test".equals(family.defaultScope())) {
+      return "test";
+    }
+    for (Path segment : root) {
+      if ("test".equals(segment.toString())) {
+        return "test";
+      }
+    }
+    return "main";
+  }
+
+  private String generatedSourceRootKind(GeneratedSourceRootFamily family, String scope) {
+    if ("test".equals(scope)) {
+      return family.testRootKind();
+    }
+    return family.mainRootKind();
+  }
+
+  private boolean hasSymbolicLinkSegment(Path repositoryRoot, Path path) {
+    Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path normalizedPath = path.toAbsolutePath().normalize();
+    if (!normalizedPath.startsWith(normalizedRepositoryRoot)) {
+      return true;
+    }
+
+    Path current = normalizedRepositoryRoot;
+    for (Path segment : normalizedRepositoryRoot.relativize(normalizedPath)) {
+      current = current.resolve(segment);
+      if (Files.isSymbolicLink(current)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private Optional<String> safeRepositoryRelativePath(Path repositoryRoot, Path path) {
+    Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path normalizedPath = path.toAbsolutePath().normalize();
+    if (!normalizedPath.startsWith(normalizedRepositoryRoot)) {
+      return Optional.empty();
+    }
+    Path relativePath = normalizedRepositoryRoot.relativize(normalizedPath);
+    for (Path segment : relativePath) {
+      String value = segment.toString();
+      if (value.isBlank() || ".".equals(value) || "..".equals(value) || value.contains("\\")) {
+        return Optional.empty();
+      }
+    }
+    return Optional.of(relativePath.toString().replace(path.getFileSystem().getSeparator(), "/"));
+  }
+
+  private EvidenceRecord generatedSourceRootPathEvidence(String path) {
+    return new EvidenceRecord(
+        "ev:" + idKey(path) + ":unknown:path_signal:" + WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED,
+        "path_signal",
+        path,
+        null,
+        null,
+        WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED,
+        null,
+        null,
+        "generated source root detected: " + path,
+        HIGH_CONFIDENCE);
+  }
+
+  private ScanDiagnostic generatedSourceRootCountCapDiagnostic() {
+    return new ScanDiagnostic(
+        "scan:diagnostic:generated_sources:" + DIAGNOSTIC_GENERATED_SOURCE_ROOT_COUNT_CAP_REACHED,
+        "warning",
+        DIAGNOSTIC_GENERATED_SOURCE_ROOT_COUNT_CAP_REACHED,
+        "generated_sources",
+        "Generated-source root metadata candidate cap reached; additional generated-source roots were omitted.",
+        null,
+        MAX_GENERATED_SOURCE_ROOT_CANDIDATES);
+  }
+
+  private ScanDiagnostic generatedSourceRootSkippedUnsafePathDiagnostic(String path) {
+    return new ScanDiagnostic(
+        "scan:diagnostic:generated_sources:"
+            + DIAGNOSTIC_GENERATED_SOURCE_ROOT_SKIPPED_UNSAFE_PATH
+            + ":"
+            + idKey(path),
+        "warning",
+        DIAGNOSTIC_GENERATED_SOURCE_ROOT_SKIPPED_UNSAFE_PATH,
+        "generated_sources",
+        "Generated-source root metadata path was skipped because it is unsafe or symlinked.",
+        path,
+        null);
+  }
+
+  private String generatedSourceRootId(String modulePath, String path) {
+    return "generated_source_root:module:" + idKey(modulePath) + ":path:" + idKey(path);
+  }
+
+  private String idKey(String value) {
+    byte[] bytes = value.getBytes(StandardCharsets.UTF_8);
+    StringBuilder key = new StringBuilder();
+    for (byte rawByte : bytes) {
+      int unsignedByte = rawByte & 0xFF;
+      char character = (char) unsignedByte;
+      if (isAllowedKeyCharacter(character)) {
+        key.append(character);
+      } else {
+        key.append('%')
+            .append(String.format(Locale.ROOT, "%02X", unsignedByte));
+      }
+    }
+    return key.toString();
+  }
+
+  private boolean isAllowedKeyCharacter(char character) {
+    return (character >= 'A' && character <= 'Z')
+        || (character >= 'a' && character <= 'z')
+        || (character >= '0' && character <= '9')
+        || character == '.'
+        || character == '_'
+        || character == '-'
+        || character == '~'
+        || character == '/'
+        || character == '{'
+        || character == '}';
+  }
+
+  private GeneratedSourceMetadata generatedSourceMetadata(
+      GeneratedSourceRootDetection rootDetection,
+      List<ModuleScopedWarningFact> warnings,
+      MavenPluginAnalysis pluginAnalysis) {
+    Map<String, List<ModuleScopedWarningFact>> rootWarningsByPath = generatedSourceRootWarningsByPath(warnings);
+    List<GeneratedSourceRootItem> roots = rootDetection.candidates().stream()
+        .map(candidate -> generatedSourceRootItem(candidate, rootWarningsByPath))
+        .sorted(GENERATED_SOURCE_ROOT_ITEM_ORDER)
+        .toList();
+    List<String> generatorWarningIds = generatedSourceGeneratorWarningIds(warnings);
+    List<String> mavenPluginIds = generatedSourceMavenPluginIds(pluginAnalysis);
+    String analysisStatus = rootDetection.analysisRan()
+        || !roots.isEmpty()
+        || !generatorWarningIds.isEmpty()
+        || !mavenPluginIds.isEmpty()
+        || !rootDetection.evidence().isEmpty()
+        ? ANALYSIS_ANALYZED
+        : ANALYSIS_NOT_DETECTED;
+    return new GeneratedSourceMetadata(
+        analysisStatus,
+        roots,
+        generatorWarningIds,
+        mavenPluginIds,
+        rootDetection.evidence(),
+        rootDetection.diagnostics());
+  }
+
+  private Map<String, List<ModuleScopedWarningFact>> generatedSourceRootWarningsByPath(
+      List<ModuleScopedWarningFact> warnings) {
+    Map<String, List<ModuleScopedWarningFact>> warningsByPath = new LinkedHashMap<>();
+    warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category()))
+        .filter(warning -> WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED.equals(warning.signal()))
+        .forEach(warning -> warningsByPath
+            .computeIfAbsent(warning.sourcePath(), ignored -> new ArrayList<>())
+            .add(warning));
+    warningsByPath.replaceAll((ignored, values) -> values.stream()
+        .sorted(WARNING_ORDER)
+        .toList());
+    return warningsByPath;
+  }
+
+  private GeneratedSourceRootItem generatedSourceRootItem(
+      GeneratedSourceRootCandidate candidate,
+      Map<String, List<ModuleScopedWarningFact>> rootWarningsByPath) {
+    List<ModuleScopedWarningFact> relatedWarnings = rootWarningsByPath.getOrDefault(candidate.path(), List.of());
+    List<String> relatedWarningIds = relatedWarnings.stream()
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+    List<String> evidenceIds = relatedWarnings.stream()
+        .flatMap(warning -> warning.evidenceIds().stream())
+        .distinct()
+        .toList();
+    if (evidenceIds.isEmpty()) {
+      evidenceIds = List.of(generatedSourceRootPathEvidence(candidate.path()).id());
+    }
+    return new GeneratedSourceRootItem(
+        candidate.id(),
+        candidate.moduleId(),
+        candidate.moduleOrder(),
+        candidate.path(),
+        candidate.rootKind(),
+        candidate.scope(),
+        GENERATED_SOURCE_ORIGIN_METADATA_ONLY,
+        GENERATED_SOURCE_CONTENT_STATUS_NOT_SCANNED,
+        GENERATED_SOURCE_DETECTION_BASIS_KNOWN_ROOT_PATH,
+        relatedWarningIds,
+        evidenceIds);
+  }
+
+  private List<String> generatedSourceGeneratorWarningIds(List<ModuleScopedWarningFact> warnings) {
+    return warnings.stream()
+        .filter(warning -> WARNING_CATEGORY_GENERATED_SOURCE.equals(warning.category()))
+        .filter(warning -> !WARNING_SIGNAL_GENERATED_SOURCE_ROOT_PATH_DETECTED.equals(warning.signal()))
+        .map(ModuleScopedWarningFact::id)
+        .toList();
+  }
+
+  private List<String> generatedSourceMavenPluginIds(MavenPluginAnalysis pluginAnalysis) {
+    LinkedHashSet<String> pluginIds = new LinkedHashSet<>();
+    for (MavenModulePlugins modulePlugins : pluginAnalysis.modules()) {
+      modulePlugins.plugins().stream()
+          .filter(this::hasGeneratedSourceSignal)
+          .map(MavenPluginDeclaration::id)
+          .forEach(pluginIds::add);
+      modulePlugins.pluginManagement().stream()
+          .filter(this::hasGeneratedSourceSignal)
+          .map(MavenPluginDeclaration::id)
+          .forEach(pluginIds::add);
+    }
+    return pluginIds.stream().sorted().toList();
+  }
+
+  private boolean hasGeneratedSourceSignal(MavenPluginDeclaration plugin) {
+    return plugin.generatorSignals().stream()
+        .anyMatch(signal -> PLUGIN_SIGNAL_OPENAPI_SWAGGER_CODEGEN.equals(signal.signal())
+            || PLUGIN_SIGNAL_SOURCE_GENERATOR_PLUGIN.equals(signal.signal())
+            || PLUGIN_SIGNAL_ANNOTATION_PROCESSOR.equals(signal.signal()))
+        || plugin.configurationSignals().stream()
+            .anyMatch(signal -> CONFIG_SIGNAL_GENERATED_SOURCES_CONFIG_PRESENT.equals(signal.signal())
+                || CONFIG_SIGNAL_ADD_SOURCE_GOAL_PRESENT.equals(signal.signal()));
   }
 
   private ModuleAwareScan analyzeModules(
@@ -1736,6 +2215,7 @@ public final class SpringMvcEndpointOutputGenerator {
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
+      GeneratedSourceMetadata generatedSourceMetadata,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis,
       ScanConfiguration scanConfiguration,
@@ -1744,6 +2224,7 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("{\n");
     appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
     appendScanMetadata(json, scanConfiguration, scanDiagnostics, true);
+    appendGeneratedSources(json, generatedSourceMetadata, true);
     json.append("  \"project\": {\n");
     appendIndentedStringField(json, 2, "root", ".", true);
     json.append("    \"build\": {\n");
@@ -1873,6 +2354,82 @@ public final class SpringMvcEndpointOutputGenerator {
     appendLineEnding(json, trailingComma);
   }
 
+  private void appendGeneratedSources(
+      StringBuilder json,
+      GeneratedSourceMetadata generatedSourceMetadata,
+      boolean trailingComma) {
+    json.append("  \"generated_sources\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", generatedSourceMetadata.analysisStatus(), true);
+    json.append("    \"policy\": {\n");
+    appendIndentedStringField(json, 3, "content_scan", "disabled", true);
+    appendIndentedBooleanField(json, 3, "content_scan_default", false, true);
+    appendIndentedBooleanField(json, 3, "content_scan_configurable", false, true);
+    appendIndentedStringField(json, 3, "content_status", GENERATED_SOURCE_CONTENT_STATUS_NOT_SCANNED, false);
+    json.append("    },\n");
+    appendGeneratedSourceRoots(json, generatedSourceMetadata.roots(), true);
+    appendGeneratedSourceGeneratorSignals(json, generatedSourceMetadata, false);
+    json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendGeneratedSourceRoots(
+      StringBuilder json,
+      List<GeneratedSourceRootItem> roots,
+      boolean trailingComma) {
+    json.append("    \"roots\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    indent(json, 3);
+    json.append("\"items\": [");
+    if (roots.isEmpty()) {
+      json.append("]\n");
+      json.append("    }");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < roots.size(); index++) {
+      appendGeneratedSourceRoot(json, roots.get(index), index < roots.size() - 1);
+    }
+    indent(json, 3);
+    json.append("]\n");
+    json.append("    }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendGeneratedSourceRoot(
+      StringBuilder json,
+      GeneratedSourceRootItem root,
+      boolean trailingComma) {
+    indent(json, 4);
+    json.append("{\n");
+    appendIndentedStringField(json, 5, "id", root.id(), true);
+    appendIndentedStringField(json, 5, "module_id", root.moduleId(), true);
+    appendIndentedStringField(json, 5, "path", root.path(), true);
+    appendIndentedStringField(json, 5, "root_kind", root.rootKind(), true);
+    appendIndentedStringField(json, 5, "scope", root.scope(), true);
+    appendIndentedStringField(json, 5, "source_origin", root.sourceOrigin(), true);
+    appendIndentedStringField(json, 5, "content_status", root.contentStatus(), true);
+    appendIndentedStringField(json, 5, "detection_basis", root.detectionBasis(), true);
+    appendIndentedStringArrayField(json, 5, "related_warning_ids", root.relatedWarningIds(), true);
+    appendIndentedStringArrayField(json, 5, "evidence_ids", root.evidenceIds(), false);
+    indent(json, 4);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendGeneratedSourceGeneratorSignals(
+      StringBuilder json,
+      GeneratedSourceMetadata generatedSourceMetadata,
+      boolean trailingComma) {
+    json.append("    \"generator_signals\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringArrayField(json, 3, "warning_ids", generatedSourceMetadata.generatorWarningIds(), true);
+    appendIndentedStringArrayField(json, 3, "maven_plugin_ids", generatedSourceMetadata.mavenPluginIds(), false);
+    json.append("    }");
+    appendLineEnding(json, trailingComma);
+  }
+
   private void appendRootBuildFiles(
       StringBuilder json,
       List<RootBuildFileItem> rootBuildFiles,
@@ -1914,6 +2471,7 @@ public final class SpringMvcEndpointOutputGenerator {
       MavenMetadataAnalysis metadataAnalysis,
       MavenDependencyAnalysis dependencyAnalysis,
       MavenPluginAnalysis pluginAnalysis,
+      GeneratedSourceMetadata generatedSourceMetadata,
       List<ScanDiagnostic> javaSourceDiagnostics,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis) {
@@ -1924,6 +2482,7 @@ public final class SpringMvcEndpointOutputGenerator {
     addScanDiagnostics(diagnostics, metadataAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, dependencyAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, pluginAnalysis.diagnostics());
+    addScanDiagnostics(diagnostics, generatedSourceMetadata.diagnostics());
     addScanDiagnostics(diagnostics, javaSourceDiagnostics);
     addScanDiagnostics(diagnostics, documentDiscoveryAnalysis.diagnostics());
     addScanDiagnostics(diagnostics, documentReconciliationAnalysis.diagnostics());
@@ -5456,6 +6015,7 @@ public final class SpringMvcEndpointOutputGenerator {
       List<SpringBootApplicationEvidence> springBootApplicationEvidenceRecords,
       List<ApiSpecEvidence> apiSpecEvidenceRecords,
       List<ApiSpecEvidence> openApiOperationEvidenceRecords,
+      List<EvidenceRecord> generatedSourceEvidenceRecords,
       List<DocumentEvidence> documentEvidenceRecords,
       List<DocumentEvidence> documentReconciliationEvidenceRecords,
       List<SpringMvcEndpointEvidence> endpointEvidenceRecords,
@@ -5495,6 +6055,7 @@ public final class SpringMvcEndpointOutputGenerator {
     openApiOperationEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
+    generatedSourceEvidenceRecords.forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
     documentEvidenceRecords.stream()
         .map(this::evidenceRecord)
         .forEach(evidence -> uniqueRecords.putIfAbsent(evidence.id(), evidence));
@@ -6254,6 +6815,70 @@ public final class SpringMvcEndpointOutputGenerator {
     private BuildMetadata {
       evidenceIds = List.copyOf(evidenceIds);
       rootBuildFiles = List.copyOf(rootBuildFiles);
+    }
+  }
+
+  private record GeneratedSourceRootFamily(
+      String path,
+      String mainRootKind,
+      String testRootKind,
+      String defaultScope,
+      String buildSystem) {
+  }
+
+  private record GeneratedSourceRootCandidate(
+      String id,
+      String moduleId,
+      int moduleOrder,
+      String modulePath,
+      String path,
+      String rootKind,
+      String scope) {
+  }
+
+  private record GeneratedSourceRootDetection(
+      List<GeneratedSourceRootCandidate> candidates,
+      List<EvidenceRecord> evidence,
+      List<ScanDiagnostic> diagnostics,
+      boolean analysisRan) {
+    private GeneratedSourceRootDetection {
+      candidates = List.copyOf(candidates);
+      evidence = List.copyOf(evidence);
+      diagnostics = List.copyOf(diagnostics);
+    }
+  }
+
+  private record GeneratedSourceRootItem(
+      String id,
+      String moduleId,
+      int moduleOrder,
+      String path,
+      String rootKind,
+      String scope,
+      String sourceOrigin,
+      String contentStatus,
+      String detectionBasis,
+      List<String> relatedWarningIds,
+      List<String> evidenceIds) {
+    private GeneratedSourceRootItem {
+      relatedWarningIds = List.copyOf(relatedWarningIds);
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record GeneratedSourceMetadata(
+      String analysisStatus,
+      List<GeneratedSourceRootItem> roots,
+      List<String> generatorWarningIds,
+      List<String> mavenPluginIds,
+      List<EvidenceRecord> evidence,
+      List<ScanDiagnostic> diagnostics) {
+    private GeneratedSourceMetadata {
+      roots = List.copyOf(roots);
+      generatorWarningIds = List.copyOf(generatorWarningIds);
+      mavenPluginIds = List.copyOf(mavenPluginIds);
+      evidence = List.copyOf(evidence);
+      diagnostics = List.copyOf(diagnostics);
     }
   }
 

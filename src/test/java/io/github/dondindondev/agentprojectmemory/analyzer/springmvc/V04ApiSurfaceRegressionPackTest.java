@@ -135,6 +135,8 @@ final class V04ApiSurfaceRegressionPackTest {
     JsonNode generatedWarningIds = root.path("api_surface")
         .path("generated_source_api_signals")
         .path("warning_ids");
+    JsonNode generatedSources = root.path("generated_sources");
+    JsonNode generatedRoots = generatedSources.path("roots").path("items");
 
     assertAll(
         () -> assertEquals(0, root.path("endpoints").size()),
@@ -150,7 +152,29 @@ final class V04ApiSurfaceRegressionPackTest {
                 "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources",
                 "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi"),
             stringValues(generatedWarningIds)),
+        () -> assertEquals("analyzed", generatedSources.path("analysis_status").asText()),
+        () -> assertEquals("disabled", generatedSources.path("policy").path("content_scan").asText()),
+        () -> assertFalse(generatedSources.path("policy").path("content_scan_configurable").asBoolean()),
+        () -> assertEquals(
+            List.of(
+                "target/generated-sources",
+                "target/generated-sources/openapi"),
+            jsonTextValues(generatedRoots, "path")),
+        () -> assertEquals(
+            List.of("not_scanned", "not_scanned"),
+            jsonTextValues(generatedRoots, "content_status")),
+        () -> assertEquals(
+            List.of("metadata_only", "metadata_only"),
+            jsonTextValues(generatedRoots, "source_origin")),
+        () -> assertEquals(
+            List.of("warning:generated_source:generated_source_root_path_detected:path:target/generated-sources"),
+            stringValues(generatedRoots.get(0).path("related_warning_ids"))),
+        () -> assertEquals(
+            List.of("warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi"),
+            stringValues(generatedRoots.get(1).path("related_warning_ids"))),
         () -> assertTrue(output.evidenceIndex().contains("\"source_type\":\"path_signal\"")),
+        () -> assertTrue(output.agentGuide().contains("## Generated Source And Codegen Orientation")),
+        () -> assertTrue(output.agentGuide().contains("content_status `not_scanned`")),
         () -> assertGeneratedSourceNeedlesDoNotAppear(output));
   }
 

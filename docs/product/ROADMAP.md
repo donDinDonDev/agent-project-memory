@@ -659,7 +659,7 @@ Product outcome: make generated-source and code generation handling more explici
 safer, and more useful while preserving the default behavior that generated source
 contents are not read.
 
-Planned contract decision:
+Contract decision:
 
 - v1.2 stays warning/config/metadata-only.
 - No default generated-source content scanning is introduced.
@@ -671,10 +671,9 @@ Planned contract decision:
   and build-helper add-source signals remain metadata, inventory, warning, or guide
   orientation signals. They must not create endpoint, API operation, Spring/JPA/test, or
   generated source content facts.
-- Planned generated-source root inventory and diagnostics, when implemented, are
-  additive `schema_version: "1.0"` compatibility expansion fields. Existing Maven and
-  Gradle source-visible facts, warning IDs, evidence semantics, and disabled-mode output
-  meanings are preserved.
+- Generated-source root inventory and diagnostics are additive `schema_version: "1.0"`
+  compatibility expansion fields. Existing Maven and Gradle source-visible facts,
+  warning IDs, evidence semantics, and disabled-mode output meanings are preserved.
 - Existing evidence types are sufficient for the v1.2 metadata-only boundary:
   `path_signal` for generated-root path observations and `build_file` for generator
   declarations. No generated source content evidence is emitted in v1.2.
@@ -696,11 +695,8 @@ Origin and claim-separation policy:
   evidence semantics, fixtures, goldens, evaluation, and risk-based security review. It
   must not be inferred from `features.generated_sources: true` alone.
 
-Planned follow-up slices:
+Remaining follow-up slices:
 
-- Implement generated-source root inventory, disabled-mode config metadata,
-  warning-reference cleanup, bounded diagnostics, guide wording, and focused
-  Maven/Gradle compatibility tests without reading generated source contents.
 - Evaluate the implemented metadata-only behavior on representative generated-source
   and codegen projects, plus Maven and Gradle regression targets.
 - Prepare release materials only after implementation, validation, and required

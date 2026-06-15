@@ -3326,11 +3326,11 @@ v1.1 validation requirements:
 - Packaged CLI evaluation on pinned Gradle Java/Spring projects before release, plus
   selected Maven regression scans.
 
-### Planned v1.2 Generated Source And Codegen Maturity Contract
+### v1.2 Generated Source And Codegen Maturity Contract
 
-This section defines the planned public v1.2 generated-source/codegen boundary. It is a
-design contract until implementation lands. Current v1.1 behavior remains the source of
-truth until tests and release notes document shipped v1.2 behavior.
+This section defines the public v1.2 generated-source/codegen boundary. The implemented
+v1.2 slice is a warning/config/metadata-only compatibility expansion; it does not add
+generated-source content scanning or generated-source facts.
 
 The v1.2 policy decision is warning/config/metadata-only:
 
@@ -3349,7 +3349,7 @@ The v1.2 policy decision is warning/config/metadata-only:
 
 Schema and compatibility decisions:
 
-- Planned v1.2 generated-source metadata is an additive `schema_version: "1.0"`
+- v1.2 generated-source metadata is an additive `schema_version: "1.0"`
   compatibility expansion, not a schema marker migration.
 - The same four output files remain under `.project-memory/`.
 - Existing source-visible Maven and Gradle facts, warning IDs, evidence ID conventions,
@@ -3361,7 +3361,7 @@ Schema and compatibility decisions:
   roots in the v1.2 boundary. They do not feed Spring, JPA, test, component, endpoint,
   OpenAPI, document, or quality analyzers.
 
-Planned high-level `project-map.json` shape:
+High-level `project-map.json` shape:
 
 ```json
 {
@@ -3435,22 +3435,23 @@ Generated-source root inventory rules:
 - `generated_sources.roots.items[]` contains path inventory records for bounded known
   generated-source root paths only. A root item proves path presence, not generated Java
   types or generated API operations.
-- Supported `root_kind` values in the planned v1.2 metadata-only boundary are
+- Supported `root_kind` values in the v1.2 metadata-only boundary are
   `"maven_generated_sources"`, `"maven_generated_test_sources"`,
   `"gradle_generated_sources"`, and `"gradle_generated_test_sources"`.
 - `scope` is `"main"` for production-like generated-source roots and `"test"` for
   generated-test roots.
 - `source_origin` is `"metadata_only"` for all v1.2 root inventory items.
 - `content_status` is `"not_scanned"` for all v1.2 root inventory items.
-- `detection_basis` is a bounded label such as `"known_generated_root_path"` or
-  `"generator_declaration_signal"`. It must not preserve arbitrary plugin configuration
-  values or raw build-script expressions.
+- `detection_basis` is `"known_generated_root_path"` for current root inventory items.
+  It must not preserve arbitrary plugin configuration values or raw build-script
+  expressions.
 - `related_warning_ids` references existing generated-source warnings when a warning is
   emitted for the same path or generator declaration. The references must resolve to
   `warnings.items`.
-- `evidence_ids` references `path_signal` evidence for root path observations or
-  `build_file` evidence for generator declaration observations. These IDs must resolve
-  to `evidence-index.jsonl`.
+- Root `evidence_ids` reference `path_signal` evidence for root path observations.
+  Generator declaration observations remain represented by existing warning references
+  and Maven plugin IDs backed by their existing `build_file` evidence. Referenced IDs
+  must resolve to their owning output collections.
 
 Path policy:
 
@@ -3463,25 +3464,25 @@ Path policy:
 - Generated-source metadata discovery must not read files under generated-source roots
   or materialize generated source contents.
 - Known Maven candidate families are bounded to module-owned `target/generated-sources`
-  and `target/generated-test-sources` roots and deterministic child roots under those
-  families.
+  and `target/generated-test-sources` roots and deterministic immediate child
+  directories under those families.
 - Known Gradle candidate families are bounded to module-owned `build/generated/sources`
-  and `build/generated/source` roots and deterministic child roots under those
-  families.
+  and `build/generated/source` roots and deterministic immediate child directories
+  under those families.
 - Arbitrary build-helper, plugin, task, or custom `sourceSets` paths are not interpreted
   as generated-source roots in v1.2 unless they also match a supported known path
   family. Directly visible declarations may still support generator warnings or
   metadata-only generator signals.
-- Generated-source root candidate selection must be bounded before fact, evidence, JSON,
-  or Markdown materialization.
+- Generated-source root candidate selection is bounded to 256 candidates before fact,
+  evidence, JSON, or Markdown materialization.
 
 Diagnostics:
 
-- Reaching the generated-source root candidate cap should emit a bounded non-fatal
+- Reaching the generated-source root candidate cap emits a bounded non-fatal
   `scan.diagnostics.items[]` entry with `code:
   "generated_source_root_count_cap_reached"`, `severity: "warning"`,
-  `category: "generated_sources"`, `path: null`, and `count` set to the cap value.
-- Skipping an unsafe generated-source path should emit a bounded non-fatal diagnostic
+  `category: "generated_sources"`, `path: null`, and `count: 256`.
+- Skipping an unsafe generated-source path emits a bounded non-fatal diagnostic
   with `code: "generated_source_root_skipped_unsafe_path"`, `severity: "warning"`,
   `category: "generated_sources"`, and `path` set only when a safe normalized
   repository-relative path can be recorded.

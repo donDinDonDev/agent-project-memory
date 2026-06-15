@@ -56,6 +56,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `src/main/java/com/example/gradle/GradleApplication.java:6` (`ev:src/main/java/com/example/gradle/GradleApplication.java:6-6:com.example.gradle.GradleApplication:@SpringBootApplication`), `src/main/java/com/example/gradle/GradleApplication.java:9` (`ev:src/main/java/com/example/gradle/GradleApplication.java:9-9:com.example.gradle.GradleApplication#main:code_symbol`)
 - Module warnings: Detected 3 warning signals for this module: `hidden_http_surface:openapi_spec_file`, `spring_security:security_configuration_annotation`, `spring_security:security_filter_chain_bean`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -378,6 +386,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `src/main/java/com/example/gradle/security/SecurityConfig.java:10` (`ev:src/main/java/com/example/gradle/security/SecurityConfig.java:10-10:com.example.gradle.security.SecurityConfig:@EnableWebSecurity`)
 - Warning: `spring_security` signal `security_filter_chain_bean` for module `module:.` (path: `.`) at `src/main/java/com/example/gradle/security/SecurityConfig.java`. SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.
   - Evidence: `src/main/java/com/example/gradle/security/SecurityConfig.java:13` (`ev:src/main/java/com/example/gradle/security/SecurityConfig.java:13-13:com.example.gradle.security.SecurityConfig#filterChain:@Bean`), `src/main/java/com/example/gradle/security/SecurityConfig.java:14` (`ev:src/main/java/com/example/gradle/security/SecurityConfig.java:14-14:com.example.gradle.security.SecurityConfig#filterChain:return:SecurityFilterChain`)
+- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.

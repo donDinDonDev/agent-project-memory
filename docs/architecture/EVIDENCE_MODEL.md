@@ -433,8 +433,9 @@ Spec-backed evidence:
 
 Generated-source path signal evidence:
 
-- Generated-source root path warnings use `source_type: "path_signal"` in the current
-  v0.4 generated-source signal contract.
+- Generated-source root path warnings use `source_type: "path_signal"` in the v0.4
+  generated-source signal contract. The v1.2 metadata-only generated-source root
+  inventory reuses the same evidence type for bounded root path observations.
 - `path_signal` evidence IDs for generated-source roots use
   `ev:<generated_source_path_key>:unknown:path_signal:generated_source_root_path_detected`.
   `<generated_source_path_key>` uses the same percent-encoded repository-relative path
@@ -446,8 +447,9 @@ Generated-source path signal evidence:
 - `line_start` and `line_end` should be `null` for directory/path presence evidence.
 - `excerpt` should be a bounded path observation such as
   `generated source root detected: target/generated-sources/openapi`.
-- `path_signal` evidence supports warning facts only. It does not prove generated Java
-  types, generated OpenAPI operations, generated endpoints, or runtime behavior.
+- `path_signal` evidence supports generated-source warning facts and v1.2
+  metadata-only generated-source root inventory items only. It does not prove generated
+  Java types, generated OpenAPI operations, generated endpoints, or runtime behavior.
 - The default analyzer must not read generated source contents from generated-source
   roots. Any future generated-source scan mode must be explicit, non-default, and
   introduced with a separate output/evidence contract update.
@@ -1113,11 +1115,11 @@ not-analyzed status when a later implementation records that limitation, but it 
 create custom source-root facts until a separate output/evidence contract explicitly
 defines that behavior.
 
-### Planned v1.2 Generated Source And Codegen Evidence
+### v1.2 Generated Source And Codegen Evidence
 
-The planned v1.2 generated-source/codegen policy is warning/config/metadata-only. It
-does not add a generated-source content scan mode, global evidence fields, evidence
-types, confidence labels, or tool-config evidence.
+The v1.2 generated-source/codegen policy is warning/config/metadata-only. It does not
+add a generated-source content scan mode, global evidence fields, evidence types,
+confidence labels, or tool-config evidence.
 
 Generated-source metadata evidence:
 
@@ -1144,7 +1146,7 @@ Generated-source content is not evidence in v1.2:
 - No v1.2 evidence record may cite a line, symbol, annotation, class, method, test, or
   document body from generated-source content, because generated-source content is not
   scanned in the v1.2 boundary.
-- Generated-source root inventory items should use metadata-only origin/status fields in
+- Generated-source root inventory items use metadata-only origin/status fields in
   `project-map.json`, such as `source_origin: "metadata_only"` and
   `content_status: "not_scanned"`, rather than new evidence fields.
 - Scan diagnostics for generated-source root caps or unsafe path skips are execution

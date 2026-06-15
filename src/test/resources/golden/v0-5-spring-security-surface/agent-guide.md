@@ -38,6 +38,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected 4 warning signals for this module: `spring_security:security_configuration_annotation`, `spring_security:security_configuration_annotation`, `spring_security:security_filter_chain_bean`, `spring_security:security_filter_chain_bean`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -155,6 +163,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `src/main/java/com/example/security/SecuritySurface.java:11` (`ev:src/main/java/com/example/security/SecuritySurface.java:11-11:com.example.security.SecuritySurface#applicationSecurity:@Bean`), `src/main/java/com/example/security/SecuritySurface.java:12` (`ev:src/main/java/com/example/security/SecuritySurface.java:12-12:com.example.security.SecuritySurface#applicationSecurity:return:SecurityFilterChain`)
 - Warning: `spring_security` signal `security_filter_chain_bean` for module `module:.` (path: `.`) at `src/main/java/com/example/security/SecuritySurface.java`. SecurityFilterChain @Bean method detected as a source-visible Spring Security configuration inspection hint and change-risk signal; the analyzer does not evaluate security policy, endpoint protection, authentication, authorization, filter-chain order, vulnerability, or correctness.
   - Evidence: `src/main/java/com/example/security/SecuritySurface.java:16` (`ev:src/main/java/com/example/security/SecuritySurface.java:16-16:com.example.security.SecuritySurface#managementSecurity:@Bean`), `src/main/java/com/example/security/SecuritySurface.java:17` (`ev:src/main/java/com/example/security/SecuritySurface.java:17-17:com.example.security.SecuritySurface#managementSecurity:return:SecurityFilterChain`)
+- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.

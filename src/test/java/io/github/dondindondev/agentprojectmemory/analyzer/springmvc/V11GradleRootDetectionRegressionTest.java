@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -152,6 +153,122 @@ final class V11GradleRootDetectionRegressionTest {
   }
 
   @Test
+  void gradleGeneratedSourceMetadataDoesNotFeedSourceVisibleAnalyzers() throws Exception {
+    Path projectPath = tempDir.resolve("gradle-generated-roots");
+    copyDirectory(fixtureRoot(FIXTURE_NAME), projectPath);
+    Path generatedMain = projectPath.resolve("build/generated/sources/main/java/com/example/generated");
+    Path generatedTest = projectPath.resolve("build/generated/sources/test/java/com/example/generated");
+    Files.createDirectories(generatedMain);
+    Files.createDirectories(generatedTest);
+    Files.writeString(generatedMain.resolve("GeneratedController.java"), """
+        package com.example.generated;
+
+        class GeneratedController {
+          static final String FAKE_V12_GENERATED_SOURCE_SECRET = "must-not-appear";
+        }
+        """);
+
+    GeneratedOutput output = generateFromProject(projectPath);
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode generatedSources = projectMap.path("generated_sources");
+    JsonNode roots = generatedSources.path("roots").path("items");
+    String joinedOutput = String.join(
+        "\n",
+        output.projectMap(),
+        output.evidenceIndex(),
+        output.endpoints(),
+        output.agentGuide());
+
+    assertAll(
+        () -> assertEquals("analyzed", generatedSources.path("analysis_status").asText()),
+        () -> assertEquals(
+            List.of(
+                "build/generated/sources",
+                "build/generated/sources/main",
+                "build/generated/sources/test"),
+            textValues(roots, "path")),
+        () -> assertEquals(
+            List.of(
+                "gradle_generated_sources",
+                "gradle_generated_sources",
+                "gradle_generated_test_sources"),
+            textValues(roots, "root_kind")),
+        () -> assertEquals(
+            List.of("main", "main", "test"),
+            textValues(roots, "scope")),
+        () -> assertEquals(
+            List.of("not_scanned", "not_scanned", "not_scanned"),
+            textValues(roots, "content_status")),
+        () -> assertEquals(List.of("src/main/java"), stringValues(projectMap.path("project").path("source_roots"))),
+        () -> assertEquals(0, projectMap.path("endpoints").size()),
+        () -> assertTrue(output.evidenceIndex().contains("\"source_type\":\"path_signal\"")),
+        () -> assertTrue(output.agentGuide().contains("## Generated Source And Codegen Orientation")),
+        () -> assertTrue(output.agentGuide().contains("metadata-only root")),
+        () -> assertFalse(joinedOutput.contains("FAKE_V12_GENERATED_SOURCE_SECRET")),
+        () -> assertFalse(joinedOutput.contains("GeneratedController")));
+  }
+
+  @Test
+  void symlinkedGeneratedRootEmitsDiagnosticWithoutRootFact() throws Exception {
+    Path projectPath = tempDir.resolve("gradle-generated-root-symlink");
+    copyDirectory(fixtureRoot(FIXTURE_NAME), projectPath);
+    Path outsideGeneratedRoot = tempDir.resolve("outside-generated-root");
+    Files.createDirectories(outsideGeneratedRoot);
+    Files.createDirectories(projectPath.resolve("build/generated"));
+    createSymbolicLink(projectPath.resolve("build/generated/sources"), outsideGeneratedRoot);
+
+    GeneratedOutput output = generateFromProject(projectPath);
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode diagnostics = projectMap.path("scan").path("diagnostics").path("items");
+
+    assertAll(
+        () -> assertEquals(0, projectMap.path("generated_sources").path("roots").path("items").size()),
+        () -> assertEquals(
+            List.of("generated_source_root_skipped_unsafe_path"),
+            textValues(diagnostics, "code")),
+        () -> assertEquals(
+            List.of("generated_sources"),
+            textValues(diagnostics, "category")),
+        () -> assertEquals(
+            List.of("build/generated/sources"),
+            textValues(diagnostics, "path")),
+        () -> assertFalse(output.evidenceIndex().contains("build/generated/sources")),
+        () -> assertEvidenceIdsResolve(output));
+  }
+
+  @Test
+  void generatedSourceRootInventoryIsBoundedAndSorted() throws Exception {
+    Path projectPath = tempDir.resolve("gradle-generated-root-cap");
+    copyDirectory(fixtureRoot(FIXTURE_NAME), projectPath);
+    Path generatedRoot = projectPath.resolve("build/generated/sources");
+    Files.createDirectories(generatedRoot);
+    for (int index = 0; index < 300; index++) {
+      Files.createDirectories(generatedRoot.resolve("generated-%03d".formatted(index)));
+    }
+
+    GeneratedOutput output = generateFromProject(projectPath);
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode roots = projectMap.path("generated_sources").path("roots").path("items");
+    JsonNode diagnostic = diagnosticWithCode(
+        projectMap.path("scan").path("diagnostics").path("items"),
+        "generated_source_root_count_cap_reached");
+    List<String> paths = textValues(roots, "path");
+
+    assertAll(
+        () -> assertEquals(256, roots.size()),
+        () -> assertEquals(paths.stream().sorted().toList(), paths),
+        () -> assertEquals("build/generated/sources", paths.get(0)),
+        () -> assertTrue(paths.contains("build/generated/sources/generated-000")),
+        () -> assertFalse(paths.contains("build/generated/sources/generated-299")),
+        () -> assertEquals("warning", diagnostic.path("severity").asText()),
+        () -> assertEquals("generated_sources", diagnostic.path("category").asText()),
+        () -> assertTrue(diagnostic.get("path").isNull()),
+        () -> assertEquals(256, diagnostic.path("count").asInt()),
+        () -> assertFalse(output.projectMap().contains("generated-299")),
+        () -> assertFalse(output.evidenceIndex().contains("generated-299")));
+  }
+
+  @Test
   void oversizedGradleRootBuildFileRendersDiagnosticAndNoBuildEvidence() throws Exception {
     Path projectPath = tempDir.resolve("oversized-gradle-build-file");
     Path outputDirectory = projectPath.resolve(".project-memory");
@@ -189,8 +306,12 @@ final class V11GradleRootDetectionRegressionTest {
 
   private GeneratedOutput generateFromFixture(String fixtureName) throws Exception {
     Path projectPath = tempDir.resolve(fixtureName);
-    Path outputDirectory = projectPath.resolve(".project-memory");
     copyDirectory(fixtureRoot(fixtureName), projectPath);
+    return generateFromProject(projectPath);
+  }
+
+  private GeneratedOutput generateFromProject(Path projectPath) throws Exception {
+    Path outputDirectory = projectPath.resolve(".project-memory");
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
@@ -235,6 +356,15 @@ final class V11GradleRootDetectionRegressionTest {
       }
     }
     return evidenceIds;
+  }
+
+  private JsonNode diagnosticWithCode(JsonNode diagnostics, String code) {
+    for (JsonNode diagnostic : diagnostics) {
+      if (code.equals(diagnostic.path("code").asText())) {
+        return diagnostic;
+      }
+    }
+    throw new AssertionError("Missing diagnostic " + code);
   }
 
   private List<String> textValues(JsonNode items, String fieldName) {
@@ -290,6 +420,14 @@ final class V11GradleRootDetectionRegressionTest {
   private void writeOversizedGradleBuildFile(Path path) throws Exception {
     Files.createDirectories(path.getParent());
     Files.writeString(path, "// " + "x".repeat(GradleBuildFileInput.MAX_GRADLE_BUILD_FILE_BYTES) + "\n");
+  }
+
+  private void createSymbolicLink(Path link, Path target) throws Exception {
+    try {
+      Files.createSymbolicLink(link, target);
+    } catch (UnsupportedOperationException | java.io.IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
   }
 
   private record GeneratedOutput(

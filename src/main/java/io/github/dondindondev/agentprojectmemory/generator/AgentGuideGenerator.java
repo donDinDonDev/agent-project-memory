@@ -35,6 +35,11 @@ public final class AgentGuideGenerator {
 
     appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
     appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
+    appendGeneratedSourceAndCodegenOrientation(
+        markdown,
+        projectMap.path("generated_sources"),
+        moduleById,
+        evidenceById);
     appendApiSurfaceInterpretation(markdown, projectMap.path("api_surface"), moduleById, evidenceById);
     appendSpringApplicationSurface(
         markdown,
@@ -647,6 +652,90 @@ public final class AgentGuideGenerator {
       appendEvidenceLine(markdown, application.path("evidence_ids"), evidenceById);
     }
     appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "Spring Boot application signals");
+  }
+
+  private void appendGeneratedSourceAndCodegenOrientation(
+      StringBuilder markdown,
+      JsonNode generatedSources,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById) {
+    if (!generatedSources.isObject()) {
+      return;
+    }
+
+    markdown.append("## Generated Source And Codegen Orientation\n\n");
+    markdown.append("- Generated-source metadata status: ")
+        .append(code(text(generatedSources, "analysis_status")))
+        .append(".\n");
+    JsonNode policy = generatedSources.path("policy");
+    markdown.append("- Policy: content scan ")
+        .append(code(text(policy, "content_scan")))
+        .append(", default ")
+        .append(code(String.valueOf(policy.path("content_scan_default").asBoolean(false))))
+        .append(", configurable ")
+        .append(code(String.valueOf(policy.path("content_scan_configurable").asBoolean(false))))
+        .append(", content_status ")
+        .append(code(text(policy, "content_status")))
+        .append(".\n");
+    markdown.append("- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.\n");
+
+    JsonNode roots = generatedSources.path("roots");
+    JsonNode rootItems = roots.path("items");
+    markdown.append("- Generated-source roots: status ")
+        .append(code(text(roots, "analysis_status")));
+    if (!rootItems.isArray() || rootItems.isEmpty()) {
+      markdown.append("; detected none.\n");
+    } else {
+      markdown.append("; detected ")
+          .append(rootItems.size())
+          .append(" metadata-only root")
+          .append(rootItems.size() == 1 ? "" : "s")
+          .append(".\n");
+      int visibleCount = Math.min(rootItems.size(), MAX_INLINE_BUILD_CONFIG_ITEMS);
+      for (int index = 0; index < visibleCount; index++) {
+        JsonNode root = rootItems.get(index);
+        markdown.append("  - Root: ")
+            .append(code(text(root, "path")))
+            .append(" kind ")
+            .append(code(text(root, "root_kind")))
+            .append(", scope ")
+            .append(code(text(root, "scope")))
+            .append(", origin ")
+            .append(code(text(root, "source_origin")))
+            .append(", content_status ")
+            .append(code(text(root, "content_status")))
+            .append(".\n");
+        appendModuleLine(markdown, root, moduleById);
+        List<String> relatedWarningIds = stringValues(root.path("related_warning_ids"));
+        if (relatedWarningIds.isEmpty()) {
+          markdown.append("    - Related warnings: none.\n");
+        } else {
+          markdown.append("    - Related warnings: ")
+              .append(cappedCodeList(relatedWarningIds, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning IDs"))
+              .append(".\n");
+        }
+        appendEvidenceLine(markdown, root.path("evidence_ids"), evidenceById);
+      }
+      appendOmittedBuildConfigItems(
+          markdown,
+          rootItems.size() - visibleCount,
+          "generated-source root metadata items");
+    }
+
+    JsonNode generatorSignals = generatedSources.path("generator_signals");
+    markdown.append("- Generator/codegen signals: status ")
+        .append(code(text(generatorSignals, "analysis_status")))
+        .append("; warning IDs ")
+        .append(cappedCodeList(
+            stringValues(generatorSignals.path("warning_ids")),
+            MAX_INLINE_BUILD_CONFIG_ITEMS,
+            "warning IDs"))
+        .append("; Maven plugin IDs ")
+        .append(cappedCodeList(
+            stringValues(generatorSignals.path("maven_plugin_ids")),
+            MAX_INLINE_BUILD_CONFIG_ITEMS,
+            "Maven plugin IDs"))
+        .append(".\n\n");
   }
 
   private void appendApiSurfaceInterpretation(
@@ -2352,6 +2441,7 @@ public final class AgentGuideGenerator {
       Map<String, EvidenceRecord> evidenceById) {
     markdown.append("## Known Uncertainty And Limits\n\n");
     appendWarnings(markdown, projectMap.path("warnings"), moduleById, evidenceById);
+    markdown.append("- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: \"not_scanned\"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.\n");
     markdown.append("- Not analyzed: Spring runtime behavior such as component scanning, dependency ")
         .append("injection graphs, bean lifecycle, scopes, and conditional configuration is not ")
         .append("represented by `components.items`.\n");
@@ -2482,6 +2572,7 @@ public final class AgentGuideGenerator {
     LinkedHashSet<String> layoutPaths = new LinkedHashSet<>();
     layoutPaths.addAll(evidencePaths(projectMap.path("project").path("build"), evidenceById));
     layoutPaths.addAll(evidencePaths(projectMap.path("project").path("modules"), evidenceById));
+    layoutPaths.addAll(evidencePaths(projectMap.path("generated_sources"), evidenceById));
     appendPathHint(markdown, List.copyOf(layoutPaths));
     markdown.append(".\n");
     markdown.append(step++)

@@ -117,6 +117,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected 4 warning signals for this module: `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`, `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`; Maven plugin IDs `maven_plugin:module:services/orders:direct:group_id:not_declared:openapi-generator-maven-plugin:decl:000001`.
+
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -320,6 +328,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `pom.xml:5` (`ev:pom.xml:5-5:build_file:module:services/missing`)
 - Warning: `maven_module` signal `unsupported_module` for module `module:libraries/shared` (path: `libraries/shared`) at `libraries/shared/pom.xml`. Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.
   - Evidence: `pom.xml:6` (`ev:pom.xml:6-6:build_file:module:libraries/shared`), `libraries/shared/pom.xml:1` (`ev:libraries/shared/pom.xml:1-1:build_file:pom.xml`)
+- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.

@@ -39,6 +39,35 @@
       "items": []
     }
   },
+  "generated_sources": {
+    "analysis_status": "analyzed",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [
+        "warning:generated_source:maven_annotation_processor:module:services/alpha:plugin_management:decl:000001",
+        "warning:generated_source:maven_build_helper_add_source:module:services/alpha:direct_plugin:decl:000001",
+        "warning:generated_source:maven_generated_source_config:module:services/zeta:direct_plugin:decl:000002",
+        "warning:generated_source:maven_generator_plugin:module:services/zeta:direct_plugin:decl:000001",
+        "warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002"
+      ],
+      "maven_plugin_ids": [
+        "maven_plugin:module:services/alpha:direct:org.codehaus.mojo:build-helper-maven-plugin:decl:000001",
+        "maven_plugin:module:services/alpha:plugin_management:org.apache.maven.plugins:maven-compiler-plugin:decl:000001",
+        "maven_plugin:module:services/zeta:direct:org.codehaus.mojo:jaxb2-maven-plugin:decl:000001",
+        "maven_plugin:module:services/zeta:direct:org.openapitools:openapi-generator-maven-plugin:decl:000002"
+      ]
+    }
+  },
   "project": {
     "root": ".",
     "build": {

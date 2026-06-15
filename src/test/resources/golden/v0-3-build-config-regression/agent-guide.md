@@ -157,6 +157,14 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:3` (`ev:services/zeta/src/main/java/com/example/zeta/ZetaApplication.java:3-3:com.example.zeta.ZetaApplication:@SpringBootApplication`)
 - Module warnings: Detected 5 warning signals for this module: `generated_source:maven_generated_source_config`, `generated_source:maven_generator_plugin`, `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs `warning:generated_source:maven_annotation_processor:module:services/alpha:plugin_management:decl:000001`, `warning:generated_source:maven_build_helper_add_source:module:services/alpha:direct_plugin:decl:000001`, `warning:generated_source:maven_generated_source_config:module:services/zeta:direct_plugin:decl:000002`, `warning:generated_source:maven_generator_plugin:module:services/zeta:direct_plugin:decl:000001`, `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/zeta:direct_plugin:decl:000002`; Maven plugin IDs `maven_plugin:module:services/alpha:direct:org.codehaus.mojo:build-helper-maven-plugin:decl:000001`, `maven_plugin:module:services/alpha:plugin_management:org.apache.maven.plugins:maven-compiler-plugin:decl:000001`, `maven_plugin:module:services/zeta:direct:org.codehaus.mojo:jaxb2-maven-plugin:decl:000001`, `maven_plugin:module:services/zeta:direct:org.openapitools:openapi-generator-maven-plugin:decl:000002`.
+
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -279,6 +287,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/zeta/src/main/resources/openapi.yml` (`ev:services/zeta/src/main/resources/openapi.yml:unknown:config_file:openapi.yml`)
 - Warning: `maven_module` signal `unsupported_module` for module `module:libraries/common` (path: `libraries/common`) at `libraries/common/pom.xml`. Maven module has a child pom.xml but no supported Java source, test, or resource roots; the analyzer does not inspect this module.
   - Evidence: `pom.xml:14` (`ev:pom.xml:14-14:build_file:module:libraries/common`), `libraries/common/pom.xml:1` (`ev:libraries/common/pom.xml:1-1:build_file:pom.xml`)
+- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.

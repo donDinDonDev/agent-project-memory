@@ -39,6 +39,57 @@
       "items": []
     }
   },
+  "generated_sources": {
+    "analysis_status": "analyzed",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "generated_source_root:module:.:path:target/generated-sources",
+          "module_id": "module:.",
+          "path": "target/generated-sources",
+          "root_kind": "maven_generated_sources",
+          "scope": "main",
+          "source_origin": "metadata_only",
+          "content_status": "not_scanned",
+          "detection_basis": "known_generated_root_path",
+          "related_warning_ids": [
+            "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources"
+          ],
+          "evidence_ids": [
+            "ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected"
+          ]
+        },
+        {
+          "id": "generated_source_root:module:.:path:target/generated-sources/openapi",
+          "module_id": "module:.",
+          "path": "target/generated-sources/openapi",
+          "root_kind": "maven_generated_sources",
+          "scope": "main",
+          "source_origin": "metadata_only",
+          "content_status": "not_scanned",
+          "detection_basis": "known_generated_root_path",
+          "related_warning_ids": [
+            "warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi"
+          ],
+          "evidence_ids": [
+            "ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected"
+          ]
+        }
+      ]
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [],
+      "maven_plugin_ids": []
+    }
+  },
   "project": {
     "root": ".",
     "build": {

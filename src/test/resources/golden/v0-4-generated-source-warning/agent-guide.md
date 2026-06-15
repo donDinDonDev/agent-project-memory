@@ -38,6 +38,22 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected 2 warning signals for this module: `generated_source:generated_source_root_path_detected`, `generated_source:generated_source_root_path_detected`. See `Known Uncertainty And Limits` for warning evidence and messages.
 
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected 2 metadata-only roots.
+  - Root: `target/generated-sources` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
+- Module: Detected `module:.` (path: `.`)
+    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources`.
+  - Evidence: `target/generated-sources` (`ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected`)
+  - Root: `target/generated-sources/openapi` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
+- Module: Detected `module:.` (path: `.`)
+    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi`.
+  - Evidence: `target/generated-sources/openapi` (`ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected`)
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -85,6 +101,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `target/generated-sources` (`ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected`)
 - Warning: `generated_source` signal `generated_source_root_path_detected` for module `module:.` (path: `.`) at `target/generated-sources/openapi`. Generated-source root path detected; the analyzer records the path signal only and does not read generated source contents or create endpoint/API facts.
   - Evidence: `target/generated-sources/openapi` (`ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected`)
+- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
 - Uncertain: JPA relationship targets preserve `target_resolution: declared_type_only` and `uncertainty: target_type_not_resolved`; no symbol solving or ORM runtime behavior is claimed.
 - Source-visible: JPA relationship metadata such as `mappedBy`, `@JoinColumn`, `@JoinTable`, `optional`, `fetch`, `cascade`, and `orphanRemoval` is reported only when direct annotation attributes are supported; foreign keys, join tables, ownership correctness, fetch behavior, cascade behavior, and database constraints are not claimed.
@@ -106,7 +123,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 
 ## Practical Inspection Order For Coding Agents
 
-1. Start with detected build, module, and layout facts in `pom.xml`.
+1. Start with detected build, module, and layout facts in `pom.xml`, `target/generated-sources`, `target/generated-sources/openapi`.
 2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
 3. For Spring application surface changes, inspect Spring application surface and component evidence (no evidence paths recorded) and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
 4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.

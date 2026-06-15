@@ -39,6 +39,24 @@
       "items": []
     }
   },
+  "generated_sources": {
+    "analysis_status": "analyzed",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [],
+      "maven_plugin_ids": []
+    }
+  },
   "project": {
     "root": ".",
     "build": {
