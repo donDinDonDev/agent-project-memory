@@ -101,7 +101,7 @@ v1.2.0 does not add:
 - Connectors, network access, telemetry, SaaS, web UI, repository chat, generic RAG, LLM
   calls in the core analyzer, or automatic code modification.
 
-## Expected Release Assets
+## Release Assets
 
 - `agent-project-memory-1.2.0.jar`
 - `SHA256SUMS`

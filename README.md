@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.1.0`. Its release artifact is
-`agent-project-memory-1.1.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.2.0`. Its release artifact is
+`agent-project-memory-1.2.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.1.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.2.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -349,9 +349,9 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.1.0`. It ships an executable jar and `SHA256SUMS`
-asset. This checkout prepares the `v1.2.0` release candidate, and local builds produce
-`target/agent-project-memory-1.2.0.jar`. Normal generated `project-map.json` files use
+The latest published release is `v1.2.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds produce `target/agent-project-memory-1.2.0.jar`. Normal generated
+`project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.2 generated-source/codegen
 metadata expansion is additive: existing Maven, Gradle, source-visible output, and
 evidence semantics are preserved, while generated-source roots are reported as

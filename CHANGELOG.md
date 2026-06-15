@@ -28,6 +28,8 @@ architecture documents.
 - Clarified that `schema_version: "1.0"` remains the stable-line marker for v1.2;
   generated-source/codegen metadata is additive, while existing Maven, Gradle,
   source-visible output, and evidence semantics are preserved.
+- Updated post-release documentation status to mark `v1.2.0` as published with release
+  jar and checksum assets.
 
 ### Security
 
