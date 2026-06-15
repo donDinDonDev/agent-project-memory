@@ -653,10 +653,85 @@ Non-goals:
 - Connectors, network/auth, SaaS, web UI, repository chat, generic RAG, LLM calls in the
   core analyzer, or automatic code modification.
 
-Possible tracks:
+### v1.2.0: Generated Sources And Codegen Maturity (Planned)
 
-- Gradle Java/Spring support.
-- Generated-source and codegen maturity.
+Product outcome: make generated-source and code generation handling more explicit,
+safer, and more useful while preserving the default behavior that generated source
+contents are not read.
+
+Planned contract decision:
+
+- v1.2 stays warning/config/metadata-only.
+- No default generated-source content scanning is introduced.
+- No non-default generated-source content scan mode is introduced in v1.2.
+- The existing `features.generated_sources` config key remains a reserved disabled
+  content-scan toggle. `false` is valid, and attempts to enable generated-source
+  content scanning remain invalid config until a later explicit contract changes that.
+- Generated-source root presence, generator declarations, annotation-processor signals,
+  and build-helper add-source signals remain metadata, inventory, warning, or guide
+  orientation signals. They must not create endpoint, API operation, Spring/JPA/test, or
+  generated source content facts.
+- Planned generated-source root inventory and diagnostics, when implemented, are
+  additive `schema_version: "1.0"` compatibility expansion fields. Existing Maven and
+  Gradle source-visible facts, warning IDs, evidence semantics, and disabled-mode output
+  meanings are preserved.
+- Existing evidence types are sufficient for the v1.2 metadata-only boundary:
+  `path_signal` for generated-root path observations and `build_file` for generator
+  declarations. No generated source content evidence is emitted in v1.2.
+
+Origin and claim-separation policy:
+
+- Existing source-visible Java facts remain human-source facts backed by source-root
+  Java evidence.
+- OpenAPI/Swagger operations remain spec-backed declared operation facts.
+- Local Markdown facts and reconciliation rows remain document-backed orientation or
+  uncertain inspection hints.
+- Inferred and uncertain rows continue to use their existing support, confidence,
+  status, and uncertainty fields.
+- Generated-source root inventory is metadata-only unless a later explicit content scan
+  contract is designed. It must be visibly distinct from human-authored source roots and
+  must use `content_status: "not_scanned"` or equivalent cautious wording.
+- A future generated-source content scan, if ever added, must be a separate
+  non-default mode with explicit path policy, caps, fact-level generated-source labels,
+  evidence semantics, fixtures, goldens, evaluation, and risk-based security review. It
+  must not be inferred from `features.generated_sources: true` alone.
+
+Planned follow-up slices:
+
+- Implement generated-source root inventory, disabled-mode config metadata,
+  warning-reference cleanup, bounded diagnostics, guide wording, and focused
+  Maven/Gradle compatibility tests without reading generated source contents.
+- Evaluate the implemented metadata-only behavior on representative generated-source
+  and codegen projects, plus Maven and Gradle regression targets.
+- Prepare release materials only after implementation, validation, and required
+  risk-based security review are complete.
+
+Non-goals:
+
+- Generator execution.
+- Generated-source content scanning, whether default or opt-in.
+- Dependency, plugin, task, Gradle Tooling API, Maven lifecycle, generated-source graph,
+  or effective build model reconstruction.
+- Runtime API freshness, runtime Spring handler mapping, generated client SDK
+  reconstruction, or automatic OpenAPI/source implementation matching.
+- Custom Gradle `sourceSets` support unless a separate Gradle follow-up explicitly
+  designs it.
+- Connectors, network/auth, SaaS, web UI, repository chat, generic RAG, LLM calls in the
+  core analyzer, or automatic code modification.
+
+Validation expectations:
+
+- Focused tests and goldens for generated-root inventory, disabled config behavior,
+  diagnostics, warning references, deterministic sorting, and guide wording.
+- Maven and Gradle regression coverage proving disabled-mode source-visible output and
+  evidence semantics are preserved.
+- Packaged CLI evaluation on representative generated-source/codegen projects before
+  release, plus selected Maven and Gradle regression scans.
+- Public documentation, output contract, evidence model, changelog, and release notes
+  must agree before release.
+
+Possible later tracks:
+
 - Agent output profiles.
 - Incremental scan and performance.
 - Lightweight relation graph.

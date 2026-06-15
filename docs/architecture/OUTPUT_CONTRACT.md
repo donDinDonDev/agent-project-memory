@@ -3326,6 +3326,220 @@ v1.1 validation requirements:
 - Packaged CLI evaluation on pinned Gradle Java/Spring projects before release, plus
   selected Maven regression scans.
 
+### Planned v1.2 Generated Source And Codegen Maturity Contract
+
+This section defines the planned public v1.2 generated-source/codegen boundary. It is a
+design contract until implementation lands. Current v1.1 behavior remains the source of
+truth until tests and release notes document shipped v1.2 behavior.
+
+The v1.2 policy decision is warning/config/metadata-only:
+
+- Generated-source content scanning remains off by default.
+- v1.2 does not introduce an opt-in generated-source content scan mode.
+- `features.generated_sources` remains a reserved disabled content-scan toggle in the
+  root-local YAML config. `false` is valid; attempts to set it to `true` remain invalid
+  config until a later explicit generated-source content scan contract changes that.
+- Generator execution, Maven lifecycle execution, Gradle task execution, dependency,
+  plugin, repository, or task resolution, generated-source graph reconstruction, and
+  runtime API freshness checks are out of scope.
+- Generated-source roots, generator declarations, annotation-processor signals,
+  build-helper add-source signals, OpenAPI declared operations, human-authored Java
+  facts, inferred relations, uncertain signals, document-backed hints, and scan
+  metadata must remain distinct.
+
+Schema and compatibility decisions:
+
+- Planned v1.2 generated-source metadata is an additive `schema_version: "1.0"`
+  compatibility expansion, not a schema marker migration.
+- The same four output files remain under `.project-memory/`.
+- Existing source-visible Maven and Gradle facts, warning IDs, evidence ID conventions,
+  evidence field semantics, Markdown caution boundaries, and disabled-mode analyzer
+  behavior must not be removed, renamed, or reinterpreted.
+- Consumers that understand the v1.0/v1.1 shape should ignore unknown additive v1.2
+  metadata fields when practical.
+- Generated-source roots are not production `source_roots`, `test_roots`, or resource
+  roots in the v1.2 boundary. They do not feed Spring, JPA, test, component, endpoint,
+  OpenAPI, document, or quality analyzers.
+
+Planned high-level `project-map.json` shape:
+
+```json
+{
+  "schema_version": "1.0",
+  "generated_sources": {
+    "analysis_status": "analyzed",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "generated_source_root:module:services/orders:path:services/orders/target/generated-sources/openapi",
+          "module_id": "module:services/orders",
+          "path": "services/orders/target/generated-sources/openapi",
+          "root_kind": "maven_generated_sources",
+          "scope": "main",
+          "source_origin": "metadata_only",
+          "content_status": "not_scanned",
+          "detection_basis": "known_generated_root_path",
+          "related_warning_ids": [
+            "warning:generated_source:generated_source_root_path_detected:module:services/orders:path:services/orders/target/generated-sources/openapi"
+          ],
+          "evidence_ids": [
+            "ev:services/orders/target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected"
+          ]
+        }
+      ]
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [],
+      "maven_plugin_ids": []
+    }
+  }
+}
+```
+
+Origin and claim-separation labels:
+
+- `human_source` means a fact extracted from supported human-authored Java source roots
+  such as `src/main/java` or supported test roots. Existing facts keep their current
+  field shape and are interpreted as human-source facts by section and evidence type;
+  v1.2 does not require adding a global origin field to every existing fact.
+- `generated_source` is reserved for a future generated-source content scan. v1.2
+  metadata-only output must not emit endpoint, component, entity, test, Spring surface,
+  quality, or relation facts with this origin.
+- `spec_backed` means local OpenAPI/Swagger spec facts and declared operation facts
+  backed by `api_spec` evidence.
+- `document_backed` means local Markdown document inventory, structure references, and
+  document-side reconciliation observations backed by `document` evidence.
+- `inferred` and `uncertain` retain their existing support-type, relation-status,
+  confidence, and uncertainty semantics.
+- `metadata_only` means a scan/config/path/build observation that orients the reader but
+  does not prove source content or runtime behavior. v1.2 generated-source root
+  inventory uses this origin with `content_status: "not_scanned"`.
+
+Generated-source root inventory rules:
+
+- `generated_sources.analysis_status` is `"analyzed"` when generated-source metadata
+  discovery runs. It is `"not_detected"` when no supported build, module, source-root,
+  or generated-source path input is available.
+- `generated_sources.policy` records the effective v1.2 generated-source policy. It is
+  scan metadata, not evidence. It must not serialize raw config values, command output,
+  local absolute paths, source excerpts, generated source contents, or generated output
+  contents.
+- `generated_sources.roots.items[]` contains path inventory records for bounded known
+  generated-source root paths only. A root item proves path presence, not generated Java
+  types or generated API operations.
+- Supported `root_kind` values in the planned v1.2 metadata-only boundary are
+  `"maven_generated_sources"`, `"maven_generated_test_sources"`,
+  `"gradle_generated_sources"`, and `"gradle_generated_test_sources"`.
+- `scope` is `"main"` for production-like generated-source roots and `"test"` for
+  generated-test roots.
+- `source_origin` is `"metadata_only"` for all v1.2 root inventory items.
+- `content_status` is `"not_scanned"` for all v1.2 root inventory items.
+- `detection_basis` is a bounded label such as `"known_generated_root_path"` or
+  `"generator_declaration_signal"`. It must not preserve arbitrary plugin configuration
+  values or raw build-script expressions.
+- `related_warning_ids` references existing generated-source warnings when a warning is
+  emitted for the same path or generator declaration. The references must resolve to
+  `warnings.items`.
+- `evidence_ids` references `path_signal` evidence for root path observations or
+  `build_file` evidence for generator declaration observations. These IDs must resolve
+  to `evidence-index.jsonl`.
+
+Path policy:
+
+- Emitted generated-source paths must be normalized repository-relative paths. They must
+  not be absolute, start with `./`, contain `.` or `..` path segments after
+  normalization, use backslash separators, or escape the scan root.
+- Generated-source metadata discovery must not follow symlinked generated-root
+  directories or symlinked files. A symlink path is not a generated-source root fact in
+  v1.2.
+- Generated-source metadata discovery must not read files under generated-source roots
+  or materialize generated source contents.
+- Known Maven candidate families are bounded to module-owned `target/generated-sources`
+  and `target/generated-test-sources` roots and deterministic child roots under those
+  families.
+- Known Gradle candidate families are bounded to module-owned `build/generated/sources`
+  and `build/generated/source` roots and deterministic child roots under those
+  families.
+- Arbitrary build-helper, plugin, task, or custom `sourceSets` paths are not interpreted
+  as generated-source roots in v1.2 unless they also match a supported known path
+  family. Directly visible declarations may still support generator warnings or
+  metadata-only generator signals.
+- Generated-source root candidate selection must be bounded before fact, evidence, JSON,
+  or Markdown materialization.
+
+Diagnostics:
+
+- Reaching the generated-source root candidate cap should emit a bounded non-fatal
+  `scan.diagnostics.items[]` entry with `code:
+  "generated_source_root_count_cap_reached"`, `severity: "warning"`,
+  `category: "generated_sources"`, `path: null`, and `count` set to the cap value.
+- Skipping an unsafe generated-source path should emit a bounded non-fatal diagnostic
+  with `code: "generated_source_root_skipped_unsafe_path"`, `severity: "warning"`,
+  `category: "generated_sources"`, and `path` set only when a safe normalized
+  repository-relative path can be recorded.
+- Normal disabled content scanning is policy, not an error. It should be represented by
+  `generated_sources.policy` and cautious guide wording rather than by a warning
+  diagnostic.
+- Attempts to enable generated-source content scanning through reserved config remain
+  invalid config errors and should fail before output generation.
+- Diagnostic messages must follow the existing bounded diagnostic rules: no raw config
+  values, raw path patterns, source excerpts, generated source contents, generated
+  output contents, stack traces, local absolute paths, credentials, or tokens.
+
+Markdown behavior:
+
+- `endpoints.md` must keep source-visible Spring MVC endpoints, interface-declared
+  Spring MVC endpoints, declared OpenAPI operations, generated-source API signals,
+  repository-rest warnings, and hidden HTTP warnings in separate sections.
+- v1.2 generated-source metadata must not be rendered as endpoint, API operation,
+  implementation coverage, generated API, or runtime handler mapping facts.
+- `agent-guide.md` may add a concise `Generated Source And Codegen Orientation` section
+  generated only from structured `generated_sources` metadata, existing build/plugin
+  facts, warnings, and resolving evidence.
+- Guide wording must use `metadata only`, `warning`, `not scanned`, or equivalent
+  cautious labels for generated roots and generator declarations.
+- Known limits should state that generated-source content scanning, generator
+  execution, generated API reconstruction, runtime freshness checks, dependency or task
+  resolution, and custom Gradle generated-source graph reconstruction are not performed.
+
+Validation requirements:
+
+- Focused tests and goldens for generated-root inventory, config-disabled behavior,
+  invalid reserved enables, warning references, diagnostics, deterministic sorting, and
+  guide wording.
+- Maven regression coverage proving existing source-visible output and evidence
+  semantics remain stable when generated-source content scanning is disabled.
+- Gradle regression coverage proving v1.1 static layout output and evidence semantics
+  remain stable and that Gradle generated-source metadata does not imply task or
+  generated-source graph reconstruction.
+- Packaged CLI evaluation on representative generated-source/codegen projects before
+  release, plus selected Maven and Gradle regression scans.
+- Risk-based security review is required before release for any implementation that
+  changes config handling, path discovery, filesystem traversal, diagnostics, generated
+  output, evidence references, or Markdown rendering.
+
+Stop conditions for implementation:
+
+- Generated-source content scanning becomes default, implicit, or launchable through a
+  plain boolean enable.
+- Generated-source metadata cannot stay distinct from human-authored source facts,
+  spec-backed operation facts, document-backed hints, inferred relations, uncertain
+  signals, and scan metadata.
+- Evidence semantics would allow generator declarations, path-only signals, config
+  metadata, documents, specs, generated Markdown, or LLM output to masquerade as
+  generated source content evidence.
+- Path normalization, symlink, containment, oversized-tree, unreadable-path, candidate
+  cap, evidence cap, or Markdown cap behavior is unclear.
+- Disabled-mode Maven or Gradle output semantics cannot be preserved.
+
 ### v0.9 CLI And Scan Configuration Contract
 
 This section defines the v0.9 public output boundary for CLI/config behavior. The v0.9

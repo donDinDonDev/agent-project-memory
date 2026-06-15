@@ -9,6 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v1.2 generated-source/codegen policy as a
+  warning/config/metadata-only compatibility expansion: generated-source content
+  scanning remains disabled and unsupported, generator execution remains out of scope,
+  generated-root inventory and diagnostics are planned as additive `schema_version:
+  "1.0"` metadata, existing evidence types are reused, and future generated-source
+  content scanning requires a separate explicit contract.
+
 ## [1.1.0] - 2026-06-14
 
 ### Added

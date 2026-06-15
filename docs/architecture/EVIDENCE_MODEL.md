@@ -1113,6 +1113,52 @@ not-analyzed status when a later implementation records that limitation, but it 
 create custom source-root facts until a separate output/evidence contract explicitly
 defines that behavior.
 
+### Planned v1.2 Generated Source And Codegen Evidence
+
+The planned v1.2 generated-source/codegen policy is warning/config/metadata-only. It
+does not add a generated-source content scan mode, global evidence fields, evidence
+types, confidence labels, or tool-config evidence.
+
+Generated-source metadata evidence:
+
+- Generated-source root inventory uses existing `path_signal` evidence for bounded
+  repository-relative path observations.
+- Generator declarations and source-visible codegen signals use existing `build_file`
+  evidence from Maven POMs or accepted Gradle build files when a directly visible build
+  observation supports a warning or metadata row.
+- `path_signal` evidence for a generated-source root proves only normalized local path
+  presence. It does not prove generated Java types, generated endpoint handlers,
+  generated OpenAPI operations, generated client SDKs, or runtime behavior.
+- `build_file` evidence for generator declarations proves only directly visible build
+  file text within the bounded existing evidence rules. It does not prove plugin
+  execution, task execution, generated output freshness, dependency resolution, or
+  generated source contents.
+- The selected `agent-project-memory.yml` scan config remains execution metadata, not
+  project evidence. Attempts to enable reserved generated-source content scanning do not
+  create evidence because invalid config fails before output generation.
+
+Generated-source content is not evidence in v1.2:
+
+- The default analyzer must not read generated source contents from generated-source
+  roots.
+- No v1.2 evidence record may cite a line, symbol, annotation, class, method, test, or
+  document body from generated-source content, because generated-source content is not
+  scanned in the v1.2 boundary.
+- Generated-source root inventory items should use metadata-only origin/status fields in
+  `project-map.json`, such as `source_origin: "metadata_only"` and
+  `content_status: "not_scanned"`, rather than new evidence fields.
+- Scan diagnostics for generated-source root caps or unsafe path skips are execution
+  metadata under `scan.diagnostics`; diagnostic IDs must not appear in `evidence_ids`.
+
+Future generated-source content scanning, if ever introduced, must update this document
+and `OUTPUT_CONTRACT.md` before implementation. That later contract must define a
+non-default mode, safe path policy, traversal and parsing caps, fact-level
+generated-source labels, evidence semantics for generated files, Markdown rendering
+rules, tests or goldens, evaluation, and risk-based security review. It must keep
+generated-source-backed facts distinguishable from human-authored source facts,
+spec-backed facts, document-backed hints, inferred relations, uncertain signals, and
+metadata-only observations.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.
