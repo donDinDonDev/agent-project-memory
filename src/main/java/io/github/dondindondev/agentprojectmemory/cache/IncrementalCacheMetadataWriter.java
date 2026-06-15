@@ -29,16 +29,16 @@ import java.util.Optional;
 import java.util.Set;
 
 public final class IncrementalCacheMetadataWriter {
-  private static final String CACHE_SCHEMA_VERSION = "1.0";
-  private static final String PROJECT_MAP_SCHEMA_VERSION = "1.0";
-  private static final String CACHE_KIND = "incremental_scan_metadata";
-  private static final String REUSE_GRANULARITY = "whole_output_set";
-  private static final String FINGERPRINT_ALGORITHM = "sha256";
-  private static final String EVIDENCE_POLICY = "cache_is_not_evidence";
-  private static final String CACHE_DIRECTORY_PATH = "cache/v1";
-  private static final String MANIFEST_PATH = CACHE_DIRECTORY_PATH + "/manifest.json";
-  private static final String INPUTS_PATH = CACHE_DIRECTORY_PATH + "/inputs.jsonl";
-  private static final String OUTPUTS_PATH = CACHE_DIRECTORY_PATH + "/outputs.jsonl";
+  static final String CACHE_SCHEMA_VERSION = "1.0";
+  static final String PROJECT_MAP_SCHEMA_VERSION = "1.0";
+  static final String CACHE_KIND = "incremental_scan_metadata";
+  static final String REUSE_GRANULARITY = "whole_output_set";
+  static final String FINGERPRINT_ALGORITHM = "sha256";
+  static final String EVIDENCE_POLICY = "cache_is_not_evidence";
+  static final String CACHE_DIRECTORY_PATH = "cache/v1";
+  static final String MANIFEST_PATH = CACHE_DIRECTORY_PATH + "/manifest.json";
+  static final String INPUTS_PATH = CACHE_DIRECTORY_PATH + "/inputs.jsonl";
+  static final String OUTPUTS_PATH = CACHE_DIRECTORY_PATH + "/outputs.jsonl";
   private static final String JAVA_SOURCE_ROOT_PATH = "src/main/java";
   private static final String JAVA_TEST_ROOT_PATH = "src/test/java";
   private static final String MAIN_RESOURCE_ROOT_PATH = "src/main/resources";
@@ -47,7 +47,10 @@ public final class IncrementalCacheMetadataWriter {
   private static final int MAX_SPEC_BYTES = 1024 * 1024;
   private static final int MAX_RESOURCE_CONFIG_BYTES = 1024 * 1024;
   private static final int MAX_MARKDOWN_BYTES = 16 * 1024 * 1024;
-  private static final int MAX_OUTPUT_BYTES = 128 * 1024 * 1024;
+  static final int MAX_OUTPUT_BYTES = 128 * 1024 * 1024;
+  private static final String GENERATED_SOURCE_ROOT_PATH_INPUT_KIND = "generated_source_root_path";
+  private static final String GENERATED_SOURCE_ROOT_UNSAFE_PATH_INPUT_KIND =
+      "generated_source_root_unsafe_path";
   private static final List<String> GENERATED_SOURCE_FAMILY_PATHS = List.of(
       "target/generated-sources",
       "target/generated-test-sources",
@@ -102,49 +105,63 @@ public final class IncrementalCacheMetadataWriter {
       return CacheWriteResult.skippedResult();
     }
 
-    CacheMetadata metadata;
     try {
-      List<AgentOutputProfile> canonicalProfiles = canonicalProfiles(selectedProfiles);
-      Map<String, InputFingerprint> inputFingerprints = inputFingerprints(
+      CacheMetadata metadata = cacheMetadata(
           normalizedRepositoryRoot,
           canonicalRepositoryRoot,
-          scanConfiguration);
-      List<OutputFingerprint> outputFingerprints = outputFingerprints(
-          canonicalRepositoryRoot,
           outputDirectory.toAbsolutePath().normalize(),
-          canonicalProfiles);
-      String configSha256 = configSha256(inputFingerprints, scanConfiguration);
-      metadata = new CacheMetadata(
-          inputFingerprints.values().stream()
-              .sorted(Comparator
-                  .comparing(InputFingerprint::path)
-                  .thenComparing(InputFingerprint::inputKind))
-              .toList(),
-          outputFingerprints,
-          manifestJson(
-              optionFingerprint(scanConfiguration, canonicalProfiles),
-              scanConfiguration,
-              configSha256,
-              canonicalProfiles,
-              toolVersion == null || toolVersion.isBlank() ? "unknown" : toolVersion));
+          scanConfiguration,
+          selectedProfiles,
+          toolVersion);
+      List<CacheFile> cacheFiles = List.of(
+          new CacheFile("inputs.jsonl", inputsJsonl(metadata.inputs())),
+          new CacheFile("outputs.jsonl", outputsJsonl(metadata.outputs())),
+          new CacheFile("manifest.json", metadata.manifestJson()));
+      for (CacheFile file : cacheFiles) {
+        Path target = cacheDirectory.orElseThrow().resolve(file.fileName());
+        if (!isSafeCacheTarget(canonicalRepositoryRoot, target)) {
+          return CacheWriteResult.skippedResult();
+        }
+      }
+      for (CacheFile file : cacheFiles) {
+        writeCacheFile(canonicalRepositoryRoot, cacheDirectory.orElseThrow(), file);
+      }
+      return CacheWriteResult.writtenResult();
     } catch (CacheMetadataUnavailableException exception) {
       return CacheWriteResult.skippedResult();
     }
+  }
 
-    List<CacheFile> cacheFiles = List.of(
-        new CacheFile("inputs.jsonl", inputsJsonl(metadata.inputs())),
-        new CacheFile("outputs.jsonl", outputsJsonl(metadata.outputs())),
-        new CacheFile("manifest.json", metadata.manifestJson()));
-    for (CacheFile file : cacheFiles) {
-      Path target = cacheDirectory.orElseThrow().resolve(file.fileName());
-      if (!isSafeCacheTarget(canonicalRepositoryRoot, target)) {
-        return CacheWriteResult.skippedResult();
-      }
-    }
-    for (CacheFile file : cacheFiles) {
-      writeCacheFile(canonicalRepositoryRoot, cacheDirectory.orElseThrow(), file);
-    }
-    return CacheWriteResult.writtenResult();
+  CacheMetadata cacheMetadata(
+      Path normalizedRepositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path outputDirectory,
+      ScanConfiguration scanConfiguration,
+      List<AgentOutputProfile> selectedProfiles,
+      String toolVersion) throws CacheMetadataUnavailableException {
+    List<AgentOutputProfile> canonicalProfiles = canonicalProfiles(selectedProfiles);
+    Map<String, InputFingerprint> inputFingerprints = inputFingerprints(
+        normalizedRepositoryRoot,
+        canonicalRepositoryRoot,
+        scanConfiguration);
+    List<OutputFingerprint> outputFingerprints = outputFingerprints(
+        canonicalRepositoryRoot,
+        outputDirectory.toAbsolutePath().normalize(),
+        canonicalProfiles);
+    String configSha256 = configSha256(inputFingerprints, scanConfiguration);
+    return new CacheMetadata(
+        inputFingerprints.values().stream()
+            .sorted(Comparator
+                .comparing(InputFingerprint::path)
+                .thenComparing(InputFingerprint::inputKind))
+            .toList(),
+        outputFingerprints,
+        manifestJson(
+            optionFingerprint(scanConfiguration, canonicalProfiles),
+            scanConfiguration,
+            configSha256,
+            canonicalProfiles,
+            toolVersion == null || toolVersion.isBlank() ? "unknown" : toolVersion));
   }
 
   private Optional<Path> ensureCacheDirectory(Path canonicalRepositoryRoot, Path outputDirectory)
@@ -216,7 +233,7 @@ public final class IncrementalCacheMetadataWriter {
               standardRootInputKind(relative)
                   .ifPresent(inputKind -> addPathFingerprint(fingerprints, relative, inputKind));
               if (isGeneratedSourceFamilyRoot(relative)) {
-                addPathFingerprint(fingerprints, relative, "generated_source_root_path");
+                addPathFingerprint(fingerprints, relative, GENERATED_SOURCE_ROOT_PATH_INPUT_KIND);
                 addGeneratedSourceChildPathFingerprints(
                     fingerprints,
                     repositoryRoot,
@@ -283,15 +300,45 @@ public final class IncrementalCacheMetadataWriter {
     try (var children = Files.list(familyRoot)) {
       children
           .map(path -> path.toAbsolutePath().normalize())
-          .filter(path -> safeDirectory(repositoryRoot, canonicalRepositoryRoot, path))
-          .map(path -> repositoryRelativePath(repositoryRoot, path))
+          .map(path -> generatedSourceChildPathFingerprint(
+              repositoryRoot,
+              canonicalRepositoryRoot,
+              path))
           .flatMap(Optional::stream)
-          .sorted()
-          .forEach(path -> addPathFingerprint(fingerprints, path, "generated_source_root_path"));
+          .sorted(Comparator
+              .comparing(GeneratedSourceChildPathFingerprint::path)
+              .thenComparing(GeneratedSourceChildPathFingerprint::inputKind))
+          .forEach(fingerprint -> addPathFingerprint(
+              fingerprints,
+              fingerprint.path(),
+              fingerprint.inputKind()));
     } catch (IOException | SecurityException exception) {
       // Child generated-source roots are metadata-only. If listing fails, the cache can still
       // represent the detected family root path without reading generated content.
     }
+  }
+
+  private Optional<GeneratedSourceChildPathFingerprint> generatedSourceChildPathFingerprint(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      Path path) {
+    Optional<String> relativePath = repositoryRelativePath(repositoryRoot, path);
+    if (relativePath.isEmpty()) {
+      return Optional.empty();
+    }
+    if (safeDirectory(repositoryRoot, canonicalRepositoryRoot, path)) {
+      return Optional.of(new GeneratedSourceChildPathFingerprint(
+          relativePath.orElseThrow(),
+          GENERATED_SOURCE_ROOT_PATH_INPUT_KIND));
+    }
+    if (Files.isSymbolicLink(path)
+        || hasSymbolicLinkSegment(repositoryRoot, path)
+        || ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, path).isEmpty()) {
+      return Optional.of(new GeneratedSourceChildPathFingerprint(
+          relativePath.orElseThrow(),
+          GENERATED_SOURCE_ROOT_UNSAFE_PATH_INPUT_KIND));
+    }
+    return Optional.empty();
   }
 
   private List<FileInputKind> inputKinds(
@@ -543,7 +590,7 @@ public final class IncrementalCacheMetadataWriter {
     }
   }
 
-  private boolean isSafeCacheTarget(Path canonicalRepositoryRoot, Path target) {
+  boolean isSafeCacheTarget(Path canonicalRepositoryRoot, Path target) {
     if (Files.isSymbolicLink(target)) {
       return false;
     }
@@ -554,10 +601,10 @@ public final class IncrementalCacheMetadataWriter {
       return false;
     }
     Long linkCount = hardLinkCount(target);
-    return linkCount == null || linkCount <= 1;
+    return linkCount != null && linkCount <= 1;
   }
 
-  private Long hardLinkCount(Path target) {
+  Long hardLinkCount(Path target) {
     try {
       Object value = Files.getAttribute(target, "unix:nlink", LinkOption.NOFOLLOW_LINKS);
       if (value instanceof Number number) {
@@ -577,7 +624,7 @@ public final class IncrementalCacheMetadataWriter {
         && ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, directory).isPresent();
   }
 
-  private boolean hasSymbolicLinkSegment(Path root, Path path) {
+  boolean hasSymbolicLinkSegment(Path root, Path path) {
     Path normalizedRoot = root.toAbsolutePath().normalize();
     Path normalizedPath = path.toAbsolutePath().normalize();
     if (!normalizedPath.startsWith(normalizedRoot)) {
@@ -610,7 +657,7 @@ public final class IncrementalCacheMetadataWriter {
     return Optional.of(pathText);
   }
 
-  private boolean safeCacheRelativePath(String path) {
+  boolean safeCacheRelativePath(String path) {
     if (path == null
         || path.isBlank()
         || path.startsWith("/")
@@ -774,7 +821,7 @@ public final class IncrementalCacheMetadataWriter {
     return List.copyOf(selected);
   }
 
-  private String sha256(byte[] bytes) {
+  String sha256(byte[] bytes) {
     try {
       MessageDigest digest = MessageDigest.getInstance("SHA-256");
       byte[] hash = digest.digest(bytes);
@@ -839,13 +886,13 @@ public final class IncrementalCacheMetadataWriter {
     }
   }
 
-  private record CacheMetadata(
+  record CacheMetadata(
       List<InputFingerprint> inputs,
       List<OutputFingerprint> outputs,
       String manifestJson) {
   }
 
-  private record InputFingerprint(
+  record InputFingerprint(
       String path,
       String inputKind,
       String contentSha256,
@@ -855,7 +902,7 @@ public final class IncrementalCacheMetadataWriter {
     }
   }
 
-  private record OutputFingerprint(
+  record OutputFingerprint(
       String path,
       String outputKind,
       String contentSha256,
@@ -865,13 +912,16 @@ public final class IncrementalCacheMetadataWriter {
   private record FileInputKind(String kind, int maxBytes) {
   }
 
+  private record GeneratedSourceChildPathFingerprint(String path, String inputKind) {
+  }
+
   private record OutputArtifact(String path, String kind) {
   }
 
   private record CacheFile(String fileName, String content) {
   }
 
-  private static final class CacheMetadataUnavailableException extends Exception {
+  static final class CacheMetadataUnavailableException extends Exception {
   }
 
   private static final class UncheckedCacheMetadataUnavailableException extends RuntimeException {

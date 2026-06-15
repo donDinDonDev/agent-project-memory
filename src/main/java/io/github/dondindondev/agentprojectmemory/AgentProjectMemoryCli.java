@@ -3,6 +3,7 @@ package io.github.dondindondev.agentprojectmemory;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataWriter;
+import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataValidator;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -50,8 +51,8 @@ public final class AgentProjectMemoryCli {
         --config <path>            Use a repository-relative YAML config file under the scan root.
         --agent-profile <profile>  Generate opt-in profile artifacts for codex, claude, cursor,
                                    generic, or all. May be repeated.
-        --incremental              Run a normal full scan and refresh cache metadata under
-                                   .project-memory/cache/v1/ after successful output generation.
+        --incremental              Reuse a validated whole-output cache hit when safe; otherwise
+                                   run a full scan and refresh .project-memory/cache/v1/.
         --help                     Show this help.
       """;
   private static final String VERSION_RESOURCE = "/agent-project-memory-version.properties";
@@ -67,6 +68,7 @@ public final class AgentProjectMemoryCli {
   private final PrintWriter err;
   private final ProjectMemoryOutputGenerator outputGenerator;
   private final IncrementalCacheMetadataWriter incrementalCacheMetadataWriter;
+  private final IncrementalCacheMetadataValidator incrementalCacheMetadataValidator;
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -81,6 +83,7 @@ public final class AgentProjectMemoryCli {
     this.err = Objects.requireNonNull(err, "err");
     this.outputGenerator = Objects.requireNonNull(outputGenerator, "outputGenerator");
     this.incrementalCacheMetadataWriter = new IncrementalCacheMetadataWriter();
+    this.incrementalCacheMetadataValidator = new IncrementalCacheMetadataValidator();
   }
 
   public int run(String[] args) {
@@ -291,6 +294,22 @@ public final class AgentProjectMemoryCli {
 
     out.println("Prepared .project-memory.");
 
+    if (incremental) {
+      IncrementalCacheMetadataValidator.CacheValidationResult cacheValidation =
+          incrementalCacheMetadataValidator.validateHit(
+              normalizedProjectPath,
+              canonicalProjectPath,
+              containedOutputDirectory,
+              scanConfiguration,
+              agentProfiles,
+              version());
+      if (cacheValidation.hit()) {
+        out.println("Reused incremental cache output set.");
+        printDiagnosticsSummary(cacheValidation.diagnosticCount());
+        return SUCCESS;
+      }
+    }
+
     try {
       SpringMvcEndpointOutputGenerator.Result result = outputGenerator.generate(
           normalizedProjectPath,
@@ -337,11 +356,7 @@ public final class AgentProjectMemoryCli {
       } else {
         out.println("No project memory output generated.");
       }
-      if (result.diagnosticCount() == 0) {
-        out.println("Diagnostics: none.");
-      } else {
-        out.println("Diagnostics: " + result.diagnosticCount() + " item(s).");
-      }
+      printDiagnosticsSummary(result.diagnosticCount());
     } catch (IOException ex) {
       String message = boundedExceptionMessage(ex, normalizedProjectPath);
       if (isOutputPathValidationError(message)) {
@@ -351,6 +366,14 @@ public final class AgentProjectMemoryCli {
     }
 
     return SUCCESS;
+  }
+
+  private void printDiagnosticsSummary(int diagnosticCount) {
+    if (diagnosticCount == 0) {
+      out.println("Diagnostics: none.");
+    } else {
+      out.println("Diagnostics: " + diagnosticCount + " item(s).");
+    }
   }
 
   private int usageError(String message) {

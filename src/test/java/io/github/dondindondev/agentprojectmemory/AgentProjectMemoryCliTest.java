@@ -458,6 +458,34 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanIncrementalUsesValidatedCacheHitWithoutRegeneratingOutputs() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult warmup = runCli("scan", tempDir.toString(), "--incremental");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    CliResult hit = runCli("scan", tempDir.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, warmup.exitCode()),
+        () -> assertFullIncrementalRefresh(warmup),
+        () -> assertEquals(0, hit.exitCode()),
+        () -> assertIncrementalHit(hit),
+        () -> assertEquals(projectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(evidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(endpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(agentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanIncrementalFingerprintsEmptyStandardRootDirectoriesAcrossSupportedModules()
       throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
@@ -496,6 +524,40 @@ final class AgentProjectMemoryCliTest {
         () -> assertCacheInput(inputs, "resource_root_path", "src/test/resources", false),
         () -> assertCacheInput(inputs, "java_source_root_path", "service/src/main/java", false),
         () -> assertCacheInput(inputs, "resource_root_path", "client/src/test/resources", false));
+  }
+
+  @Test
+  void scanIncrementalFallsBackAndRefreshesForAddedEditedDeletedAndRenamedInputs()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path javaFile = tempDir.resolve("src/main/java/com/example/Sample.java");
+    Files.createDirectories(javaFile.getParent());
+    Files.writeString(javaFile, "package com.example;\nclass Sample {}\n");
+
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
+
+    Files.writeString(javaFile, "package com.example;\nclass Sample { String changed; }\n");
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
+
+    Path readme = tempDir.resolve("README.md");
+    Files.writeString(readme, "# Public Notes\n");
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
+
+    Files.delete(readme);
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
+
+    Path renamedJavaFile = tempDir.resolve("src/main/java/com/example/Renamed.java");
+    Files.move(javaFile, renamedJavaFile);
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
   }
 
   @Test
@@ -572,7 +634,7 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanIncrementalOverwritesCorruptRegularCacheMetadataWithoutReadingIt()
+  void scanIncrementalOverwritesCorruptRegularCacheMetadataAfterMiss()
       throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
@@ -594,6 +656,29 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals("1.0", manifest.path("cache_schema_version").asText()),
         () -> assertFalse(Files.readString(cacheDirectory.resolve("inputs.jsonl")).contains("not-json")),
         () -> assertFalse(Files.readString(cacheDirectory.resolve("outputs.jsonl")).contains("not-json")));
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenCacheSchemaMismatches() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    Path manifestPath = tempDir.resolve(".project-memory/cache/v1/manifest.json");
+    Files.writeString(
+        manifestPath,
+        Files.readString(manifestPath).replace(
+            "\"cache_schema_version\": \"1.0\"",
+            "\"cache_schema_version\": \"0.9\""));
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    JsonNode manifest = JSON.readTree(Files.readString(manifestPath));
+
+    assertAll(
+        () -> assertFullIncrementalRefresh(result),
+        () -> assertEquals("1.0", manifest.path("cache_schema_version").asText()));
   }
 
   @Test
@@ -688,6 +773,142 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanIncrementalFallsBackOnConfigAndProfileMismatchThenHitsSelectedProfileArtifacts()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("config"));
+    Files.writeString(tempDir.resolve("config/custom.yml"), """
+        version: 1
+        features:
+          local_markdown: false
+        """);
+
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+
+    CliResult profileMiss = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--agent-profile",
+        "codex");
+    assertFullIncrementalRefresh(profileMiss);
+    Path profile = tempDir.resolve(".project-memory/agent-profiles/codex.md");
+    String profileContent = Files.readString(profile);
+
+    CliResult profileHit = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--agent-profile",
+        "codex");
+    assertAll(
+        () -> assertIncrementalHit(profileHit),
+        () -> assertEquals(profileContent, Files.readString(profile)));
+
+    CliResult configMiss = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--config",
+        "config/custom.yml",
+        "--agent-profile",
+        "codex");
+    assertFullIncrementalRefresh(configMiss);
+
+    CliResult configHit = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--config",
+        "config/custom.yml",
+        "--agent-profile",
+        "codex");
+    assertIncrementalHit(configHit);
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenSelectedOutputDigestMismatches() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    Path agentGuide = tempDir.resolve(".project-memory/agent-guide.md");
+    Files.writeString(agentGuide, "tampered generated output");
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertFullIncrementalRefresh(result),
+        () -> assertFalse(Files.readString(agentGuide).contains("tampered generated output")));
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenSelectedProfileOutputDigestMismatches() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    assertFullIncrementalRefresh(runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--agent-profile",
+        "codex"));
+    Path profile = tempDir.resolve(".project-memory/agent-profiles/codex.md");
+    Files.writeString(profile, "tampered profile output");
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--agent-profile",
+        "codex");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertFullIncrementalRefresh(result),
+        () -> assertFalse(Files.readString(profile).contains("tampered profile output")));
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenGeneratedSourceChildBecomesUnsafe() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path generatedSourceRoot = tempDir.resolve("target/generated-sources");
+    Files.createDirectories(generatedSourceRoot);
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    assertIncrementalHit(runCli("scan", tempDir.toString(), "--incremental"));
+
+    Path outsideGeneratedSource = tempDir.resolve("outside-generated-source");
+    Files.createDirectories(outsideGeneratedSource);
+    createSymbolicLink(generatedSourceRoot.resolve("openapi"), outsideGeneratedSource);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    List<JsonNode> inputs = jsonLines(tempDir.resolve(".project-memory/cache/v1/inputs.jsonl"));
+
+    assertAll(
+        () -> assertFullIncrementalRefresh(result),
+        () -> assertCacheInput(
+            inputs,
+            "generated_source_root_unsafe_path",
+            "target/generated-sources/openapi",
+            false));
+  }
+
+  @Test
   void scanIncrementalSkipsCacheRefreshWhenCacheDirectoryIsSymlink() throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
@@ -704,6 +925,7 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
+        () -> assertFalse(result.stdout().contains("Reused incremental cache output set.")),
         () -> assertTrue(result.stdout().contains("Skipped incremental cache metadata refresh.")),
         () -> assertFalse(Files.exists(outsideCache.resolve("v1/manifest.json"))),
         () -> assertFalse(Files.exists(outsideCache.resolve("v1/inputs.jsonl"))),
@@ -728,6 +950,7 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
+        () -> assertFalse(result.stdout().contains("Reused incremental cache output set.")),
         () -> assertTrue(result.stdout().contains("Skipped incremental cache metadata refresh.")),
         () -> assertEquals("outside content", Files.readString(outsideManifest)),
         () -> assertEquals("outside content", Files.readString(cacheDirectory.resolve("manifest.json"))),
@@ -1214,6 +1437,24 @@ final class AgentProjectMemoryCliTest {
       }
     }
     return records;
+  }
+
+  private void assertIncrementalHit(CliResult result) {
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Reused incremental cache output set.")),
+        () -> assertFalse(result.stdout().contains("Generated project-map.json")),
+        () -> assertFalse(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertTrue(result.stdout().contains("Diagnostics:")));
+  }
+
+  private void assertFullIncrementalRefresh(CliResult result) {
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertFalse(result.stdout().contains("Reused incremental cache output set.")),
+        () -> assertTrue(result.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertTrue(result.stdout().contains("Diagnostics:")));
   }
 
   private void assertCacheInput(

@@ -103,17 +103,20 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
-Current development builds also support opt-in incremental cache metadata warm-up:
+Current development builds also support opt-in incremental scan mode:
 
 ```sh
 java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-project --incremental
 ```
 
-`--incremental` currently runs the same normal full analysis path and refreshes
-metadata-only cache files under `.project-memory/cache/v1/` after successful output
-generation. It does not skip analysis or reuse cached output yet. Scans without
-`--incremental` ignore persistent cache state and do not read, write, delete, or trust
-cache files.
+`--incremental` reuses the existing generated output set only after validating cache
+schema, tool version, selected CLI options, selected config, selected agent profiles,
+input fingerprints, and current generated output fingerprints. The first incremental
+scan for a repository state is a cache miss: it runs the normal full analysis path and
+refreshes metadata-only cache files under `.project-memory/cache/v1/` after successful
+output generation. Missing, stale, unsafe, corrupted, or mismatched cache state fails
+closed to normal full analysis. Scans without `--incremental` ignore persistent cache
+state and do not read, write, delete, or trust cache files.
 
 CLI exit codes are stable for automation:
 
@@ -298,10 +301,10 @@ Compatibility and migration notes:
   top-level `generated_sources` policy and root metadata with
   `content_status: "not_scanned"`. Generated-source content scanning remains
   unavailable, and `features.generated_sources: true` remains invalid config.
-- The v1.4 incremental cache metadata foundation keeps `schema_version: "1.0"` and adds
-  only opt-in `.project-memory/cache/v1/` execution metadata. Cache-hit reuse is not
-  implemented in the current foundation, and normal scans without `--incremental`
-  preserve full-scan behavior.
+- The v1.4 incremental cache mode keeps `schema_version: "1.0"` and adds only opt-in
+  `.project-memory/cache/v1/` execution metadata. Validated cache hits reuse the
+  existing generated output set without adding cache fields to `project-map.json`, and
+  normal scans without `--incremental` preserve full-scan behavior.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
   evidence IDs, and Markdown evidence references stay aligned.

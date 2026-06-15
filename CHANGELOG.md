@@ -19,6 +19,10 @@ architecture documents.
   selected profile/config/option matching metadata, input fingerprints, and generated
   output fingerprints, including path-only standard source, test, and resource root
   directory-presence fingerprints, without enabling cache-hit reuse.
+- Added validated whole-output-set cache hits for `scan <path> --incremental`: unchanged
+  repository states can reuse the existing generated output set only when cache schema,
+  tool version, selected CLI options, selected config, selected agent profiles, input
+  fingerprints, and current output fingerprints all match.
 
 ### Changed
 
@@ -32,11 +36,12 @@ architecture documents.
 
 ### Security
 
-- Kept the v1.4 cache metadata foundation local-only and bounded: normal scans without
+- Kept the v1.4 cache path local-only, bounded, and fail-closed: normal scans without
   `--incremental` ignore cache state, cache metadata stays under
-  `.project-memory/cache/v1/`, symlinked or multi-link cache targets are not
-  overwritten, generated-source roots remain path-only metadata, and cache files remain
-  non-evidence execution metadata.
+  `.project-memory/cache/v1/`, symlinked or multi-link cache targets are not trusted or
+  overwritten, generated-source roots remain path-only metadata, output digest
+  mismatches and unsafe generated-source child path changes fall back to full analysis,
+  and cache files remain non-evidence execution metadata.
 
 ## [1.3.0] - 2026-06-15
 

@@ -843,12 +843,13 @@ existing evidence model.
 
 Current implementation status:
 
-- The initial cache metadata foundation is implemented in development builds. Opt-in
-  `scan <path> --incremental` runs the normal full analysis path and writes
-  `.project-memory/cache/v1/manifest.json`, `inputs.jsonl`, and `outputs.jsonl` after
-  successful output generation.
-- Cache-hit reuse is not implemented yet. Normal scans without `--incremental` continue
-  to ignore persistent cache state.
+- The incremental cache implementation is active in development builds. Opt-in
+  `scan <path> --incremental` validates `.project-memory/cache/v1/manifest.json`,
+  `inputs.jsonl`, and `outputs.jsonl`; unchanged repository states can reuse the
+  existing generated output set, while missing, stale, unsafe, corrupted, or mismatched
+  cache state falls back to full analysis and refreshes metadata after successful output
+  generation.
+- Normal scans without `--incremental` continue to ignore persistent cache state.
 
 Planned contract boundary:
 

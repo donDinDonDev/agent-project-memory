@@ -1192,8 +1192,9 @@ implementation.
 
 The v1.4 incremental cache layer does not add evidence types, evidence fields, evidence
 records, confidence labels, excerpt semantics, path semantics, or tool-config evidence.
-The current foundation writes opt-in cache metadata after successful full output
-generation; validated cache-hit reuse is not implemented yet.
+The current implementation writes opt-in cache metadata after successful full output
+generation and may reuse the existing generated output set after strict whole-output-set
+cache validation.
 
 Cache state is execution metadata, not project evidence:
 

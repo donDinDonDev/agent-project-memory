@@ -3743,10 +3743,11 @@ Stop conditions for implementation:
 
 ### v1.4 Incremental Cache Contract
 
-This section defines the v1.4 incremental cache boundary. The current foundation
-implements opt-in cache metadata warm-up with `scan <path> --incremental`: it runs the
-normal full analysis path and writes cache metadata after successful output generation.
-Validated cache-hit reuse is not implemented yet.
+This section defines the v1.4 incremental cache boundary. The current implementation
+supports opt-in metadata-only cache-assisted reuse with `scan <path> --incremental`:
+it reuses the existing generated output set only after strict whole-output-set cache
+validation, and otherwise runs the normal full analysis path and writes cache metadata
+after successful output generation.
 
 The v1.4 policy decision is optional metadata-only cache-assisted reuse:
 
@@ -3760,7 +3761,7 @@ The v1.4 policy decision is optional metadata-only cache-assisted reuse:
 - The first incremental run for a repository state is a cache miss and warm-up: it runs
   normal full analysis, writes the normal generated output set, then writes cache
   metadata only after successful output generation.
-- A later implementation may skip full analysis only when cache schema, tool version,
+- Later incremental runs may skip full analysis only when cache schema, tool version,
   selected CLI options, selected config, selected agent profiles, input fingerprints,
   and existing generated output fingerprints all match the current repository state.
 - The initial v1.4 reuse granularity is the whole generated output set for an unchanged
@@ -3780,7 +3781,7 @@ Schema and compatibility decisions:
 - Optional profile artifacts remain governed by the v1.3 profile contract under
   `.project-memory/agent-profiles/`.
 - `project-map.json` does not gain cache-hit, cache-miss, timing, output-digest, or
-  incremental-reuse fields in the planned v1.4 design. This keeps byte-for-byte output
+  incremental-reuse fields in the v1.4 design. This keeps byte-for-byte output
   parity possible between full scan output and a validated incremental cache hit.
 - `evidence-index.jsonl` field shape and evidence semantics are unchanged. Cache files,
   cache hits or misses, fingerprints, invalidation decisions, output digests, generated
@@ -3886,6 +3887,7 @@ Manifest rules:
 {"cache_schema_version":"1.0","path":"src/main/java","input_kind":"java_source_root_path","content_sha256":null,"size_bytes":null}
 {"cache_schema_version":"1.0","path":"src/main/java/com/example/App.java","input_kind":"java_source","content_sha256":"sha256:...","size_bytes":4567}
 {"cache_schema_version":"1.0","path":"target/generated-sources/openapi","input_kind":"generated_source_root_path","content_sha256":null,"size_bytes":null}
+{"cache_schema_version":"1.0","path":"target/generated-sources/unsafe-link","input_kind":"generated_source_root_unsafe_path","content_sha256":null,"size_bytes":null}
 ```
 
 Input fingerprint rules:
@@ -3897,19 +3899,22 @@ Input fingerprint rules:
   `gradle_build_file`, `java_source_root_path`, `java_test_root_path`,
   `resource_root_path`, `java_source`, `java_test_source`, `resource_config_file`,
   `openapi_spec`, `local_markdown_document`, `scan_config`, or
-  `generated_source_root_path`.
+  `generated_source_root_path`. Unsafe or symlinked generated-source child path
+  observations may use `generated_source_root_unsafe_path`.
 - Content-affecting regular-file inputs use `content_sha256` and `size_bytes`.
   Directory or path-presence observations that are already metadata-only, such as
-  standard source/test/resource root presence and generated-source root path presence,
-  use `content_sha256: null` and `size_bytes: null`.
+  standard source/test/resource root presence, generated-source root path presence, and
+  unsafe generated-source child path presence, use `content_sha256: null` and
+  `size_bytes: null`.
 - File modification times are not part of the serialized cache contract and must not be
   the sole authority for cache hits.
 - The fingerprinted input set must include every source, build, spec, local Markdown,
   supported config, selected scan config, standard source/test/resource root directory
   presence, generated-source path observation, and other local input class that can
   affect the generated output set or bounded diagnostics under the selected options.
-- Generated-source root fingerprints remain path-presence metadata only. The cache
-  contract must not read or fingerprint files under generated-source roots.
+- Generated-source root fingerprints, including unsafe generated-source child path
+  markers, remain path-presence metadata only. The cache contract must not read or
+  fingerprint files under generated-source roots.
 
 `cache/v1/outputs.jsonl` shape:
 
