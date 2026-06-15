@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-06-15
+
 ### Added
 
 - Implemented the first v1.4 incremental cache metadata foundation: opt-in
@@ -23,6 +25,10 @@ architecture documents.
   repository states can reuse the existing generated output set only when cache schema,
   tool version, selected CLI options, selected config, selected agent profiles, input
   fingerprints, and current output fingerprints all match.
+- Added v1.4.0 release notes covering incremental cache compatibility, validation,
+  security boundaries, not-included scope, and expected release assets.
+- Added a v1.4 incremental cache evaluation summary for packaged CLI full-scan,
+  cache-miss, cache-hit, invalidation, no-profile, and selected-profile validation.
 
 ### Changed
 
@@ -31,6 +37,11 @@ architecture documents.
   fail-closed invalidation, full-scan output parity, cache-sensitive-data limits, and
   the evidence decision that cache state is execution metadata rather than project
   evidence.
+- Aligned the Maven project version, README local build examples, roadmap status, and
+  release notes for the `v1.4.0` release materials.
+- Confirmed that `schema_version: "1.0"` remains the stable-line marker for v1.4;
+  incremental cache files are additive execution metadata outside `project-map.json`
+  and `evidence-index.jsonl`.
 - Updated post-release documentation status to mark `v1.3.0` as published with release
   jar and checksum assets.
 

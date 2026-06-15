@@ -3,11 +3,12 @@
 ## Current Status
 
 The latest published release is `v1.3.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The published v1.3.0 profile expansion is additive: Maven, Gradle,
-source-visible output, generated-source metadata, and evidence semantics are preserved,
-while opt-in agent profile artifacts are generated as
-deterministic presentations under `.project-memory/agent-profiles/`.
+The current source tree is prepared for `v1.4.0` release-candidate review. Normal
+generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
+marker. The v1.4 incremental cache expansion is additive: Maven, Gradle,
+source-visible output, generated-source metadata, agent profile artifacts, and evidence
+semantics are preserved, while opt-in `--incremental` scans may reuse an unchanged
+generated output set after strict metadata validation.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -835,7 +836,7 @@ Non-goals:
 - Adding profile-driven project facts, evidence records, runtime claims, security
   correctness claims, or source/document body summaries.
 
-### v1.4.0: Incremental Scan And Performance (Planned)
+### v1.4.0: Incremental Scan And Performance (Release Candidate)
 
 Product outcome: improve repeat scans for larger local Java/Spring repositories while
 preserving full-scan correctness, deterministic outputs, local-only operation, and the
@@ -910,6 +911,23 @@ Validation expectations before release:
 - Packaged CLI evaluation on representative fixtures and larger local targets before
   release, plus risk-based review for cache, path, filesystem, config, output, and
   evidence-boundary behavior.
+
+Release readiness notes:
+
+- Public release notes are available in
+  [V1_4_RELEASE_NOTES.md](V1_4_RELEASE_NOTES.md).
+- A public incremental cache evaluation summary is available in
+  [../development/evaluations/v1.4-incremental-cache_SUMMARY.md](../development/evaluations/v1.4-incremental-cache_SUMMARY.md).
+- Focused tests cover cache path containment, symlink and hardlink cache paths, cache
+  schema and corruption handling, fingerprint changes, file additions, edits,
+  deletions and renames, config/option/profile mismatches, output digest mismatches,
+  normal no-incremental stability, and unchanged-state cache hits.
+- Final local release-prep validation passed with `mvn test`, `mvn package`, packaged
+  CLI full/incremental/profile smoke, checksum dry-run in a clean local asset
+  directory, whitespace checks, public marker audit, and risk-based release-prep review
+  for the final release-prep diff.
+- No release-blocking security finding or bounded security-fix goal remains open for
+  `v1.4.0`.
 
 Possible later tracks:
 
