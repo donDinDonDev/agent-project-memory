@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-15
+
 ### Added
 
 - Documented the v1.3 deterministic agent output profile contract, including
@@ -23,6 +25,34 @@ architecture documents.
   selected profile-specific Markdown content generated from existing structured facts
   and evidence references, unchanged no-profile default output, and no
   `project-map.json` or `evidence-index.jsonl` semantic changes.
+- Added v1.3.0 release notes covering agent profile compatibility, validation, security
+  boundaries, not-included scope, and expected release assets.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, and
+  release notes for the `v1.3.0` release materials.
+- Clarified that `schema_version: "1.0"` remains the stable-line marker for v1.3;
+  agent profile artifacts are additive generated presentations, while existing
+  project-map, evidence-index, endpoint, guide, generated-source, and evidence
+  semantics are preserved.
+
+### Security
+
+- Completed risk-based release review for the agent profile presentation boundary with
+  no release-blocking findings remaining.
+- Kept profile generation local-only and deterministic: profile artifacts do not call
+  LLMs, external services, connectors, editors, local agent runtimes, build tools, or
+  generated-source scanners; do not create evidence records; and do not modify root
+  repository instruction/config files.
+
+### Not Included
+
+- LLM calls, AI-generated summaries, source upload, connectors, network access,
+  telemetry, editor integrations, MCP/server surfaces, plugin platforms, repository
+  chat, generic RAG, automatic repository-file modification, generated-source content
+  scanning, build execution, package-manager publication, SaaS, web UI, or automatic
+  code modification.
 
 ## [1.2.0] - 2026-06-15
 

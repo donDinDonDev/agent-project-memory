@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.2.0.jar
+target/agent-project-memory-1.3.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,24 +74,25 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.2.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.2.0.jar --help
-java -jar target/agent-project-memory-1.2.0.jar help
-java -jar target/agent-project-memory-1.2.0.jar scan --help
-java -jar target/agent-project-memory-1.2.0.jar --version
-java -jar target/agent-project-memory-1.2.0.jar version
+java -jar target/agent-project-memory-1.3.0.jar --help
+java -jar target/agent-project-memory-1.3.0.jar help
+java -jar target/agent-project-memory-1.3.0.jar scan --help
+java -jar target/agent-project-memory-1.3.0.jar --version
+java -jar target/agent-project-memory-1.3.0.jar version
 ```
 
-Current development builds also support opt-in agent profile artifact selection:
+Current v1.3 release-candidate builds also support opt-in agent profile artifact
+selection:
 
 ```sh
-java -jar target/agent-project-memory-1.2.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-1.2.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -321,6 +322,8 @@ fact.
 
 Start here:
 
+- v1.3 release-candidate summary:
+  [docs/product/V1_3_RELEASE_NOTES.md](docs/product/V1_3_RELEASE_NOTES.md).
 - v1.2 release summary: [docs/product/V1_2_RELEASE_NOTES.md](docs/product/V1_2_RELEASE_NOTES.md).
 - v1.1 release summary: [docs/product/V1_1_RELEASE_NOTES.md](docs/product/V1_1_RELEASE_NOTES.md).
 - v1.0 release summary: [docs/product/V1_0_RELEASE_NOTES.md](docs/product/V1_0_RELEASE_NOTES.md).
@@ -376,12 +379,12 @@ references.
 ## Project Status
 
 The latest published release is `v1.2.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds produce `target/agent-project-memory-1.2.0.jar`. Normal generated
-`project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.2 generated-source/codegen
-metadata expansion is additive: existing Maven, Gradle, source-visible output, and
-evidence semantics are preserved, while generated-source roots are reported as
-metadata-only inventory with `content_status: "not_scanned"`.
+asset. Current local release-candidate builds produce
+`target/agent-project-memory-1.3.0.jar`. Normal generated `project-map.json` files use
+`schema_version: "1.0"` as a stable-line marker. The v1.3 agent profile expansion is
+additive: existing Maven, Gradle, source-visible output, generated-source metadata, and
+evidence semantics are preserved, while opt-in profile selection writes deterministic
+generated presentations under `.project-memory/agent-profiles/`.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
@@ -651,6 +654,11 @@ Current limitations:
   evidence; it does not read
   hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
   serialize document bodies.
+- Agent profile artifacts are opt-in generated presentations only. They reference
+  existing project facts and evidence, do not add `project-map.json` fields, do not
+  create evidence records, do not replace `agent-guide.md`, and do not modify root
+  repository instruction/config files such as `AGENTS.md`, `CLAUDE.md`, Cursor rules,
+  IDE settings, source files, docs, or config files.
 - Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, and optional
