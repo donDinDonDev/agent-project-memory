@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.1.0.jar
+target/agent-project-memory-1.2.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,17 +74,17 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.1.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.2.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.1.0.jar --help
-java -jar target/agent-project-memory-1.1.0.jar help
-java -jar target/agent-project-memory-1.1.0.jar scan --help
-java -jar target/agent-project-memory-1.1.0.jar --version
-java -jar target/agent-project-memory-1.1.0.jar version
+java -jar target/agent-project-memory-1.2.0.jar --help
+java -jar target/agent-project-memory-1.2.0.jar help
+java -jar target/agent-project-memory-1.2.0.jar scan --help
+java -jar target/agent-project-memory-1.2.0.jar --version
+java -jar target/agent-project-memory-1.2.0.jar version
 ```
 
 CLI exit codes are stable for automation:
@@ -151,8 +151,9 @@ supported security annotations and `SecurityFilterChain` `@Bean` methods without
 security policy, endpoint protection, authentication, authorization, filter-chain
 ordering, vulnerability, or correctness claims. It also discovers common local
 OpenAPI/Swagger spec filenames as declared API
-inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, and discovers
-safe default-scope local Markdown document inventory with deterministic ATX heading
+inputs, extracts minimal spec-backed declared OpenAPI/Swagger operations, discovers
+generated-source/codegen root metadata without reading generated source contents, and
+discovers safe default-scope local Markdown document inventory with deterministic ATX heading
 references and bounded chunk references, with resolving document evidence for file,
 heading, chunk, and bounded reconciliation mention observations, plus conservative
 `documents.reconciliation` inspection hints for document-only endpoint-like path
@@ -188,7 +189,8 @@ Spring Boot application signals under
 `project.modules.items[].build_config.spring_boot_applications`, API surface categories
 for source-visible endpoint facts, local OpenAPI/Swagger spec file facts under
 `api_surface.openapi.spec_files`, minimal declared operation facts under
-`api_surface.openapi.operations`, direct `module_id`
+`api_surface.openapi.operations`, top-level generated-source/codegen policy and
+metadata-only root inventory under `generated_sources`, direct `module_id`
 fields on module-owned facts, Spring MVC endpoint facts, hidden HTTP surface,
 generated-source, and Maven module warnings that are not expanded into endpoint/API
 facts, direct component inventory, direct JPA entity facts with bounded source-visible
@@ -236,6 +238,10 @@ Compatibility and migration notes:
 - The v1.1 Gradle expansion keeps `schema_version: "1.0"` and adds Gradle and mixed
   Maven/Gradle fields only where Gradle inputs are detected. Existing Maven fields and
   evidence semantics are preserved.
+- The v1.2 generated-source/codegen expansion keeps `schema_version: "1.0"` and adds
+  top-level `generated_sources` policy and root metadata with
+  `content_status: "not_scanned"`. Generated-source content scanning remains
+  unavailable, and `features.generated_sources: true` remains invalid config.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
   evidence IDs, and Markdown evidence references stay aligned.
@@ -280,12 +286,16 @@ The same output files:
 .project-memory/agent-guide.md
 ```
 
-These files are meant to give humans and coding agents a compact, evidence-backed map of the project: detected build layout, Spring MVC endpoints, important components, and references back to the source files that prove each fact.
+These files are meant to give humans and coding agents a compact, evidence-backed map
+of the project: detected build layout, Spring MVC endpoints, generated-source/codegen
+metadata, important components, and references back to the source files that prove each
+fact.
 
 ## Public Documentation Map
 
 Start here:
 
+- v1.2 release summary: [docs/product/V1_2_RELEASE_NOTES.md](docs/product/V1_2_RELEASE_NOTES.md).
 - v1.1 release summary: [docs/product/V1_1_RELEASE_NOTES.md](docs/product/V1_1_RELEASE_NOTES.md).
 - v1.0 release summary: [docs/product/V1_0_RELEASE_NOTES.md](docs/product/V1_0_RELEASE_NOTES.md).
 - v0.9 release summary: [docs/product/V0_9_RELEASE_NOTES.md](docs/product/V0_9_RELEASE_NOTES.md).
@@ -340,11 +350,12 @@ references.
 ## Project Status
 
 The latest published release is `v1.1.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds from this checkout produce `target/agent-project-memory-1.1.0.jar`.
-Normal generated `project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.1 Gradle expansion is additive:
-Maven output and evidence semantics are preserved, while Gradle and mixed
-Maven/Gradle scans may add the documented Gradle build and module fields.
+asset. This checkout prepares the `v1.2.0` release candidate, and local builds produce
+`target/agent-project-memory-1.2.0.jar`. Normal generated `project-map.json` files use
+`schema_version: "1.0"` as a stable-line marker. The v1.2 generated-source/codegen
+metadata expansion is additive: existing Maven, Gradle, source-visible output, and
+evidence semantics are preserved, while generated-source roots are reported as
+metadata-only inventory with `content_status: "not_scanned"`.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
@@ -368,7 +379,8 @@ deterministic path-only resource-root and supported config-file
 discovery, deterministic hidden HTTP surface, generated-source, and Maven module
 warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
 inputs, minimal deterministic OpenAPI/Swagger operation extraction as spec-backed
-declared operation facts, a minimal deterministic tests inventory, deterministic
+declared operation facts, deterministic generated-source/codegen metadata-only
+inventory under `generated_sources`, a minimal deterministic tests inventory, deterministic
 repository signal extraction for direct `@Repository` and supported Spring Data
 repository interface extensions, deterministic configuration surface extraction for
 direct `@Configuration`, direct `@Bean`, and direct `@ConfigurationProperties`
@@ -544,6 +556,13 @@ Current limitations:
   fetch external schemas, claim implementation, treat symlink entries as spec files, or
   scan generated-source roots. Invalid or unsupported specs degrade to warnings rather
   than endpoint facts.
+- Generated-source/codegen metadata remains warning, inventory, and guide orientation
+  only. Generated roots are reported with `content_status: "not_scanned"` and
+  `source_origin: "metadata_only"`; generated-source contents are not read, do not
+  produce scanned-content evidence, and do not create endpoint, component, Spring/JPA,
+  test, or API implementation facts. `features.generated_sources: false` remains a
+  valid reserved config value, while `features.generated_sources: true` remains invalid
+  config.
 - Hidden HTTP surface and generated-source warnings are limited to OpenAPI/Swagger spec filename presence,
   supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
   `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,

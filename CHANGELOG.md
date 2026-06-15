@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-06-15
+
 ### Added
 
 - Implemented the v1.2 generated-source/codegen metadata-only slice: top-level
@@ -16,6 +18,34 @@ architecture documents.
   `content_status: "not_scanned"`, generator/codegen warning references, unsafe-path
   and cap diagnostics, guide wording, and golden coverage, while keeping generated
   source content scanning disabled and `features.generated_sources: true` invalid.
+- Added v1.2.0 release notes covering generated-source/codegen compatibility,
+  validation, security boundaries, not-included scope, and expected release assets.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, and
+  release notes for the `v1.2.0` release materials.
+- Clarified that `schema_version: "1.0"` remains the stable-line marker for v1.2;
+  generated-source/codegen metadata is additive, while existing Maven, Gradle,
+  source-visible output, and evidence semantics are preserved.
+
+### Security
+
+- Completed risk-based release review for the generated-source/codegen metadata-only
+  boundary with no release-blocking findings remaining.
+- Kept generated-source handling local-only and metadata-only: the analyzer does not
+  scan generated source contents, execute generators, run Maven or Gradle tasks, resolve
+  plugins or dependencies, follow symlinks, or serialize generated output contents.
+
+### Not Included
+
+- Generated-source content scanning, whether default or opt-in, generator execution,
+  Maven lifecycle execution, Gradle task execution, plugin/dependency/task/repository
+  resolution, generated-source graph reconstruction, runtime API freshness checks,
+  generated client or server API reconstruction, automatic OpenAPI/source matching,
+  custom Gradle `sourceSets` support, connectors, network access, telemetry,
+  package-manager publication, SaaS, web UI, repository chat, generic RAG, LLM calls in
+  the core analyzer, or automatic code modification.
 
 ## [1.1.0] - 2026-06-14
 

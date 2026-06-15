@@ -3,10 +3,11 @@
 ## Current Status
 
 The latest published release is `v1.1.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The v1.1 Gradle expansion is additive: Maven output and evidence
-semantics are preserved, while Gradle and mixed Maven/Gradle scans may add documented
-Gradle build and module fields.
+This checkout prepares the `v1.2.0` release candidate. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as the stable-line marker. The
+v1.2 generated-source/codegen metadata expansion is additive: Maven, Gradle,
+source-visible output, and evidence semantics are preserved, while generated-source
+roots are reported as metadata-only inventory with `content_status: "not_scanned"`.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -20,15 +21,16 @@ The current release line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
 MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
 metadata, source-visible test and quality planning signals, default-scope local Markdown
-document inventory, redacted scan metadata, safe root-local YAML config support, stable
-CLI help/version behavior, and a documented release-jar verification path.
+document inventory, generated-source/codegen metadata-only inventory, redacted scan
+metadata, safe root-local YAML config support, stable CLI help/version behavior, and a
+documented release-jar verification path.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The current v1.1 released expansion is Gradle Java/Spring support, scoped as
-an additive v1.0-compatible output-contract expansion rather than a schema marker
-migration.
+started. The current v1.2 release-candidate expansion is generated-source/codegen
+metadata maturity, scoped as an additive v1.0-compatible output-contract expansion
+rather than a schema marker migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -653,7 +655,7 @@ Non-goals:
 - Connectors, network/auth, SaaS, web UI, repository chat, generic RAG, LLM calls in the
   core analyzer, or automatic code modification.
 
-### v1.2.0: Generated Sources And Codegen Maturity (Planned)
+### v1.2.0: Generated Sources And Codegen Maturity (Release Candidate)
 
 Product outcome: make generated-source and code generation handling more explicit,
 safer, and more useful while preserving the default behavior that generated source
@@ -695,12 +697,19 @@ Origin and claim-separation policy:
   evidence semantics, fixtures, goldens, evaluation, and risk-based security review. It
   must not be inferred from `features.generated_sources: true` alone.
 
-Remaining follow-up slices:
+Release-candidate readiness notes:
 
-- Evaluate the implemented metadata-only behavior on representative generated-source
-  and codegen projects, plus Maven and Gradle regression targets.
-- Prepare release materials only after implementation, validation, and required
-  risk-based security review are complete.
+- Public release notes are available in
+  [V1_2_RELEASE_NOTES.md](V1_2_RELEASE_NOTES.md).
+- Focused tests and goldens cover generated-root inventory, disabled config behavior,
+  diagnostics, warning references, deterministic sorting, and guide wording.
+- Maven and Gradle regression coverage proves disabled-mode source-visible output and
+  evidence semantics are preserved.
+- Packaged CLI release-prep validation passed for generated-source metadata behavior,
+  help/version metadata, artifact metadata, and checksum verification.
+- Risk-based release review completed with no release-blocking findings remaining.
+- No tag, push, release, artifact upload, or package-manager publication is performed by
+  release-prep documentation work.
 
 Non-goals:
 
