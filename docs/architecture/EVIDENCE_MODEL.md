@@ -1188,11 +1188,12 @@ Any future profile feature that changes evidence shape or treats profile output 
 evidence source must update this document and `OUTPUT_CONTRACT.md` before
 implementation.
 
-### Planned v1.4 Incremental Cache Evidence Decision
+### v1.4 Incremental Cache Evidence Decision
 
-The planned v1.4 incremental cache layer does not add evidence types, evidence fields,
-evidence records, confidence labels, excerpt semantics, path semantics, or tool-config
-evidence.
+The v1.4 incremental cache layer does not add evidence types, evidence fields, evidence
+records, confidence labels, excerpt semantics, path semantics, or tool-config evidence.
+The current foundation writes opt-in cache metadata after successful full output
+generation; validated cache-hit reuse is not implemented yet.
 
 Cache state is execution metadata, not project evidence:
 
@@ -1231,7 +1232,7 @@ Cache-sensitive-data boundaries:
   command logs, stack traces, raw include/exclude patterns, environment variables,
   decrypted values, credentials, tokens, secret-looking values, local absolute paths,
   downstream agent output, or LLM output.
-- Generated-source roots remain metadata-only in the planned v1.4 cache boundary. Cache
+- Generated-source roots remain metadata-only in the v1.4 cache boundary. Cache
   fingerprints must not read or cite files under generated-source roots unless a later
   explicit generated-source content scan contract updates this document and
   `OUTPUT_CONTRACT.md`.

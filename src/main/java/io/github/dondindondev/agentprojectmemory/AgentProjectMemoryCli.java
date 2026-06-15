@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
+import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataWriter;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -21,17 +22,17 @@ import java.util.Properties;
 
 public final class AgentProjectMemoryCli {
   public static final String USAGE =
-      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]";
+      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]";
   private static final String GENERAL_HELP = """
       agent-project-memory - local evidence-backed project memory for Java/Spring projects
 
       Usage:
-        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]
+        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
         agent-project-memory help
         agent-project-memory version
 
       Commands:
-        scan <path> [--config <path>] [--agent-profile <profile>]
+        scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
                                        Generate .project-memory output for a local repository.
         help                           Show this help.
         version                        Show the CLI version.
@@ -41,7 +42,7 @@ public final class AgentProjectMemoryCli {
         --version                      Show the CLI version.
       """;
   private static final String SCAN_HELP = """
-      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]
+      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
 
       Generate local evidence-backed project memory under <path>/.project-memory/.
 
@@ -49,6 +50,8 @@ public final class AgentProjectMemoryCli {
         --config <path>            Use a repository-relative YAML config file under the scan root.
         --agent-profile <profile>  Generate opt-in profile artifacts for codex, claude, cursor,
                                    generic, or all. May be repeated.
+        --incremental              Run a normal full scan and refresh cache metadata under
+                                   .project-memory/cache/v1/ after successful output generation.
         --help                     Show this help.
       """;
   private static final String VERSION_RESOURCE = "/agent-project-memory-version.properties";
@@ -63,6 +66,7 @@ public final class AgentProjectMemoryCli {
   private final PrintWriter out;
   private final PrintWriter err;
   private final ProjectMemoryOutputGenerator outputGenerator;
+  private final IncrementalCacheMetadataWriter incrementalCacheMetadataWriter;
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -76,6 +80,7 @@ public final class AgentProjectMemoryCli {
     this.out = Objects.requireNonNull(out, "out");
     this.err = Objects.requireNonNull(err, "err");
     this.outputGenerator = Objects.requireNonNull(outputGenerator, "outputGenerator");
+    this.incrementalCacheMetadataWriter = new IncrementalCacheMetadataWriter();
   }
 
   public int run(String[] args) {
@@ -129,7 +134,11 @@ public final class AgentProjectMemoryCli {
       out.print(SCAN_HELP);
       return SUCCESS;
     }
-    return scan(scanArgs.path(), scanArgs.configPath(), scanArgs.agentProfiles());
+    return scan(
+        scanArgs.path(),
+        scanArgs.configPath(),
+        scanArgs.agentProfiles(),
+        scanArgs.incremental());
   }
 
   private ScanArgs scanArgs(String[] args) {
@@ -148,15 +157,26 @@ public final class AgentProjectMemoryCli {
       return ScanArgs.scanInputError("Scan path must not be blank.");
     }
     if (scanPath.startsWith("--")) {
-      return "--config".equals(scanPath) || "--agent-profile".equals(scanPath)
+      return "--config".equals(scanPath)
+              || "--agent-profile".equals(scanPath)
+              || "--incremental".equals(scanPath)
           ? ScanArgs.usageError("Missing scan path.")
           : ScanArgs.usageError("Unknown flag.");
     }
     String configPath = null;
     EnumSet<AgentOutputProfile> agentProfiles = EnumSet.noneOf(AgentOutputProfile.class);
+    boolean incremental = false;
     int index = 2;
     while (index < args.length) {
       String argument = args[index];
+      if ("--incremental".equals(argument)) {
+        if (incremental) {
+          return ScanArgs.usageError("Duplicate --incremental flag.");
+        }
+        incremental = true;
+        index++;
+        continue;
+      }
       if ("--config".equals(argument)) {
         if (configPath != null) {
           return ScanArgs.usageError("Duplicate --config flag.");
@@ -187,7 +207,7 @@ public final class AgentProjectMemoryCli {
       }
       return ScanArgs.usageError("Unexpected extra arguments.");
     }
-    return ScanArgs.valid(scanPath, configPath, canonicalProfiles(agentProfiles));
+    return ScanArgs.valid(scanPath, configPath, canonicalProfiles(agentProfiles), incremental);
   }
 
   private List<AgentOutputProfile> canonicalProfiles(EnumSet<AgentOutputProfile> profiles) {
@@ -203,7 +223,8 @@ public final class AgentProjectMemoryCli {
   private int scan(
       String rawPath,
       String explicitConfigPath,
-      List<AgentOutputProfile> agentProfiles) {
+      List<AgentOutputProfile> agentProfiles,
+      boolean incremental) {
     if (rawPath == null) {
       return scanInputError("Missing scan path.");
     }
@@ -297,6 +318,21 @@ public final class AgentProjectMemoryCli {
         out.println("Generated agent-guide.md.");
         if (result.profileCount() > 0) {
           out.println("Generated agent profile artifacts: " + result.profileCount() + ".");
+        }
+        if (incremental) {
+          IncrementalCacheMetadataWriter.CacheWriteResult cacheResult =
+              incrementalCacheMetadataWriter.write(
+                  normalizedProjectPath,
+                  canonicalProjectPath,
+                  containedOutputDirectory,
+                  scanConfiguration,
+                  agentProfiles,
+                  version());
+          if (cacheResult.written()) {
+            out.println("Updated incremental cache metadata.");
+          } else {
+            out.println("Skipped incremental cache metadata refresh.");
+          }
         }
       } else {
         out.println("No project memory output generated.");
@@ -411,26 +447,28 @@ public final class AgentProjectMemoryCli {
       String path,
       String configPath,
       List<AgentOutputProfile> agentProfiles,
+      boolean incremental,
       boolean help,
       String errorMessage,
       int errorExitCode) {
     static ScanArgs valid(
         String path,
         String configPath,
-        List<AgentOutputProfile> agentProfiles) {
-      return new ScanArgs(path, configPath, agentProfiles, false, null, SUCCESS);
+        List<AgentOutputProfile> agentProfiles,
+        boolean incremental) {
+      return new ScanArgs(path, configPath, agentProfiles, incremental, false, null, SUCCESS);
     }
 
     static ScanArgs helpRequested() {
-      return new ScanArgs(null, null, List.of(), true, null, SUCCESS);
+      return new ScanArgs(null, null, List.of(), false, true, null, SUCCESS);
     }
 
     static ScanArgs usageError(String message) {
-      return new ScanArgs(null, null, List.of(), false, message, USAGE_ERROR);
+      return new ScanArgs(null, null, List.of(), false, false, message, USAGE_ERROR);
     }
 
     static ScanArgs scanInputError(String message) {
-      return new ScanArgs(null, null, List.of(), false, message, SCAN_INPUT_ERROR);
+      return new ScanArgs(null, null, List.of(), false, false, message, SCAN_INPUT_ERROR);
     }
   }
 }

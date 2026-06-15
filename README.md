@@ -103,6 +103,18 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
+Current development builds also support opt-in incremental cache metadata warm-up:
+
+```sh
+java -jar target/agent-project-memory-1.3.0.jar scan /path/to/java-spring-project --incremental
+```
+
+`--incremental` currently runs the same normal full analysis path and refreshes
+metadata-only cache files under `.project-memory/cache/v1/` after successful output
+generation. It does not skip analysis or reuse cached output yet. Scans without
+`--incremental` ignore persistent cache state and do not read, write, delete, or trust
+cache files.
+
 CLI exit codes are stable for automation:
 
 - `0`: success, help, or version.
@@ -196,6 +208,23 @@ also writes:
 Only selected profile Markdown files are written. Unsupported directories that only
 prepare `.project-memory/` do not create orphan profile artifacts.
 
+When `--incremental` is selected and the scan writes the base output files, the scan
+also writes cache metadata:
+
+```text
+<path>/.project-memory/cache/v1/manifest.json
+<path>/.project-memory/cache/v1/inputs.jsonl
+<path>/.project-memory/cache/v1/outputs.jsonl
+```
+
+These cache files are execution metadata, not evidence. They store bounded
+repository-relative paths, SHA-256 fingerprints, byte counts, schema/tool metadata,
+selected profile names, and redacted option/config matching metadata only. They do not
+add fields to `project-map.json`, do not create `evidence-index.jsonl` records, and do
+not store source bodies, local document bodies, config contents, generated-source
+contents, generated Markdown bodies, local absolute paths, command logs, timing
+measurements, credentials, tokens, or secret-looking values.
+
 `project-map.json` is the minimal stable machine-readable project map. Current
 development output uses `schema_version: "1.0"` and includes redacted scan metadata for
 safe root-local config selection, detected root `pom.xml` build metadata when present,
@@ -269,6 +298,10 @@ Compatibility and migration notes:
   top-level `generated_sources` policy and root metadata with
   `content_status: "not_scanned"`. Generated-source content scanning remains
   unavailable, and `features.generated_sources: true` remains invalid config.
+- The v1.4 incremental cache metadata foundation keeps `schema_version: "1.0"` and adds
+  only opt-in `.project-memory/cache/v1/` execution metadata. Cache-hit reuse is not
+  implemented in the current foundation, and normal scans without `--incremental`
+  preserve full-scan behavior.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
   evidence IDs, and Markdown evidence references stay aligned.

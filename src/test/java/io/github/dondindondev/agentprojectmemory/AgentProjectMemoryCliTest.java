@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -14,12 +16,15 @@ import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class AgentProjectMemoryCliTest {
+  private static final ObjectMapper JSON = new ObjectMapper();
+
   @TempDir
   private Path tempDir;
 
@@ -69,6 +74,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains(AgentProjectMemoryCli.USAGE)),
         () -> assertTrue(result.stdout().contains("--config <path>")),
         () -> assertTrue(result.stdout().contains("--agent-profile <profile>")),
+        () -> assertTrue(result.stdout().contains("--incremental")),
         () -> assertTrue(result.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
@@ -361,6 +367,395 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.isDirectory(outputDirectory)),
         () -> assertTrue(result.stdout().contains("No project memory output generated.")),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
+  }
+
+  @Test
+  void scanWithIncrementalDoesNotCreateCacheForUnsupportedDirectory() {
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    Path cacheDirectory = tempDir.resolve(".project-memory/cache");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("No project memory output generated.")),
+        () -> assertFalse(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertFalse(Files.exists(cacheDirectory)));
+  }
+
+  @Test
+  void scanIncrementalWritesCacheMetadataSchemaAndFingerprints() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("src/main/java/com/example"));
+    Files.writeString(tempDir.resolve("src/main/java/com/example/Sample.java"), """
+        package com.example;
+
+        class Sample {}
+        """);
+    Files.writeString(tempDir.resolve("README.md"), "# Public Notes\n");
+    Files.createDirectories(
+        tempDir.resolve("target/generated-sources/openapi/src/main/java/com/example"));
+    Files.writeString(
+        tempDir.resolve("target/generated-sources/openapi/src/main/java/com/example/GeneratedApi.java"),
+        """
+        package com.example;
+        // FAKE_GENERATED_CACHE_SECRET
+        class GeneratedApi {}
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--agent-profile",
+        "codex",
+        "--incremental");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    Path cacheDirectory = outputDirectory.resolve("cache/v1");
+    JsonNode manifest = JSON.readTree(Files.readString(cacheDirectory.resolve("manifest.json")));
+    List<JsonNode> inputs = jsonLines(cacheDirectory.resolve("inputs.jsonl"));
+    List<JsonNode> outputs = jsonLines(cacheDirectory.resolve("outputs.jsonl"));
+    String inputsJsonl = Files.readString(cacheDirectory.resolve("inputs.jsonl"));
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertEquals("1.0", manifest.path("cache_schema_version").asText()),
+        () -> assertEquals("1.0", manifest.path("project_map_schema_version").asText()),
+        () -> assertEquals("incremental_scan_metadata", manifest.path("cache_kind").asText()),
+        () -> assertEquals("whole_output_set", manifest.path("reuse_granularity").asText()),
+        () -> assertEquals("sha256", manifest.path("fingerprint_algorithm").asText()),
+        () -> assertEquals("cache/v1/inputs.jsonl", manifest.path("input_fingerprints_path").asText()),
+        () -> assertEquals("cache/v1/outputs.jsonl", manifest.path("output_fingerprints_path").asText()),
+        () -> assertTrue(manifest.path("tool_version").asText().length() > 0),
+        () -> assertTrue(manifest.path("option_fingerprint").asText().startsWith("sha256:")),
+        () -> assertEquals("not_detected", manifest.path("config_fingerprint").path("status").asText()),
+        () -> assertTrue(manifest.path("config_fingerprint").path("path").isNull()),
+        () -> assertTrue(manifest.path("config_fingerprint").path("sha256").isNull()),
+        () -> assertEquals("codex", manifest.path("selected_profiles").get(0).asText()),
+        () -> assertEquals("cache_is_not_evidence", manifest.path("evidence_policy").asText()),
+        () -> assertFalse(manifest.path("raw_values_serialized").asBoolean()),
+        () -> assertCacheInput(inputs, "maven_pom", "pom.xml", true),
+        () -> assertCacheInput(inputs, "java_source", "src/main/java/com/example/Sample.java", true),
+        () -> assertCacheInput(inputs, "local_markdown_document", "README.md", true),
+        () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources", false),
+        () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources/openapi", false),
+        () -> assertCacheOutput(outputs, "project_map", "project-map.json"),
+        () -> assertCacheOutput(outputs, "evidence_index", "evidence-index.jsonl"),
+        () -> assertCacheOutput(outputs, "endpoints_markdown", "endpoints.md"),
+        () -> assertCacheOutput(outputs, "agent_guide_markdown", "agent-guide.md"),
+        () -> assertCacheOutput(outputs, "agent_profile_manifest", "agent-profiles/manifest.json"),
+        () -> assertCacheOutput(outputs, "agent_profile_markdown", "agent-profiles/codex.md"),
+        () -> assertFalse(inputsJsonl.contains("GeneratedApi.java")),
+        () -> assertFalse(inputsJsonl.contains("FAKE_GENERATED_CACHE_SECRET")),
+        () -> assertFalse(projectMap.contains("\"cache\"")),
+        () -> assertFalse(projectMap.contains("incremental")),
+        () -> assertFalse(evidenceIndex.contains("cache/v1")),
+        () -> assertFalse(evidenceIndex.contains("incremental")));
+  }
+
+  @Test
+  void scanIncrementalFingerprintsEmptyStandardRootDirectoriesAcrossSupportedModules()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <modules>
+            <module>service</module>
+          </modules>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("service"));
+    Files.writeString(tempDir.resolve("service/pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.writeString(tempDir.resolve("settings.gradle"), "include 'client'\n");
+    Files.writeString(tempDir.resolve("build.gradle"), "plugins { id 'java' }\n");
+    Files.createDirectories(tempDir.resolve("client"));
+    Files.writeString(tempDir.resolve("client/build.gradle"), "plugins { id 'java' }\n");
+    Files.createDirectories(tempDir.resolve("src/main/java"));
+    Files.createDirectories(tempDir.resolve("src/test/java"));
+    Files.createDirectories(tempDir.resolve("src/main/resources"));
+    Files.createDirectories(tempDir.resolve("src/test/resources"));
+    Files.createDirectories(tempDir.resolve("service/src/main/java"));
+    Files.createDirectories(tempDir.resolve("client/src/test/resources"));
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    List<JsonNode> inputs = jsonLines(tempDir.resolve(".project-memory/cache/v1/inputs.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertCacheInput(inputs, "java_source_root_path", "src/main/java", false),
+        () -> assertCacheInput(inputs, "java_test_root_path", "src/test/java", false),
+        () -> assertCacheInput(inputs, "resource_root_path", "src/main/resources", false),
+        () -> assertCacheInput(inputs, "resource_root_path", "src/test/resources", false),
+        () -> assertCacheInput(inputs, "java_source_root_path", "service/src/main/java", false),
+        () -> assertCacheInput(inputs, "resource_root_path", "client/src/test/resources", false));
+  }
+
+  @Test
+  void scanIncrementalInputFingerprintsChangeWhenEmptyStandardRootIsDeletedAndAdded()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path javaRoot = tempDir.resolve("src/main/java");
+    Files.createDirectories(javaRoot);
+    Files.createDirectories(tempDir.resolve("src/test/resources"));
+
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    Path inputsPath = tempDir.resolve(".project-memory/cache/v1/inputs.jsonl");
+    String firstInputs = Files.readString(inputsPath);
+    assertTrue(hasCacheInput(
+        jsonLines(inputsPath),
+        "java_source_root_path",
+        "src/main/java"));
+
+    Files.delete(javaRoot);
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    String deletedInputs = Files.readString(inputsPath);
+    assertFalse(hasCacheInput(
+        jsonLines(inputsPath),
+        "java_source_root_path",
+        "src/main/java"));
+
+    Files.createDirectories(javaRoot);
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    String addedInputs = Files.readString(inputsPath);
+
+    assertAll(
+        () -> assertNotEquals(firstInputs, deletedInputs),
+        () -> assertNotEquals(deletedInputs, addedInputs),
+        () -> assertTrue(hasCacheInput(
+            jsonLines(inputsPath),
+            "java_source_root_path",
+            "src/main/java")));
+  }
+
+  @Test
+  void scanWithoutIncrementalIgnoresExistingCacheStateAndPreservesFullOutputs()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    assertEquals(0, runCli("scan", tempDir.toString()).exitCode());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    Path cacheDirectory = outputDirectory.resolve("cache/v1");
+    Files.createDirectories(cacheDirectory);
+    Files.writeString(cacheDirectory.resolve("manifest.json"), "{not-json");
+
+    CliResult result = runCli("scan", tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertFalse(result.stdout().contains("cache metadata")),
+        () -> assertEquals("{not-json", Files.readString(cacheDirectory.resolve("manifest.json"))),
+        () -> assertFalse(Files.exists(cacheDirectory.resolve("inputs.jsonl"))),
+        () -> assertFalse(Files.exists(cacheDirectory.resolve("outputs.jsonl"))),
+        () -> assertEquals(projectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(evidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(endpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(agentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanIncrementalOverwritesCorruptRegularCacheMetadataWithoutReadingIt()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path cacheDirectory = tempDir.resolve(".project-memory/cache/v1");
+    Files.createDirectories(cacheDirectory);
+    Files.writeString(cacheDirectory.resolve("manifest.json"), "{not-json");
+    Files.writeString(cacheDirectory.resolve("inputs.jsonl"), "not-json\n");
+    Files.writeString(cacheDirectory.resolve("outputs.jsonl"), "not-json\n");
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    JsonNode manifest = JSON.readTree(Files.readString(cacheDirectory.resolve("manifest.json")));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertEquals("1.0", manifest.path("cache_schema_version").asText()),
+        () -> assertFalse(Files.readString(cacheDirectory.resolve("inputs.jsonl")).contains("not-json")),
+        () -> assertFalse(Files.readString(cacheDirectory.resolve("outputs.jsonl")).contains("not-json")));
+  }
+
+  @Test
+  void scanIncrementalFingerprintsChangeWhenInputBytesChange() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path javaFile = tempDir.resolve("src/main/java/com/example/Sample.java");
+    Files.createDirectories(javaFile.getParent());
+    Files.writeString(javaFile, "package com.example;\nclass Sample {}\n");
+
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    Path inputsPath = tempDir.resolve(".project-memory/cache/v1/inputs.jsonl");
+    String firstHash = cacheInput(jsonLines(inputsPath), "java_source", "src/main/java/com/example/Sample.java")
+        .path("content_sha256")
+        .asText();
+
+    Files.writeString(javaFile, "package com.example;\nclass Sample { String changed; }\n");
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    String secondHash = cacheInput(jsonLines(inputsPath), "java_source", "src/main/java/com/example/Sample.java")
+        .path("content_sha256")
+        .asText();
+
+    assertNotEquals(firstHash, secondHash);
+  }
+
+  @Test
+  void scanIncrementalRecordsConfigOptionAndProfileMatchingMetadata() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    assertEquals(0, runCli("scan", tempDir.toString(), "--incremental").exitCode());
+    Path manifestPath = tempDir.resolve(".project-memory/cache/v1/manifest.json");
+    JsonNode defaultManifest = JSON.readTree(Files.readString(manifestPath));
+    Files.createDirectories(tempDir.resolve("config"));
+    Path config = tempDir.resolve("config/custom.yml");
+    Files.writeString(config, """
+        version: 1
+        features:
+          local_markdown: false
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--config",
+        "config/custom.yml",
+        "--agent-profile",
+        "codex");
+    JsonNode selectedManifest = JSON.readTree(Files.readString(manifestPath));
+    String firstConfigHash = selectedManifest.path("config_fingerprint").path("sha256").asText();
+
+    Files.writeString(config, """
+        version: 1
+        features:
+          local_markdown: true
+        """);
+    assertEquals(
+        0,
+        runCli(
+            "scan",
+            tempDir.toString(),
+            "--incremental",
+            "--config",
+            "config/custom.yml",
+            "--agent-profile",
+            "codex").exitCode());
+    JsonNode changedConfigManifest = JSON.readTree(Files.readString(manifestPath));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertNotEquals(
+            defaultManifest.path("option_fingerprint").asText(),
+            selectedManifest.path("option_fingerprint").asText()),
+        () -> assertTrue(defaultManifest.path("selected_profiles").isEmpty()),
+        () -> assertEquals("codex", selectedManifest.path("selected_profiles").get(0).asText()),
+        () -> assertEquals("explicit", selectedManifest.path("config_fingerprint").path("status").asText()),
+        () -> assertEquals("config/custom.yml", selectedManifest.path("config_fingerprint").path("path").asText()),
+        () -> assertTrue(firstConfigHash.startsWith("sha256:")),
+        () -> assertNotEquals(
+            firstConfigHash,
+            changedConfigManifest.path("config_fingerprint").path("sha256").asText()),
+        () -> assertCacheOutput(
+            jsonLines(tempDir.resolve(".project-memory/cache/v1/outputs.jsonl")),
+            "agent_profile_markdown",
+            "agent-profiles/codex.md"));
+  }
+
+  @Test
+  void scanIncrementalSkipsCacheRefreshWhenCacheDirectoryIsSymlink() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    Path outsideCache = tempDir.resolve("outside-cache");
+    Files.createDirectories(outsideCache);
+    createSymbolicLink(outputDirectory.resolve("cache"), outsideCache);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Skipped incremental cache metadata refresh.")),
+        () -> assertFalse(Files.exists(outsideCache.resolve("v1/manifest.json"))),
+        () -> assertFalse(Files.exists(outsideCache.resolve("v1/inputs.jsonl"))),
+        () -> assertFalse(Files.exists(outsideCache.resolve("v1/outputs.jsonl"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))));
+  }
+
+  @Test
+  void scanIncrementalSkipsCacheRefreshWhenCacheTargetIsHardLink() throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Path cacheDirectory = tempDir.resolve(".project-memory/cache/v1");
+    Files.createDirectories(cacheDirectory);
+    Path outsideManifest = tempDir.resolve("outside-manifest.json");
+    Files.writeString(outsideManifest, "outside content");
+    createHardLink(cacheDirectory.resolve("manifest.json"), outsideManifest);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Skipped incremental cache metadata refresh.")),
+        () -> assertEquals("outside content", Files.readString(outsideManifest)),
+        () -> assertEquals("outside content", Files.readString(cacheDirectory.resolve("manifest.json"))),
+        () -> assertFalse(Files.exists(cacheDirectory.resolve("inputs.jsonl"))),
+        () -> assertFalse(Files.exists(cacheDirectory.resolve("outputs.jsonl"))));
+  }
+
+  @Test
+  void scanIncrementalPreservesByteEqualBaseOutputsFromFullScan() throws Exception {
+    Path projectPath = tempDir.resolve("fixture-project");
+    copyDirectory(fixtureRoot(), projectPath);
+
+    assertEquals(0, runCli("scan", projectPath.toString()).exitCode());
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+
+    CliResult result = runCli("scan", projectPath.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals(projectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(evidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(endpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(agentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("cache/v1/manifest.json"))));
   }
 
   @Test
@@ -809,6 +1204,57 @@ final class AgentProjectMemoryCliTest {
         .run(args);
 
     return new CliResult(exitCode, stdout.toString(), stderr.toString());
+  }
+
+  private List<JsonNode> jsonLines(Path path) throws Exception {
+    List<JsonNode> records = new ArrayList<>();
+    for (String line : Files.readString(path).lines().toList()) {
+      if (!line.isBlank()) {
+        records.add(JSON.readTree(line));
+      }
+    }
+    return records;
+  }
+
+  private void assertCacheInput(
+      List<JsonNode> inputs,
+      String inputKind,
+      String path,
+      boolean contentFingerprintExpected) {
+    JsonNode input = cacheInput(inputs, inputKind, path);
+    assertEquals("1.0", input.path("cache_schema_version").asText());
+    if (contentFingerprintExpected) {
+      assertTrue(input.path("content_sha256").asText().startsWith("sha256:"));
+      assertTrue(input.path("size_bytes").asLong() >= 0);
+    } else {
+      assertTrue(input.path("content_sha256").isNull());
+      assertTrue(input.path("size_bytes").isNull());
+    }
+  }
+
+  private JsonNode cacheInput(List<JsonNode> inputs, String inputKind, String path) {
+    return inputs.stream()
+        .filter(input -> inputKind.equals(input.path("input_kind").asText()))
+        .filter(input -> path.equals(input.path("path").asText()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing cache input " + inputKind + " " + path));
+  }
+
+  private boolean hasCacheInput(List<JsonNode> inputs, String inputKind, String path) {
+    return inputs.stream()
+        .filter(input -> inputKind.equals(input.path("input_kind").asText()))
+        .anyMatch(input -> path.equals(input.path("path").asText()));
+  }
+
+  private void assertCacheOutput(List<JsonNode> outputs, String outputKind, String path) {
+    JsonNode output = outputs.stream()
+        .filter(record -> outputKind.equals(record.path("output_kind").asText()))
+        .filter(record -> path.equals(record.path("path").asText()))
+        .findFirst()
+        .orElseThrow(() -> new AssertionError("Missing cache output " + outputKind + " " + path));
+    assertEquals("1.0", output.path("cache_schema_version").asText());
+    assertTrue(output.path("content_sha256").asText().startsWith("sha256:"));
+    assertTrue(output.path("size_bytes").asLong() >= 0);
   }
 
   private Path fixtureRoot() throws Exception {

@@ -9,6 +9,17 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Implemented the first v1.4 incremental cache metadata foundation: opt-in
+  `scan <path> --incremental` runs the normal full analysis path, preserves the normal
+  generated output set, and writes repository-local cache metadata under
+  `.project-memory/cache/v1/{manifest.json,inputs.jsonl,outputs.jsonl}` after
+  successful output generation. This foundation records schema/version metadata,
+  selected profile/config/option matching metadata, input fingerprints, and generated
+  output fingerprints, including path-only standard source, test, and resource root
+  directory-presence fingerprints, without enabling cache-hit reuse.
+
 ### Changed
 
 - Documented the planned v1.4 incremental cache design boundary: optional
@@ -18,6 +29,14 @@ architecture documents.
   evidence.
 - Updated post-release documentation status to mark `v1.3.0` as published with release
   jar and checksum assets.
+
+### Security
+
+- Kept the v1.4 cache metadata foundation local-only and bounded: normal scans without
+  `--incremental` ignore cache state, cache metadata stays under
+  `.project-memory/cache/v1/`, symlinked or multi-link cache targets are not
+  overwritten, generated-source roots remain path-only metadata, and cache files remain
+  non-evidence execution metadata.
 
 ## [1.3.0] - 2026-06-15
 

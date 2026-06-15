@@ -841,14 +841,22 @@ Product outcome: improve repeat scans for larger local Java/Spring repositories 
 preserving full-scan correctness, deterministic outputs, local-only operation, and the
 existing evidence model.
 
+Current implementation status:
+
+- The initial cache metadata foundation is implemented in development builds. Opt-in
+  `scan <path> --incremental` runs the normal full analysis path and writes
+  `.project-memory/cache/v1/manifest.json`, `inputs.jsonl`, and `outputs.jsonl` after
+  successful output generation.
+- Cache-hit reuse is not implemented yet. Normal scans without `--incremental` continue
+  to ignore persistent cache state.
+
 Planned contract boundary:
 
 - Full scan remains the compatibility baseline. A scan without the incremental selector
   should continue to run normal full analysis and should not depend on cache state.
-- Incremental behavior is explicit and opt-in through the planned
-  `scan <path> --incremental` selector. Root-local YAML config does not enable
-  incremental scans in the initial design, and there is no daemon, remote cache, or
-  background service.
+- Incremental behavior is explicit and opt-in through the `scan <path> --incremental`
+  selector. Root-local YAML config does not enable incremental scans in the initial
+  design, and there is no daemon, remote cache, or background service.
 - The initial v1.4 cache is metadata-only and repository-contained under
   `.project-memory/cache/v1/`. It is not a new source of project facts.
 - The initial reuse model is whole-output-set reuse for unchanged repository states.

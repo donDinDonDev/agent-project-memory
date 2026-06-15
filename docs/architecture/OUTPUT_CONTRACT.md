@@ -3741,25 +3741,26 @@ Stop conditions for implementation:
   hardlink handling, evidence-reference rendering, or Markdown-safe rendering are
   unclear.
 
-### Planned v1.4 Incremental Cache Contract
+### v1.4 Incremental Cache Contract
 
-This section defines the planned v1.4 incremental cache boundary before implementation.
-The current v1.3 implementation does not have persistent cache files, a cache command,
-or incremental reuse behavior.
+This section defines the v1.4 incremental cache boundary. The current foundation
+implements opt-in cache metadata warm-up with `scan <path> --incremental`: it runs the
+normal full analysis path and writes cache metadata after successful output generation.
+Validated cache-hit reuse is not implemented yet.
 
 The v1.4 policy decision is optional metadata-only cache-assisted reuse:
 
 - Full scan remains the compatibility baseline. A normal `scan <path>` without the
   incremental selector runs full analysis and does not require, read, write, delete, or
   trust cache state.
-- The planned public selector is `scan <path> --incremental`. Root-local YAML config
-  does not enable incremental scans in the initial v1.4 design, and there is no separate
-  cache command, clean command, daemon, background service, remote cache, telemetry,
-  network access, or connector behavior.
+- The public selector is `scan <path> --incremental`. Root-local YAML config does not
+  enable incremental scans in the initial v1.4 design, and there is no separate cache
+  command, clean command, daemon, background service, remote cache, telemetry, network
+  access, or connector behavior.
 - The first incremental run for a repository state is a cache miss and warm-up: it runs
   normal full analysis, writes the normal generated output set, then writes cache
   metadata only after successful output generation.
-- A later incremental run may skip full analysis only when cache schema, tool version,
+- A later implementation may skip full analysis only when cache schema, tool version,
   selected CLI options, selected config, selected agent profiles, input fingerprints,
   and existing generated output fingerprints all match the current repository state.
 - The initial v1.4 reuse granularity is the whole generated output set for an unchanged
@@ -3788,7 +3789,7 @@ Schema and compatibility decisions:
   `agent-project-memory`; downstream consumers should keep using `project-map.json` and
   `evidence-index.jsonl` as the stable machine-readable project-memory surface.
 
-Planned cache artifact layout:
+Cache artifact layout:
 
 ```text
 .project-memory/
@@ -3825,7 +3826,7 @@ Cache path and ownership rules:
 - Non-incremental full scans ignore existing cache state. They do not update cache
   metadata unless a later explicit contract changes the default behavior.
 
-Planned `cache/v1/manifest.json` shape:
+`cache/v1/manifest.json` shape:
 
 ```json
 {
@@ -3878,10 +3879,11 @@ Manifest rules:
   profile artifacts are selected.
 - `raw_values_serialized` must be `false`.
 
-Planned `cache/v1/inputs.jsonl` shape:
+`cache/v1/inputs.jsonl` shape:
 
 ```json
 {"cache_schema_version":"1.0","path":"pom.xml","input_kind":"maven_pom","content_sha256":"sha256:...","size_bytes":123}
+{"cache_schema_version":"1.0","path":"src/main/java","input_kind":"java_source_root_path","content_sha256":null,"size_bytes":null}
 {"cache_schema_version":"1.0","path":"src/main/java/com/example/App.java","input_kind":"java_source","content_sha256":"sha256:...","size_bytes":4567}
 {"cache_schema_version":"1.0","path":"target/generated-sources/openapi","input_kind":"generated_source_root_path","content_sha256":null,"size_bytes":null}
 ```
@@ -3892,23 +3894,24 @@ Input fingerprint rules:
   `./`, contain `.` or `..` path segments after normalization, use backslash
   separators, or escape the scan root.
 - `input_kind` identifies the cache-relevant input family, such as `maven_pom`,
-  `gradle_build_file`, `java_source`, `java_test_source`, `resource_config_file`,
+  `gradle_build_file`, `java_source_root_path`, `java_test_root_path`,
+  `resource_root_path`, `java_source`, `java_test_source`, `resource_config_file`,
   `openapi_spec`, `local_markdown_document`, `scan_config`, or
   `generated_source_root_path`.
 - Content-affecting regular-file inputs use `content_sha256` and `size_bytes`.
   Directory or path-presence observations that are already metadata-only, such as
-  generated-source root path presence, use `content_sha256: null` and
-  `size_bytes: null`.
+  standard source/test/resource root presence and generated-source root path presence,
+  use `content_sha256: null` and `size_bytes: null`.
 - File modification times are not part of the serialized cache contract and must not be
   the sole authority for cache hits.
 - The fingerprinted input set must include every source, build, spec, local Markdown,
-  supported config, selected scan config, generated-source path observation, and other
-  local input class that can affect the generated output set or bounded diagnostics
-  under the selected options.
+  supported config, selected scan config, standard source/test/resource root directory
+  presence, generated-source path observation, and other local input class that can
+  affect the generated output set or bounded diagnostics under the selected options.
 - Generated-source root fingerprints remain path-presence metadata only. The cache
   contract must not read or fingerprint files under generated-source roots.
 
-Planned `cache/v1/outputs.jsonl` shape:
+`cache/v1/outputs.jsonl` shape:
 
 ```json
 {"cache_schema_version":"1.0","path":"project-map.json","output_kind":"project_map","content_sha256":"sha256:...","size_bytes":12345}
