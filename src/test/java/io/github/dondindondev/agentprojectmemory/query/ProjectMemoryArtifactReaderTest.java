@@ -59,6 +59,22 @@ final class ProjectMemoryArtifactReaderTest {
   }
 
   @Test
+  void doesNotReadGraphWhenGraphIsNotRequested() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Files.writeString(artifactRoot.resolve("project-graph.json"), "{not-json");
+
+    ProjectMemoryArtifacts artifacts = reader.load(
+        artifactRoot.getParent(),
+        ProjectMemoryArtifactReader.GraphRequirement.NONE);
+
+    assertAll(
+        () -> assertTrue(!artifacts.hasProjectGraph()),
+        () -> assertEquals("1.0", artifacts.projectMapSchemaVersion()),
+        () -> assertEquals(1, artifacts.evidenceRecords().size()));
+  }
+
+  @Test
   void requiresGraphWhenRequested() throws Exception {
     Path artifactRoot = tempDir.resolve("repo/.project-memory");
     writeBaseArtifacts(artifactRoot);

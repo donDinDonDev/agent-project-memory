@@ -135,20 +135,24 @@ java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-proje
 
 `query <path> ...` accepts either a repository directory containing
 `.project-memory/` or the `.project-memory/` directory itself. These commands read the
-existing `project-map.json` and `evidence-index.jsonl` artifacts, optionally validate a
-present `project-graph.json`, print deterministic human text, and do not run scans,
-create `.project-memory/`, refresh cache/profile artifacts, read repository source
-files, or write repository files. Source-visible endpoint rows and spec-backed declared
-API operation rows stay separate; entity rows and embeddable rows stay separate.
+existing `project-map.json` and `evidence-index.jsonl` artifacts, print deterministic
+human text, and do not run scans, create `.project-memory/`, refresh cache/profile
+artifacts, read repository source files, or write repository files. Non-graph query
+commands do not require or parse `project-graph.json`; a missing or malformed graph
+artifact is ignored unless the command needs graph-backed lookup. Source-visible
+endpoint rows and spec-backed declared API operation rows stay separate; entity rows
+and embeddable rows stay separate.
 `explain evidence <id>` resolves exact evidence IDs from `evidence-index.jsonl`.
 `find fact <term>` and `find symbol <term>` are exact and case-sensitive; they do not
 perform substring, fuzzy, regex, semantic, natural-language, or embedding search.
-`relations <id>` requires a valid `project-graph.json`, accepts either a graph node ID
-or a generated fact ID that maps through node `source_ref`, and renders only one-hop
-incoming, outgoing, or default `both` graph neighbors while keeping graph edges separate
-from `relation_statuses[]`. Graph `source_ref` and `derivation` fields are navigation
-metadata, not evidence. Stable JSON query output remains planned v1.6 work until release
-notes document it as implemented.
+`find fact <term>` uses `project-graph.json` only for graph ID-shaped terms such as
+`node:`, `edge:`, `relation-status:`, and `graph-warning:` when graph output is present
+and valid. `relations <id>` requires a valid `project-graph.json`, accepts either a
+graph node ID or a generated fact ID that maps through node `source_ref`, and renders
+only one-hop incoming, outgoing, or default `both` graph neighbors while keeping graph
+edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
+are navigation metadata, not evidence. Stable JSON query output remains planned v1.6
+work until release notes document it as implemented.
 
 CLI exit codes are stable for automation:
 

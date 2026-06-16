@@ -61,14 +61,16 @@ public final class ProjectMemoryArtifactReader {
         "schema_version",
         SUPPORTED_PROJECT_MAP_SCHEMA);
     EvidenceIndex evidenceIndex = readEvidenceIndex(requiredArtifact(artifactRoot, EVIDENCE_INDEX));
-    Optional<Path> graphPath = optionalArtifact(artifactRoot, PROJECT_GRAPH);
     JsonNode projectGraph = null;
     String graphSchema = null;
-    if (graphPath.isPresent()) {
-      projectGraph = readJson(graphPath.orElseThrow(), PROJECT_GRAPH);
-      graphSchema = validateGraph(projectGraph, evidenceIndex.ids());
-    } else if (graphRequirement == GraphRequirement.REQUIRED) {
-      throw new QueryArtifactException("Missing project-graph.json.");
+    if (graphRequirement != GraphRequirement.NONE) {
+      Optional<Path> graphPath = optionalArtifact(artifactRoot, PROJECT_GRAPH);
+      if (graphPath.isPresent()) {
+        projectGraph = readJson(graphPath.orElseThrow(), PROJECT_GRAPH);
+        graphSchema = validateGraph(projectGraph, evidenceIndex.ids());
+      } else if (graphRequirement == GraphRequirement.REQUIRED) {
+        throw new QueryArtifactException("Missing project-graph.json.");
+      }
     }
     return new ProjectMemoryArtifacts(
         artifactRoot,
@@ -374,6 +376,7 @@ public final class ProjectMemoryArtifactReader {
   }
 
   public enum GraphRequirement {
+    NONE,
     OPTIONAL,
     REQUIRED
   }

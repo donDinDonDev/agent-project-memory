@@ -89,6 +89,58 @@ final class QueryCliTest {
   }
 
   @Test
+  void nonGraphQueryCommandsIgnoreMalformedPresentGraph() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeMalformedGraph(artifactRoot);
+
+    CliResult modules = runCli("query", repositoryRoot.toString(), "list", "modules");
+    CliResult endpoints = runCli("query", repositoryRoot.toString(), "list", "endpoints");
+    CliResult evidence = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:endpoint:mapping");
+    CliResult symbol = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "symbol",
+        "com.example.domain.Order");
+    CliResult projectMapFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        "endpoint:com.example.web.OrderController#getOrder");
+
+    assertAll(
+        () -> assertEquals(0, modules.exitCode()),
+        () -> assertEquals(0, endpoints.exitCode()),
+        () -> assertEquals(0, evidence.exitCode()),
+        () -> assertEquals(0, symbol.exitCode()),
+        () -> assertEquals(0, projectMapFact.exitCode()),
+        () -> assertTrue(modules.stderr().isEmpty()),
+        () -> assertTrue(endpoints.stderr().isEmpty()),
+        () -> assertTrue(evidence.stderr().isEmpty()),
+        () -> assertTrue(symbol.stderr().isEmpty()),
+        () -> assertTrue(projectMapFact.stderr().isEmpty()),
+        () -> assertTrue(modules.stdout().contains("Query: list modules")),
+        () -> assertTrue(endpoints.stdout().contains("Query: list endpoints")),
+        () -> assertTrue(evidence.stdout().contains("Query: explain evidence")),
+        () -> assertTrue(symbol.stdout().contains("Query: find symbol")),
+        () -> assertTrue(projectMapFact.stdout().contains("Query: find fact")),
+        () -> assertTrue(projectMapFact.stdout().contains("Results: 1")),
+        () -> assertFalse(modules.stdout().contains("project-graph.json")),
+        () -> assertFalse(endpoints.stdout().contains("project-graph.json")),
+        () -> assertFalse(evidence.stdout().contains("project-graph.json")),
+        () -> assertFalse(symbol.stdout().contains("project-graph.json")),
+        () -> assertFalse(projectMapFact.stdout().contains("project-graph.json")));
+  }
+
+  @Test
   void listEndpointsAndApiOperationsStaySeparate() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
@@ -274,12 +326,12 @@ final class QueryCliTest {
     assertAll(
         () -> assertEquals(0, projectMapFact.exitCode()),
         () -> assertTrue(projectMapFact.stdout().contains("Query: find fact")),
-        () -> assertTrue(projectMapFact.stdout().contains("Results: 2")),
+        () -> assertTrue(projectMapFact.stdout().contains("Results: 1")),
         () -> assertTrue(projectMapFact.stdout().contains("navigation: project-map.json#/endpoints/0 (not evidence)")),
-        () -> assertTrue(projectMapFact.stdout().contains("navigation: project-graph.json#/nodes/1 (not evidence)")),
-        () -> assertTrue(projectMapFact.stdout().contains("source_ref: artifact=project-map.json section=endpoints id=endpoint:com.example.web.OrderController#getOrder (not evidence)")),
-        () -> assertTrue(projectMapFact.stdout().contains("kind: endpoint")),
-        () -> assertTrue(projectMapFact.stdout().contains("claim_category: extracted")),
+        () -> assertFalse(projectMapFact.stdout().contains("navigation: project-graph.json")),
+        () -> assertFalse(projectMapFact.stdout().contains("source_ref: artifact=project-map.json section=endpoints id=endpoint:com.example.web.OrderController#getOrder (not evidence)")),
+        () -> assertTrue(projectMapFact.stdout().contains("api_surface_category: source_visible_spring_mvc_endpoint")),
+        () -> assertTrue(projectMapFact.stdout().contains("controller_class: com.example.web.OrderController")),
         () -> assertTrue(projectMapFact.stderr().isEmpty()),
         () -> assertEquals(0, graphFact.exitCode()),
         () -> assertTrue(graphFact.stdout().contains("Query: find fact")),
@@ -290,6 +342,27 @@ final class QueryCliTest {
         () -> assertTrue(graphFact.stdout().contains("derivation: kind=project_map_field artifact=project-map.json section=endpoints (not evidence)")),
         () -> assertFalse(graphFact.stdout().contains("incoming")),
         () -> assertTrue(graphFact.stderr().isEmpty()));
+  }
+
+  @Test
+  void graphBackedFindFactRejectsMalformedGraphWhenGraphLookupIsRequested() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeMalformedGraph(artifactRoot);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        "node:module:root");
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stdout().isEmpty()),
+        () -> assertTrue(result.stderr().contains("Query input error: Malformed project-graph.json.")),
+        () -> assertFalse(result.stderr().contains(repositoryRoot.toString())));
   }
 
   @Test
@@ -694,6 +767,10 @@ final class QueryCliTest {
           "warnings":[]
         }
         """);
+  }
+
+  private void writeMalformedGraph(Path artifactRoot) throws IOException {
+    Files.writeString(artifactRoot.resolve("project-graph.json"), "{not-json-with-SECRET_TOKEN}");
   }
 
   private void writeLookupGraph(Path artifactRoot) throws IOException {

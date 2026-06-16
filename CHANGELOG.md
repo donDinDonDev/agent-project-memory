@@ -41,6 +41,14 @@ architecture documents.
   default, preserves graph edge fields and `relation_statuses[]` separately, and keeps
   graph derivation as non-evidence navigation metadata.
 
+### Fixed
+
+- Fixed non-graph query commands so a present malformed optional `project-graph.json`
+  does not block list commands, evidence explanation, symbol lookup, or non-graph fact
+  lookup when `project-map.json` and `evidence-index.jsonl` are valid. Relation lookup
+  and graph ID-shaped fact lookup still require a valid graph artifact when they use
+  graph-backed results.
+
 ## [1.5.0] - 2026-06-16
 
 ### Added

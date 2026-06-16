@@ -4785,11 +4785,13 @@ Path and artifact input policy:
   must not create the artifact root, create missing artifacts, refresh cache metadata,
   generate profile artifacts, run scans, or write repository files.
 - The required artifacts for non-graph commands are `project-map.json` and
-  `evidence-index.jsonl`.
+  `evidence-index.jsonl`. Non-graph commands must not require, read, or validate
+  `project-graph.json`.
 - `project-graph.json` is required only for `relations`. `find fact` may include graph
-  node and edge IDs only when graph output is present and valid. Other non-graph query
-  commands must not require graph output, and all non-graph query commands must ignore a
-  missing graph artifact.
+  node, edge, relation-status, and graph-warning IDs only for graph ID-shaped lookup
+  terms when graph output is present and valid. Other non-graph query commands must not
+  require graph output, and all non-graph query commands must ignore a missing or
+  malformed graph artifact.
 - `endpoints.md`, `agent-guide.md`, `agent-profiles/`, and `cache/v1/` are not query
   input sources in the initial v1.6 design. Generated Markdown, profile artifacts, cache
   metadata, diagnostics, graph derivation metadata, and query output are not evidence.
@@ -4807,8 +4809,9 @@ Artifact validation policy:
   The initial v1.6 design supports the current stable-line marker `"1.0"`.
 - `evidence-index.jsonl` must parse as newline-delimited JSON with unique evidence
   `id` values and the documented evidence field set.
-- `project-graph.json`, when required by `relations`, must parse as JSON and use a
-  supported `graph_schema_version`. The initial v1.6 design supports `"1.0"`.
+- `project-graph.json`, when required by `relations` or graph-backed `find fact`, must
+  parse as JSON and use a supported `graph_schema_version`. The initial v1.6 design
+  supports `"1.0"`.
 - Query commands fail closed for missing required artifacts, malformed JSON/JSONL,
   unsupported schema markers, duplicate IDs in a required lookup index, graph edges that
   reference missing graph nodes, and graph `evidence_ids` that do not resolve to
@@ -4864,7 +4867,11 @@ Fact and symbol lookup behavior:
 - `find fact <term>` performs exact, case-sensitive lookup over generated fact IDs and
   documented exact keys already present in generated artifacts, such as endpoint IDs,
   operation keys, entity IDs, repository IDs, test IDs, warning IDs, status IDs,
-  document IDs, graph node IDs, and graph edge IDs when graph output is present.
+  document IDs, graph node IDs, graph edge IDs, relation-status IDs, and graph-warning
+  IDs when graph output is present.
+- Graph-backed fact lookup is selected only for graph ID-shaped terms such as `node:`,
+  `edge:`, `relation-status:`, and `graph-warning:`. Other fact lookup terms use
+  `project-map.json` without reading or validating `project-graph.json`.
 - `find symbol <term>` performs exact, case-sensitive lookup over structured symbol
   fields already present in generated artifacts, such as fully qualified class names,
   simple class names when represented by a generated fact, method names tied to emitted

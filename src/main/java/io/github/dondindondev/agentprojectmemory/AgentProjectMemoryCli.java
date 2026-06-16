@@ -313,7 +313,7 @@ public final class AgentProjectMemoryCli {
           "list",
           args[3],
           null,
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryArtifactReader.GraphRequirement.NONE,
           ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("explain".equals(subcommand)) {
@@ -328,7 +328,7 @@ public final class AgentProjectMemoryCli {
           "explain",
           "evidence",
           args[4],
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryArtifactReader.GraphRequirement.NONE,
           ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("find".equals(subcommand)) {
@@ -343,7 +343,7 @@ public final class AgentProjectMemoryCli {
           "find",
           args[3],
           args[4],
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          graphRequirementForFind(args[3], args[4]),
           ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("relations".equals(subcommand)) {
@@ -396,6 +396,24 @@ public final class AgentProjectMemoryCli {
         || "api-operations".equals(subject)
         || "entities".equals(subject)
         || "tests".equals(subject);
+  }
+
+  private ProjectMemoryArtifactReader.GraphRequirement graphRequirementForFind(
+      String subject,
+      String term) {
+    if (!"fact".equals(subject) || term == null) {
+      return ProjectMemoryArtifactReader.GraphRequirement.NONE;
+    }
+    return isGraphFactTerm(term)
+        ? ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL
+        : ProjectMemoryArtifactReader.GraphRequirement.NONE;
+  }
+
+  private boolean isGraphFactTerm(String term) {
+    return term.startsWith("node:")
+        || term.startsWith("edge:")
+        || term.startsWith("relation-status:")
+        || term.startsWith("graph-warning:");
   }
 
   private int query(QueryArgs queryArgs) {
