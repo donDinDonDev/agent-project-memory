@@ -8,10 +8,12 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
+import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -1202,6 +1204,132 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertBoundedExcerpt(testAnnotationEvidence, "@Test(value = \""),
         () -> assertBoundedExcerpt(mavenModuleEvidence, "<module>../"),
         () -> assertBoundedExcerpt(mavenWarningEvidence, "<artifactId>openapi-generator-maven-plugin</artifactId>"));
+  }
+
+  @Test
+  void redactsFakeSecretLikeValuesInEvidenceAndGeneratedOutputSurfaces() throws Exception {
+    Path projectPath = tempDir.resolve("v170-redaction-output");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>password=FAKE_V170_MAVEN_SECRET</artifactId>
+          <version>1.0.0</version>
+        </project>
+        """);
+    writeFile(projectPath.resolve("agent-project-memory.yml"), """
+        version: 1
+        features:
+          local_markdown: true
+        documents:
+          include:
+            - README.md
+        """);
+    writeFile(projectPath.resolve("README.md"), """
+        # Redaction fixture
+        The `/redaction` endpoint is documented here.
+        """);
+    writeFile(projectPath.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.0
+        info:
+          title: redaction fixture
+          version: 1.0.0
+        paths:
+          /redaction:
+            get:
+              operationId: redaction
+              tags:
+                - password=FAKE_V170_OPENAPI_SECRET
+              responses:
+                '200':
+                  description: ok
+        """);
+    writeFile(projectPath.resolve("src/main/java/com/example/SecretController.java"), """
+        package com.example;
+
+        import org.springframework.web.bind.annotation.GetMapping;
+        import org.springframework.web.bind.annotation.RestController;
+
+        @RestController("clientSecret=FAKE_V170_JAVA_SECRET")
+        class SecretController {
+          @GetMapping(value = "/redaction", headers = "Authorization: Bearer FAKE_V170_HEADER_SECRET")
+          String redaction() {
+            return "ok";
+          }
+        }
+        """);
+
+    ScanConfiguration scanConfiguration = new ScanConfiguration(
+        "config_file",
+        "agent-project-memory.yml",
+        "applied",
+        false,
+        false,
+        true,
+        "config_file",
+        List.of(ScanConfigPathPattern.parse("README.md", "documents.include[0]", true)),
+        List.of());
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory,
+        scanConfiguration,
+        List.of(AgentOutputProfile.CODEX));
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String codexProfile = Files.readString(outputDirectory.resolve("agent-profiles/codex.md"));
+    String joinedOutput = String.join(
+        "\n",
+        projectMap,
+        projectGraph,
+        evidenceIndex,
+        endpoints,
+        agentGuide,
+        codexProfile);
+    List<JsonNode> evidenceRecords = evidenceRecords(evidenceIndex);
+    JsonNode restControllerEvidence = evidenceRecord(
+        evidenceRecords,
+        "src/main/java/com/example/SecretController.java",
+        "@RestController");
+    JsonNode endpointEvidence = evidenceRecord(
+        evidenceRecords,
+        "src/main/java/com/example/SecretController.java",
+        "@GetMapping");
+    JsonNode projectMapJson = JSON.readTree(projectMap);
+    JsonNode endpoint = projectMapJson.path("endpoints").get(0);
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertTrue(joinedOutput.contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_MAVEN_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_OPENAPI_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JAVA_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_HEADER_SECRET"),
+        () -> assertEquals(
+            "src/main/java/com/example/SecretController.java",
+            restControllerEvidence.path("path").asText()),
+        () -> assertEquals("@RestController", restControllerEvidence.path("symbol_name").asText()),
+        () -> assertEquals("high", restControllerEvidence.path("confidence").asText()),
+        () -> assertTrue(restControllerEvidence.path("line_start").asInt() > 0),
+        () -> assertTrue(restControllerEvidence.path("excerpt").asText()
+            .contains("clientSecret=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(endpointEvidence.path("excerpt").asText()
+            .contains("Authorization: Bearer " + OutputRedactor.REDACTION_MARKER)),
+        () -> assertEquals(
+            "endpoint:com.example.SecretController#redaction",
+            endpoint.path("id").asText()),
+        () -> assertEquals("com.example.SecretController", endpoint.path("controller_class").asText()),
+        () -> assertEquals("redaction", endpoint.path("handler_method").asText()),
+        () -> assertEquals("/redaction", endpoint.path("paths").get(0).asText()),
+        () -> assertFalse(endpoint.path("evidence_ids").isEmpty()),
+        () -> assertTrue(codexProfile.contains("ev:")));
   }
 
   @Test
@@ -2863,6 +2991,14 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(excerpt.startsWith(expectedPrefix)),
         () -> assertTrue(excerpt.endsWith("...")),
         () -> assertTrue(excerpt.length() <= EvidenceExcerpts.MAX_EXCERPT_LENGTH + 3));
+  }
+
+  private void assertFakeNeedleAbsent(String output, String needle) {
+    int index = output.indexOf(needle);
+    String context = index < 0
+        ? ""
+        : output.substring(Math.max(0, index - 120), Math.min(output.length(), index + 120));
+    assertEquals(-1, index, "Generated output must redact " + needle + "; context: " + context);
   }
 
   private List<String> jsonPathValues(JsonNode items) {

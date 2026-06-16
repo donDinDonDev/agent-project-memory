@@ -44,4 +44,4 @@ focused on local path safety, bounded parsing, evidence integrity, and avoiding
 accidental serialization of sensitive-looking values in generated or rendered output.
 
 See [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
-threat model, trust boundaries, and planned redaction limitations.
+threat model, trust boundaries, and redaction limitations.

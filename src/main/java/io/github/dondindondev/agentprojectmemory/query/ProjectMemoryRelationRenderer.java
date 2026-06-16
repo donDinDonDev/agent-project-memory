@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.query;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -225,7 +226,7 @@ public final class ProjectMemoryRelationRenderer {
     Iterator<Map.Entry<String, JsonNode>> fields = attributes.fields();
     while (fields.hasNext()) {
       Map.Entry<String, JsonNode> field = fields.next();
-      values.add(safe(field.getKey()) + "=" + text(field.getValue()));
+      values.add(safe(field.getKey()) + "=" + mapValueText(field.getKey(), field.getValue()));
     }
     return values.isEmpty() ? "{}" : String.join(", ", values);
   }
@@ -254,11 +255,11 @@ public final class ProjectMemoryRelationRenderer {
   }
 
   private void field(List<String> lines, String indent, String name, JsonNode value) {
-    lines.add(indent + name + ": " + text(value));
+    lines.add(indent + name + ": " + text(value, name));
   }
 
   private void field(List<String> lines, String indent, String name, String value) {
-    lines.add(indent + name + ": " + safe(value));
+    lines.add(indent + name + ": " + safe(value, shouldRedactField(name)));
   }
 
   private String rawText(JsonNode node) {
@@ -278,14 +279,42 @@ public final class ProjectMemoryRelationRenderer {
     return safe(node.toString());
   }
 
+  private String text(JsonNode node, String fieldName) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual()) {
+      return safe(node.asText(), shouldRedactField(fieldName));
+    }
+    if (node.isNumber() || node.isBoolean()) {
+      return node.asText();
+    }
+    return safe(node.toString(), shouldRedactField(fieldName));
+  }
+
+  private String mapValueText(String key, JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    String raw = node.isTextual() || node.isNumber() || node.isBoolean()
+        ? node.asText()
+        : node.toString();
+    return safe(OutputRedactor.redactMapValue(key, raw));
+  }
+
   private String finish(List<String> lines) {
     return String.join("\n", lines) + "\n";
   }
 
   private String safe(String value) {
-    String bounded = value.length() <= MAX_TEXT_CHARS
-        ? value
-        : value.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
+    return safe(value, false);
+  }
+
+  private String safe(String value, boolean redact) {
+    String rendered = redact ? OutputRedactor.redact(value) : value;
+    String bounded = rendered.length() <= MAX_TEXT_CHARS
+        ? rendered
+        : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
     StringBuilder result = new StringBuilder(bounded.length());
     for (int index = 0; index < bounded.length(); index++) {
       char ch = bounded.charAt(index);
@@ -302,6 +331,11 @@ public final class ProjectMemoryRelationRenderer {
       }
     }
     return result.toString();
+  }
+
+  private boolean shouldRedactField(String fieldName) {
+    return OutputRedactor.shouldRedactFreeTextField(fieldName)
+        || OutputRedactor.isCredentialKey(fieldName);
   }
 
   public enum Direction {

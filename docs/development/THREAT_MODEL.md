@@ -78,12 +78,12 @@ The intended security properties are:
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
 
-## Planned Redaction Boundary
+## Redaction Boundary
 
-The planned v1.7 security track defines deterministic redaction as an output safety
-boundary, not as a repository-wide secret scan.
+The current unreleased v1.7 security track defines deterministic redaction as an output
+safety boundary, not as a repository-wide secret scan.
 
-The planned marker is:
+The marker is:
 
 ```text
 [REDACTED_SECRET_LIKE_VALUE]
@@ -93,7 +93,7 @@ The marker is plain generated text inside existing excerpt or rendered-output st
 It does not require new evidence fields, a new evidence type, or a schema migration by
 itself.
 
-In scope for the planned redaction policy:
+In scope for the redaction policy:
 
 - obvious key/value or assignment-like output strings where the key name indicates a
   credential, token, password, private key, API key, client secret, or authorization
@@ -104,7 +104,7 @@ In scope for the planned redaction policy:
   attributes, cache/scan diagnostics, CLI stdout/stderr, and query-rendered text when
   those surfaces would otherwise print a secret-looking value.
 
-Out of scope for the planned redaction policy:
+Out of scope for the redaction policy:
 
 - complete secret discovery;
 - entropy-only detection;
@@ -116,9 +116,10 @@ Out of scope for the planned redaction policy:
 - scanning generated-source contents, config values, environment variables, local
   machine state, remote services, or connector credentials.
 
-The planned implementation should apply redaction at generation time for new artifacts
-and at query render time for existing artifacts. Query render-time redaction is a
-defense-in-depth presentation boundary; it must not rewrite or repair artifact files.
+The implementation applies redaction at generation time for selected new generated
+artifacts and at query render time for selected existing artifacts. Query render-time
+redaction is a defense-in-depth presentation boundary; it must not rewrite or repair
+artifact files.
 
 ## Path And Symlink Audit Matrix
 

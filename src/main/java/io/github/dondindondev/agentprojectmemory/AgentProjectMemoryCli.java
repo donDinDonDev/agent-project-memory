@@ -698,7 +698,7 @@ public final class AgentProjectMemoryCli {
     if (message == null || message.isBlank()) {
       return "I/O error.";
     }
-    return stripLocalRoot(message, scanRoot);
+    return OutputRedactor.redact(stripLocalRoot(message, scanRoot));
   }
 
   private String stripLocalRoot(String message, Path scanRoot) {

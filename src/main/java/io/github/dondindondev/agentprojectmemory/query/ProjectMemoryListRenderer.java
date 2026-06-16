@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.query;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -99,7 +100,7 @@ public final class ProjectMemoryListRenderer {
       field(lines, "   ", "http_method", operation.path("http_method"));
       field(lines, "   ", "path", operation.path("path"));
       field(lines, "   ", "operation_id", operation.path("operation_id"));
-      lines.add("   tags: " + arrayText(operation.path("tags")));
+      lines.add("   tags: " + arrayText(operation.path("tags"), "tags"));
       field(lines, "   ", "implementation_status", operation.path("implementation_status"));
       lines.add("   evidence_ids: " + evidenceIds(operation, "evidence_ids"));
     }
@@ -234,7 +235,7 @@ public final class ProjectMemoryListRenderer {
               + " method_kind="
               + text(method.path("method_kind"))
               + " display_name="
-              + text(method.path("display_name"))
+              + text(method.path("display_name"), "display_name")
               + " evidence_ids="
               + evidenceIds(method, "evidence_ids"));
     }
@@ -482,7 +483,7 @@ public final class ProjectMemoryListRenderer {
   }
 
   private void field(List<String> lines, String indent, String name, JsonNode value) {
-    lines.add(indent + name + ": " + text(value));
+    lines.add(indent + name + ": " + text(value, name));
   }
 
   private String firstPresent(JsonNode node, String firstField, String secondField) {
@@ -506,9 +507,13 @@ public final class ProjectMemoryListRenderer {
   }
 
   private String arrayText(JsonNode node) {
+    return arrayText(node, null);
+  }
+
+  private String arrayText(JsonNode node, String fieldName) {
     List<String> values = new ArrayList<>();
     for (JsonNode value : iterableArray(node)) {
-      values.add(text(value));
+      values.add(fieldName == null ? text(value) : text(value, fieldName));
     }
     return values.isEmpty() ? "none" : String.join(", ", values);
   }
@@ -547,10 +552,28 @@ public final class ProjectMemoryListRenderer {
     return safe(node.toString());
   }
 
+  private String text(JsonNode node, String fieldName) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual()) {
+      return safe(node.asText(), shouldRedactField(fieldName));
+    }
+    if (node.isNumber() || node.isBoolean()) {
+      return node.asText();
+    }
+    return safe(node.toString(), shouldRedactField(fieldName));
+  }
+
   private String safe(String value) {
-    String bounded = value.length() <= MAX_TEXT_CHARS
-        ? value
-        : value.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
+    return safe(value, false);
+  }
+
+  private String safe(String value, boolean redact) {
+    String rendered = redact ? OutputRedactor.redact(value) : value;
+    String bounded = rendered.length() <= MAX_TEXT_CHARS
+        ? rendered
+        : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
     StringBuilder result = new StringBuilder(bounded.length());
     for (int index = 0; index < bounded.length(); index++) {
       char ch = bounded.charAt(index);
@@ -567,5 +590,10 @@ public final class ProjectMemoryListRenderer {
       }
     }
     return result.toString();
+  }
+
+  private boolean shouldRedactField(String fieldName) {
+    return OutputRedactor.shouldRedactFreeTextField(fieldName)
+        || OutputRedactor.isCredentialKey(fieldName);
   }
 }

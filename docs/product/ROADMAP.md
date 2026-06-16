@@ -1100,7 +1100,7 @@ Planned design boundary:
   appear in selected generated excerpts, generated Markdown, selected agent profile
   Markdown, graph labels or attributes, cache/scan diagnostics, CLI stdout/stderr, or
   query-rendered text.
-- Use `[REDACTED_SECRET_LIKE_VALUE]` as the planned plain-text redaction marker.
+- Use `[REDACTED_SECRET_LIKE_VALUE]` as the plain-text redaction marker.
 - Treat redaction as output hardening, not as complete secret detection, a secret
   inventory, vulnerability scanning, or security correctness proof.
 - Apply redaction at generation time for newly produced artifacts and at query render
@@ -1110,7 +1110,7 @@ Planned design boundary:
   repository-relative paths, symbols, line ranges, confidence, uncertainty, relation
   statuses, and claim categories should remain navigable.
 - Keep redaction markers inside existing excerpt or rendered-output strings. The
-  planned v1.7 design does not add evidence fields, evidence types, a new
+  initial v1.7 design does not add evidence fields, evidence types, a new
   `project-map.json` schema marker, or a new `graph_schema_version` by itself.
 - Audit path and symlink behavior across scan roots, output writes, root-local config,
   local Markdown discovery, generated-source metadata, cache metadata, graph output,
@@ -1118,11 +1118,11 @@ Planned design boundary:
 - Keep public security documentation in the root `SECURITY.md` and the public threat
   model in [../development/THREAT_MODEL.md](../development/THREAT_MODEL.md).
 
-Planned implementation sequence:
+Implementation sequence:
 
-- Implement a shared bounded redaction/excerpt primitive and apply it to evidence
-  excerpts and generated-output serialization points that can carry selected source or
-  artifact text.
+- Initial implementation: the shared bounded redaction/excerpt primitive is applied to
+  evidence excerpts and selected generated-output serialization and rendering points
+  that can carry selected source or artifact text.
 - Add fake-only security regression fixtures and output checks for generated artifacts,
   generated Markdown, profile output, graph output, cache metadata, query output, and
   terminal output.

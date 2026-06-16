@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.analyzer;
 
 import com.github.javaparser.Range;
 import com.github.javaparser.ast.Node;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -16,15 +17,16 @@ public final class EvidenceExcerpts {
 
   public static String bounded(String excerpt) {
     Objects.requireNonNull(excerpt, "excerpt");
-    if (excerpt.length() <= MAX_EXCERPT_LENGTH) {
-      return excerpt;
+    String redacted = OutputRedactor.redact(excerpt);
+    if (redacted.length() <= MAX_EXCERPT_LENGTH) {
+      return redacted;
     }
 
     int end = MAX_EXCERPT_LENGTH;
-    if (Character.isHighSurrogate(excerpt.charAt(end - 1))) {
+    if (Character.isHighSurrogate(redacted.charAt(end - 1))) {
       end--;
     }
-    return excerpt.substring(0, end) + TRUNCATED_SUFFIX;
+    return redacted.substring(0, end) + TRUNCATED_SUFFIX;
   }
 
   public static String sourceRange(Node node, List<String> sourceLines) {

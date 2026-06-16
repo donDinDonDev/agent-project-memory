@@ -28,9 +28,9 @@ scanner, general-purpose secret scanner, or secret inventory tool.
 
 The current output contracts avoid serializing known sensitive surfaces such as raw
 config values, document bodies, generated-source contents, command logs, local absolute
-paths, credentials, tokens, and secret-looking values. The planned v1.7 security track
-adds a bounded deterministic redaction policy for obvious secret-looking values that
-may otherwise appear in generated excerpts or rendered query output, while explicitly
+paths, credentials, tokens, and secret-looking values. Current unreleased v1.7 work
+adds bounded deterministic redaction for obvious secret-looking values that may
+otherwise appear in generated excerpts or rendered query output, while explicitly
 preserving evidence IDs, normalized repository-relative paths, symbols, line ranges,
 confidence, uncertainty, and claim categories.
 

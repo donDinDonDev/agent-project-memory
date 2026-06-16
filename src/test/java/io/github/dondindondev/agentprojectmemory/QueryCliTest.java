@@ -640,6 +640,224 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryExplainEvidenceRedactsLegacyUnredactedExcerptWithoutMutatingArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String evidenceIndex = evidenceRecord(
+        "ev:legacy:secret",
+        "annotation",
+        "src/main/java/com/example/SecretController.java",
+        "com.example.SecretController",
+        "secret",
+        "@Value",
+        7,
+        7,
+        "@Value(\"password=FAKE_V170_QUERY_EXCERPT_SECRET\")",
+        "high");
+    writeArtifacts(
+        artifactRoot,
+        "{\"schema_version\":\"1.0\",\"project\":{\"modules\":{\"items\":[]}}}\n",
+        evidenceIndex);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:legacy:secret");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("1. ev:legacy:secret")),
+        () -> assertTrue(result.stdout().contains(
+            "path: src/main/java/com/example/SecretController.java")),
+        () -> assertTrue(result.stdout().contains("symbol_name: @Value")),
+        () -> assertTrue(result.stdout().contains(
+            "excerpt: @Value(\"password=" + OutputRedactor.REDACTION_MARKER + "\")")),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_QUERY_EXCERPT_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(Files.readString(artifactRoot.resolve("evidence-index.jsonl"))
+            .contains("FAKE_V170_QUERY_EXCERPT_SECRET")));
+  }
+
+  @Test
+  void queryListTestsRedactsLegacyDisplayNameWhilePreservingNavigationFields()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, """
+        {
+          "schema_version": "1.0",
+          "tests": {
+            "items": [
+              {
+                "id": "test:com.example.SecretControllerTest",
+                "module_id": "module:.",
+                "class_name": "com.example.SecretControllerTest",
+                "methods": [
+                  {
+                    "method_name": "usesSecretDisplayName",
+                    "test_annotation": "@Test",
+                    "method_kind": "test",
+                    "display_name": "password=FAKE_V170_QUERY_DISPLAY_SECRET",
+                    "evidence_ids": ["ev:test:secret"]
+                  }
+                ],
+                "framework_signals": [],
+                "spring_test_slices": [],
+                "mock_signals": [],
+                "tested_subjects": [],
+                "evidence_ids": ["ev:test:secret"]
+              }
+            ]
+          }
+        }
+        """, evidenceRecord(
+        "ev:test:secret",
+        "test_file",
+        "src/test/java/com/example/SecretControllerTest.java",
+        "com.example.SecretControllerTest",
+        null,
+        "com.example.SecretControllerTest",
+        5,
+        5,
+        "class SecretControllerTest",
+        "high"));
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "list", "tests");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("test:com.example.SecretControllerTest")),
+        () -> assertTrue(result.stdout().contains("class_name: com.example.SecretControllerTest")),
+        () -> assertTrue(result.stdout().contains("evidence_ids=ev:test:secret")),
+        () -> assertTrue(result.stdout().contains(
+            "display_name=password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_QUERY_DISPLAY_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryListApiOperationsRedactsLegacyTagsWhilePreservingNavigationFields()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, """
+        {
+          "schema_version": "1.0",
+          "api_surface": {
+            "openapi": {
+              "operations": {
+                "items": [
+                  {
+                    "id": "api-operation:get:/redaction",
+                    "module_id": "module:.",
+                    "api_surface_category": "interface_declared_spring_mvc_endpoint",
+                    "spec_path": "src/main/resources/openapi.yml",
+                    "http_method": "GET",
+                    "path": "/redaction",
+                    "operation_id": "redaction",
+                    "tags": ["password=FAKE_V170_QUERY_TAG_SECRET"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:secret"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """, evidenceRecord(
+        "ev:api:secret",
+        "api_spec",
+        "src/main/resources/openapi.yml",
+        null,
+        null,
+        "operation:get:/redaction",
+        7,
+        7,
+        "operation get /redaction",
+        "high"));
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "list", "api-operations");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("api-operation:get:/redaction")),
+        () -> assertTrue(result.stdout().contains("path: /redaction")),
+        () -> assertTrue(result.stdout().contains("evidence_ids: ev:api:secret")),
+        () -> assertTrue(result.stdout().contains(
+            "tags: password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_QUERY_TAG_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryRelationsRedactsLegacyGraphLabelsAndAttributes()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    Files.writeString(artifactRoot.resolve("project-graph.json"), """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:secret",
+              "kind": "type",
+              "label": "Authorization: Bearer FAKE_V170_GRAPH_LABEL_SECRET",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "components.items",
+                "id": "component:com.example.SecretController"
+              },
+              "evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+            }
+          ],
+          "edges": [],
+          "relation_statuses": [
+            {
+              "id": "relation-status:secret",
+              "relation_family": "tested_subject",
+              "source_id": "node:secret",
+              "target_id": null,
+              "relation_status": "not_detected",
+              "support_type": "status_only",
+              "confidence": "low",
+              "uncertainty": "no_supported_subject_signal",
+              "relation_attributes": {
+                "client_secret": "FAKE_V170_GRAPH_ATTR_SECRET",
+                "note": "password=FAKE_V170_GRAPH_NOTE_SECRET"
+              },
+              "derivation": null,
+              "evidence_ids": []
+            }
+          ],
+          "warnings": []
+        }
+        """);
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "relations", "node:secret");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Resolved node: node:secret")),
+        () -> assertTrue(result.stdout().contains(
+            "label: Authorization: Bearer " + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(result.stdout().contains(
+            "relation_attributes: client_secret=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(result.stdout().contains(
+            "note=password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_GRAPH_LABEL_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_GRAPH_ATTR_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_GRAPH_NOTE_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
   void queryMissingPathAndNonDirectoryPathReturnQueryInputErrorsWithoutAbsolutePath()
       throws Exception {
     Path missingPath = tempDir.resolve("missing");

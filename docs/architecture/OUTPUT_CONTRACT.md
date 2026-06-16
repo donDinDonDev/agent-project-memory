@@ -5019,22 +5019,22 @@ Stop conditions for implementation:
 - Artifact path behavior cannot be kept local, deterministic, read-only, and bounded to
   the approved generated artifacts.
 
-### Planned v1.7 Redaction And Security Hardening Contract
+### v1.7 Redaction And Security Hardening Contract
 
-This section records the planned v1.7 output-safety boundary. It is a planned
-contract until the implementation and tests land. Existing released artifacts before
-that implementation are not guaranteed to have been generated with this redaction
-policy.
+This section records the v1.7 output-safety boundary. Current unreleased v1.7
+artifacts apply the initial redaction policy described here. Existing released
+artifacts before this implementation are not guaranteed to have been generated with
+this redaction policy.
 
 Design decision:
 
 - Redaction is deterministic output hardening for selected generated and rendered
   strings. It is not a repository-wide secret scan, vulnerability scanner, secret
   inventory, credential classifier, or proof that all secrets were found.
-- The planned redaction marker is the exact plain text
+- The redaction marker is the exact plain text
   `[REDACTED_SECRET_LIKE_VALUE]`.
 - The marker is stored or rendered inside existing string fields, most often evidence
-  `excerpt` or generated Markdown/query text. The planned v1.7 design does not add a
+  `excerpt` or generated Markdown/query text. The initial v1.7 design does not add a
   `redacted` boolean, new evidence fields, new evidence types, a new `project-map.json`
   schema marker, or a new `graph_schema_version` by itself.
 - Evidence IDs, normalized repository-relative paths, class names, method names,
@@ -5064,11 +5064,12 @@ Secret-looking value policy:
 
 Generation-time handling:
 
-- New scan-generated artifacts should apply the shared redaction policy before writing
-  selected source-derived free text or artifact-derived free text to
+- New scan-generated artifacts apply the shared redaction policy before writing
+  selected source-derived free text or artifact-derived free text to generated JSON and
+  Markdown surfaces. The initial implementation covers evidence excerpts,
   `project-map.json`, `project-graph.json`, `evidence-index.jsonl`, `endpoints.md`,
-  `agent-guide.md`, selected profile Markdown, cache metadata, scan diagnostics, CLI
-  stdout, or CLI stderr.
+  `agent-guide.md`, selected profile Markdown derived from generated artifacts, and
+  bounded CLI error text.
 - Evidence excerpt construction should redact before final excerpt bounding and should
   still enforce the existing excerpt length and output escaping limits after redaction.
 - Structured fields that already avoid values, such as IDs, schema markers, enum-like
@@ -5078,7 +5079,7 @@ Generation-time handling:
 
 Query render-time handling:
 
-- Query output should apply the same redaction policy while rendering stdout or stderr,
+- Query output applies the same redaction policy while rendering stdout or stderr,
   including `explain evidence` output for existing older artifacts that may contain
   unredacted excerpts.
 - Query render-time redaction is presentation-only. It must not rewrite, repair,

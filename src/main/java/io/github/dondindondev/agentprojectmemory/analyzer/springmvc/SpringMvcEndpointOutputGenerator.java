@@ -129,6 +129,7 @@ import io.github.dondindondev.agentprojectmemory.graph.ProjectGraph;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphCollector;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphIds;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphJsonSerializer;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
@@ -2127,7 +2128,7 @@ public final class SpringMvcEndpointOutputGenerator {
           .append(nullableCode(operation.operationId()))
           .append("\n");
       markdown.append("- Tags: ")
-          .append(codeList(operation.tags()))
+          .append(codeList(redactedStringValues("tags", operation.tags())))
           .append("\n");
       markdown.append("- Implementation status: ")
           .append(code(operation.implementationStatus()))
@@ -2192,7 +2193,7 @@ public final class SpringMvcEndpointOutputGenerator {
           .append(nullableCode(warning.sourcePath()))
           .append("\n");
       markdown.append("- Message: ")
-          .append(MarkdownRenderer.text(warning.message()))
+          .append(MarkdownRenderer.text(OutputRedactor.redact(warning.message())))
           .append("\n");
       markdown.append("- Evidence: ")
           .append(codeList(warning.evidenceIds()))
@@ -7318,7 +7319,8 @@ public final class SpringMvcEndpointOutputGenerator {
       String value,
       boolean trailingComma) {
     indent(json, indentLevel);
-    json.append(jsonString(name)).append(": ").append(jsonString(value));
+    json.append(jsonString(name)).append(": ")
+        .append(jsonString(OutputRedactor.redactField(name, value)));
     appendLineEnding(json, trailingComma);
   }
 
@@ -7333,7 +7335,7 @@ public final class SpringMvcEndpointOutputGenerator {
     if (value == null) {
       json.append("null");
     } else {
-      json.append(jsonString(value));
+      json.append(jsonString(OutputRedactor.redactField(name, value)));
     }
     appendLineEnding(json, trailingComma);
   }
@@ -7400,11 +7402,15 @@ public final class SpringMvcEndpointOutputGenerator {
       boolean trailingComma) {
     indent(json, indentLevel);
     json.append(jsonString(name)).append(": ");
-    appendStringArray(json, indentLevel, values);
+    appendStringArray(json, indentLevel, name, values);
     appendLineEnding(json, trailingComma);
   }
 
-  private void appendStringArray(StringBuilder json, int indentLevel, List<String> values) {
+  private void appendStringArray(
+      StringBuilder json,
+      int indentLevel,
+      String name,
+      List<String> values) {
     if (values.isEmpty()) {
       json.append("[]");
       return;
@@ -7413,7 +7419,7 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("[\n");
     for (int index = 0; index < values.size(); index++) {
       indent(json, indentLevel + 1);
-      json.append(jsonString(values.get(index)));
+      json.append(jsonString(OutputRedactor.redactField(name, values.get(index))));
       if (index < values.size() - 1) {
         json.append(",");
       }
@@ -7436,7 +7442,7 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private void appendStringField(StringBuilder json, String name, String value) {
     appendFieldPrefix(json, name);
-    json.append(jsonString(value));
+    json.append(jsonString(OutputRedactor.redactField(name, value)));
   }
 
   private void appendNullableStringField(StringBuilder json, String name, String value) {
@@ -7445,7 +7451,7 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("null");
       return;
     }
-    json.append(jsonString(value));
+    json.append(jsonString(OutputRedactor.redactField(name, value)));
   }
 
   private void appendNullableIntegerField(StringBuilder json, String name, Integer value) {
@@ -7499,6 +7505,12 @@ public final class SpringMvcEndpointOutputGenerator {
       return "none detected";
     }
     return code(value);
+  }
+
+  private List<String> redactedStringValues(String fieldName, List<String> values) {
+    return values.stream()
+        .map(value -> OutputRedactor.redactField(fieldName, value))
+        .toList();
   }
 
   private String codeList(List<String> values) {

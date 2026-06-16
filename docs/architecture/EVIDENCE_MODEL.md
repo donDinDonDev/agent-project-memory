@@ -1301,16 +1301,15 @@ first-class facts, changes confidence semantics, treats derivation as evidence, 
 generated-source contents, or adds runtime, connector, or AI-derived evidence must
 update this document and `OUTPUT_CONTRACT.md` before implementation.
 
-### Planned v1.7 Redaction And Evidence Excerpt Safety
+### v1.7 Redaction And Evidence Excerpt Safety
 
-The planned v1.7 redaction layer does not add evidence types, evidence fields,
-evidence records, confidence labels, path semantics, runtime evidence, or tool-config
-evidence. It updates excerpt safety semantics only after the implementation and tests
-land.
+The v1.7 redaction layer does not add evidence types, evidence fields, evidence
+records, confidence labels, path semantics, runtime evidence, or tool-config evidence.
+It updates excerpt safety semantics for selected generated and rendered output strings.
 
 Evidence excerpt redaction:
 
-- Evidence `excerpt` remains a short source excerpt or normalized snippet, but future
+- Evidence `excerpt` remains a short source excerpt or normalized snippet, but
   v1.7-generated excerpts may contain the plain marker
   `[REDACTED_SECRET_LIKE_VALUE]` when a selected excerpt would otherwise include an
   obvious secret-looking value.
@@ -1329,12 +1328,12 @@ Evidence excerpt redaction:
 
 Secret-looking value boundary:
 
-- The planned policy covers obvious credential-like key/value or header/value strings,
+- The policy covers obvious credential-like key/value or header/value strings,
   obvious bearer/basic authorization values, and obvious private-key material markers
   only when such text has already been selected for generated or rendered output.
-- The planned policy does not scan the whole repository for secrets, perform
-  entropy-only detection, detect every unlabeled or split secret, validate credentials,
-  classify secrets by provider, or prove that no secrets exist.
+- The policy does not scan the whole repository for secrets, perform entropy-only
+  detection, detect every unlabeled or split secret, validate credentials, classify
+  secrets by provider, or prove that no secrets exist.
 - The absence of a redaction marker is not evidence that an input contains no secrets.
 - The presence of a redaction marker is not vulnerability evidence, security
   correctness evidence, credential validity evidence, or a secret inventory row.

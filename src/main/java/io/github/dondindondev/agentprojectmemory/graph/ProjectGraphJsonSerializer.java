@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.graph;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -230,7 +231,7 @@ public final class ProjectGraphJsonSerializer {
       boolean trailingComma) {
     indent(json, level);
     json.append('"').append(fieldName).append("\": \"")
-        .append(jsonString(value))
+        .append(jsonString(OutputRedactor.redactField(fieldName, value)))
         .append('"');
     appendLineEnding(json, trailingComma);
   }
@@ -246,7 +247,9 @@ public final class ProjectGraphJsonSerializer {
     if (value == null) {
       json.append("null");
     } else {
-      json.append('"').append(jsonString(value)).append('"');
+      json.append('"')
+          .append(jsonString(OutputRedactor.redactField(fieldName, value)))
+          .append('"');
     }
     appendLineEnding(json, trailingComma);
   }
@@ -278,7 +281,9 @@ public final class ProjectGraphJsonSerializer {
     json.append("\n");
     for (int index = 0; index < values.size(); index++) {
       indent(json, level + 1);
-      json.append('"').append(jsonString(values.get(index))).append('"');
+      json.append('"')
+          .append(jsonString(OutputRedactor.redactField(fieldName, values.get(index))))
+          .append('"');
       if (index < values.size() - 1) {
         json.append(",");
       }
@@ -306,10 +311,28 @@ public final class ProjectGraphJsonSerializer {
     List<String> keys = values.keySet().stream().sorted().toList();
     for (int index = 0; index < keys.size(); index++) {
       String key = keys.get(index);
-      appendStringField(json, level + 1, key, values.get(key), index < keys.size() - 1);
+      appendStringMapValueField(
+          json,
+          level + 1,
+          key,
+          values.get(key),
+          index < keys.size() - 1);
     }
     indent(json, level);
     json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendStringMapValueField(
+      StringBuilder json,
+      int level,
+      String fieldName,
+      String value,
+      boolean trailingComma) {
+    indent(json, level);
+    json.append('"').append(jsonString(fieldName)).append("\": \"")
+        .append(jsonString(OutputRedactor.redactMapValue(fieldName, value)))
+        .append('"');
     appendLineEnding(json, trailingComma);
   }
 

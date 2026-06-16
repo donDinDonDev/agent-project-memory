@@ -11,13 +11,16 @@ architecture documents.
 
 ### Added
 
-- Documented the planned v1.7 security and secrets-safety design boundary, including
-  bounded deterministic redaction for obvious secret-looking output values, explicit
-  non-guarantee language, generation-time and query render-time handling, and the
-  decision to preserve the existing evidence field shape.
+- Implemented the initial v1.7 deterministic redaction primitive for obvious
+  secret-looking output values, including evidence excerpt hardening, selected
+  generated JSON/Markdown rendering, selected profile rendering, query render-time
+  hardening for existing artifacts, and bounded CLI error-message hardening.
+- Documented the v1.7 security and secrets-safety design boundary, including explicit
+  non-guarantee language and the decision to preserve the existing evidence field
+  shape.
 - Added a public security threat model and refreshed the root security policy to
-  describe the local-first trust boundary, vulnerability reporting scope, and planned
-  redaction hardening without positioning the tool as a vulnerability scanner or
+  describe the local-first trust boundary, vulnerability reporting scope, and redaction
+  hardening without positioning the tool as a vulnerability scanner or
   general-purpose secret scanner.
 
 ### Changed
