@@ -20,6 +20,24 @@ The current product focus is intentionally narrow:
 The supported product line is a local-first CLI. Source code must not be sent to
 external services by default.
 
+## Security And Sensitive Data
+
+`agent-project-memory` treats repository contents as local, untrusted input and keeps
+generated project memory local by default. It is not a SaaS scanner, vulnerability
+scanner, general-purpose secret scanner, or secret inventory tool.
+
+The current output contracts avoid serializing known sensitive surfaces such as raw
+config values, document bodies, generated-source contents, command logs, local absolute
+paths, credentials, tokens, and secret-looking values. The planned v1.7 security track
+adds a bounded deterministic redaction policy for obvious secret-looking values that
+may otherwise appear in generated excerpts or rendered query output, while explicitly
+preserving evidence IDs, normalized repository-relative paths, symbols, line ranges,
+confidence, uncertainty, and claim categories.
+
+See [SECURITY.md](SECURITY.md) for vulnerability reporting and
+[docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
+product threat model and security limitations.
+
 ## Requirements
 
 - Java 21.

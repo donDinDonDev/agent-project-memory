@@ -9,6 +9,17 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v1.7 security and secrets-safety design boundary, including
+  bounded deterministic redaction for obvious secret-looking output values, explicit
+  non-guarantee language, generation-time and query render-time handling, and the
+  decision to preserve the existing evidence field shape.
+- Added a public security threat model and refreshed the root security policy to
+  describe the local-first trust boundary, vulnerability reporting scope, and planned
+  redaction hardening without positioning the tool as a vulnerability scanner or
+  general-purpose secret scanner.
+
 ### Changed
 
 - Updated post-release documentation status to mark `v1.6.0` as published with release

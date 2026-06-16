@@ -1301,6 +1301,61 @@ first-class facts, changes confidence semantics, treats derivation as evidence, 
 generated-source contents, or adds runtime, connector, or AI-derived evidence must
 update this document and `OUTPUT_CONTRACT.md` before implementation.
 
+### Planned v1.7 Redaction And Evidence Excerpt Safety
+
+The planned v1.7 redaction layer does not add evidence types, evidence fields,
+evidence records, confidence labels, path semantics, runtime evidence, or tool-config
+evidence. It updates excerpt safety semantics only after the implementation and tests
+land.
+
+Evidence excerpt redaction:
+
+- Evidence `excerpt` remains a short source excerpt or normalized snippet, but future
+  v1.7-generated excerpts may contain the plain marker
+  `[REDACTED_SECRET_LIKE_VALUE]` when a selected excerpt would otherwise include an
+  obvious secret-looking value.
+- The marker is a sanitized replacement inside the existing `excerpt` string. It is
+  not a new evidence field, not an evidence type, not a confidence label, and not proof
+  that the original value was an active credential.
+- Redaction should preserve the evidence record's useful locator fields: `id`,
+  `source_type`, `path`, `class_name`, `method_name`, `symbol_name`, `line_start`,
+  `line_end`, and `confidence`.
+- Redaction should preserve useful safe context when possible, such as an annotation
+  symbol, XML/YAML key, header name, element name, or delimiter. If preserving context
+  would expose the value or make the boundary ambiguous, the selected excerpt may be
+  replaced by the marker.
+- Redaction should happen before final excerpt length bounding and output escaping, and
+  the final emitted excerpt must remain bounded.
+
+Secret-looking value boundary:
+
+- The planned policy covers obvious credential-like key/value or header/value strings,
+  obvious bearer/basic authorization values, and obvious private-key material markers
+  only when such text has already been selected for generated or rendered output.
+- The planned policy does not scan the whole repository for secrets, perform
+  entropy-only detection, detect every unlabeled or split secret, validate credentials,
+  classify secrets by provider, or prove that no secrets exist.
+- The absence of a redaction marker is not evidence that an input contains no secrets.
+- The presence of a redaction marker is not vulnerability evidence, security
+  correctness evidence, credential validity evidence, or a secret inventory row.
+
+Evidence shape decision:
+
+- No new evidence field is required for the initial v1.7 redaction design.
+- No `evidence-index.jsonl` schema migration is required by the marker alone.
+- Existing facts should continue to reference evidence IDs normally after redaction.
+- Graph, cache, profile, generated Markdown, diagnostics, and query output remain
+  non-evidence even when they render existing evidence excerpts or redaction markers.
+- Query render-time redaction over existing older artifact excerpts is a presentation
+  boundary. It must not rewrite `evidence-index.jsonl` and must not create new evidence
+  records.
+
+Any future change that needs machine-readable redaction metadata, evidence-level
+redaction reason fields, secret classifications, credential validation, or provider-
+specific detection must update this document and `OUTPUT_CONTRACT.md` before
+implementation. Such a change must still avoid presenting redaction as complete secret
+detection or vulnerability proof.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

@@ -1088,9 +1088,65 @@ Release readiness notes:
 - The `v1.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
+### v1.7.0: Security And Secrets Safety Maturity (Planned)
+
+Product outcome: harden the accumulated local scan, generated-output, and read-only
+query surfaces against accidental sensitive-data exposure and path-safety regressions
+while preserving deterministic evidence-backed project memory.
+
+Planned design boundary:
+
+- Define deterministic redaction for obvious secret-looking values that may otherwise
+  appear in selected generated excerpts, generated Markdown, selected agent profile
+  Markdown, graph labels or attributes, cache/scan diagnostics, CLI stdout/stderr, or
+  query-rendered text.
+- Use `[REDACTED_SECRET_LIKE_VALUE]` as the planned plain-text redaction marker.
+- Treat redaction as output hardening, not as complete secret detection, a secret
+  inventory, vulnerability scanning, or security correctness proof.
+- Apply redaction at generation time for newly produced artifacts and at query render
+  time for existing artifacts. Query render-time redaction must not rewrite or repair
+  artifact files.
+- Preserve evidence usefulness after redaction: evidence IDs, normalized
+  repository-relative paths, symbols, line ranges, confidence, uncertainty, relation
+  statuses, and claim categories should remain navigable.
+- Keep redaction markers inside existing excerpt or rendered-output strings. The
+  planned v1.7 design does not add evidence fields, evidence types, a new
+  `project-map.json` schema marker, or a new `graph_schema_version` by itself.
+- Audit path and symlink behavior across scan roots, output writes, root-local config,
+  local Markdown discovery, generated-source metadata, cache metadata, graph output,
+  agent profile output, query artifact reads, CLI stdout, and CLI stderr.
+- Keep public security documentation in the root `SECURITY.md` and the public threat
+  model in [../development/THREAT_MODEL.md](../development/THREAT_MODEL.md).
+
+Planned implementation sequence:
+
+- Implement a shared bounded redaction/excerpt primitive and apply it to evidence
+  excerpts and generated-output serialization points that can carry selected source or
+  artifact text.
+- Add fake-only security regression fixtures and output checks for generated artifacts,
+  generated Markdown, profile output, graph output, cache metadata, query output, and
+  terminal output.
+- Run a path/symlink audit over existing surface behavior and convert broad findings
+  into bounded fixes instead of expanding the release track.
+- Run release-track validation and security review before release prep.
+
+Non-goals:
+
+- No complete secret detector, secret inventory, credential classifier, vulnerability
+  scanner, or security correctness claim.
+- No external secret scanners, network access, telemetry, source upload, connector
+  credentials, repository chat, generic RAG, embeddings, LLM calls in the core analyzer
+  or query layer, SaaS, web UI, editor integration, server surface, plugin platform, or
+  automatic code modification.
+- No generated-source content scanning, default symlink following, environment-variable
+  interpolation, config value extraction, Maven or Gradle execution, dependency
+  resolution, runtime Spring reconstruction, stable JSON query output, release
+  automation, package-manager publication, signing, native images, or container images.
+- No real secrets in fixtures, tests, docs, examples, release materials, or public
+  vulnerability reports.
+
 Possible later tracks:
 
-- Security and secrets safety.
 - Public adoption polish.
 - v2 architecture preparation.
 

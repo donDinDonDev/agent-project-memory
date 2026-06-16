@@ -5019,6 +5019,117 @@ Stop conditions for implementation:
 - Artifact path behavior cannot be kept local, deterministic, read-only, and bounded to
   the approved generated artifacts.
 
+### Planned v1.7 Redaction And Security Hardening Contract
+
+This section records the planned v1.7 output-safety boundary. It is a planned
+contract until the implementation and tests land. Existing released artifacts before
+that implementation are not guaranteed to have been generated with this redaction
+policy.
+
+Design decision:
+
+- Redaction is deterministic output hardening for selected generated and rendered
+  strings. It is not a repository-wide secret scan, vulnerability scanner, secret
+  inventory, credential classifier, or proof that all secrets were found.
+- The planned redaction marker is the exact plain text
+  `[REDACTED_SECRET_LIKE_VALUE]`.
+- The marker is stored or rendered inside existing string fields, most often evidence
+  `excerpt` or generated Markdown/query text. The planned v1.7 design does not add a
+  `redacted` boolean, new evidence fields, new evidence types, a new `project-map.json`
+  schema marker, or a new `graph_schema_version` by itself.
+- Evidence IDs, normalized repository-relative paths, class names, method names,
+  symbol names, fact IDs, graph IDs, line ranges, confidence labels, uncertainty
+  labels, relation statuses, claim categories, schema markers, and enum-like contract
+  values should remain unredacted unless a future contract explicitly defines a safe
+  replacement. These values are needed for evidence navigation and deterministic joins.
+
+Secret-looking value policy:
+
+- In scope are obvious output strings where a bounded value is associated with a
+  credential-like key or header, such as password, token, secret, credential, private
+  key, API key, client secret, access key, authorization, bearer, or basic credential
+  forms.
+- In scope are obvious private-key material markers when such material appears inside a
+  selected excerpt or rendered output string.
+- The redaction primitive should mask the value portion when the boundary is clear,
+  preserving safe context such as the key name, delimiter, annotation symbol, element
+  name, source path, or line range. When the value boundary is unclear, the whole
+  selected excerpt or rendered value may be replaced by the marker.
+- Multiple secret-looking values in one selected string should all be masked. The
+  output must not include a hash, digest, prefix, suffix, length, or reversible
+  transform of the masked value.
+- Out of scope are entropy-only detection, unlabeled secrets, split or obfuscated
+  secrets, semantic classification of credentials, validation against providers,
+  claims that a value is active, and claims that a repository contains no secrets.
+
+Generation-time handling:
+
+- New scan-generated artifacts should apply the shared redaction policy before writing
+  selected source-derived free text or artifact-derived free text to
+  `project-map.json`, `project-graph.json`, `evidence-index.jsonl`, `endpoints.md`,
+  `agent-guide.md`, selected profile Markdown, cache metadata, scan diagnostics, CLI
+  stdout, or CLI stderr.
+- Evidence excerpt construction should redact before final excerpt bounding and should
+  still enforce the existing excerpt length and output escaping limits after redaction.
+- Structured fields that already avoid values, such as IDs, schema markers, enum-like
+  statuses, confidence labels, normalized repository-relative paths, and evidence ID
+  references, should not be passed through a value-redaction step that would make them
+  unstable or non-joinable.
+
+Query render-time handling:
+
+- Query output should apply the same redaction policy while rendering stdout or stderr,
+  including `explain evidence` output for existing older artifacts that may contain
+  unredacted excerpts.
+- Query render-time redaction is presentation-only. It must not rewrite, repair,
+  mutate, normalize in place, or regenerate `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, generated Markdown, profile artifacts, or cache metadata.
+- Future stable JSON query output, if implemented later, must apply the same redaction
+  policy before serializing result strings.
+
+Path and symlink audit matrix for v1.7:
+
+| Surface | Target output/path policy |
+| --- | --- |
+| Scan root | Resolve one local directory and keep generated outputs under the canonical scan root. |
+| Output directory and files | Keep `.project-memory/` under the scan root; reject unsafe symlink, hardlink, or escaping output paths. |
+| Root-local scan config | Accept only one bounded YAML file under the scan root; reject absolute, escaping, generated-output, or symlinked config paths. |
+| Java, Maven, Gradle, resource, and API-spec inputs | Read only documented local input classes through bounded parser policies and normalized repository-relative paths. |
+| Local Markdown documents | Keep default safety exclusions, local Markdown-only user rules, aggregate caps, and no symlink following. |
+| Generated-source metadata | Keep generated-source roots as path-presence metadata only; do not read generated-source contents by default. |
+| Cache metadata | Keep cache files under `.project-memory/cache/v1/`; fail closed on unsafe, stale, corrupt, mismatched, symlinked, hardlinked, or inconsistent cache state. |
+| Graph output | Generate navigation metadata from existing facts, evidence IDs, relation/status rows, and derivation metadata only. |
+| Agent profile output | Render selected deterministic Markdown from existing structured facts and evidence references only. |
+| Query artifact root and files | Read only direct child artifacts required by the query command; reject symlinked artifact roots or required artifact files; never write during query. |
+| CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, source bodies, document bodies, config contents, generated-source contents, credentials, tokens, or secret-looking values. |
+
+Validation requirements before v1.7 release:
+
+- Focused redaction/excerpt tests using fake sentinel values only.
+- Output serialization and generated Markdown tests proving the marker appears where a
+  fake secret-looking value would otherwise be emitted and that evidence IDs, paths,
+  symbols, line ranges, confidence, uncertainty, and relation/status labels remain
+  useful.
+- Query rendering tests proving older unredacted artifact excerpts are masked in stdout
+  without mutating artifact files.
+- Surface regression checks for `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, `endpoints.md`, `agent-guide.md`, selected profile Markdown,
+  cache metadata, scan stdout/stderr, and query stdout/stderr.
+- Path/symlink audit coverage for scan inputs, output writes, config selection, local
+  Markdown discovery, generated-source metadata, cache metadata, and query artifacts.
+
+Stop conditions for implementation:
+
+- The design or implementation starts promising complete secret detection, a secret
+  inventory, vulnerability findings, credential validity, or security correctness.
+- Redaction would destroy evidence navigation by masking IDs, paths, symbols, line
+  ranges, confidence, uncertainty, relation statuses, or claim categories needed to
+  inspect a generated fact.
+- The implementation requires generated-source content scanning, default symlink
+  following, environment-variable interpolation, config value extraction, network
+  access, connector credentials, telemetry, SaaS, web UI, repository chat, generic RAG,
+  LLM calls, automatic code modification, or broad filesystem traversal.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.
