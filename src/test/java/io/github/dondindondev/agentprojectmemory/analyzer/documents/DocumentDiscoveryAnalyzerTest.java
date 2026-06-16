@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
@@ -204,6 +205,42 @@ final class DocumentDiscoveryAnalyzerTest {
         () -> assertEquals(123, heading.title().length()),
         () -> assertEquals("a".repeat(120), heading.anchor()),
         () -> assertTrue(heading.id().startsWith("document_heading:README.md:heading:")));
+  }
+
+  @Test
+  void redactsSecretLikeHeadingValuesFromIdentifiersAndEvidenceKeys()
+      throws Exception {
+    Path repositoryRoot = repository("secret-heading");
+    writeFile(repositoryRoot.resolve("README.md"), """
+        # Authorization: Bearer FAKE_V170_MARKDOWN_HEADING_SECRET
+
+        Body.
+        """);
+
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot, List.of());
+    DocumentFileFact document = analysis.documents().get(0);
+    DocumentHeadingFact heading = document.headings().get(0);
+    DocumentChunkFact chunk = document.chunks().get(0);
+    DocumentEvidence headingEvidence = evidence(analysis, heading.evidenceIds().get(0));
+    String joinedKeys = String.join(
+        "\n",
+        heading.id(),
+        heading.anchor(),
+        chunk.headingId(),
+        headingEvidence.id(),
+        headingEvidence.symbolName());
+
+    assertAll(
+        () -> assertTrue(document.title().contains("FAKE_V170_MARKDOWN_HEADING_SECRET")),
+        () -> assertTrue(heading.title().contains("FAKE_V170_MARKDOWN_HEADING_SECRET")),
+        () -> assertTrue(joinedKeys.contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(joinedKeys.contains("FAKE_V170_MARKDOWN_HEADING_SECRET")),
+        () -> assertTrue(heading.id().contains("%5BREDACTED_SECRET_LIKE_VALUE%5D")),
+        () -> assertEquals(
+            "authorization-bearer-redacted-secret-like-value",
+            heading.anchor()),
+        () -> assertEquals(heading.id(), chunk.headingId()),
+        () -> assertTrue(headingEvidence.symbolName().contains(OutputRedactor.REDACTION_MARKER)));
   }
 
   @Test

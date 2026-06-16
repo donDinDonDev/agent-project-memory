@@ -28,6 +28,13 @@ architecture documents.
 - Updated post-release documentation status to mark `v1.6.0` as published with release
   jar and checksum assets.
 
+### Fixed
+
+- Prevented obvious secret-looking local Markdown heading values from leaking through
+  generated document heading IDs, heading anchors, chunk heading links, graph source
+  references, and heading evidence symbol keys by deriving those keys from the
+  redaction-safe heading text.
+
 ## [1.6.0] - 2026-06-16
 
 ### Added

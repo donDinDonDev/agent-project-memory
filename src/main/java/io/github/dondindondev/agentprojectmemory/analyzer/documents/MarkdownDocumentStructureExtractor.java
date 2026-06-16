@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -80,7 +81,7 @@ final class MarkdownDocumentStructureExtractor {
       Map<String, Integer> titleOccurrences,
       Map<String, Integer> anchorOccurrences) {
     String title = boundedTitle(normalizedInlineText(heading.title()));
-    String titleKey = title.isBlank() ? "untitled" : title;
+    String titleKey = safeHeadingKey(title);
     int titleOccurrence = titleOccurrences.merge(titleKey, 1, Integer::sum);
     String id = "document_heading:"
         + DocumentDiscoveryAnalyzer.idKey(sourcePath)
@@ -89,7 +90,7 @@ final class MarkdownDocumentStructureExtractor {
         + ":occ:"
         + zeroPadded(titleOccurrence);
 
-    String anchorBase = anchorBase(title);
+    String anchorBase = anchorBase(title.isBlank() ? title : titleKey);
     String anchor = null;
     if (anchorBase != null) {
       int anchorOccurrence = anchorOccurrences.merge(anchorBase, 1, Integer::sum);
@@ -104,6 +105,11 @@ final class MarkdownDocumentStructureExtractor {
         lineNumber,
         lineNumber,
         List.of());
+  }
+
+  private String safeHeadingKey(String title) {
+    String redacted = OutputRedactor.redact(title);
+    return redacted.isBlank() ? "untitled" : redacted;
   }
 
   private HeadingCandidate atxHeading(String line) {

@@ -2855,11 +2855,16 @@ Current v0.8 heading and chunk rules:
   headings. Future support for Setext headings or other Markdown constructs requires a
   contract update if output semantics change.
 - Heading IDs are stable and path-scoped. Duplicate heading text is disambiguated with a
-  deterministic document-order ordinal.
+  deterministic document-order ordinal. When heading text contains an obvious
+  secret-looking value covered by the v1.7 redaction policy, the heading key used in
+  `heading.id`, `chunk.heading_id`, graph source references, and heading evidence IDs
+  is derived from the redaction-safe heading text before ID-key percent-encoding.
 - `heading.title` is the normalized heading text. It must be bounded and Markdown-safe
   when rendered. It is not a summary of the following section.
-- `heading.anchor` is a deterministic local anchor when it can be computed safely. If a
-  stable anchor cannot be computed, it should be `null` rather than guessed.
+- `heading.anchor` is a deterministic local anchor when it can be computed safely. For
+  redacted heading text, the anchor is computed from the same redaction-safe heading key
+  used by heading IDs. If a stable anchor cannot be computed, it should be `null`
+  rather than guessed.
 - `heading.line_start` and `heading.line_end` point to the heading line or range when
   available. The current implementation emits integer line ranges for every emitted
   heading.
@@ -5040,8 +5045,12 @@ Design decision:
 - Evidence IDs, normalized repository-relative paths, class names, method names,
   symbol names, fact IDs, graph IDs, line ranges, confidence labels, uncertainty
   labels, relation statuses, claim categories, schema markers, and enum-like contract
-  values should remain unredacted unless a future contract explicitly defines a safe
+  values should remain unredacted unless this contract explicitly defines a safe
   replacement. These values are needed for evidence navigation and deterministic joins.
+  For fields whose join keys are derived from local Markdown heading text, the v1.7
+  contract derives the key from the redaction-safe heading text before percent-encoding
+  so raw secret-looking heading values do not leak through IDs, anchors, graph source
+  references, or evidence symbol keys.
 
 Secret-looking value policy:
 
@@ -5072,10 +5081,12 @@ Generation-time handling:
   bounded CLI error text.
 - Evidence excerpt construction should redact before final excerpt bounding and should
   still enforce the existing excerpt length and output escaping limits after redaction.
-- Structured fields that already avoid values, such as IDs, schema markers, enum-like
+- Structured fields that already avoid values, such as schema markers, enum-like
   statuses, confidence labels, normalized repository-relative paths, and evidence ID
   references, should not be passed through a value-redaction step that would make them
-  unstable or non-joinable.
+  unstable or non-joinable. Structured IDs that intentionally include bounded
+  source-derived free text, such as local Markdown heading IDs and related evidence
+  keys, must derive that key from the redaction-safe value before serialization.
 
 Query render-time handling:
 

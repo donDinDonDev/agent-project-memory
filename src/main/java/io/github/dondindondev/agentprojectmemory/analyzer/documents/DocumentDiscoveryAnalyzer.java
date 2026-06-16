@@ -1,5 +1,6 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.BoundedCandidateSet;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
@@ -645,7 +646,7 @@ public final class DocumentDiscoveryAnalyzer {
     for (int index = 0; index < headings.size(); index++) {
       DocumentHeadingFact heading = headings.get(index);
       String ordinal = zeroPadded(index + 1);
-      String titleKey = heading.title().isBlank() ? "untitled" : heading.title();
+      String titleKey = safeHeadingKey(heading.title());
       DocumentEvidence headingEvidence = new DocumentEvidence(
           "ev:"
               + idKey(sourcePath)
@@ -684,7 +685,7 @@ public final class DocumentDiscoveryAnalyzer {
       List<DocumentEvidence> evidence) {
     Map<String, String> headingTitleById = new LinkedHashMap<>();
     for (DocumentHeadingFact heading : headings) {
-      headingTitleById.put(heading.id(), heading.title().isBlank() ? "untitled" : heading.title());
+      headingTitleById.put(heading.id(), safeHeadingKey(heading.title()));
     }
 
     List<DocumentChunkFact> updatedChunks = new ArrayList<>();
@@ -717,6 +718,11 @@ public final class DocumentDiscoveryAnalyzer {
           List.of(chunkEvidence.id())));
     }
     return updatedChunks;
+  }
+
+  private String safeHeadingKey(String title) {
+    String redacted = OutputRedactor.redact(title);
+    return redacted.isBlank() ? "untitled" : redacted;
   }
 
   private String normalizedHeadingLine(DocumentHeadingFact heading) {

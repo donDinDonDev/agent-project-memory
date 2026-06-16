@@ -1156,6 +1156,178 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanIncrementalAllProfilesKeepsFakeSecretLikeValuesOutOfG003Surfaces()
+      throws Exception {
+    List<String> fakeNeedles = List.of(
+        "FAKE_V170_CONFIG_COMMENT_SECRET",
+        "FAKE_V170_MAVEN_ARTIFACT_SECRET",
+        "FAKE_V170_MARKDOWN_TITLE_SECRET",
+        "FAKE_V170_MARKDOWN_BODY_SECRET",
+        "FAKE_V170_RESOURCE_CONFIG_SECRET",
+        "FAKE_V170_GENERATED_SOURCE_BODY_SECRET",
+        "FAKE_V170_OPENAPI_TAG_SECRET",
+        "FAKE_V170_JAVA_CLASS_SECRET",
+        "FAKE_V170_JAVA_HEADER_SECRET");
+    writeFile(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <groupId>com.example</groupId>
+          <artifactId>password=FAKE_V170_MAVEN_ARTIFACT_SECRET</artifactId>
+          <version>1.0.0</version>
+        </project>
+        """);
+    writeFile(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        features:
+          local_markdown: true
+        documents:
+          include:
+            - docs/*.md
+        # password=FAKE_V170_CONFIG_COMMENT_SECRET
+        """);
+    writeFile(tempDir.resolve("docs/public.md"), """
+        # Authorization: Bearer FAKE_V170_MARKDOWN_TITLE_SECRET
+
+        This local Markdown body mentions password=FAKE_V170_MARKDOWN_BODY_SECRET.
+        """);
+    writeFile(tempDir.resolve("src/main/resources/application.yml"), """
+        api-token: FAKE_V170_RESOURCE_CONFIG_SECRET
+        """);
+    writeFile(tempDir.resolve("target/generated-sources/openapi/GeneratedSecret.java"), """
+        package com.example.generated;
+        class GeneratedSecret {
+          static final String TOKEN = "FAKE_V170_GENERATED_SOURCE_BODY_SECRET";
+        }
+        """);
+    writeFile(tempDir.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.0
+        info:
+          title: G003 fixture
+          version: 1.0.0
+        paths:
+          /v170-safe:
+            get:
+              operationId: v170Safe
+              tags:
+                - password=FAKE_V170_OPENAPI_TAG_SECRET
+              responses:
+                '200':
+                  description: ok
+        """);
+    writeFile(tempDir.resolve("src/main/java/com/example/SecretController.java"), """
+        package com.example;
+
+        import org.springframework.web.bind.annotation.GetMapping;
+        import org.springframework.web.bind.annotation.RestController;
+
+        @RestController("clientSecret=FAKE_V170_JAVA_CLASS_SECRET")
+        class SecretController {
+          @GetMapping(value = "/v170-safe", headers = "Authorization: Bearer FAKE_V170_JAVA_HEADER_SECRET")
+          String v170Safe() {
+            return "ok";
+          }
+        }
+        """);
+
+    CliResult scan = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--agent-profile",
+        "all");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    List<Path> surfaceFiles = List.of(
+        outputDirectory.resolve("project-map.json"),
+        outputDirectory.resolve("project-graph.json"),
+        outputDirectory.resolve("evidence-index.jsonl"),
+        outputDirectory.resolve("endpoints.md"),
+        outputDirectory.resolve("agent-guide.md"),
+        outputDirectory.resolve("agent-profiles/manifest.json"),
+        outputDirectory.resolve("agent-profiles/codex.md"),
+        outputDirectory.resolve("agent-profiles/claude.md"),
+        outputDirectory.resolve("agent-profiles/cursor.md"),
+        outputDirectory.resolve("agent-profiles/generic.md"),
+        outputDirectory.resolve("cache/v1/manifest.json"),
+        outputDirectory.resolve("cache/v1/inputs.jsonl"),
+        outputDirectory.resolve("cache/v1/outputs.jsonl"));
+    String generatedSurfaces = readAll(surfaceFiles);
+    List<JsonNode> cacheInputs = jsonLines(outputDirectory.resolve("cache/v1/inputs.jsonl"));
+    List<JsonNode> cacheOutputs = jsonLines(outputDirectory.resolve("cache/v1/outputs.jsonl"));
+    String getMappingEvidenceId = evidenceId(
+        outputDirectory.resolve("evidence-index.jsonl"),
+        "src/main/java/com/example/SecretController.java",
+        "@GetMapping");
+    CliResult queryEndpoints = runCli("query", tempDir.toString(), "list", "endpoints");
+    CliResult queryApiOperations = runCli("query", tempDir.toString(), "list", "api-operations");
+    CliResult queryEvidence = runCli(
+        "query",
+        tempDir.toString(),
+        "explain",
+        "evidence",
+        getMappingEvidenceId);
+    String querySurfaces = String.join(
+        "\n",
+        queryEndpoints.stdout(),
+        queryEndpoints.stderr(),
+        queryApiOperations.stdout(),
+        queryApiOperations.stderr(),
+        queryEvidence.stdout(),
+        queryEvidence.stderr());
+    CliResult cliError = runCli(
+        "scan",
+        tempDir.toString(),
+        "--config",
+        "config/password=FAKE_V170_CLI_ERROR_SECRET.txt");
+
+    assertAll(
+        () -> assertEquals(0, scan.exitCode()),
+        () -> assertTrue(scan.stderr().isEmpty()),
+        () -> assertTrue(scan.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(scan.stdout().contains("Generated project-graph.json")),
+        () -> assertTrue(scan.stdout().contains("Generated agent profile artifacts: 4.")),
+        () -> assertTrue(scan.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertTrue(generatedSurfaces.contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(generatedSurfaces.contains(tempDir.toString())),
+        () -> assertFalse((scan.stdout() + scan.stderr()).contains(tempDir.toString())),
+        () -> assertFalse((scan.stdout() + scan.stderr()).contains("\tat ")),
+        () -> assertEquals(0, queryEndpoints.exitCode()),
+        () -> assertEquals(0, queryApiOperations.exitCode()),
+        () -> assertEquals(0, queryEvidence.exitCode()),
+        () -> assertTrue(querySurfaces.contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(querySurfaces.contains(tempDir.toString())),
+        () -> assertFalse(querySurfaces.contains("\tat ")),
+        () -> assertEquals(4, cliError.exitCode()),
+        () -> assertTrue(cliError.stdout().isEmpty()),
+        () -> assertFalse(cliError.stderr().contains("FAKE_V170_CLI_ERROR_SECRET")),
+        () -> assertFalse(cliError.stderr().contains(tempDir.toString())),
+        () -> assertFalse(cliError.stderr().contains("\tat ")));
+    assertFakeNeedlesAbsent("scan stdout/stderr", scan.stdout() + scan.stderr(), fakeNeedles);
+    assertFakeNeedlesAbsent("generated artifacts/profile/cache", generatedSurfaces, fakeNeedles);
+    assertFakeNeedlesAbsent("query stdout/stderr", querySurfaces, fakeNeedles);
+    assertCacheInput(cacheInputs, "scan_config", "agent-project-memory.yml", true);
+    assertCacheInput(cacheInputs, "maven_pom", "pom.xml", true);
+    assertCacheInput(cacheInputs, "local_markdown_document", "docs/public.md", true);
+    assertCacheInput(cacheInputs, "resource_config_file", "src/main/resources/application.yml", true);
+    assertCacheInput(cacheInputs, "openapi_spec", "src/main/resources/openapi.yml", true);
+    assertCacheInput(cacheInputs, "generated_source_root_path", "target/generated-sources", false);
+    assertCacheInput(
+        cacheInputs,
+        "generated_source_root_path",
+        "target/generated-sources/openapi",
+        false);
+    assertCacheOutput(cacheOutputs, "project_map", "project-map.json");
+    assertCacheOutput(cacheOutputs, "project_graph", "project-graph.json");
+    assertCacheOutput(cacheOutputs, "evidence_index", "evidence-index.jsonl");
+    assertCacheOutput(cacheOutputs, "endpoints_markdown", "endpoints.md");
+    assertCacheOutput(cacheOutputs, "agent_guide_markdown", "agent-guide.md");
+    assertCacheOutput(cacheOutputs, "agent_profile_manifest", "agent-profiles/manifest.json");
+    assertCacheOutput(cacheOutputs, "agent_profile_markdown", "agent-profiles/codex.md");
+    assertCacheOutput(cacheOutputs, "agent_profile_markdown", "agent-profiles/claude.md");
+    assertCacheOutput(cacheOutputs, "agent_profile_markdown", "agent-profiles/cursor.md");
+    assertCacheOutput(cacheOutputs, "agent_profile_markdown", "agent-profiles/generic.md");
+  }
+
+  @Test
   void scanSummarizesReportedDiagnostics() throws Exception {
     CliResult result = runCliWithGenerator(
         (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles) ->
@@ -1620,6 +1792,39 @@ final class AgentProjectMemoryCliTest {
     return records;
   }
 
+  private String evidenceId(Path evidenceIndex, String sourcePath, String symbolName)
+      throws Exception {
+    return jsonLines(evidenceIndex).stream()
+        .filter(record -> sourcePath.equals(record.path("path").asText()))
+        .filter(record -> symbolName.equals(record.path("symbol_name").asText()))
+        .map(record -> record.path("id").asText())
+        .findFirst()
+        .orElseThrow(() -> new AssertionError(
+            "Missing evidence record for " + sourcePath + " " + symbolName));
+  }
+
+  private String readAll(List<Path> files) throws Exception {
+    StringBuilder joined = new StringBuilder();
+    for (Path file : files) {
+      joined.append("\n--- ").append(file.getFileName()).append(" ---\n");
+      joined.append(Files.readString(file));
+    }
+    return joined.toString();
+  }
+
+  private void assertFakeNeedlesAbsent(String surface, String output, List<String> fakeNeedles) {
+    for (String needle : fakeNeedles) {
+      int index = output.indexOf(needle);
+      String context = index < 0
+          ? ""
+          : output.substring(Math.max(0, index - 120), Math.min(output.length(), index + 120));
+      assertEquals(
+          -1,
+          index,
+          surface + " must not include fake sensitive value " + needle + "; context: " + context);
+    }
+  }
+
   private void assertIncrementalHit(CliResult result) {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
@@ -1715,6 +1920,11 @@ final class AgentProjectMemoryCliTest {
         api-token: FAKE_SYMLINK_RESOURCE_CONFIG_SECRET
         """);
     createSymbolicLink(repositoryRoot.resolve("src/main"), repositoryRoot.resolve("real-main"));
+  }
+
+  private void writeFile(Path path, String content) throws Exception {
+    Files.createDirectories(path.getParent());
+    Files.writeString(path, content);
   }
 
   private void createSymbolicLink(Path link, Path target) throws Exception {

@@ -978,7 +978,9 @@ Document evidence IDs:
   and `unknown` when it is not.
 - `<document_symbol_key>` identifies the bounded document observation, such as
   `file:<filename>`, `heading:<normalized-heading>`, `chunk:<zero-padded-ordinal>`, or
-  `mention:<bounded-token-key>`.
+  `mention:<bounded-token-key>`. For heading observations, `<normalized-heading>` is
+  the redaction-safe normalized heading key when the heading contains an obvious
+  secret-looking value covered by the v1.7 redaction policy.
 - Current heading evidence IDs include a deterministic `decl:<zero-padded-ordinal>`
   discriminator based on heading document order to keep IDs path-scoped and
   collision-safe.
@@ -1316,9 +1318,12 @@ Evidence excerpt redaction:
 - The marker is a sanitized replacement inside the existing `excerpt` string. It is
   not a new evidence field, not an evidence type, not a confidence label, and not proof
   that the original value was an active credential.
-- Redaction should preserve the evidence record's useful locator fields: `id`,
-  `source_type`, `path`, `class_name`, `method_name`, `symbol_name`, `line_start`,
-  `line_end`, and `confidence`.
+- Redaction should preserve the evidence record's useful locator fields when they are
+  not derived from selected free text: `id`, `source_type`, `path`, `class_name`,
+  `method_name`, `symbol_name`, `line_start`, `line_end`, and `confidence`. Document
+  heading evidence IDs and heading `symbol_name` values derive their heading key from
+  redaction-safe heading text before percent-encoding so raw secret-looking heading
+  values do not become evidence locators.
 - Redaction should preserve useful safe context when possible, such as an annotation
   symbol, XML/YAML key, header name, element name, or delimiter. If preserving context
   would expose the value or make the boundary ambiguous, the selected excerpt may be
