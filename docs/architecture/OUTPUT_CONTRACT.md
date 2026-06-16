@@ -4739,6 +4739,262 @@ Current v0.9 CLI behavior:
   `Diagnostics: none.` or `Diagnostics: N item(s).` Detailed diagnostics, when a flag is
   added, should still follow the redaction rules above.
 
+### Planned v1.6 Query CLI Contract
+
+This section defines the planned public contract for the v1.6 local query/read-only
+explorer. It is design-only until a v1.6 implementation and release notes ship. The
+current v1.5 command surface remains `scan`, `help`, and `version`.
+
+The planned query layer is a deterministic presentation and lookup layer over existing
+generated artifacts. It does not create project facts, does not create evidence
+records, does not mutate `.project-memory/`, does not read repository source files, and
+does not run a scan. Query output is not evidence.
+
+Planned command grammar:
+
+```text
+agent-project-memory query <path> list modules [--format text|json]
+agent-project-memory query <path> list endpoints [--format text|json]
+agent-project-memory query <path> list api-operations [--format text|json]
+agent-project-memory query <path> list entities [--format text|json]
+agent-project-memory query <path> list tests [--format text|json]
+agent-project-memory query <path> explain evidence <evidence-id> [--format text|json]
+agent-project-memory query <path> find fact <term> [--format text|json]
+agent-project-memory query <path> find symbol <term> [--format text|json]
+agent-project-memory query <path> relations <id> [--direction incoming|outgoing|both] [--format text|json]
+```
+
+The packaged-jar invocation uses the same arguments after `java -jar
+agent-project-memory-X.Y.Z.jar`. The installed `agent-project-memory` command remains
+future distribution work until a release note documents an installed channel.
+
+Path and artifact input policy:
+
+- `<path>` is required and must be one local directory argument.
+- If `<path>` names a `.project-memory` directory, that directory is the artifact root.
+  Otherwise `<path>` is treated as a repository root and the artifact root is
+  `<path>/.project-memory`.
+- The query layer reads only direct child artifact files from the artifact root. It
+  must not create the artifact root, create missing artifacts, refresh cache metadata,
+  generate profile artifacts, run scans, or write repository files.
+- The required artifacts for non-graph commands are `project-map.json` and
+  `evidence-index.jsonl`.
+- `project-graph.json` is required only for `relations`. `find fact` may include graph
+  node and edge IDs only when graph output is present and valid. Other non-graph query
+  commands must not require graph output, and all non-graph query commands must ignore a
+  missing graph artifact.
+- `endpoints.md`, `agent-guide.md`, `agent-profiles/`, and `cache/v1/` are not query
+  input sources in the initial v1.6 design. Generated Markdown, profile artifacts, cache
+  metadata, diagnostics, graph derivation metadata, and query output are not evidence.
+- Query path handling follows the same conservative local boundary as generated
+  artifacts: artifact paths must remain repository-local or artifact-root-local,
+  normalized with slash separators in outputs, and must not serialize local absolute
+  paths in successful stdout.
+- Query input directories and required artifact files must be stable local directories
+  or regular files. The initial query design does not follow symlinked artifact roots or
+  symlinked artifact files.
+
+Artifact validation policy:
+
+- `project-map.json` must parse as JSON and use a supported `schema_version`.
+  The initial v1.6 design supports the current stable-line marker `"1.0"`.
+- `evidence-index.jsonl` must parse as newline-delimited JSON with unique evidence
+  `id` values and the documented evidence field set.
+- `project-graph.json`, when required by `relations`, must parse as JSON and use a
+  supported `graph_schema_version`. The initial v1.6 design supports `"1.0"`.
+- Query commands fail closed for missing required artifacts, malformed JSON/JSONL,
+  unsupported schema markers, duplicate IDs in a required lookup index, graph edges that
+  reference missing graph nodes, and graph `evidence_ids` that do not resolve to
+  `evidence-index.jsonl`.
+- Query commands must not repair, rewrite, normalize in place, or silently regenerate an
+  invalid artifact set.
+
+List command behavior:
+
+- `list modules` reads `project.modules.items[]` and emits deterministic module rows
+  with module ID, module path, build systems, support status, and available evidence ID
+  references. Module path inventory remains a generated fact from `project-map.json`,
+  not query evidence.
+- `list endpoints` reads source-visible Spring MVC endpoint facts from top-level
+  `endpoints[]` only. It must not merge spec-backed OpenAPI operations, generated-source
+  signals, or hidden HTTP warnings into endpoint rows.
+- `list api-operations` reads spec-backed declared operation facts from
+  `api_surface.openapi.operations.items[]`. Rows must use declared/spec-backed wording
+  and must not imply implementation, runtime routing, or source/spec agreement.
+- `list entities` reads direct JPA entity facts and embeddable facts from the domain
+  output sections and keeps entity and embeddable rows visibly distinct. Relationship
+  targets, embedded targets, repository/entity links, and status-only rows must preserve
+  inferred, uncertain, unsupported, ambiguous, or not-analyzed labels from the artifacts.
+- `list tests` reads emitted tests from the tests inventory and preserves test class
+  IDs, module ownership, direct framework/slice/mock signal categories, tested-subject
+  relation/status labels, confidence, uncertainty, and evidence ID visibility where
+  present. It must not claim execution, coverage, assertions, CI status, or runtime
+  behavior.
+- Empty list results are successful results with an empty result set.
+
+Evidence explain behavior:
+
+- `explain evidence <evidence-id>` performs an exact evidence ID lookup in
+  `evidence-index.jsonl`.
+- Successful output renders only the existing evidence record fields: `id`,
+  `source_type`, `path`, `class_name`, `method_name`, `symbol_name`, `line_start`,
+  `line_end`, `excerpt`, and `confidence`.
+- The command must not open the referenced source file to expand excerpts, fill missing
+  line ranges, infer additional symbols, or validate runtime behavior.
+- A missing evidence ID is a no-result lookup, not an invitation to scan source files.
+
+Fact and symbol lookup behavior:
+
+- `find fact <term>` performs exact, case-sensitive lookup over generated fact IDs and
+  documented exact keys already present in generated artifacts, such as endpoint IDs,
+  operation keys, entity IDs, repository IDs, test IDs, warning IDs, status IDs,
+  document IDs, graph node IDs, and graph edge IDs when graph output is present.
+- `find symbol <term>` performs exact, case-sensitive lookup over structured symbol
+  fields already present in generated artifacts, such as fully qualified class names,
+  simple class names when represented by a generated fact, method names tied to emitted
+  endpoint or test facts, repository names, entity names, operation IDs, and evidence
+  `symbol_name` values.
+- Lookup is not substring search, fuzzy search, regex search, glob search,
+  natural-language query, semantic search, or embedding search.
+- Multiple exact matches are valid successful results. No-match lookup exits with the
+  planned no-result exit code.
+- Lookup results must identify the source artifact and section or graph `source_ref`
+  that produced the row. These references are navigation metadata, not evidence.
+
+Graph relation lookup behavior:
+
+- `relations <id>` requires a valid `project-graph.json`.
+- `<id>` may be either a graph node ID or a generated fact ID that can be mapped to a
+  graph node through the node `source_ref`.
+- The initial relation lookup is one-hop only. It has no depth flag and must not perform
+  transitive traversal, reachability analysis, impact analysis, call-graph traversal, or
+  dependency traversal.
+- `--direction` defaults to `both`. `incoming` shows edges whose `target_id` is the
+  selected node, `outgoing` shows edges whose `source_id` is the selected node, and
+  `both` shows both sets in deterministic graph order.
+- Relation output must keep graph edges and `relation_statuses[]` separate. Status-only
+  rows must not be promoted to edges.
+- Relation output must preserve `type`, `relation_family`, `claim_category`,
+  `relation_status`, `support_type`, `confidence`, `uncertainty`,
+  `relation_attributes`, `derivation`, and `evidence_ids` values as graph navigation
+  metadata. `derivation` remains non-evidence.
+- Missing graph output is an artifact input error for `relations` and is ignored by
+  non-graph query commands.
+
+Text and JSON output behavior:
+
+- Text output is the default. It is deterministic, concise, human-readable, and safe for
+  terminal use, but exact text layout is not the stable parser interface unless a later
+  contract documents a specific text structure.
+- `--format text` is explicit text output. `--format json` emits the stable
+  machine-readable query result envelope.
+- Successful text and JSON results go to stdout. Successful commands should not print to
+  stderr.
+- Usage errors, artifact input errors, invalid artifact errors, no-result lookup errors,
+  and unexpected internal errors go to stderr and must not produce partial stdout.
+- Error messages must be bounded and deterministic. They must not print stack traces,
+  source bodies, document bodies, config contents, generated-source contents, generated
+  Markdown bodies, raw command logs, local absolute paths, credentials, tokens, or
+  secret-looking values.
+- JSON output must use stable field order and JSON escaping. It must not include local
+  absolute paths or raw user command text.
+- The planned JSON envelope is:
+
+```json
+{
+  "query_schema_version": "1.0",
+  "command": "list",
+  "subject": "modules",
+  "source_artifacts": [
+    {
+      "name": "project-map.json",
+      "schema_version": "1.0"
+    },
+    {
+      "name": "evidence-index.jsonl",
+      "record_count": 12
+    }
+  ],
+  "result_count": 1,
+  "results": [],
+  "diagnostics": []
+}
+```
+
+JSON envelope rules:
+
+- `query_schema_version` is the machine-readable stdout contract marker for query
+  results. The initial planned marker is `"1.0"`.
+- `command` is the query verb such as `"list"`, `"explain"`, `"find"`, or
+  `"relations"`.
+- `subject` identifies the list kind, lookup kind, or relation subject.
+- `source_artifacts[]` names only generated artifact filenames and their relevant schema
+  markers or bounded counts. It must not contain local absolute paths.
+- `results[]` contains command-specific rows copied or projected from generated
+  artifacts. Rows may include existing `evidence_ids` references and existing bounded
+  evidence excerpts for `explain evidence`, but query output itself remains
+  non-evidence.
+- `diagnostics[]` contains query-output diagnostics only. Query diagnostics are not
+  project evidence, graph evidence, scan diagnostics, security findings, runtime claims,
+  or generated facts.
+
+Planned query exit codes:
+
+- `0`: success, including successful empty list results.
+- `1`: unexpected internal error.
+- `2`: usage error, such as an unknown query subcommand, unknown flag, malformed
+  command, invalid `--format` value, invalid `--direction` value, or unexpected extra
+  arguments.
+- `3`: query input or artifact error, such as a missing query path, non-directory query
+  path, missing `.project-memory/`, missing required artifact, symlinked artifact root
+  or required artifact file, malformed JSON/JSONL, unsupported artifact schema marker,
+  duplicate required IDs, unresolved required graph node references, or missing/invalid
+  graph artifact for `relations`.
+- `4`: invalid scan config. This existing scan exit code is unchanged and is not used by
+  read-only query commands.
+- `5`: scan output generation or write error. This existing scan exit code is unchanged;
+  read-only query commands should not write outputs.
+- `6`: query no-result, such as an absent evidence ID, absent exact fact/symbol match,
+  or absent relation subject ID in otherwise valid artifacts.
+
+Validation requirements before v1.6 release:
+
+- Focused CLI parser tests for every planned query grammar branch and invalid argument
+  shape.
+- Artifact path tests for repository-root input, direct `.project-memory` input,
+  missing path, missing artifact root, missing required artifacts, symlink rejection,
+  malformed JSON/JSONL, unsupported schema markers, duplicate IDs, invalid graph
+  references, and graph absence for non-graph commands.
+- Deterministic stdout tests for text output and stable field-order tests for JSON
+  output.
+- Focused list, evidence explain, fact lookup, symbol lookup, no-result, multiple-match,
+  and graph relation tests over generated-memory fixtures.
+- No-write tests proving query commands do not create, rewrite, delete, or refresh
+  `.project-memory/`, cache metadata, profile artifacts, source files, docs, or config
+  files.
+- Content-safety tests proving query output does not serialize source bodies, local
+  document bodies, config contents, raw build-script bodies, generated-source contents,
+  generated Markdown bodies, raw command logs, stack traces, local absolute paths,
+  credentials, tokens, secret-looking values, downstream agent output, or LLM output.
+- Packaged CLI smoke before release for representative artifact sets, including a graph
+  artifact set and a valid non-graph artifact set.
+
+Stop conditions for implementation:
+
+- Query behavior requires source scanning, scan refresh, artifact mutation, cache
+  refresh, profile generation, repository writes, code modification, natural-language
+  query, embeddings, vector search, generic RAG, connectors, network/auth, telemetry,
+  SaaS, web UI, editor integration, agent server surfaces, or LLM calls.
+- Query output starts treating query diagnostics, graph derivation metadata, generated
+  Markdown, cache metadata, profile artifacts, downstream agent output, or LLM output as
+  evidence.
+- Relation lookup starts implying call reachability, dependency reachability, runtime
+  Spring wiring, runtime routing, source/spec agreement, documentation freshness,
+  coverage, CI status, assertion behavior, vulnerability, correctness, production
+  impact, business priority, complete architecture ownership, or impact analysis.
+- Artifact path behavior cannot be kept local, deterministic, read-only, and bounded to
+  the approved generated artifacts.
+
 ## `evidence-index.jsonl`
 
 `evidence-index.jsonl` is newline-delimited JSON. Each line is one evidence record.

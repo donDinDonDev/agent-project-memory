@@ -1019,9 +1019,71 @@ Release readiness notes:
 - The `v1.5.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
+### v1.6.0: Local Query And Read-Only Explorer (Planned Design)
+
+This section describes the planned v1.6 query contract. It is not shipped in the latest
+published `v1.5.0` release.
+
+Product outcome: add deterministic read-only CLI lookup commands over existing
+`.project-memory/` artifacts so humans and coding agents can inspect generated facts,
+evidence, and graph relations without running a chat, RAG, source-scan, or write flow.
+
+Planned command boundary:
+
+- Add a top-level `query` command. The planned executable-jar form is
+  `java -jar agent-project-memory-X.Y.Z.jar query <path> ...`; the installed-command
+  form remains future distribution work until a release note documents it.
+- Require exactly one local directory path after `query`. If the path names a
+  `.project-memory` directory, query commands read artifacts from that directory. For
+  any other directory, query commands read artifacts from its direct `.project-memory/`
+  child.
+- Read only `project-map.json` and `evidence-index.jsonl` for the base query layer,
+  plus `project-graph.json` for relation lookup and optional graph-ID lookup when a
+  valid graph artifact exists. Generated Markdown, cache metadata, profile artifacts,
+  diagnostics, graph derivation metadata, and query output are not evidence.
+- Support list commands for modules, source-visible Spring MVC endpoints, spec-backed
+  declared API operations, JPA entities/embeddables, and emitted tests. Source-visible
+  endpoints and spec-backed operations stay separate.
+- Support `explain evidence <id>` by exact evidence ID from `evidence-index.jsonl`.
+- Support exact `find fact <term>` and `find symbol <term>` lookup over generated
+  artifact fields. v1.6 lookup is case-sensitive and does not include substring,
+  fuzzy, regex, semantic, natural-language, or embedding search.
+- Support one-hop graph relation lookup for a generated fact ID or graph node ID when a
+  valid `project-graph.json` artifact exists. Relation lookup must preserve graph
+  edges, relation-status rows, claim categories, support type, confidence, uncertainty,
+  evidence IDs, and non-evidence derivation metadata without turning the graph into
+  impact analysis.
+- Use deterministic human text output by default and a stable JSON result envelope when
+  `--format json` is selected. Error output remains bounded and deterministic on
+  stderr.
+
+Planned non-goals:
+
+- No source scanning, scan refresh, `.project-memory/` creation, cache refresh, profile
+  generation, repository writes, or code modification during query.
+- No chat interface, natural-language query, embeddings, vector store, generic RAG,
+  LLM calls in the core analyzer or query layer, connectors, network/auth, telemetry,
+  SaaS, web UI, editor integration, or agent server surface.
+- No full call graph, runtime dependency graph, runtime Spring graph, runtime handler
+  mapping, source/spec agreement scoring, documentation freshness scoring, coverage,
+  CI status, assertion proof, vulnerability, correctness, production-impact, or
+  business-priority claim.
+
+Implementation expectations:
+
+- Start with a read-only artifact reader and path-validation foundation before adding
+  user-facing lookup commands.
+- Test missing, malformed, incompatible, and absent optional graph artifacts; unsupported
+  schema markers; duplicate IDs; no-result lookup behavior; deterministic text output;
+  stable JSON output; stdout/stderr separation; no-write behavior; and sensitive-output
+  boundaries.
+- Validate query behavior on representative generated `.project-memory/` outputs before
+  release prep, including graph-rich outputs and artifact sets without graph output.
+- Keep public docs, changelog, release notes, and this output contract synchronized when
+  implementation ships command behavior or stable machine-readable stdout.
+
 Possible later tracks:
 
-- Local query/read-only explorer.
 - Security and secrets safety.
 - Public adoption polish.
 - v2 architecture preparation.

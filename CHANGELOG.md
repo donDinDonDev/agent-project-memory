@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v1.6 local read-only query CLI contract, including `query`
+  command grammar, generated-artifact input policy, list/explain/find/relations
+  behavior, text and JSON output modes, exit behavior, and implementation validation
+  expectations. Query commands are not implemented yet.
+
 ## [1.5.0] - 2026-06-16
 
 ### Added
