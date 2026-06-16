@@ -190,10 +190,13 @@ heading, chunk, and bounded reconciliation mention observations, plus conservati
 mentions, document-only module references, and source-backed API/module facts with no
 obvious default-scope document mention, plus compact local-document guide rendering from
 structured document inventory, bounded heading/chunk references, and uncertain
-reconciliation hints, then writes:
+reconciliation hints. Supported scans also emit a bounded deterministic lightweight
+relation graph over existing facts, with direct/structural nodes and `owns`/`declares`
+edges only in the current foundation, then write:
 
 ```text
 <path>/.project-memory/project-map.json
+<path>/.project-memory/project-graph.json
 <path>/.project-memory/endpoints.md
 <path>/.project-memory/evidence-index.jsonl
 <path>/.project-memory/agent-guide.md
@@ -304,11 +307,14 @@ Compatibility and migration notes:
   `.project-memory/cache/v1/` execution metadata. Validated cache hits reuse the
   existing generated output set without adding cache fields to `project-map.json`, and
   normal scans without `--incremental` preserve full-scan behavior.
+- The v1.5 graph foundation keeps `project-map.json` on `schema_version: "1.0"` and
+  adds `.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a
+  separate navigation artifact over existing facts and evidence references.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
-  v0.9 shape. Regenerate the four `.project-memory/` files together so JSON facts,
-  evidence IDs, and Markdown evidence references stay aligned.
-- `project-map.json` and `evidence-index.jsonl` are the stable machine-readable
-  outputs. `endpoints.md` and `agent-guide.md` are deterministic human-readable
+  v0.9 shape. Regenerate the base `.project-memory/` files together so JSON facts,
+  graph nodes, evidence IDs, and Markdown evidence references stay aligned.
+- `project-map.json`, `project-graph.json`, and `evidence-index.jsonl` are the stable
+  machine-readable outputs. `endpoints.md` and `agent-guide.md` are deterministic human-readable
   presentations; their filenames, cautious categories, and evidence visibility are
   documented expectations, while exact Markdown wording or layout may evolve.
 - Future breaking changes, deprecations, and required migration steps are documented in
@@ -343,15 +349,16 @@ The same output files:
 
 ```text
 .project-memory/project-map.json
+.project-memory/project-graph.json
 .project-memory/evidence-index.jsonl
 .project-memory/endpoints.md
 .project-memory/agent-guide.md
 ```
 
 These files are meant to give humans and coding agents a compact, evidence-backed map
-of the project: detected build layout, Spring MVC endpoints, generated-source/codegen
-metadata, important components, and references back to the source files that prove each
-fact.
+of the project plus a bounded relation graph: detected build layout, Spring MVC
+endpoints, generated-source/codegen metadata, important components, structural graph
+navigation, and references back to the source files that prove each fact.
 
 ## Public Documentation Map
 

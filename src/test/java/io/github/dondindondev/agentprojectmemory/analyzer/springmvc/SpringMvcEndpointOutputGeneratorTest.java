@@ -17,6 +17,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
@@ -57,6 +58,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
             expected("project-map.json"),
             Files.readString(outputDirectory.resolve("project-map.json"))),
         () -> assertEquals(
+            expected("project-graph.json"),
+            Files.readString(outputDirectory.resolve("project-graph.json"))),
+        () -> assertEquals(
             expected("evidence-index.jsonl"),
             Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertEquals(
@@ -77,6 +81,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     generator.generate(projectPath, outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
@@ -86,6 +91,52 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"));
+  }
+
+  @Test
+  void projectGraphContainsFoundationNodesEdgesAndResolvedEvidenceReferences() throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    JsonNode graph = JSON.readTree(Files.readString(outputDirectory.resolve("project-graph.json")));
+    Set<String> graphEvidenceIds = graphEvidenceIds(graph);
+    Set<String> evidenceIndexIds = evidenceIndexIds(
+        Files.readString(outputDirectory.resolve("evidence-index.jsonl")));
+    Set<String> nodeIds = graphNodeIds(graph);
+
+    assertAll(
+        () -> assertEquals("1.0", graph.path("graph_schema_version").asText()),
+        () -> assertEquals("1.0", graph.path("project_map_schema_version").asText()),
+        () -> assertEquals("lightweight_relation_graph", graph.path("graph_kind").asText()),
+        () -> assertEquals(
+            List.of("project-map.json", "evidence-index.jsonl"),
+            stringValues(graph.path("source_artifacts"))),
+        () -> assertEquals(20_000, graph.path("limits").path("max_nodes").asInt()),
+        () -> assertEquals(50_000, graph.path("limits").path("max_edges").asInt()),
+        () -> assertEquals(10_000, graph.path("limits").path("max_relation_statuses").asInt()),
+        () -> assertTrue(hasGraphNodeKind(graph, "module")),
+        () -> assertTrue(hasGraphNodeKind(graph, "package")),
+        () -> assertTrue(hasGraphNodeKind(graph, "type")),
+        () -> assertTrue(hasGraphNodeKind(graph, "endpoint")),
+        () -> assertTrue(hasGraphNodeKind(graph, "entity")),
+        () -> assertTrue(hasGraphNodeKind(graph, "embeddable")),
+        () -> assertTrue(hasGraphNodeKind(graph, "repository")),
+        () -> assertTrue(hasGraphNodeKind(graph, "test")),
+        () -> assertTrue(hasGraphEdgeType(graph, "owns")),
+        () -> assertTrue(hasGraphEdgeType(graph, "declares")),
+        () -> assertFalse(hasGraphEdgeType(graph, "repository_entity")),
+        () -> assertFalse(hasGraphEdgeType(graph, "tested_subject")),
+        () -> assertFalse(hasGraphEdgeType(graph, "document_reference")),
+        () -> assertEquals(0, graph.path("relation_statuses").size()),
+        () -> assertEquals(0, graph.path("warnings").size()),
+        () -> assertTrue(evidenceIndexIds.containsAll(graphEvidenceIds),
+            "Every graph evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertGraphEdgesResolveAndUseDerivationOnly(graph, nodeIds),
+        () -> assertSortedGraph(graph));
   }
 
   @Test
@@ -123,6 +174,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("project-map.json"),
             Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(
+            expected("project-graph.json"),
+            Files.readString(outputDirectory.resolve("project-graph.json"))),
         () -> assertEquals(
             expected("evidence-index.jsonl"),
             Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
@@ -220,6 +274,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
@@ -289,6 +344,12 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(projectMap.contains("Body text that must not be serialized")),
         () -> assertFalse(projectMap.contains("More body text that must not be serialized")),
         () -> assertFalse(projectMap.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
+        () -> assertTrue(hasGraphNodeKind(JSON.readTree(projectGraph), "document")),
+        () -> assertTrue(hasGraphNodeKind(JSON.readTree(projectGraph), "document_heading")),
+        () -> assertTrue(hasGraphNodeKind(JSON.readTree(projectGraph), "document_chunk")),
+        () -> assertFalse(projectGraph.contains("Body text that must not be serialized")),
+        () -> assertFalse(projectGraph.contains("More body text that must not be serialized")),
+        () -> assertFalse(projectGraph.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
         () -> assertFalse(evidenceIndex.contains("Body text that must not be serialized")),
         () -> assertFalse(evidenceIndex.contains("More body text that must not be serialized")),
         () -> assertFalse(evidenceIndex.contains("FAKE_PRIVATE_MARKDOWN_SECRET")),
@@ -326,6 +387,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     JsonNode root = JSON.readTree(projectMap);
     JsonNode diagnostics = root.path("scan").path("diagnostics").path("items");
@@ -366,6 +428,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     JsonNode root = JSON.readTree(projectMap);
     JsonNode diagnostics = root.path("scan").path("diagnostics").path("items");
@@ -1508,6 +1571,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     JsonNode apiSurface = JSON.readTree(projectMap).path("api_surface");
@@ -1543,6 +1607,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains("\"source_type\":\"api_spec\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"openapi\"")),
         () -> assertTrue(projectMap.contains("openapi_operation:")),
+        () -> assertTrue(hasGraphNodeKind(JSON.readTree(projectGraph), "api_operation")),
+        () -> assertFalse(hasGraphEdgeType(JSON.readTree(projectGraph), "api_source_relation")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"operation:get:/orders\"")),
         () -> assertTrue(endpoints.contains("## Declared OpenAPI Operations")),
         () -> assertTrue(endpoints.contains("#### Declared `GET /orders`")),
@@ -2279,6 +2345,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
     JsonNode generatedApiWarningIds = root.path("api_surface")
         .path("generated_source_api_signals")
         .path("warning_ids");
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
@@ -2303,6 +2370,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(evidenceIndex.contains(
             "\"symbol_name\":\"generated_source_root_path_detected\"")),
         () -> assertFalse(projectMap.contains("GeneratedApiController")),
+        () -> assertTrue(hasGraphNodeKind(JSON.readTree(projectGraph), "generated_source_root")),
+        () -> assertFalse(projectGraph.contains("GeneratedApiController")),
+        () -> assertFalse(projectGraph.contains("FAKE_GENERATED_API_SECRET")),
         () -> assertFalse(evidenceIndex.contains("GeneratedApiController")),
         () -> assertFalse(projectMap.contains("FAKE_GENERATED_API_SECRET")),
         () -> assertFalse(evidenceIndex.contains("FAKE_GENERATED_API_SECRET")),
@@ -2534,6 +2604,71 @@ final class SpringMvcEndpointOutputGeneratorTest {
       ids.add(matcher.group(1));
     }
     return ids;
+  }
+
+  private Set<String> graphEvidenceIds(JsonNode graph) {
+    Set<String> ids = new HashSet<>();
+    for (JsonNode evidenceIds : graph.findValues("evidence_ids")) {
+      evidenceIds.forEach(id -> ids.add(id.asText()));
+    }
+    return ids;
+  }
+
+  private Set<String> graphNodeIds(JsonNode graph) {
+    Set<String> ids = new HashSet<>();
+    graph.path("nodes").forEach(node -> ids.add(node.path("id").asText()));
+    return ids;
+  }
+
+  private boolean hasGraphNodeKind(JsonNode graph, String kind) {
+    for (JsonNode node : graph.path("nodes")) {
+      if (kind.equals(node.path("kind").asText())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean hasGraphEdgeType(JsonNode graph, String type) {
+    for (JsonNode edge : graph.path("edges")) {
+      if (type.equals(edge.path("type").asText())) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void assertGraphEdgesResolveAndUseDerivationOnly(JsonNode graph, Set<String> nodeIds) {
+    for (JsonNode edge : graph.path("edges")) {
+      assertAll(
+          () -> assertTrue(nodeIds.contains(edge.path("source_id").asText())),
+          () -> assertTrue(nodeIds.contains(edge.path("target_id").asText())),
+          () -> assertEquals("structural", edge.path("claim_category").asText()),
+          () -> assertEquals("derived", edge.path("relation_status").asText()),
+          () -> assertEquals("project_map_derivation", edge.path("support_type").asText()),
+          () -> assertEquals("high", edge.path("confidence").asText()),
+          () -> assertTrue(edge.path("uncertainty").isNull()),
+          () -> assertEquals("project_map_field", edge.path("derivation").path("kind").asText()),
+          () -> assertEquals(0, edge.path("evidence_ids").size()));
+    }
+  }
+
+  private void assertSortedGraph(JsonNode graph) {
+    List<String> nodeOrder = new ArrayList<>();
+    graph.path("nodes").forEach(node -> nodeOrder.add(
+        node.path("kind").asText() + "\0" + node.path("id").asText()));
+    List<String> edgeOrder = new ArrayList<>();
+    graph.path("edges").forEach(edge -> edgeOrder.add(
+        edge.path("type").asText()
+            + "\0"
+            + edge.path("source_id").asText()
+            + "\0"
+            + edge.path("target_id").asText()
+            + "\0"
+            + edge.path("id").asText()));
+    assertAll(
+        () -> assertEquals(nodeOrder.stream().sorted().toList(), nodeOrder),
+        () -> assertEquals(edgeOrder.stream().sorted().toList(), edgeOrder));
   }
 
   private List<JsonNode> evidenceRecords(String evidenceIndex) throws Exception {

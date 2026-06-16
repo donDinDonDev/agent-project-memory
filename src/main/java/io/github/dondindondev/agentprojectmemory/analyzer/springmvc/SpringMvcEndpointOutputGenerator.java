@@ -120,6 +120,14 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.AgentProfileMarkdownGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
+import io.github.dondindondev.agentprojectmemory.graph.GraphDerivation;
+import io.github.dondindondev.agentprojectmemory.graph.GraphEdge;
+import io.github.dondindondev.agentprojectmemory.graph.GraphNode;
+import io.github.dondindondev.agentprojectmemory.graph.GraphSourceRef;
+import io.github.dondindondev.agentprojectmemory.graph.ProjectGraph;
+import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphCollector;
+import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphIds;
+import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphJsonSerializer;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
@@ -168,6 +176,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String QUALITY_UNCERTAINTY_SOURCE_VISIBLE_ONLY =
       "source_visible_change_surface_only";
   private static final String PROJECT_MAP_FILE_NAME = "project-map.json";
+  private static final String PROJECT_GRAPH_FILE_NAME = "project-graph.json";
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
   private static final String AGENT_GUIDE_FILE_NAME = "agent-guide.md";
@@ -457,6 +466,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final AgentGuideGenerator agentGuideGenerator;
   private final AgentProfileMarkdownGenerator agentProfileMarkdownGenerator =
       new AgentProfileMarkdownGenerator();
+  private final ProjectGraphJsonSerializer projectGraphJsonSerializer =
+      new ProjectGraphJsonSerializer();
 
   public SpringMvcEndpointOutputGenerator() {
     this(
@@ -715,6 +726,13 @@ public final class SpringMvcEndpointOutputGenerator {
         documentReconciliationAnalysis,
         scanConfiguration,
         scanDiagnostics);
+    String projectGraphJson = projectGraphJson(
+        layout,
+        scan,
+        springBootApplicationAnalysis,
+        openApiOperationAnalysis,
+        generatedSourceMetadata,
+        documentDiscoveryAnalysis);
 
     List<GeneratedOutputFile> generatedOutputFiles = new ArrayList<>();
     generatedOutputFiles.add(new GeneratedOutputFile(
@@ -730,6 +748,9 @@ public final class SpringMvcEndpointOutputGenerator {
     generatedOutputFiles.add(new GeneratedOutputFile(
         PROJECT_MAP_FILE_NAME,
         projectMapJson));
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        PROJECT_GRAPH_FILE_NAME,
+        projectGraphJson));
     generatedOutputFiles.add(new GeneratedOutputFile(
         AGENT_GUIDE_FILE_NAME,
         agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl)));
@@ -2310,6 +2331,650 @@ public final class SpringMvcEndpointOutputGenerator {
     appendQuality(json, qualitySignals(scan));
     json.append("}\n");
     return json.toString();
+  }
+
+  private String projectGraphJson(
+      ProjectLayout layout,
+      ModuleAwareScan scan,
+      SpringBootApplicationAnalysis springBootApplicationAnalysis,
+      OpenApiOperationAnalysis openApiOperationAnalysis,
+      GeneratedSourceMetadata generatedSourceMetadata,
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
+    ProjectGraphCollector graph = new ProjectGraphCollector();
+    addGraphModuleNodes(graph, layout.modules().items());
+    addGraphComponentTypes(graph, scan.components());
+    addGraphSpringApplicationTypes(graph, scan, springBootApplicationAnalysis);
+    addGraphEndpointNodes(graph, scan.endpoints());
+    addGraphOpenApiOperationNodes(graph, openApiOperationAnalysis.operations());
+    addGraphJpaNodes(graph, scan.entities(), scan.embeddables());
+    addGraphTestNodes(graph, scan.tests());
+    addGraphDocumentNodes(graph, documentDiscoveryAnalysis.documents());
+    addGraphGeneratedSourceRootNodes(graph, generatedSourceMetadata.roots());
+    addGraphWarningNodes(graph, scan.warnings());
+    ProjectGraph projectGraph = graph.build();
+    return projectGraphJsonSerializer.serialize(projectGraph);
+  }
+
+  private void addGraphModuleNodes(ProjectGraphCollector graph, List<MavenModuleItem> modules) {
+    for (MavenModuleItem module : modules) {
+      List<String> evidenceIds = new ArrayList<>();
+      evidenceIds.addAll(module.declarationEvidenceIds());
+      evidenceIds.addAll(module.pomEvidenceIds());
+      graph.addNode(new GraphNode(
+          moduleNodeId(module.moduleId()),
+          "module",
+          ".".equals(module.modulePath()) ? "root" : module.modulePath(),
+          "structural",
+          module.moduleId(),
+          sourceRef("project.modules.items", module.moduleId()),
+          evidenceIds.stream().distinct().sorted().toList()));
+    }
+  }
+
+  private void addGraphComponentTypes(
+      ProjectGraphCollector graph,
+      List<ModuleScopedComponentFact> components) {
+    for (ModuleScopedComponentFact scopedComponent : components) {
+      SpringComponentFact component = scopedComponent.fact();
+      addGraphTypeNode(
+          graph,
+          scopedComponent.moduleId(),
+          component.className(),
+          "components.items",
+          componentId(scopedComponent.moduleId(), component),
+          component.evidenceIds());
+    }
+  }
+
+  private void addGraphSpringApplicationTypes(
+      ProjectGraphCollector graph,
+      ModuleAwareScan scan,
+      SpringBootApplicationAnalysis springBootApplicationAnalysis) {
+    for (ModuleSpringBootApplications moduleApplications : springBootApplicationAnalysis.modules()) {
+      for (SpringBootApplicationFact application : moduleApplications.applications()) {
+        addGraphTypeNode(
+            graph,
+            moduleApplications.moduleId(),
+            application.className(),
+            "project.modules.items[].build_config.spring_boot.applications.items",
+            application.id(),
+            application.evidenceIds());
+      }
+    }
+    for (ModuleScopedSpringRepositoryFact scopedRepository : scan.springRepositories()) {
+      SpringRepositoryFact repository = scopedRepository.fact();
+      String typeNodeId = addGraphTypeNode(
+          graph,
+          scopedRepository.moduleId(),
+          repository.className(),
+          "spring_application_surface.repositories.items",
+          springRepositoryId(scopedRepository.moduleId(), repository),
+          repository.evidenceIds());
+      String repositoryNodeId = repositoryNodeId(scopedRepository.moduleId(), repository);
+      graph.addNode(new GraphNode(
+          repositoryNodeId,
+          "repository",
+          simpleName(repository.className()),
+          "extracted",
+          scopedRepository.moduleId(),
+          sourceRef(
+              "spring_application_surface.repositories.items",
+              springRepositoryId(scopedRepository.moduleId(), repository)),
+          repository.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          scopedRepository.moduleId(),
+          repositoryNodeId,
+          "spring_application_surface.repositories.items",
+          List.of("module_id", "id"));
+      addGraphStructuralEdge(
+          graph,
+          "declares",
+          typeNodeId,
+          repositoryNodeId,
+          "spring_application_surface.repositories.items",
+          List.of("class_name", "id"));
+    }
+    for (ModuleScopedSpringConfigurationClassFact scopedConfiguration : scan.springConfigurationClasses()) {
+      SpringConfigurationClassFact configuration = scopedConfiguration.fact();
+      addGraphTypeNode(
+          graph,
+          scopedConfiguration.moduleId(),
+          configuration.className(),
+          "spring_application_surface.configuration.configuration_classes.items",
+          springConfigurationClassId(scopedConfiguration.moduleId(), configuration),
+          configuration.evidenceIds());
+    }
+    for (ModuleScopedSpringConfigurationPropertiesFact scopedProperties : scan.springConfigurationProperties()) {
+      SpringConfigurationPropertiesFact properties = scopedProperties.fact();
+      addGraphTypeNode(
+          graph,
+          scopedProperties.moduleId(),
+          properties.className(),
+          "spring_application_surface.configuration.configuration_properties.items",
+          springConfigurationPropertiesId(scopedProperties.moduleId(), properties),
+          properties.evidenceIds());
+    }
+    for (ModuleScopedSpringBeanMethodFact scopedBeanMethod : scan.springBeanMethods()) {
+      SpringBeanMethodFact beanMethod = scopedBeanMethod.fact();
+      addGraphTypeNode(
+          graph,
+          scopedBeanMethod.moduleId(),
+          beanMethod.className(),
+          "spring_application_surface.configuration.bean_methods.items",
+          springBeanMethodId(scopedBeanMethod.moduleId(), beanMethod),
+          beanMethod.evidenceIds());
+    }
+    for (ModuleScopedSpringTransactionBoundaryFact scopedBoundary : scan.springTransactionBoundaries()) {
+      SpringTransactionBoundaryFact boundary = scopedBoundary.fact();
+      addGraphTypeNode(
+          graph,
+          scopedBoundary.moduleId(),
+          boundary.className(),
+          "spring_application_surface.behavior.transaction_boundaries.items",
+          springTransactionBoundaryId(scopedBoundary.moduleId(), boundary),
+          boundary.evidenceIds());
+    }
+    for (ModuleScopedSpringScheduledMethodFact scopedScheduledMethod : scan.springScheduledMethods()) {
+      SpringScheduledMethodFact scheduledMethod = scopedScheduledMethod.fact();
+      addGraphTypeNode(
+          graph,
+          scopedScheduledMethod.moduleId(),
+          scheduledMethod.className(),
+          "spring_application_surface.behavior.scheduled_methods.items",
+          springScheduledMethodId(scopedScheduledMethod.moduleId(), scheduledMethod),
+          scheduledMethod.evidenceIds());
+    }
+    for (ModuleScopedSpringEventListenerFact scopedEventListener : scan.springEventListeners()) {
+      SpringEventListenerFact eventListener = scopedEventListener.fact();
+      addGraphTypeNode(
+          graph,
+          scopedEventListener.moduleId(),
+          eventListener.className(),
+          "spring_application_surface.behavior.event_listeners.items",
+          springEventListenerId(scopedEventListener.moduleId(), eventListener),
+          eventListener.evidenceIds());
+    }
+    for (ModuleScopedSpringMessagingListenerFact scopedListener : scan.springMessagingListeners()) {
+      SpringMessagingListenerFact listener = scopedListener.fact();
+      addGraphTypeNode(
+          graph,
+          scopedListener.moduleId(),
+          listener.className(),
+          "spring_application_surface.messaging.listener_signals.items",
+          springMessagingListenerId(scopedListener.moduleId(), listener),
+          listener.evidenceIds());
+    }
+  }
+
+  private void addGraphEndpointNodes(
+      ProjectGraphCollector graph,
+      List<ModuleScopedEndpointFact> endpoints) {
+    for (ModuleScopedEndpointFact scopedEndpoint : endpoints) {
+      SpringMvcEndpointFact endpoint = scopedEndpoint.fact();
+      String endpointId = endpointId(scopedEndpoint.moduleId(), endpoint);
+      String controllerTypeNodeId = addGraphTypeNode(
+          graph,
+          scopedEndpoint.moduleId(),
+          endpoint.controllerClass(),
+          "endpoints",
+          endpointId,
+          endpoint.evidenceIds());
+      String declaringTypeNodeId = addGraphTypeNode(
+          graph,
+          scopedEndpoint.moduleId(),
+          endpoint.mappingSource().declaringType(),
+          "endpoints",
+          endpointId,
+          endpoint.mappingSource().evidenceIds());
+      String ownerTypeNodeId = declaringTypeNodeId == null ? controllerTypeNodeId : declaringTypeNodeId;
+      String endpointNodeId = endpointNodeId(scopedEndpoint.moduleId(), endpoint);
+      graph.addNode(new GraphNode(
+          endpointNodeId,
+          "endpoint",
+          endpointLabel(endpoint),
+          "extracted",
+          scopedEndpoint.moduleId(),
+          sourceRef("endpoints", endpointId),
+          endpoint.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          scopedEndpoint.moduleId(),
+          endpointNodeId,
+          "endpoints",
+          List.of("module_id", "id"));
+      addGraphStructuralEdge(
+          graph,
+          "declares",
+          ownerTypeNodeId,
+          endpointNodeId,
+          "endpoints",
+          List.of("controller_class", "handler_method", "mapping_source.declaring_type"));
+    }
+  }
+
+  private void addGraphOpenApiOperationNodes(
+      ProjectGraphCollector graph,
+      List<OpenApiOperationFact> operations) {
+    for (OpenApiOperationFact operation : operations) {
+      String operationNodeId = apiOperationNodeId(operation);
+      graph.addNode(new GraphNode(
+          operationNodeId,
+          "api_operation",
+          operation.httpMethod() + " " + operation.path(),
+          "spec_backed",
+          operation.moduleId(),
+          sourceRef("api_surface.openapi.operations.items", operation.id()),
+          operation.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          operation.moduleId(),
+          operationNodeId,
+          "api_surface.openapi.operations.items",
+          List.of("module_id", "id"));
+    }
+  }
+
+  private void addGraphJpaNodes(
+      ProjectGraphCollector graph,
+      List<ModuleScopedEntityFact> entities,
+      List<ModuleScopedEmbeddableFact> embeddables) {
+    for (ModuleScopedEntityFact scopedEntity : entities) {
+      JpaEntityFact entity = scopedEntity.fact();
+      String typeNodeId = addGraphTypeNode(
+          graph,
+          scopedEntity.moduleId(),
+          entity.className(),
+          "entities.items",
+          entityId(scopedEntity.moduleId(), entity),
+          entity.evidenceIds());
+      String entityNodeId = entityNodeId(scopedEntity.moduleId(), entity);
+      graph.addNode(new GraphNode(
+          entityNodeId,
+          "entity",
+          simpleName(entity.className()),
+          "extracted",
+          scopedEntity.moduleId(),
+          sourceRef("entities.items", entityId(scopedEntity.moduleId(), entity)),
+          entity.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          scopedEntity.moduleId(),
+          entityNodeId,
+          "entities.items",
+          List.of("module_id", "id"));
+      addGraphStructuralEdge(
+          graph,
+          "declares",
+          typeNodeId,
+          entityNodeId,
+          "entities.items",
+          List.of("class_name", "id"));
+    }
+    for (ModuleScopedEmbeddableFact scopedEmbeddable : embeddables) {
+      JpaEmbeddableFact embeddable = scopedEmbeddable.fact();
+      String typeNodeId = addGraphTypeNode(
+          graph,
+          scopedEmbeddable.moduleId(),
+          embeddable.className(),
+          "entities.embeddables.items",
+          embeddableId(scopedEmbeddable.moduleId(), embeddable),
+          embeddable.evidenceIds());
+      String embeddableNodeId = embeddableNodeId(scopedEmbeddable.moduleId(), embeddable);
+      graph.addNode(new GraphNode(
+          embeddableNodeId,
+          "embeddable",
+          simpleName(embeddable.className()),
+          "extracted",
+          scopedEmbeddable.moduleId(),
+          sourceRef("entities.embeddables.items", embeddableId(scopedEmbeddable.moduleId(), embeddable)),
+          embeddable.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          scopedEmbeddable.moduleId(),
+          embeddableNodeId,
+          "entities.embeddables.items",
+          List.of("module_id", "id"));
+      addGraphStructuralEdge(
+          graph,
+          "declares",
+          typeNodeId,
+          embeddableNodeId,
+          "entities.embeddables.items",
+          List.of("class_name", "id"));
+    }
+  }
+
+  private void addGraphTestNodes(
+      ProjectGraphCollector graph,
+      List<ModuleScopedTestFact> tests) {
+    for (ModuleScopedTestFact scopedTest : tests) {
+      TestClassFact test = scopedTest.fact();
+      String typeNodeId = addGraphTypeNode(
+          graph,
+          scopedTest.moduleId(),
+          test.className(),
+          "tests.items",
+          testId(scopedTest.moduleId(), test),
+          test.evidenceIds());
+      String testNodeId = testNodeId(scopedTest.moduleId(), test);
+      graph.addNode(new GraphNode(
+          testNodeId,
+          "test",
+          simpleName(test.className()),
+          "extracted",
+          scopedTest.moduleId(),
+          sourceRef("tests.items", testId(scopedTest.moduleId(), test)),
+          test.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          scopedTest.moduleId(),
+          testNodeId,
+          "tests.items",
+          List.of("module_id", "id"));
+      addGraphStructuralEdge(
+          graph,
+          "declares",
+          typeNodeId,
+          testNodeId,
+          "tests.items",
+          List.of("class_name", "id"));
+    }
+  }
+
+  private void addGraphDocumentNodes(
+      ProjectGraphCollector graph,
+      List<DocumentFileFact> documents) {
+    for (DocumentFileFact document : documents) {
+      String documentNodeId = documentNodeId(document);
+      graph.addNode(new GraphNode(
+          documentNodeId,
+          "document",
+          document.path(),
+          "document_backed",
+          document.moduleId(),
+          sourceRef("documents.items", document.id()),
+          document.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          document.moduleId(),
+          documentNodeId,
+          "documents.items",
+          List.of("module_id", "id"));
+      Map<String, String> headingNodeIds = new LinkedHashMap<>();
+      for (DocumentHeadingFact heading : document.headings()) {
+        String headingNodeId = documentHeadingNodeId(heading);
+        headingNodeIds.put(heading.id(), headingNodeId);
+        graph.addNode(new GraphNode(
+            headingNodeId,
+            "document_heading",
+            heading.title(),
+            "document_backed",
+            document.moduleId(),
+            sourceRef("documents.items[].headings", heading.id()),
+            heading.evidenceIds()));
+        addGraphStructuralEdge(
+            graph,
+            "owns",
+            documentNodeId,
+            headingNodeId,
+            "documents.items[].headings",
+            List.of("document.id", "headings.id"));
+      }
+      for (DocumentChunkFact chunk : document.chunks()) {
+        String chunkNodeId = documentChunkNodeId(chunk);
+        graph.addNode(new GraphNode(
+            chunkNodeId,
+            "document_chunk",
+            "lines " + chunk.lineStart() + "-" + chunk.lineEnd(),
+            "document_backed",
+            document.moduleId(),
+            sourceRef("documents.items[].chunks", chunk.id()),
+            chunk.evidenceIds()));
+        addGraphStructuralEdge(
+            graph,
+            "owns",
+            documentNodeId,
+            chunkNodeId,
+            "documents.items[].chunks",
+            List.of("document.id", "chunks.id"));
+        String headingNodeId = chunk.headingId() == null ? null : headingNodeIds.get(chunk.headingId());
+        addGraphStructuralEdge(
+            graph,
+            "owns",
+            headingNodeId,
+            chunkNodeId,
+            "documents.items[].chunks",
+            List.of("chunks.heading_id", "chunks.id"));
+      }
+    }
+  }
+
+  private void addGraphGeneratedSourceRootNodes(
+      ProjectGraphCollector graph,
+      List<GeneratedSourceRootItem> roots) {
+    for (GeneratedSourceRootItem root : roots) {
+      String rootNodeId = generatedSourceRootNodeId(root);
+      graph.addNode(new GraphNode(
+          rootNodeId,
+          "generated_source_root",
+          root.path(),
+          "metadata_only",
+          root.moduleId(),
+          sourceRef("generated_sources.roots.items", root.id()),
+          root.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          root.moduleId(),
+          rootNodeId,
+          "generated_sources.roots.items",
+          List.of("module_id", "id"));
+    }
+  }
+
+  private void addGraphWarningNodes(
+      ProjectGraphCollector graph,
+      List<ModuleScopedWarningFact> warnings) {
+    for (ModuleScopedWarningFact warning : warnings) {
+      String warningNodeId = warningNodeId(warning);
+      graph.addNode(new GraphNode(
+          warningNodeId,
+          "warning",
+          warning.category() + ":" + warning.signal(),
+          "warning",
+          warning.moduleId(),
+          sourceRef("warnings.items", warning.id()),
+          warning.evidenceIds()));
+      addGraphModuleOwns(
+          graph,
+          warning.moduleId(),
+          warningNodeId,
+          "warnings.items",
+          List.of("module_id", "id"));
+    }
+  }
+
+  private String addGraphTypeNode(
+      ProjectGraphCollector graph,
+      String moduleId,
+      String className,
+      String section,
+      String sourceId,
+      List<String> evidenceIds) {
+    if (className == null || className.isBlank()) {
+      return null;
+    }
+    String typeNodeId = typeNodeId(moduleId, className);
+    graph.addNode(new GraphNode(
+        typeNodeId,
+        "type",
+        simpleName(className),
+        "extracted",
+        moduleId,
+        sourceRef(section, sourceId),
+        evidenceIds));
+    addGraphModuleOwns(
+        graph,
+        moduleId,
+        typeNodeId,
+        section,
+        List.of("module_id", "class_name"));
+    String packageName = packageName(className);
+    if (!packageName.isBlank()) {
+      String packageNodeId = packageNodeId(moduleId, packageName);
+      graph.addNode(new GraphNode(
+          packageNodeId,
+          "package",
+          packageName,
+          "structural",
+          moduleId,
+          sourceRef("derived.packages", moduleId + ":" + packageName),
+          List.of()));
+      addGraphModuleOwns(
+          graph,
+          moduleId,
+          packageNodeId,
+          "derived.packages",
+          List.of("module_id", "package_name"));
+      addGraphStructuralEdge(
+          graph,
+          "owns",
+          packageNodeId,
+          typeNodeId,
+          section,
+          List.of("class_name"));
+    }
+    return typeNodeId;
+  }
+
+  private void addGraphModuleOwns(
+      ProjectGraphCollector graph,
+      String moduleId,
+      String targetNodeId,
+      String section,
+      List<String> fields) {
+    if (moduleId == null || moduleId.isBlank()) {
+      return;
+    }
+    addGraphStructuralEdge(graph, "owns", moduleNodeId(moduleId), targetNodeId, section, fields);
+  }
+
+  private void addGraphStructuralEdge(
+      ProjectGraphCollector graph,
+      String type,
+      String sourceNodeId,
+      String targetNodeId,
+      String section,
+      List<String> fields) {
+    if (sourceNodeId == null || targetNodeId == null) {
+      return;
+    }
+    graph.addEdge(new GraphEdge(
+        ProjectGraphIds.edgeId(type, sourceNodeId, targetNodeId),
+        type,
+        sourceNodeId,
+        targetNodeId,
+        "structural",
+        "derived",
+        "project_map_derivation",
+        HIGH_CONFIDENCE,
+        null,
+        new GraphDerivation(
+            "project_map_field",
+            PROJECT_MAP_FILE_NAME,
+            section,
+            fields),
+        List.of()));
+  }
+
+  private GraphSourceRef sourceRef(String section, String id) {
+    return new GraphSourceRef(PROJECT_MAP_FILE_NAME, section, id);
+  }
+
+  private String moduleNodeId(String moduleId) {
+    return "node:module:" + ProjectGraphIds.key(ProjectGraphIds.moduleKey(moduleId));
+  }
+
+  private String packageNodeId(String moduleId, String packageName) {
+    return "node:package:"
+        + ProjectGraphIds.key(ProjectGraphIds.moduleKey(moduleId))
+        + ":"
+        + ProjectGraphIds.key(packageName);
+  }
+
+  private String typeNodeId(String moduleId, String className) {
+    return "node:type:"
+        + ProjectGraphIds.key(ProjectGraphIds.moduleKey(moduleId))
+        + ":"
+        + ProjectGraphIds.key(className);
+  }
+
+  private String endpointNodeId(String moduleId, SpringMvcEndpointFact endpoint) {
+    return "node:endpoint:" + ProjectGraphIds.key(endpointId(moduleId, endpoint));
+  }
+
+  private String apiOperationNodeId(OpenApiOperationFact operation) {
+    return "node:api_operation:" + ProjectGraphIds.key(operation.id());
+  }
+
+  private String entityNodeId(String moduleId, JpaEntityFact entity) {
+    return "node:entity:" + ProjectGraphIds.key(entityId(moduleId, entity));
+  }
+
+  private String embeddableNodeId(String moduleId, JpaEmbeddableFact embeddable) {
+    return "node:embeddable:" + ProjectGraphIds.key(embeddableId(moduleId, embeddable));
+  }
+
+  private String repositoryNodeId(String moduleId, SpringRepositoryFact repository) {
+    return "node:repository:" + ProjectGraphIds.key(springRepositoryId(moduleId, repository));
+  }
+
+  private String testNodeId(String moduleId, TestClassFact test) {
+    return "node:test:" + ProjectGraphIds.key(testId(moduleId, test));
+  }
+
+  private String documentNodeId(DocumentFileFact document) {
+    return "node:document:" + ProjectGraphIds.key(document.id());
+  }
+
+  private String documentHeadingNodeId(DocumentHeadingFact heading) {
+    return "node:document_heading:" + ProjectGraphIds.key(heading.id());
+  }
+
+  private String documentChunkNodeId(DocumentChunkFact chunk) {
+    return "node:document_chunk:" + ProjectGraphIds.key(chunk.id());
+  }
+
+  private String generatedSourceRootNodeId(GeneratedSourceRootItem root) {
+    return "node:generated_source_root:" + ProjectGraphIds.key(root.id());
+  }
+
+  private String warningNodeId(ModuleScopedWarningFact warning) {
+    return "node:warning:" + ProjectGraphIds.key(warning.id());
+  }
+
+  private String endpointLabel(SpringMvcEndpointFact endpoint) {
+    String methodLabel = endpoint.httpMethods().isEmpty()
+        ? "ANY"
+        : String.join(",", endpoint.httpMethods());
+    String pathLabel = firstPath(endpoint).isBlank() ? "(no path)" : firstPath(endpoint);
+    return methodLabel + " " + pathLabel;
+  }
+
+  private String packageName(String className) {
+    int dot = className.lastIndexOf('.');
+    if (dot <= 0) {
+      return "";
+    }
+    return className.substring(0, dot);
+  }
+
+  private String simpleName(String className) {
+    int dot = className.lastIndexOf('.');
+    if (dot < 0 || dot + 1 >= className.length()) {
+      return className;
+    }
+    return className.substring(dot + 1);
   }
 
   private void appendScanMetadata(

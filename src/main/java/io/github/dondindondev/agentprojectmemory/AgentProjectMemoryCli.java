@@ -334,6 +334,7 @@ public final class AgentProjectMemoryCli {
             "Generated evidence-index.jsonl with "
                 + result.evidenceCount()
                 + " evidence records.");
+        out.println("Generated project-graph.json.");
         out.println("Generated agent-guide.md.");
         if (result.profileCount() > 0) {
           out.println("Generated agent profile artifacts: " + result.profileCount() + ".");

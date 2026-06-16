@@ -1244,9 +1244,9 @@ diagnostics, or output digests as evidence must update this document and
 
 ### v1.5 Relation Graph Evidence And Derivation Decision
 
-The planned v1.5 relation graph does not add evidence types, evidence fields, evidence
-records, confidence labels, excerpt semantics, path semantics, runtime evidence, or
-tool-config evidence.
+The v1.5 relation graph does not add evidence types, evidence fields, evidence records,
+confidence labels, excerpt semantics, path semantics, runtime evidence, or tool-config
+evidence.
 
 Graph state is generated navigation metadata over existing project-memory facts:
 

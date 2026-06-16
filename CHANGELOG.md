@@ -9,9 +9,20 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Implemented the v1.5 lightweight relation graph foundation: supported scans now write
+  `.project-memory/project-graph.json` with `graph_schema_version: "1.0"`,
+  deterministic graph nodes, direct/structural `owns` and `declares` edges,
+  derivation-only structural edge metadata, bounded graph warnings, and existing
+  `evidence_ids` references without duplicating evidence records as graph nodes.
+- Included `project-graph.json` in incremental cache output fingerprints with
+  `output_kind: "project_graph"` so cache hits verify the graph digest and size before
+  reusing a generated output set.
+
 ### Changed
 
-- Documented the planned v1.5 lightweight relation graph contract boundary: a separate
+- Documented the v1.5 lightweight relation graph contract boundary: a separate
   `.project-memory/project-graph.json` artifact with its own graph schema marker,
   deterministic node and edge IDs, explicit evidence or derivation basis, bounded
   confidence and uncertainty semantics, size/noise limits, and no `project-map.json`

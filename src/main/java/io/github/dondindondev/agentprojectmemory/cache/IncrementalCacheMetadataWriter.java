@@ -80,6 +80,7 @@ public final class IncrementalCacheMetadataWriter {
       "secrets");
   private static final List<OutputArtifact> BASE_OUTPUTS = List.of(
       new OutputArtifact("project-map.json", "project_map"),
+      new OutputArtifact("project-graph.json", "project_graph"),
       new OutputArtifact("evidence-index.jsonl", "evidence_index"),
       new OutputArtifact("endpoints.md", "endpoints_markdown"),
       new OutputArtifact("agent-guide.md", "agent_guide_markdown"));

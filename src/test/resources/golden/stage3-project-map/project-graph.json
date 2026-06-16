@@ -1,0 +1,1753 @@
+{
+  "graph_schema_version": "1.0",
+  "project_map_schema_version": "1.0",
+  "graph_kind": "lightweight_relation_graph",
+  "source_artifacts": [
+    "project-map.json",
+    "evidence-index.jsonl"
+  ],
+  "limits": {
+    "max_nodes": 20000,
+    "max_edges": 50000,
+    "max_relation_statuses": 10000
+  },
+  "nodes": [
+    {
+      "id": "node:embeddable:embeddable%3Acom.example.domain.ProjectAddress",
+      "kind": "embeddable",
+      "label": "ProjectAddress",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "id": "embeddable:com.example.domain.ProjectAddress"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectAddress:@Embeddable"
+      ]
+    },
+    {
+      "id": "node:embeddable:embeddable%3Acom.example.domain.ProjectShipmentId",
+      "kind": "embeddable",
+      "label": "ProjectShipmentId",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "id": "embeddable:com.example.domain.ProjectShipmentId"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+      ]
+    },
+    {
+      "id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23createItem",
+      "kind": "endpoint",
+      "label": "POST /api/items",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "id": "endpoint:com.example.web.ProjectMapController#createItem"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:22-22:com.example.web.ProjectMapController#createItem:@RequestBody:parameter:0:request"
+      ]
+    },
+    {
+      "id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23getItem",
+      "kind": "endpoint",
+      "label": "GET /api/items/{id}",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "id": "endpoint:com.example.web.ProjectMapController#getItem"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand"
+      ]
+    },
+    {
+      "id": "node:entity:entity%3Acom.example.domain.ProjectCustomer",
+      "kind": "entity",
+      "label": "ProjectCustomer",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectCustomer"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity"
+      ]
+    },
+    {
+      "id": "node:entity:entity%3Acom.example.domain.ProjectLegacyOrder",
+      "kind": "entity",
+      "label": "ProjectLegacyOrder",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectLegacyOrder"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+      ]
+    },
+    {
+      "id": "node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "kind": "entity",
+      "label": "ProjectOrder",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectOrder"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+      ]
+    },
+    {
+      "id": "node:entity:entity%3Acom.example.domain.ProjectShipment",
+      "kind": "entity",
+      "label": "ProjectShipment",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectShipment"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity"
+      ]
+    },
+    {
+      "id": "node:entity:entity%3Acom.example.domain.ProjectVisit",
+      "kind": "entity",
+      "label": "ProjectVisit",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectVisit"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table"
+      ]
+    },
+    {
+      "id": "node:module:root",
+      "kind": "module",
+      "label": "root",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "project.modules.items",
+        "id": "module:."
+      },
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    {
+      "id": "node:package:root:com.example",
+      "kind": "package",
+      "label": "com.example",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "id": "module:.:com.example"
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "node:package:root:com.example.components",
+      "kind": "package",
+      "label": "com.example.components",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "id": "module:.:com.example.components"
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "node:package:root:com.example.domain",
+      "kind": "package",
+      "label": "com.example.domain",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "id": "module:.:com.example.domain"
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "node:package:root:com.example.repositories",
+      "kind": "package",
+      "label": "com.example.repositories",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "id": "module:.:com.example.repositories"
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "node:package:root:com.example.web",
+      "kind": "package",
+      "label": "com.example.web",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "id": "module:.:com.example.web"
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "kind": "repository",
+      "label": "ProjectOrderRepository",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "id": "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
+        "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+      ]
+    },
+    {
+      "id": "node:repository:spring_repository_stereotype%3Amodule%3A.%3Acom.example.components.InventoryRepository",
+      "kind": "repository",
+      "label": "InventoryRepository",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "id": "spring_repository_stereotype:module:.:com.example.components.InventoryRepository"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+      ]
+    },
+    {
+      "id": "node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "kind": "test",
+      "label": "ProjectMapControllerTest",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "id": "test:com.example.web.ProjectMapControllerTest"
+      },
+      "evidence_ids": [
+        "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.Stage3Application",
+      "kind": "type",
+      "label": "Stage3Application",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "project.modules.items[].build_config.spring_boot.applications.items",
+        "id": "spring_boot_application:module:.:com.example.Stage3Application"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/Stage3Application.java:5-5:com.example.Stage3Application:@SpringBootApplication",
+        "ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.components.AppConfiguration",
+      "kind": "type",
+      "label": "AppConfiguration",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "id": "component:com.example.components.AppConfiguration"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.components.InventoryComponent",
+      "kind": "type",
+      "label": "InventoryComponent",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "id": "component:com.example.components.InventoryComponent"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/components/InventoryComponents.java:8-8:com.example.components.InventoryComponent:@Component"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.components.InventoryRepository",
+      "kind": "type",
+      "label": "InventoryRepository",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "id": "component:com.example.components.InventoryRepository"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.components.InventoryService",
+      "kind": "type",
+      "label": "InventoryService",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "id": "component:com.example.components.InventoryService"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectAddress",
+      "kind": "type",
+      "label": "ProjectAddress",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "id": "embeddable:com.example.domain.ProjectAddress"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectAddress:@Embeddable"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectCustomer",
+      "kind": "type",
+      "label": "ProjectCustomer",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectCustomer"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectLegacyOrder",
+      "kind": "type",
+      "label": "ProjectLegacyOrder",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectLegacyOrder"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectOrder",
+      "kind": "type",
+      "label": "ProjectOrder",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectOrder"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectShipment",
+      "kind": "type",
+      "label": "ProjectShipment",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectShipment"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectShipmentId",
+      "kind": "type",
+      "label": "ProjectShipmentId",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "id": "embeddable:com.example.domain.ProjectShipmentId"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.domain.ProjectVisit",
+      "kind": "type",
+      "label": "ProjectVisit",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "id": "entity:com.example.domain.ProjectVisit"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.repositories.ProjectOrderRepository",
+      "kind": "type",
+      "label": "ProjectOrderRepository",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "id": "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
+        "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.web.ProjectMapController",
+      "kind": "type",
+      "label": "ProjectMapController",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "id": "component:com.example.web.ProjectMapController"
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:22-22:com.example.web.ProjectMapController#createItem:@RequestBody:parameter:0:request"
+      ]
+    },
+    {
+      "id": "node:type:root:com.example.web.ProjectMapControllerTest",
+      "kind": "type",
+      "label": "ProjectMapControllerTest",
+      "claim_category": "extracted",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "id": "test:com.example.web.ProjectMapControllerTest"
+      },
+      "evidence_ids": [
+        "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "edge:declares:node:type:root:com.example.components.InventoryRepository:node:repository:spring_repository_stereotype%3Amodule%3A.%3Acom.example.components.InventoryRepository",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.components.InventoryRepository",
+      "target_id": "node:repository:spring_repository_stereotype%3Amodule%3A.%3Acom.example.components.InventoryRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectAddress:node:embeddable:embeddable%3Acom.example.domain.ProjectAddress",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectAddress",
+      "target_id": "node:embeddable:embeddable%3Acom.example.domain.ProjectAddress",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectCustomer:node:entity:entity%3Acom.example.domain.ProjectCustomer",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectCustomer",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectCustomer",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectLegacyOrder:node:entity:entity%3Acom.example.domain.ProjectLegacyOrder",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectLegacyOrder",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectLegacyOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectOrder:node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectOrder",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectShipment:node:entity:entity%3Acom.example.domain.ProjectShipment",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectShipment",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectShipment",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectShipmentId:node:embeddable:embeddable%3Acom.example.domain.ProjectShipmentId",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectShipmentId",
+      "target_id": "node:embeddable:embeddable%3Acom.example.domain.ProjectShipmentId",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.domain.ProjectVisit:node:entity:entity%3Acom.example.domain.ProjectVisit",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.domain.ProjectVisit",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectVisit",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.repositories.ProjectOrderRepository:node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.repositories.ProjectOrderRepository",
+      "target_id": "node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.web.ProjectMapController:node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23createItem",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.web.ProjectMapController",
+      "target_id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23createItem",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "fields": [
+          "controller_class",
+          "handler_method",
+          "mapping_source.declaring_type"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.web.ProjectMapController:node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23getItem",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.web.ProjectMapController",
+      "target_id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23getItem",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "fields": [
+          "controller_class",
+          "handler_method",
+          "mapping_source.declaring_type"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:declares:node:type:root:com.example.web.ProjectMapControllerTest:node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "type": "declares",
+      "source_id": "node:type:root:com.example.web.ProjectMapControllerTest",
+      "target_id": "node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "fields": [
+          "class_name",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:embeddable:embeddable%3Acom.example.domain.ProjectAddress",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:embeddable:embeddable%3Acom.example.domain.ProjectAddress",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:embeddable:embeddable%3Acom.example.domain.ProjectShipmentId",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:embeddable:embeddable%3Acom.example.domain.ProjectShipmentId",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23createItem",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23createItem",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23getItem",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:endpoint:endpoint%3Acom.example.web.ProjectMapController%23getItem",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "endpoints",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:entity:entity%3Acom.example.domain.ProjectCustomer",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectCustomer",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:entity:entity%3Acom.example.domain.ProjectLegacyOrder",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectLegacyOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:entity:entity%3Acom.example.domain.ProjectShipment",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectShipment",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:entity:entity%3Acom.example.domain.ProjectVisit",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectVisit",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:package:root:com.example",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:package:root:com.example",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "fields": [
+          "module_id",
+          "package_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:package:root:com.example.components",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:package:root:com.example.components",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "fields": [
+          "module_id",
+          "package_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:package:root:com.example.domain",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:package:root:com.example.domain",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "fields": [
+          "module_id",
+          "package_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:package:root:com.example.repositories",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:package:root:com.example.repositories",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "fields": [
+          "module_id",
+          "package_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:package:root:com.example.web",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:package:root:com.example.web",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "derived.packages",
+        "fields": [
+          "module_id",
+          "package_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:repository:spring_repository_stereotype%3Amodule%3A.%3Acom.example.components.InventoryRepository",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:repository:spring_repository_stereotype%3Amodule%3A.%3Acom.example.components.InventoryRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "fields": [
+          "module_id",
+          "id"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.Stage3Application",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.Stage3Application",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "project.modules.items[].build_config.spring_boot.applications.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.components.AppConfiguration",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.components.AppConfiguration",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.components.InventoryComponent",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.components.InventoryComponent",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.components.InventoryRepository",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.components.InventoryRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.components.InventoryService",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.components.InventoryService",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectAddress",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectAddress",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectCustomer",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectCustomer",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectLegacyOrder",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectLegacyOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectOrder",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectShipment",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectShipment",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectShipmentId",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectShipmentId",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.domain.ProjectVisit",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.domain.ProjectVisit",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.repositories.ProjectOrderRepository",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.repositories.ProjectOrderRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.web.ProjectMapController",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.web.ProjectMapController",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:module:root:node:type:root:com.example.web.ProjectMapControllerTest",
+      "type": "owns",
+      "source_id": "node:module:root",
+      "target_id": "node:type:root:com.example.web.ProjectMapControllerTest",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "fields": [
+          "module_id",
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example:node:type:root:com.example.Stage3Application",
+      "type": "owns",
+      "source_id": "node:package:root:com.example",
+      "target_id": "node:type:root:com.example.Stage3Application",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "project.modules.items[].build_config.spring_boot.applications.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.components:node:type:root:com.example.components.AppConfiguration",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.components",
+      "target_id": "node:type:root:com.example.components.AppConfiguration",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.components:node:type:root:com.example.components.InventoryComponent",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.components",
+      "target_id": "node:type:root:com.example.components.InventoryComponent",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.components:node:type:root:com.example.components.InventoryRepository",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.components",
+      "target_id": "node:type:root:com.example.components.InventoryRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.components:node:type:root:com.example.components.InventoryService",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.components",
+      "target_id": "node:type:root:com.example.components.InventoryService",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectAddress",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectAddress",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectCustomer",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectCustomer",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectLegacyOrder",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectLegacyOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectOrder",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectOrder",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectShipment",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectShipment",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectShipmentId",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectShipmentId",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.embeddables.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.domain:node:type:root:com.example.domain.ProjectVisit",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.domain",
+      "target_id": "node:type:root:com.example.domain.ProjectVisit",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "entities.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.repositories:node:type:root:com.example.repositories.ProjectOrderRepository",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.repositories",
+      "target_id": "node:type:root:com.example.repositories.ProjectOrderRepository",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "spring_application_surface.repositories.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.web:node:type:root:com.example.web.ProjectMapController",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.web",
+      "target_id": "node:type:root:com.example.web.ProjectMapController",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "components.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    },
+    {
+      "id": "edge:owns:node:package:root:com.example.web:node:type:root:com.example.web.ProjectMapControllerTest",
+      "type": "owns",
+      "source_id": "node:package:root:com.example.web",
+      "target_id": "node:type:root:com.example.web.ProjectMapControllerTest",
+      "claim_category": "structural",
+      "relation_status": "derived",
+      "support_type": "project_map_derivation",
+      "confidence": "high",
+      "uncertainty": null,
+      "derivation": {
+        "kind": "project_map_field",
+        "artifact": "project-map.json",
+        "section": "tests.items",
+        "fields": [
+          "class_name"
+        ]
+      },
+      "evidence_ids": []
+    }
+  ],
+  "relation_statuses": [],
+  "warnings": []
+}

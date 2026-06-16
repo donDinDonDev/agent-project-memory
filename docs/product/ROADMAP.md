@@ -930,17 +930,28 @@ Release readiness notes:
 - The `v1.4.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-### v1.5.0: Lightweight Relation Graph (Planned)
+### v1.5.0: Lightweight Relation Graph (In Development)
 
 Product outcome: add a bounded deterministic graph artifact that helps humans and
 coding agents navigate relationships between existing project-memory facts without
 turning the graph into a full architecture, runtime dependency, or impact model.
 
-Planned contract decision:
+Current development foundation:
 
-- Emit a separate `.project-memory/project-graph.json` artifact once the feature is
-  implemented. The graph is not a top-level `project-map.json` section, and the design
-  is not parked.
+- Supported scans emit `.project-memory/project-graph.json` as a separate machine-
+  readable graph artifact with `graph_schema_version: "1.0"`.
+- The foundation graph contains deterministic nodes and direct/structural `owns` and
+  `declares` edges derived from existing structured facts, with derivation metadata for
+  structural edges and existing `evidence_ids` on evidence-backed nodes.
+- Incremental cache output fingerprints include `project-graph.json` as
+  `output_kind: "project_graph"`.
+- Inferred relation edges, relation-status expansion, and uncertain document-reference
+  graph edges remain planned follow-up scope within the v1.5 boundary.
+
+Contract decision:
+
+- Emit a separate `.project-memory/project-graph.json` artifact. The graph is not a
+  top-level `project-map.json` section.
 - Keep `project-map.json` on `schema_version: "1.0"` for the initial graph expansion.
   The graph artifact has its own `graph_schema_version: "1.0"` marker.
 - Generate the graph only from already extracted deterministic facts, existing
@@ -957,7 +968,7 @@ Planned contract decision:
 - Treat graph output as an additive navigation/index artifact over deterministic facts,
   not as a stronger authority than `project-map.json` and `evidence-index.jsonl`.
 
-Planned graph scope:
+Full v1.5 graph scope:
 
 - Node families: modules, packages derived from emitted source-visible types,
   source-visible types already represented by existing facts, Spring MVC endpoints,

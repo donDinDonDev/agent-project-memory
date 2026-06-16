@@ -213,6 +213,7 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))),
@@ -230,6 +231,7 @@ final class AgentProjectMemoryCliTest {
     CliResult result = runCli("scan", tempDir.toString());
     Path outputDirectory = tempDir.resolve(".project-memory");
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
 
     assertAll(
@@ -239,6 +241,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
         () -> assertFalse(result.stdout().contains(tempDir.toString())),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
@@ -273,6 +276,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Generated agent profile artifacts: 1.")),
         () -> assertTrue(Files.exists(tempDir.resolve(".project-memory/project-map.json"))),
+        () -> assertTrue(Files.exists(tempDir.resolve(".project-memory/project-graph.json"))),
         () -> assertTrue(Files.exists(profileDirectory.resolve("manifest.json"))),
         () -> assertTrue(Files.exists(profileDirectory.resolve("codex.md"))),
         () -> assertFalse(Files.exists(profileDirectory.resolve("claude.md"))),
@@ -444,6 +448,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources", false),
         () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources/openapi", false),
         () -> assertCacheOutput(outputs, "project_map", "project-map.json"),
+        () -> assertCacheOutput(outputs, "project_graph", "project-graph.json"),
         () -> assertCacheOutput(outputs, "evidence_index", "evidence-index.jsonl"),
         () -> assertCacheOutput(outputs, "endpoints_markdown", "endpoints.md"),
         () -> assertCacheOutput(outputs, "agent_guide_markdown", "agent-guide.md"),
@@ -468,6 +473,7 @@ final class AgentProjectMemoryCliTest {
     CliResult warmup = runCli("scan", tempDir.toString(), "--incremental");
     Path outputDirectory = tempDir.resolve(".project-memory");
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
@@ -480,9 +486,34 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, hit.exitCode()),
         () -> assertIncrementalHit(hit),
         () -> assertEquals(projectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(projectGraph, Files.readString(outputDirectory.resolve("project-graph.json"))),
         () -> assertEquals(evidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertEquals(endpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
         () -> assertEquals(agentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenProjectGraphOutputFingerprintMismatches()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult warmup = runCli("scan", tempDir.toString(), "--incremental");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    Path projectGraphPath = outputDirectory.resolve("project-graph.json");
+    String projectGraph = Files.readString(projectGraphPath);
+    Files.writeString(projectGraphPath, "{\"tampered\":true}\n");
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+
+    assertAll(
+        () -> assertEquals(0, warmup.exitCode()),
+        () -> assertFullIncrementalRefresh(warmup),
+        () -> assertFullIncrementalRefresh(result),
+        () -> assertEquals(projectGraph, Files.readString(projectGraphPath)));
   }
 
   @Test
@@ -612,6 +643,7 @@ final class AgentProjectMemoryCliTest {
     assertEquals(0, runCli("scan", tempDir.toString()).exitCode());
     Path outputDirectory = tempDir.resolve(".project-memory");
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
@@ -628,6 +660,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(Files.exists(cacheDirectory.resolve("inputs.jsonl"))),
         () -> assertFalse(Files.exists(cacheDirectory.resolve("outputs.jsonl"))),
         () -> assertEquals(projectMap, Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertEquals(projectGraph, Files.readString(outputDirectory.resolve("project-graph.json"))),
         () -> assertEquals(evidenceIndex, Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertEquals(endpoints, Files.readString(outputDirectory.resolve("endpoints.md"))),
         () -> assertEquals(agentGuide, Files.readString(outputDirectory.resolve("agent-guide.md"))));
@@ -1357,6 +1390,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(result.stderr().contains("com.github.javaparser")),
         () -> assertFalse(result.stderr().contains("\tat ")),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))));
@@ -1388,6 +1422,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(result.stderr().contains(tempDir.toString())),
         () -> assertFalse(result.stderr().contains("\tat ")),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))));
@@ -1408,6 +1443,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(result.stderr().contains("Output path must not be a symbolic link")),
         () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outsideOutputDirectory.resolve("agent-guide.md"))));
@@ -1431,6 +1467,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
   }
@@ -1455,6 +1492,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(
             "outside content",
             Files.readString(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
@@ -1484,6 +1522,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(Files.exists(outsideProfileDirectory.resolve("manifest.json"))),
         () -> assertFalse(Files.exists(outsideProfileDirectory.resolve("codex.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
@@ -1512,6 +1551,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(result.stderr().contains(projectPath.toString())),
         () -> assertEquals("outside content", Files.readString(outsideProfileFile)),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))),

@@ -6,20 +6,23 @@ Any output field addition, removal, rename, or semantic change requires updating
 
 ## Directory Structure
 
-The current scan output uses the same four files introduced in v0.1:
+The current scan output uses the base project-memory files plus the v1.5 graph
+artifact:
 
 ```text
 .project-memory/
   project-map.json
+  project-graph.json
   evidence-index.jsonl
   endpoints.md
   agent-guide.md
 ```
 
-In the current implementation, `scan <path>` writes all four files when supported Maven
+In the current implementation, `scan <path>` writes all base files when supported Maven
 or Gradle module roots, supported root source, test, or resource roots, supported config
-files, or Maven/Gradle module warnings are detected. Unsupported directories still only
-get a prepared `.project-memory/` directory and do not get contract output files.
+files, Maven/Gradle module warnings, or graph-supported facts are detected. Unsupported
+directories still only get a prepared `.project-memory/` directory and do not get
+contract output files.
 When `--agent-profile` is selected and the scan writes the base contract files, the
 current v1.3 development profile layer also writes
 `.project-memory/agent-profiles/manifest.json` and selected deterministic profile
@@ -1255,9 +1258,10 @@ v0.3 warning rules:
 
 Sensitive config handling rules:
 
-- `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md` must
-  not include config file contents, property keys, property values, YAML node content,
-  XML element content, decrypted values, or secret-looking values from config files.
+- `project-map.json`, `project-graph.json`, `evidence-index.jsonl`, `endpoints.md`,
+  and `agent-guide.md` must not include config file contents, property keys, property
+  values, YAML node content, XML element content, decrypted values, or secret-looking
+  values from config files.
 - `config_file` evidence excerpts for v0.3 config discovery must be bounded path or
   filename observations such as `config file detected: application.yml`.
 - Config file discovery is bounded before fact or evidence materialization. The current
@@ -3714,8 +3718,9 @@ Validation requirements:
   `.project-memory/agent-profiles/`, cannot escape that directory, and do not overwrite
   repository root instruction/config files.
 - Golden outputs for `manifest.json` and every supported profile Markdown file.
-- Regression goldens proving `project-map.json`, `evidence-index.jsonl`, `endpoints.md`,
-  and `agent-guide.md` remain stable when no profile is requested.
+- Regression goldens proving `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md` remain stable when no
+  profile is requested.
 - Evidence-reference integrity checks for profile Markdown, including resolving
   referenced evidence IDs and preserving claim separation.
 - Repeated-output digest checks on representative profile-generation scans before
@@ -3920,6 +3925,7 @@ Input fingerprint rules:
 
 ```json
 {"cache_schema_version":"1.0","path":"project-map.json","output_kind":"project_map","content_sha256":"sha256:...","size_bytes":12345}
+{"cache_schema_version":"1.0","path":"project-graph.json","output_kind":"project_graph","content_sha256":"sha256:...","size_bytes":23456}
 {"cache_schema_version":"1.0","path":"agent-profiles/codex.md","output_kind":"agent_profile_markdown","content_sha256":"sha256:...","size_bytes":6789}
 ```
 
@@ -3927,8 +3933,8 @@ Output fingerprint rules:
 
 - `path` is `.project-memory`-relative and must point only to artifacts generated for
   the selected scan option set.
-- Base output fingerprints cover `project-map.json`, `evidence-index.jsonl`,
-  `endpoints.md`, and `agent-guide.md`.
+- Base output fingerprints cover `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`.
 - When agent profiles are selected, output fingerprints also cover
   `agent-profiles/manifest.json` and the selected profile Markdown files.
 - Unselected profile files are not part of the selected generated output set. They
@@ -3956,9 +3962,9 @@ Invalidation and fallback rules:
 - A cache hit must not rewrite generated project-memory outputs unless a later explicit
   contract defines safe rewrite behavior. It may report a bounded CLI cache-hit summary.
 - Cache miss, invalidation, corruption, or unsafe-cache conditions may be reported in
-  concise CLI output, but generated `project-map.json`, `evidence-index.jsonl`,
-  `endpoints.md`, `agent-guide.md`, and profile Markdown must not serialize cache status
-  or timing data in the initial v1.4 design.
+  concise CLI output, but generated `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, `endpoints.md`, `agent-guide.md`, and profile Markdown must
+  not serialize cache status or timing data.
 
 Sensitive-data policy:
 
@@ -4025,9 +4031,9 @@ Stop conditions for implementation:
 
 ### v1.5 Lightweight Relation Graph Contract
 
-This section defines the planned v1.5 lightweight relation graph boundary. It is a
-design contract for future implementation work; it does not claim that current release
-builds already emit the graph artifact.
+This section defines the v1.5 lightweight relation graph boundary. Current development
+builds emit the graph foundation for supported scans while keeping later inferred,
+status-only, and uncertain relation expansion inside the same documented boundary.
 
 The v1.5 policy decision is a separate graph artifact:
 
@@ -4043,14 +4049,14 @@ The v1.5 policy decision is a separate graph artifact:
   strengthen, reinterpret, or override the source facts in `project-map.json` or the
   evidence records in `evidence-index.jsonl`.
 - The initial contract has no graph CLI selector and no root-local config selector.
-  Once implemented, supported scans that write the base project-memory files should
-  also write `project-graph.json`. Unsupported directories that only prepare
+  Supported scans that write the base project-memory files also write
+  `project-graph.json`. Unsupported directories that only prepare
   `.project-memory/` should not create an orphan graph artifact.
 - `agent-guide.md` and selected agent profile Markdown are not required to render graph
   content in the initial graph contract. The first graph surface is machine-readable
   JSON.
 
-Planned graph artifact layout:
+Graph artifact layout:
 
 ```text
 .project-memory/
@@ -4174,6 +4180,11 @@ Edge taxonomy:
 - `document_reference`: an existing document reconciliation uncertain-reference hint.
 - `api_source_relation`: reserved for a future explicitly designed endpoint/spec
   relation. The initial graph contract must not emit this edge type.
+
+The current graph foundation emits direct/structural material first: deterministic
+nodes plus `owns` and `declares` edges. `repository_entity`, `tested_subject`,
+`document_reference`, and status-only relation expansion remain reserved until their
+graph semantics are implemented without changing the evidence boundary.
 
 Evidence references are carried by `evidence_ids`, not by `references_evidence` edges.
 The initial graph contract has no `references_evidence` edge type because evidence
@@ -4347,9 +4358,9 @@ Size and noise limits:
 
 Incremental cache interaction:
 
-- Once `project-graph.json` is implemented as part of the base generated output set,
-  incremental cache output fingerprints must include it as `.project-memory`-relative
-  path `project-graph.json` with `output_kind: "project_graph"`.
+- `project-graph.json` is part of the base generated output set. Incremental cache
+  output fingerprints include it as `.project-memory`-relative path
+  `project-graph.json` with `output_kind: "project_graph"`.
 - The cache schema can remain `cache_schema_version: "1.0"` if the cache file field
   shape remains unchanged; the tool-version and selected output fingerprint set still
   make older cache state miss safely.
