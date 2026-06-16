@@ -14,7 +14,12 @@ architecture documents.
 - Documented the planned v1.6 local read-only query CLI contract, including `query`
   command grammar, generated-artifact input policy, list/explain/find/relations
   behavior, text and JSON output modes, exit behavior, and implementation validation
-  expectations. Query commands are not implemented yet.
+  expectations.
+- Implemented the first read-only `query` foundation for artifact root resolution,
+  bounded loading and validation of `project-map.json`, `evidence-index.jsonl`, and
+  optional `project-graph.json`, plus minimal command help and skeleton validation
+  behavior. Full list, explain, find, relations rendering, JSON result envelopes, and
+  lookup UX remain future v1.6 work.
 
 ## [1.5.0] - 2026-06-16
 

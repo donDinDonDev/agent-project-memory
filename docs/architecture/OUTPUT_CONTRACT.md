@@ -4742,8 +4742,13 @@ Current v0.9 CLI behavior:
 ### Planned v1.6 Query CLI Contract
 
 This section defines the planned public contract for the v1.6 local query/read-only
-explorer. It is design-only until a v1.6 implementation and release notes ship. The
-current v1.5 command surface remains `scan`, `help`, and `version`.
+explorer. The latest published v1.5 command surface remains `scan`, `help`, and
+`version`. Current unreleased v1.6 development starts with only the read-only
+artifact-loading foundation: minimal `query <path> list modules` and
+`query <path> relations <id>` skeletons validate existing artifacts without rendering
+the final list or relation UX. Full list, explain, find, relations output, `--format`,
+`--direction`, and the stable JSON result envelope remain planned until their
+implementation slices ship.
 
 The planned query layer is a deterministic presentation and lookup layer over existing
 generated artifacts. It does not create project facts, does not create evidence

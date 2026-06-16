@@ -5,6 +5,9 @@ import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEnd
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataWriter;
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataValidator;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactReader;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
+import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoader;
@@ -29,12 +32,14 @@ public final class AgentProjectMemoryCli {
 
       Usage:
         agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
+        agent-project-memory query <path> <query-command>
         agent-project-memory help
         agent-project-memory version
 
       Commands:
         scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
                                        Generate .project-memory output for a local repository.
+        query <path> <query-command>   Validate and read existing .project-memory artifacts.
         help                           Show this help.
         version                        Show the CLI version.
 
@@ -55,6 +60,19 @@ public final class AgentProjectMemoryCli {
                                    run a full scan and refresh .project-memory/cache/v1/.
         --help                     Show this help.
       """;
+  private static final String QUERY_USAGE = "Usage: agent-project-memory query <path> <query-command>";
+  private static final String QUERY_HELP = """
+      Usage: agent-project-memory query <path> <query-command>
+
+      Read existing .project-memory artifacts without scanning or writing.
+
+      Foundation commands:
+        list modules               Validate base query artifacts for module listing.
+        relations <id>             Validate base artifacts plus project-graph.json.
+
+      Options:
+        --help                     Show this help.
+      """;
   private static final String VERSION_RESOURCE = "/agent-project-memory-version.properties";
   private static final String OUTPUT_DIRECTORY_NAME = ".project-memory";
   private static final int SUCCESS = 0;
@@ -69,6 +87,7 @@ public final class AgentProjectMemoryCli {
   private final ProjectMemoryOutputGenerator outputGenerator;
   private final IncrementalCacheMetadataWriter incrementalCacheMetadataWriter;
   private final IncrementalCacheMetadataValidator incrementalCacheMetadataValidator;
+  private final ProjectMemoryArtifactReader queryArtifactReader = new ProjectMemoryArtifactReader();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -121,6 +140,20 @@ public final class AgentProjectMemoryCli {
       }
       out.println("agent-project-memory " + version());
       return SUCCESS;
+    }
+
+    if ("query".equals(command)) {
+      QueryArgs queryArgs = queryArgs(args);
+      if (queryArgs.errorMessage() != null) {
+        return queryArgs.errorExitCode() == SCAN_INPUT_ERROR
+            ? queryInputError(queryArgs.errorMessage())
+            : queryUsageError(queryArgs.errorMessage());
+      }
+      if (queryArgs.help()) {
+        out.print(QUERY_HELP);
+        return SUCCESS;
+      }
+      return query(queryArgs);
     }
 
     if (!"scan".equals(command)) {
@@ -221,6 +254,106 @@ public final class AgentProjectMemoryCli {
       }
     }
     return List.copyOf(selectedProfiles);
+  }
+
+  private QueryArgs queryArgs(String[] args) {
+    if (args.length < 2) {
+      return QueryArgs.queryInputError("Missing query path.");
+    }
+    if ("--help".equals(args[1])) {
+      if (args.length != 2) {
+        return QueryArgs.usageError("Unexpected extra arguments.");
+      }
+      return QueryArgs.helpRequested();
+    }
+
+    String queryPath = args[1];
+    if (queryPath == null || queryPath.isBlank()) {
+      return QueryArgs.queryInputError("Query path must not be blank.");
+    }
+    if (queryPath.startsWith("--")) {
+      return QueryArgs.usageError("Unknown flag.");
+    }
+    if (args.length < 3) {
+      return QueryArgs.usageError("Missing query subcommand.");
+    }
+    if ("--help".equals(args[2])) {
+      if (args.length != 3) {
+        return QueryArgs.usageError("Unexpected extra arguments.");
+      }
+      return QueryArgs.helpRequested();
+    }
+
+    String subcommand = args[2];
+    if ("list".equals(subcommand)) {
+      if (args.length != 4) {
+        return QueryArgs.usageError("Malformed list query command.");
+      }
+      if (!"modules".equals(args[3])) {
+        return QueryArgs.usageError("Unsupported query list subject.");
+      }
+      return QueryArgs.valid(
+          queryPath,
+          "list",
+          "modules",
+          null,
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+    }
+    if ("relations".equals(subcommand)) {
+      if (args.length != 4) {
+        return QueryArgs.usageError("Malformed relations query command.");
+      }
+      String relationId = args[3];
+      if (relationId == null || relationId.isBlank() || relationId.startsWith("--")) {
+        return QueryArgs.usageError("Missing relation id.");
+      }
+      return QueryArgs.valid(
+          queryPath,
+          "relations",
+          "relations",
+          relationId,
+          ProjectMemoryArtifactReader.GraphRequirement.REQUIRED);
+    }
+    return QueryArgs.usageError("Unsupported query subcommand.");
+  }
+
+  private int query(QueryArgs queryArgs) {
+    Path queryPath;
+    try {
+      queryPath = Path.of(queryArgs.path());
+    } catch (InvalidPathException ex) {
+      return queryInputError("Invalid query path syntax.");
+    }
+
+    ProjectMemoryArtifacts artifacts;
+    try {
+      artifacts = queryArtifactReader.load(queryPath, queryArgs.graphRequirement());
+    } catch (QueryArtifactException ex) {
+      return queryInputError(ex.getMessage());
+    }
+
+    out.println("Query artifact validation succeeded.");
+    out.println("Loaded project-map.json schema_version " + artifacts.projectMapSchemaVersion() + ".");
+    out.println(
+        "Loaded evidence-index.jsonl with "
+            + artifacts.evidenceRecords().size()
+            + " evidence record(s).");
+    if (artifacts.hasProjectGraph()) {
+      out.println(
+          "Loaded project-graph.json graph_schema_version "
+              + artifacts.projectGraphSchemaVersion()
+              + ".");
+    } else {
+      out.println("No project-graph.json loaded.");
+    }
+    String queryLabel = queryArgs.command().equals(queryArgs.subject())
+        ? queryArgs.command()
+        : queryArgs.command() + " " + queryArgs.subject();
+    out.println(
+        "Result rendering for query "
+            + queryLabel
+            + " is not implemented in this foundation.");
+    return SUCCESS;
   }
 
   private int scan(
@@ -388,6 +521,17 @@ public final class AgentProjectMemoryCli {
     return SCAN_INPUT_ERROR;
   }
 
+  private int queryInputError(String message) {
+    err.println("Query input error: " + message);
+    return SCAN_INPUT_ERROR;
+  }
+
+  private int queryUsageError(String message) {
+    err.println("Usage error: " + message);
+    err.println(QUERY_USAGE);
+    return USAGE_ERROR;
+  }
+
   private int invalidConfigError(String message) {
     err.println(message);
     return INVALID_CONFIG;
@@ -493,6 +637,61 @@ public final class AgentProjectMemoryCli {
 
     static ScanArgs scanInputError(String message) {
       return new ScanArgs(null, null, List.of(), false, false, message, SCAN_INPUT_ERROR);
+    }
+  }
+
+  private record QueryArgs(
+      String path,
+      String command,
+      String subject,
+      String relationId,
+      ProjectMemoryArtifactReader.GraphRequirement graphRequirement,
+      boolean help,
+      String errorMessage,
+      int errorExitCode) {
+    static QueryArgs valid(
+        String path,
+        String command,
+        String subject,
+        String relationId,
+        ProjectMemoryArtifactReader.GraphRequirement graphRequirement) {
+      return new QueryArgs(path, command, subject, relationId, graphRequirement, false, null, SUCCESS);
+    }
+
+    static QueryArgs helpRequested() {
+      return new QueryArgs(
+          null,
+          null,
+          null,
+          null,
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          true,
+          null,
+          SUCCESS);
+    }
+
+    static QueryArgs usageError(String message) {
+      return new QueryArgs(
+          null,
+          null,
+          null,
+          null,
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          false,
+          message,
+          USAGE_ERROR);
+    }
+
+    static QueryArgs queryInputError(String message) {
+      return new QueryArgs(
+          null,
+          null,
+          null,
+          null,
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          false,
+          message,
+          SCAN_INPUT_ERROR);
     }
   }
 }
