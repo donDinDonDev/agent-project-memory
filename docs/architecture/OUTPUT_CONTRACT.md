@@ -4745,11 +4745,12 @@ This section defines the planned public contract for the v1.6 local query/read-o
 explorer. The latest published v1.5 command surface remains `scan`, `help`, and
 `version`. Current unreleased v1.6 development includes the read-only artifact-loading
 foundation plus deterministic text output for `query <path> list modules`,
-`list endpoints`, `list api-operations`, `list entities`, and `list tests`.
+`list endpoints`, `list api-operations`, `list entities`, `list tests`,
+`explain evidence <id>`, `find fact <term>`, and `find symbol <term>`.
 `query <path> relations <id>` remains a skeleton that validates existing artifacts
-without rendering the final relation UX. Explain, find, final relations output,
-`--format`, `--direction`, and the stable JSON result envelope remain planned until
-their implementation slices ship.
+without rendering the final relation UX. Final relations output, `--format`,
+`--direction`, and the stable JSON result envelope remain planned until their
+implementation slices ship.
 
 The planned query layer is a deterministic presentation and lookup layer over existing
 generated artifacts. It does not create project facts, does not create evidence
@@ -4843,6 +4844,9 @@ List command behavior:
 
 Evidence explain behavior:
 
+- Current unreleased evidence-explain implementation supports deterministic text output
+  only. The planned `--format text|json` flag and stable JSON result envelope are not
+  implemented yet.
 - `explain evidence <evidence-id>` performs an exact evidence ID lookup in
   `evidence-index.jsonl`.
 - Successful output renders only the existing evidence record fields: `id`,
@@ -4854,6 +4858,9 @@ Evidence explain behavior:
 
 Fact and symbol lookup behavior:
 
+- Current unreleased fact and symbol lookup implementation supports deterministic text
+  output only. The planned `--format text|json` flag and stable JSON result envelope are
+  not implemented yet.
 - `find fact <term>` performs exact, case-sensitive lookup over generated fact IDs and
   documented exact keys already present in generated artifacts, such as endpoint IDs,
   operation keys, entity IDs, repository IDs, test IDs, warning IDs, status IDs,

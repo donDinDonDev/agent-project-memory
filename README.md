@@ -117,7 +117,7 @@ output generation. Missing, stale, unsafe, corrupted, or mismatched cache state 
 closed to normal full analysis. Scans without `--incremental` ignore persistent cache
 state and do not read, write, delete, or trust cache files.
 
-Current unreleased development builds also include read-only query list commands over
+Current unreleased development builds also include read-only query commands over
 existing generated artifacts:
 
 ```sh
@@ -126,27 +126,35 @@ java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-proje
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list api-operations
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list entities
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find symbol <term>
 ```
 
-`query <path> list ...` accepts either a repository directory containing
+`query <path> ...` accepts either a repository directory containing
 `.project-memory/` or the `.project-memory/` directory itself. These commands read the
 existing `project-map.json` and `evidence-index.jsonl` artifacts, optionally validate a
 present `project-graph.json`, print deterministic human text, and do not run scans,
 create `.project-memory/`, refresh cache/profile artifacts, read repository source
 files, or write repository files. Source-visible endpoint rows and spec-backed declared
-API operation rows stay separate; entity rows and embeddable rows stay separate. Stable
-JSON query output, evidence explain, exact fact/symbol lookup, and graph relation
-rendering remain planned v1.6 work until release notes document them as implemented.
+API operation rows stay separate; entity rows and embeddable rows stay separate.
+`explain evidence <id>` resolves exact evidence IDs from `evidence-index.jsonl`.
+`find fact <term>` and `find symbol <term>` are exact and case-sensitive; they do not
+perform substring, fuzzy, regex, semantic, natural-language, or embedding search.
+Stable JSON query output and graph relation rendering remain planned v1.6 work until
+release notes document them as implemented.
 
 CLI exit codes are stable for automation:
 
 - `0`: success, help, or version.
 - `1`: unexpected internal error.
 - `2`: usage error, such as an unknown command, unknown flag, or malformed command.
-- `3`: scan input error, such as a missing scan path, missing directory, or unsafe output
-  path.
+- `3`: scan/query input or artifact error, such as a missing scan path, missing query
+  path, missing directory, unsafe output path, missing query artifact, malformed
+  query artifact, or invalid graph artifact for relation lookup.
 - `4`: invalid scan config.
 - `5`: output generation or write error.
+- `6`: query no-result, such as an absent evidence ID or absent exact fact/symbol match.
 
 Normal scan stdout is concise and deterministic: it reports `.project-memory`
 preparation, generated file names with stable fact counts when outputs are written, and

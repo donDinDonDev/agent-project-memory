@@ -8,6 +8,7 @@ import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactReader;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryListRenderer;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryLookupRenderer;
 import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -73,6 +74,9 @@ public final class AgentProjectMemoryCli {
         list api-operations        List spec-backed declared API operations.
         list entities              List JPA entities, embeddables, and repository/entity relation rows.
         list tests                 List emitted test facts and tested-subject rows.
+        explain evidence <id>      Explain one evidence-index.jsonl record by exact ID.
+        find fact <term>           Find generated fact IDs and exact keys.
+        find symbol <term>         Find structured symbol fields.
         relations <id>             Validate base artifacts plus project-graph.json.
 
       Options:
@@ -86,6 +90,7 @@ public final class AgentProjectMemoryCli {
   private static final int SCAN_INPUT_ERROR = 3;
   private static final int INVALID_CONFIG = 4;
   private static final int OUTPUT_ERROR = 5;
+  private static final int QUERY_NO_RESULT = 6;
 
   private final PrintWriter out;
   private final PrintWriter err;
@@ -94,6 +99,7 @@ public final class AgentProjectMemoryCli {
   private final IncrementalCacheMetadataValidator incrementalCacheMetadataValidator;
   private final ProjectMemoryArtifactReader queryArtifactReader = new ProjectMemoryArtifactReader();
   private final ProjectMemoryListRenderer queryListRenderer = new ProjectMemoryListRenderer();
+  private final ProjectMemoryLookupRenderer queryLookupRenderer = new ProjectMemoryLookupRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -305,6 +311,34 @@ public final class AgentProjectMemoryCli {
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
     }
+    if ("explain".equals(subcommand)) {
+      if (args.length != 5 || !"evidence".equals(args[3])) {
+        return QueryArgs.usageError("Malformed explain query command.");
+      }
+      if (args[4] == null || args[4].isBlank() || args[4].startsWith("--")) {
+        return QueryArgs.usageError("Missing evidence id.");
+      }
+      return QueryArgs.valid(
+          queryPath,
+          "explain",
+          "evidence",
+          args[4],
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+    }
+    if ("find".equals(subcommand)) {
+      if (args.length != 5 || (!"fact".equals(args[3]) && !"symbol".equals(args[3]))) {
+        return QueryArgs.usageError("Malformed find query command.");
+      }
+      if (args[4] == null || args[4].isBlank() || args[4].startsWith("--")) {
+        return QueryArgs.usageError("Missing find term.");
+      }
+      return QueryArgs.valid(
+          queryPath,
+          "find",
+          args[3],
+          args[4],
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+    }
     if ("relations".equals(subcommand)) {
       if (args.length != 4) {
         return QueryArgs.usageError("Malformed relations query command.");
@@ -349,6 +383,19 @@ public final class AgentProjectMemoryCli {
     if ("list".equals(queryArgs.command())) {
       out.print(queryListRenderer.render(artifacts, queryArgs.subject()));
       return SUCCESS;
+    }
+    if ("explain".equals(queryArgs.command())) {
+      ProjectMemoryLookupRenderer.LookupResult result =
+          queryLookupRenderer.renderEvidence(artifacts, queryArgs.lookupTerm());
+      return printLookupResult(result);
+    }
+    if ("find".equals(queryArgs.command())) {
+      ProjectMemoryLookupRenderer.FindKind kind = "fact".equals(queryArgs.subject())
+          ? ProjectMemoryLookupRenderer.FindKind.FACT
+          : ProjectMemoryLookupRenderer.FindKind.SYMBOL;
+      ProjectMemoryLookupRenderer.LookupResult result =
+          queryLookupRenderer.renderFind(artifacts, kind, queryArgs.lookupTerm());
+      return printLookupResult(result);
     }
 
     out.println("Query artifact validation succeeded.");
@@ -545,6 +592,19 @@ public final class AgentProjectMemoryCli {
     return SCAN_INPUT_ERROR;
   }
 
+  private int printLookupResult(ProjectMemoryLookupRenderer.LookupResult result) {
+    if (!result.found()) {
+      return queryNoResult(result.noResultMessage());
+    }
+    out.print(result.output());
+    return SUCCESS;
+  }
+
+  private int queryNoResult(String message) {
+    err.println("Query no result: " + message);
+    return QUERY_NO_RESULT;
+  }
+
   private int queryUsageError(String message) {
     err.println("Usage error: " + message);
     err.println(QUERY_USAGE);
@@ -663,7 +723,7 @@ public final class AgentProjectMemoryCli {
       String path,
       String command,
       String subject,
-      String relationId,
+      String lookupTerm,
       ProjectMemoryArtifactReader.GraphRequirement graphRequirement,
       boolean help,
       String errorMessage,
@@ -672,9 +732,9 @@ public final class AgentProjectMemoryCli {
         String path,
         String command,
         String subject,
-        String relationId,
+        String lookupTerm,
         ProjectMemoryArtifactReader.GraphRequirement graphRequirement) {
-      return new QueryArgs(path, command, subject, relationId, graphRequirement, false, null, SUCCESS);
+      return new QueryArgs(path, command, subject, lookupTerm, graphRequirement, false, null, SUCCESS);
     }
 
     static QueryArgs helpRequested() {

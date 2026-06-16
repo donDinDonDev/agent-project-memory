@@ -32,6 +32,9 @@ final class QueryCliTest {
         () -> assertTrue(queryHelp.stdout().contains("list api-operations")),
         () -> assertTrue(queryHelp.stdout().contains("list entities")),
         () -> assertTrue(queryHelp.stdout().contains("list tests")),
+        () -> assertTrue(queryHelp.stdout().contains("explain evidence <id>")),
+        () -> assertTrue(queryHelp.stdout().contains("find fact <term>")),
+        () -> assertTrue(queryHelp.stdout().contains("find symbol <term>")),
         () -> assertTrue(queryHelp.stdout().contains("relations <id>")),
         () -> assertTrue(queryHelp.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
@@ -209,6 +212,155 @@ final class QueryCliTest {
   }
 
   @Test
+  void explainEvidenceRendersExactRecordAndMissingIdReturnsNoResult() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+
+    CliResult found = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:endpoint:mapping");
+    CliResult missing = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:missing");
+
+    assertAll(
+        () -> assertEquals(0, found.exitCode()),
+        () -> assertTrue(found.stdout().contains("Query: explain evidence")),
+        () -> assertTrue(found.stdout().contains("Results: 1")),
+        () -> assertTrue(found.stdout().contains("1. ev:endpoint:mapping")),
+        () -> assertTrue(found.stdout().contains("source_type: annotation")),
+        () -> assertTrue(found.stdout().contains("path: src/main/java/com/example/web/OrderController.java")),
+        () -> assertTrue(found.stdout().contains("class_name: com.example.web.OrderController")),
+        () -> assertTrue(found.stdout().contains("method_name: getOrder")),
+        () -> assertTrue(found.stdout().contains("symbol_name: @GetMapping")),
+        () -> assertTrue(found.stdout().contains("line_start: 12")),
+        () -> assertTrue(found.stdout().contains("line_end: 12")),
+        () -> assertTrue(found.stdout().contains("excerpt: @GetMapping(\"/orders/{id}\")")),
+        () -> assertTrue(found.stdout().contains("confidence: high")),
+        () -> assertTrue(found.stderr().isEmpty()),
+        () -> assertEquals(6, missing.exitCode()),
+        () -> assertTrue(missing.stdout().isEmpty()),
+        () -> assertTrue(missing.stderr().contains("Query no result: No evidence record matched")),
+        () -> assertFalse(missing.stderr().contains("ev:missing")));
+  }
+
+  @Test
+  void findFactMatchesProjectMapAndGraphIdsWithoutRelationRendering() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeLookupGraph(artifactRoot);
+
+    CliResult projectMapFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        "endpoint:com.example.web.OrderController#getOrder");
+    CliResult graphFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        "edge:owns:node:module:root:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder");
+
+    assertAll(
+        () -> assertEquals(0, projectMapFact.exitCode()),
+        () -> assertTrue(projectMapFact.stdout().contains("Query: find fact")),
+        () -> assertTrue(projectMapFact.stdout().contains("Results: 2")),
+        () -> assertTrue(projectMapFact.stdout().contains("navigation: project-map.json#/endpoints/0 (not evidence)")),
+        () -> assertTrue(projectMapFact.stdout().contains("navigation: project-graph.json#/nodes/1 (not evidence)")),
+        () -> assertTrue(projectMapFact.stdout().contains("source_ref: artifact=project-map.json section=endpoints id=endpoint:com.example.web.OrderController#getOrder (not evidence)")),
+        () -> assertTrue(projectMapFact.stdout().contains("kind: endpoint")),
+        () -> assertTrue(projectMapFact.stdout().contains("claim_category: extracted")),
+        () -> assertTrue(projectMapFact.stderr().isEmpty()),
+        () -> assertEquals(0, graphFact.exitCode()),
+        () -> assertTrue(graphFact.stdout().contains("Query: find fact")),
+        () -> assertTrue(graphFact.stdout().contains("Results: 1")),
+        () -> assertTrue(graphFact.stdout().contains("navigation: project-graph.json#/edges/0 (not evidence)")),
+        () -> assertTrue(graphFact.stdout().contains("type: owns")),
+        () -> assertTrue(graphFact.stdout().contains("relation_status: derived")),
+        () -> assertTrue(graphFact.stdout().contains("derivation: kind=project_map_field artifact=project-map.json section=endpoints (not evidence)")),
+        () -> assertFalse(graphFact.stdout().contains("incoming")),
+        () -> assertTrue(graphFact.stderr().isEmpty()));
+  }
+
+  @Test
+  void findFactKeepsFactAndEvidenceOrSymbolCategoriesSeparate() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+
+    CliResult evidenceId = runCli("query", repositoryRoot.toString(), "find", "fact", "ev:entity:order");
+    CliResult operationId = runCli("query", repositoryRoot.toString(), "find", "fact", "createOrder");
+    CliResult symbol = runCli("query", repositoryRoot.toString(), "find", "symbol", "createOrder");
+
+    assertAll(
+        () -> assertEquals(6, evidenceId.exitCode()),
+        () -> assertTrue(evidenceId.stdout().isEmpty()),
+        () -> assertTrue(evidenceId.stderr().contains("Query no result: No exact fact match found.")),
+        () -> assertFalse(evidenceId.stderr().contains("ev:entity:order")),
+        () -> assertEquals(6, operationId.exitCode()),
+        () -> assertTrue(operationId.stdout().isEmpty()),
+        () -> assertEquals(0, symbol.exitCode()),
+        () -> assertTrue(symbol.stdout().contains("Query: find symbol")),
+        () -> assertTrue(symbol.stdout().contains("matched_field: operation_id")),
+        () -> assertTrue(symbol.stdout().contains("matched_value: createOrder")),
+        () -> assertTrue(symbol.stdout().contains("api_surface_category: openapi_declared_operation")),
+        () -> assertTrue(symbol.stderr().isEmpty()));
+  }
+
+  @Test
+  void findSymbolIsExactCaseSensitiveAndReturnsMultipleMatches() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+
+    CliResult exact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "symbol",
+        "com.example.domain.Order");
+    CliResult wrongCase = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "symbol",
+        "com.example.domain.order");
+    CliResult simpleName = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "symbol",
+        "Order");
+
+    assertAll(
+        () -> assertEquals(0, exact.exitCode()),
+        () -> assertTrue(exact.stdout().contains("Query: find symbol")),
+        () -> assertTrue(exact.stdout().contains("Results: 4")),
+        () -> assertTrue(exact.stdout().contains("navigation: project-map.json#/entities/items/0 (not evidence)")),
+        () -> assertTrue(exact.stdout().contains("matched_field: class_name")),
+        () -> assertTrue(exact.stdout().contains("matched_field: target_class_name")),
+        () -> assertTrue(exact.stdout().contains("matched_field: generic_type")),
+        () -> assertTrue(exact.stdout().contains("navigation: evidence-index.jsonl#/records/3 (not evidence)")),
+        () -> assertTrue(exact.stdout().contains("source_type: code_symbol")),
+        () -> assertTrue(exact.stderr().isEmpty()),
+        () -> assertEquals(6, wrongCase.exitCode()),
+        () -> assertTrue(wrongCase.stdout().isEmpty()),
+        () -> assertEquals(0, simpleName.exitCode()),
+        () -> assertTrue(simpleName.stdout().contains("matched_field: class_name.simple_name")),
+        () -> assertFalse(simpleName.stdout().contains("com.example.domain.order")));
+  }
+
+  @Test
   void queryRelationsRequiresGraphArtifact() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     writeBaseArtifacts(repositoryRoot.resolve(".project-memory"));
@@ -346,11 +498,14 @@ final class QueryCliTest {
   }
 
   private void writeArtifacts(Path artifactRoot, String projectMap) throws IOException {
+    writeArtifacts(artifactRoot, projectMap, evidenceRecord("ev:pom.xml:1-1:build_file:pom.xml"));
+  }
+
+  private void writeArtifacts(Path artifactRoot, String projectMap, String evidenceIndex)
+      throws IOException {
     Files.createDirectories(artifactRoot);
     Files.writeString(artifactRoot.resolve("project-map.json"), projectMap);
-    Files.writeString(
-        artifactRoot.resolve("evidence-index.jsonl"),
-        evidenceRecord("ev:pom.xml:1-1:build_file:pom.xml"));
+    Files.writeString(artifactRoot.resolve("evidence-index.jsonl"), evidenceIndex);
   }
 
   private void writeValidGraph(Path artifactRoot) throws IOException {
@@ -362,6 +517,66 @@ final class QueryCliTest {
           "edges":[],
           "relation_statuses":[],
           "warnings":[]
+        }
+        """);
+  }
+
+  private void writeLookupGraph(Path artifactRoot) throws IOException {
+    Files.writeString(artifactRoot.resolve("project-graph.json"), """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:module:root",
+              "kind": "module",
+              "label": "root",
+              "claim_category": "structural",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "project.modules.items",
+                "id": "module:."
+              },
+              "evidence_ids": []
+            },
+            {
+              "id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "kind": "endpoint",
+              "label": "GET /orders/{id}",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "id": "endpoint:com.example.web.OrderController#getOrder"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge:owns:node:module:root:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "type": "owns",
+              "source_id": "node:module:root",
+              "target_id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "fields": ["module_id", "id"]
+              },
+              "evidence_ids": []
+            }
+          ],
+          "relation_statuses": [],
+          "warnings": []
         }
         """);
   }
@@ -379,6 +594,82 @@ final class QueryCliTest {
         + "\"excerpt\":\"<project>\","
         + "\"confidence\":\"high\""
         + "}\n";
+  }
+
+  private String evidenceRecord(
+      String id,
+      String sourceType,
+      String path,
+      String className,
+      String methodName,
+      String symbolName,
+      int lineStart,
+      int lineEnd,
+      String excerpt,
+      String confidence) {
+    return "{"
+        + "\"id\":\"" + id + "\","
+        + "\"source_type\":\"" + sourceType + "\","
+        + "\"path\":\"" + path + "\","
+        + "\"class_name\":" + nullableJsonString(className) + ","
+        + "\"method_name\":" + nullableJsonString(methodName) + ","
+        + "\"symbol_name\":\"" + symbolName + "\","
+        + "\"line_start\":" + lineStart + ","
+        + "\"line_end\":" + lineEnd + ","
+        + "\"excerpt\":\"" + excerpt.replace("\"", "\\\"") + "\","
+        + "\"confidence\":\"" + confidence + "\""
+        + "}\n";
+  }
+
+  private String lookupEvidenceRecords() {
+    return evidenceRecord(
+            "ev:pom.xml:1-1:build_file:pom.xml",
+            "build_file",
+            "pom.xml",
+            null,
+            null,
+            "pom.xml",
+            1,
+            1,
+            "<project>",
+            "high")
+        + evidenceRecord(
+            "ev:endpoint:mapping",
+            "annotation",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            "getOrder",
+            "@GetMapping",
+            12,
+            12,
+            "@GetMapping(\"/orders/{id}\")",
+            "high")
+        + evidenceRecord(
+            "ev:entity:order",
+            "annotation",
+            "src/main/java/com/example/domain/Order.java",
+            "com.example.domain.Order",
+            null,
+            "@Entity",
+            8,
+            8,
+            "@Entity",
+            "high")
+        + evidenceRecord(
+            "ev:order:symbol",
+            "code_symbol",
+            "src/main/java/com/example/domain/Order.java",
+            "com.example.domain.Order",
+            null,
+            "com.example.domain.Order",
+            9,
+            9,
+            "class Order",
+            "high");
+  }
+
+  private String nullableJsonString(String value) {
+    return value == null ? "null" : "\"" + value + "\"";
   }
 
   private String richProjectMap() {
