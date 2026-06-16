@@ -38,6 +38,8 @@ architecture documents.
   schema migration.
 - Aligned the Maven project version, README local build examples, roadmap status, and
   release notes for the `v1.5.0` release materials.
+- Updated post-release documentation status to mark `v1.5.0` as published with release
+  jar and checksum assets.
 - Updated post-release documentation status to mark `v1.4.0` as published with release
   jar and checksum assets.
 

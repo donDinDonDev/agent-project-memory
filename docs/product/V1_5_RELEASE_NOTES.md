@@ -88,8 +88,9 @@ The v1.5.0 local release-prep validation passed:
   deterministic repeated digests for release-candidate artifacts.
 - Packaged jar metadata inspection confirmed the CLI manifest entrypoint, filtered
   version resource, and Maven artifact metadata for `1.5.0`.
-- In a clean local dry-run asset directory, `SHA256SUMS` was generated with the release
-  asset filename only and verified successfully.
+- `SHA256SUMS` was generated with the release asset filename only and verified
+  successfully before publication; downloaded release assets also verified successfully
+  after publication.
 - `git diff --check`: passed.
 - Public release-document marker audit passed.
 - Risk-based release review for the final release-prep diff completed with no
@@ -114,8 +115,8 @@ v1.5.0 does not add:
 - Generated-source content scanning.
 - Connectors, network access, telemetry, SaaS, web UI, repository chat, generic RAG,
   LLM calls in the core analyzer, or automatic code modification.
-- Package-manager publication, signing, native images, container images, release
-  automation, or artifact upload automation.
+- Package-manager publication, signing, native images, container images, or release
+  automation.
 
 ## Release Assets
 

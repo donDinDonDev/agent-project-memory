@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.4.0`. Its release artifact is
-`agent-project-memory-1.4.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.5.0`. Its release artifact is
+`agent-project-memory-1.5.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.4.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.5.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -427,15 +427,14 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.4.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current local release-candidate build is `1.5.0` and produces
-`target/agent-project-memory-1.5.0.jar`. Normal generated `project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
-expansion is additive: existing Maven, Gradle, source-visible output, generated-source
-metadata, agent profile artifacts, incremental cache behavior, and evidence semantics
-are preserved, while supported release-candidate scans emit
-`.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a separate
-navigation artifact over existing facts and evidence references.
+The latest published release is `v1.5.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds also produce `target/agent-project-memory-1.5.0.jar`. Normal
+generated `project-map.json` files use `schema_version: "1.0"` as a stable-line
+marker. The v1.5 lightweight relation graph expansion is additive: existing Maven,
+Gradle, source-visible output, generated-source metadata, agent profile artifacts,
+incremental cache behavior, and evidence semantics are preserved, while supported scans
+emit `.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a
+separate navigation artifact over existing facts and evidence references.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
