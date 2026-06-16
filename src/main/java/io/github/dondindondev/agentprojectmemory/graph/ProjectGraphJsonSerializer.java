@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.graph;
 
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 public final class ProjectGraphJsonSerializer {
   public String serialize(ProjectGraph graph) {
@@ -92,6 +93,7 @@ public final class ProjectGraphJsonSerializer {
     appendStringField(json, 3, "support_type", edge.supportType(), true);
     appendStringField(json, 3, "confidence", edge.confidence(), true);
     appendNullableStringField(json, 3, "uncertainty", edge.uncertainty(), true);
+    appendStringMapField(json, 3, "relation_attributes", edge.relationAttributes(), true);
     appendDerivationField(json, 3, "derivation", edge.derivation(), true);
     appendStringArrayField(json, 3, "evidence_ids", edge.evidenceIds(), false);
     indent(json, 2);
@@ -133,6 +135,7 @@ public final class ProjectGraphJsonSerializer {
     appendStringField(json, 3, "support_type", status.supportType(), true);
     appendStringField(json, 3, "confidence", status.confidence(), true);
     appendNullableStringField(json, 3, "uncertainty", status.uncertainty(), true);
+    appendStringMapField(json, 3, "relation_attributes", status.relationAttributes(), true);
     appendDerivationField(json, 3, "derivation", status.derivation(), true);
     appendStringArrayField(json, 3, "evidence_ids", status.evidenceIds(), false);
     indent(json, 2);
@@ -283,6 +286,30 @@ public final class ProjectGraphJsonSerializer {
     }
     indent(json, level);
     json.append("]");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendStringMapField(
+      StringBuilder json,
+      int level,
+      String fieldName,
+      Map<String, String> values,
+      boolean trailingComma) {
+    indent(json, level);
+    json.append('"').append(fieldName).append("\": {");
+    if (values.isEmpty()) {
+      json.append("}");
+      appendLineEnding(json, trailingComma);
+      return;
+    }
+    json.append("\n");
+    List<String> keys = values.keySet().stream().sorted().toList();
+    for (int index = 0; index < keys.size(); index++) {
+      String key = keys.get(index);
+      appendStringField(json, level + 1, key, values.get(key), index < keys.size() - 1);
+    }
+    indent(json, level);
+    json.append("}");
     appendLineEnding(json, trailingComma);
   }
 

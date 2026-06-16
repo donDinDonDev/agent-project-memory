@@ -4032,8 +4032,8 @@ Stop conditions for implementation:
 ### v1.5 Lightweight Relation Graph Contract
 
 This section defines the v1.5 lightweight relation graph boundary. Current development
-builds emit the graph foundation for supported scans while keeping later inferred,
-status-only, and uncertain relation expansion inside the same documented boundary.
+builds emit the graph artifact for supported scans, including structural graph material
+and conservative relation/status graph material inside the same documented boundary.
 
 The v1.5 policy decision is a separate graph artifact:
 
@@ -4181,10 +4181,13 @@ Edge taxonomy:
 - `api_source_relation`: reserved for a future explicitly designed endpoint/spec
   relation. The initial graph contract must not emit this edge type.
 
-The current graph foundation emits direct/structural material first: deterministic
-nodes plus `owns` and `declares` edges. `repository_entity`, `tested_subject`,
-`document_reference`, and status-only relation expansion remain reserved until their
-graph semantics are implemented without changing the evidence boundary.
+The current graph emits deterministic nodes, direct/structural `owns` and `declares`
+edges, conservative inferred `repository_entity` and `tested_subject` edges from
+existing relation rows, and status-only relation rows for unsupported, ambiguous,
+not-detected, not-analyzed, uncertain, or no-target relation rows. `document_reference`
+edges are emitted only when an existing reconciliation row has both a document-side node
+and a source-fact node; current no-target reconciliation rows remain in
+`relation_statuses[]`. The reserved `api_source_relation` edge type remains unimplemented.
 
 Evidence references are carried by `evidence_ids`, not by `references_evidence` edges.
 The initial graph contract has no `references_evidence` edge type because evidence
@@ -4203,6 +4206,7 @@ Edge shape:
   "support_type": "project_map_derivation",
   "confidence": "high",
   "uncertainty": null,
+  "relation_attributes": {},
   "derivation": {
     "kind": "project_map_field",
     "artifact": "project-map.json",
@@ -4229,6 +4233,16 @@ Edge rules:
   relation/status values when the edge is derived from repository/entity,
   tested-subject, or document reconciliation rows. Structural edges use
   `relation_status: "derived"` and `support_type: "project_map_derivation"`.
+- `relation_attributes` is a deterministic string map for bounded relation-row fields
+  that do not change the graph edge taxonomy. It is `{}` for structural edges. For
+  relation-backed edges or status rows, it may preserve existing row fields such as
+  `relation_type`, `candidate_reference`, `target_class_name`, `target_module_id`,
+  `target_entity_id`, `generic_type`, `signal`, `document_id`, `document_chunk_id`,
+  `source_fact_kind`, `source_fact_id`, `subject_kind`, `subject_name`, and
+  `match_basis`. These attributes are copied only from existing generated facts or
+  relation/status rows; they must not contain source bodies, document bodies, config
+  values, generated-source contents, raw command output, local absolute paths,
+  credentials, tokens, or secret-looking values.
 - `derivation` is required when an edge does not have a dedicated evidence-backed
   relation row. It must identify the source artifact, section, and field family used to
   derive the edge. For edges backed by an existing evidence-backed relation row,
@@ -4253,6 +4267,9 @@ Edge rules:
   "support_type": "status_only",
   "confidence": "low",
   "uncertainty": "no_supported_subject_signal",
+  "relation_attributes": {
+    "relation_type": "not_detected"
+  },
   "derivation": {
     "kind": "project_map_relation_status",
     "artifact": "project-map.json",
@@ -4269,6 +4286,9 @@ Relation-status rules:
   explicitly unsupported, not detected, ambiguous, uncertain, or not analyzed.
 - `source_id` must resolve to an emitted source node when present. `target_id` is `null`
   when no concrete target is represented.
+- `relation_attributes` follows the same bounded string-map rules as edge
+  `relation_attributes` and preserves existing relation/status row details without
+  promoting those details to graph targets.
 - Relation statuses are navigation/status records only. They must not be treated as
   extracted facts, inferred target edges, coverage claims, source/spec agreement,
   documentation freshness, runtime behavior, or impact proof.

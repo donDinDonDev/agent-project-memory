@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 final class ProjectGraphCollectorTest {
@@ -101,6 +102,7 @@ final class ProjectGraphCollectorTest {
         "project_map_derivation",
         "high",
         null,
+        Map.of(),
         new GraphDerivation(
             "project_map_field",
             "project-map.json",

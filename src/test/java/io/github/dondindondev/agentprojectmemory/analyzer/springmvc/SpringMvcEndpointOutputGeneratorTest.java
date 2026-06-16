@@ -107,6 +107,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
     Set<String> evidenceIndexIds = evidenceIndexIds(
         Files.readString(outputDirectory.resolve("evidence-index.jsonl")));
     Set<String> nodeIds = graphNodeIds(graph);
+    JsonNode repositoryEntityEdge = graphEdgeWithType(graph, "repository_entity");
+    JsonNode testedSubjectEdge = graphEdgeWithType(graph, "tested_subject");
+    JsonNode testedSubjectTargetNode = graphNodeWithId(
+        graph,
+        testedSubjectEdge.path("target_id").asText());
 
     assertAll(
         () -> assertEquals("1.0", graph.path("graph_schema_version").asText()),
@@ -128,14 +133,41 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(hasGraphNodeKind(graph, "test")),
         () -> assertTrue(hasGraphEdgeType(graph, "owns")),
         () -> assertTrue(hasGraphEdgeType(graph, "declares")),
-        () -> assertFalse(hasGraphEdgeType(graph, "repository_entity")),
-        () -> assertFalse(hasGraphEdgeType(graph, "tested_subject")),
+        () -> assertTrue(hasGraphEdgeType(graph, "repository_entity")),
+        () -> assertTrue(hasGraphEdgeType(graph, "tested_subject")),
         () -> assertFalse(hasGraphEdgeType(graph, "document_reference")),
         () -> assertEquals(0, graph.path("relation_statuses").size()),
         () -> assertEquals(0, graph.path("warnings").size()),
         () -> assertTrue(evidenceIndexIds.containsAll(graphEvidenceIds),
             "Every graph evidence_ids entry must exist in evidence-index.jsonl"),
-        () -> assertGraphEdgesResolveAndUseDerivationOnly(graph, nodeIds),
+        () -> assertGraphEdgesResolveAndPreserveRelationSemantics(graph, nodeIds),
+        () -> assertEquals("inferred", repositoryEntityEdge.path("relation_status").asText()),
+        () -> assertEquals("inferred", repositoryEntityEdge.path("support_type").asText()),
+        () -> assertEquals("medium", repositoryEntityEdge.path("confidence").asText()),
+        () -> assertTrue(repositoryEntityEdge.path("uncertainty").isNull()),
+        () -> assertTrue(repositoryEntityEdge.path("derivation").isNull()),
+        () -> assertEquals(
+            "repository_entity_generic",
+            repositoryEntityEdge.path("relation_attributes").path("relation_type").asText()),
+        () -> assertEquals(
+            "com.example.domain.ProjectOrder",
+            repositoryEntityEdge.path("relation_attributes").path("generic_type").asText()),
+        () -> assertFalse(repositoryEntityEdge.path("evidence_ids").isEmpty()),
+        () -> assertEquals("inferred", testedSubjectEdge.path("relation_status").asText()),
+        () -> assertEquals("inferred", testedSubjectEdge.path("support_type").asText()),
+        () -> assertEquals("medium", testedSubjectEdge.path("confidence").asText()),
+        () -> assertTrue(testedSubjectEdge.path("uncertainty").isNull()),
+        () -> assertTrue(testedSubjectEdge.path("derivation").isNull()),
+        () -> assertEquals(
+            "naming_convention",
+            testedSubjectEdge.path("relation_attributes").path("relation_type").asText()),
+        () -> assertEquals(
+            "com.example.web.ProjectMapController",
+            testedSubjectEdge.path("relation_attributes").path("target_class_name").asText()),
+        () -> assertFalse(testedSubjectEdge.path("evidence_ids").isEmpty()),
+        () -> assertTrue(stringValues(testedSubjectTargetNode.path("evidence_ids")).stream()
+            .noneMatch(evidenceId -> evidenceId.contains("src/test/java/")),
+            "The target type node must not inherit test-side relation evidence"),
         () -> assertSortedGraph(graph));
   }
 
@@ -642,10 +674,12 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory);
 
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
     JsonNode reconciliation = JSON.readTree(projectMap).path("documents").path("reconciliation");
     JsonNode signals = reconciliation.path("items");
+    JsonNode graph = JSON.readTree(projectGraph);
     JsonNode documentOnlyEndpoint = signalWithSubject(
         signals,
         "document_only_endpoint_mention",
@@ -659,6 +693,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         "source_api_without_document_mention",
         "/internal");
     Set<String> projectMapEvidenceIds = projectMapEvidenceIds(projectMap);
+    Set<String> graphEvidenceIds = graphEvidenceIds(graph);
     Set<String> evidenceIndexIds = evidenceIndexIds(evidenceIndex);
 
     assertAll(
@@ -673,6 +708,17 @@ final class SpringMvcEndpointOutputGeneratorTest {
             evidenceIndex),
         () -> assertEquals("analyzed", reconciliation.path("analysis_status").asText()),
         () -> assertEquals(3, signals.size()),
+        () -> assertFalse(hasGraphEdgeType(graph, "document_reference")),
+        () -> assertEquals(
+            3,
+            graphRelationStatusesWithFamily(graph, "document_reference").size()),
+        () -> assertTrue(graphRelationStatusesWithFamily(graph, "document_reference").stream()
+            .allMatch(status -> status.path("target_id").isNull())),
+        () -> assertTrue(graphRelationStatusesWithFamily(graph, "document_reference").stream()
+            .allMatch(status -> "uncertain_signal".equals(status.path("relation_status").asText()))),
+        () -> assertTrue(graphRelationStatusesWithFamily(graph, "document_reference").stream()
+            .anyMatch(status -> "/ghost".equals(status.path("relation_attributes")
+                .path("subject_name").asText()))),
         () -> assertEquals(
             List.of(
                 "document_only_endpoint_mention",
@@ -702,6 +748,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(
             evidenceIndexIds.containsAll(projectMapEvidenceIds),
             "Every project-map evidence_ids entry must exist in evidence-index.jsonl"),
+        () -> assertTrue(
+            evidenceIndexIds.containsAll(graphEvidenceIds),
+            "Every project-graph evidence_ids entry must exist in evidence-index.jsonl"),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"mention:/ghost\"")),
         () -> assertTrue(evidenceIndex.contains("\"excerpt\":\"mention token: /ghost\"")),
         () -> assertFalse(projectMap.contains("only a bounded document mention")),
@@ -1254,6 +1303,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
         .path("spring_application_surface")
         .path("repositories")
         .path("items");
+    JsonNode graph = JSON.readTree(Files.readString(outputDirectory.resolve("project-graph.json")));
+    List<JsonNode> repositoryEntityEdges = graphEdgesWithType(graph, "repository_entity");
+    List<JsonNode> repositoryEntityStatuses = graphRelationStatusesWithFamily(graph, "repository_entity");
     JsonNode uniqueRepository = objectWithText(
         repositoryItems,
         "class_name",
@@ -1312,7 +1364,64 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals("unsupported", wildcardRepository.path("entity_relation_status").asText()),
         () -> assertTrue(wildcardRepository.path("entity_relation").isNull()),
         () -> assertEquals("unsupported", rawRepository.path("entity_relation_status").asText()),
-        () -> assertTrue(rawRepository.path("entity_relation").isNull()));
+        () -> assertTrue(rawRepository.path("entity_relation").isNull()),
+        () -> assertEquals(2, repositoryEntityEdges.size()),
+        () -> assertTrue(repositoryEntityEdges.stream()
+            .allMatch(edge -> "inferred".equals(edge.path("relation_status").asText()))),
+        () -> assertTrue(repositoryEntityEdges.stream()
+            .allMatch(edge -> "repository_entity_generic".equals(edge.path("relation_attributes")
+                .path("relation_type").asText()))),
+        () -> assertTrue(repositoryEntityEdges.stream()
+            .allMatch(edge -> edge.path("derivation").isNull())),
+        () -> assertTrue(repositoryEntityEdges.stream()
+            .allMatch(edge -> !edge.path("evidence_ids").isEmpty())),
+        () -> assertEquals(5, repositoryEntityStatuses.size()),
+        () -> assertTrue(hasGraphRelationStatus(repositoryEntityStatuses, "not_detected")),
+        () -> assertTrue(hasGraphRelationStatus(repositoryEntityStatuses, "ambiguous")),
+        () -> assertTrue(hasGraphRelationStatus(repositoryEntityStatuses, "unsupported")),
+        () -> assertTrue(repositoryEntityStatuses.stream()
+            .allMatch(status -> status.path("target_id").isNull())),
+        () -> assertTrue(repositoryEntityStatuses.stream()
+            .allMatch(status -> "status_only".equals(status.path("support_type").asText()))));
+  }
+
+  @Test
+  void projectGraphKeepsTestedSubjectStatusRowsOutOfEdges() throws Exception {
+    Path fixture = Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/v0-7-guide-quality-regression")).toURI());
+    Path projectPath = tempDir.resolve("v0-7-guide-quality-regression");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixture, projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    JsonNode graph = JSON.readTree(Files.readString(outputDirectory.resolve("project-graph.json")));
+    List<JsonNode> testedSubjectEdges = graphEdgesWithType(graph, "tested_subject");
+    List<JsonNode> testedSubjectStatuses = graphRelationStatusesWithFamily(graph, "tested_subject");
+
+    assertAll(
+        () -> assertFalse(testedSubjectEdges.isEmpty()),
+        () -> assertTrue(testedSubjectEdges.stream()
+            .allMatch(edge -> "inferred".equals(edge.path("relation_status").asText()))),
+        () -> assertTrue(testedSubjectEdges.stream()
+            .allMatch(edge -> edge.path("derivation").isNull())),
+        () -> assertTrue(testedSubjectEdges.stream()
+            .allMatch(edge -> !edge.path("evidence_ids").isEmpty())),
+        () -> assertTrue(testedSubjectEdges.stream()
+            .anyMatch(edge -> "com.example.web.OrderController".equals(edge.path("relation_attributes")
+                .path("target_class_name").asText()))),
+        () -> assertTrue(testedSubjectEdges.stream()
+            .anyMatch(edge -> "naming_convention".equals(edge.path("relation_attributes")
+                .path("relation_type").asText()))),
+        () -> assertTrue(hasGraphRelationStatus(testedSubjectStatuses, "ambiguous")),
+        () -> assertTrue(hasGraphRelationStatus(testedSubjectStatuses, "not_detected")),
+        () -> assertTrue(hasGraphRelationStatus(testedSubjectStatuses, "unsupported")),
+        () -> assertTrue(testedSubjectStatuses.stream()
+            .allMatch(status -> status.path("target_id").isNull())),
+        () -> assertTrue(testedSubjectStatuses.stream()
+            .anyMatch(status -> "List<OrderController>".equals(status.path("relation_attributes")
+                .path("candidate_reference").asText()))));
   }
 
   @Test
@@ -2638,18 +2747,73 @@ final class SpringMvcEndpointOutputGeneratorTest {
     return false;
   }
 
-  private void assertGraphEdgesResolveAndUseDerivationOnly(JsonNode graph, Set<String> nodeIds) {
+  private JsonNode graphEdgeWithType(JsonNode graph, String type) {
+    for (JsonNode edge : graph.path("edges")) {
+      if (type.equals(edge.path("type").asText())) {
+        return edge;
+      }
+    }
+    throw new AssertionError("Missing graph edge with type " + type);
+  }
+
+  private JsonNode graphNodeWithId(JsonNode graph, String id) {
+    for (JsonNode node : graph.path("nodes")) {
+      if (id.equals(node.path("id").asText())) {
+        return node;
+      }
+    }
+    throw new AssertionError("Missing graph node with id " + id);
+  }
+
+  private List<JsonNode> graphEdgesWithType(JsonNode graph, String type) {
+    List<JsonNode> matches = new ArrayList<>();
+    for (JsonNode edge : graph.path("edges")) {
+      if (type.equals(edge.path("type").asText())) {
+        matches.add(edge);
+      }
+    }
+    return matches;
+  }
+
+  private List<JsonNode> graphRelationStatusesWithFamily(JsonNode graph, String family) {
+    List<JsonNode> matches = new ArrayList<>();
+    for (JsonNode status : graph.path("relation_statuses")) {
+      if (family.equals(status.path("relation_family").asText())) {
+        matches.add(status);
+      }
+    }
+    return matches;
+  }
+
+  private boolean hasGraphRelationStatus(List<JsonNode> statuses, String relationStatus) {
+    return statuses.stream()
+        .anyMatch(status -> relationStatus.equals(status.path("relation_status").asText()));
+  }
+
+  private void assertGraphEdgesResolveAndPreserveRelationSemantics(JsonNode graph, Set<String> nodeIds) {
     for (JsonNode edge : graph.path("edges")) {
       assertAll(
           () -> assertTrue(nodeIds.contains(edge.path("source_id").asText())),
-          () -> assertTrue(nodeIds.contains(edge.path("target_id").asText())),
-          () -> assertEquals("structural", edge.path("claim_category").asText()),
-          () -> assertEquals("derived", edge.path("relation_status").asText()),
-          () -> assertEquals("project_map_derivation", edge.path("support_type").asText()),
-          () -> assertEquals("high", edge.path("confidence").asText()),
-          () -> assertTrue(edge.path("uncertainty").isNull()),
-          () -> assertEquals("project_map_field", edge.path("derivation").path("kind").asText()),
-          () -> assertEquals(0, edge.path("evidence_ids").size()));
+          () -> assertTrue(nodeIds.contains(edge.path("target_id").asText())));
+      if ("owns".equals(edge.path("type").asText())
+          || "declares".equals(edge.path("type").asText())) {
+        assertAll(
+            () -> assertEquals("structural", edge.path("claim_category").asText()),
+            () -> assertEquals("derived", edge.path("relation_status").asText()),
+            () -> assertEquals("project_map_derivation", edge.path("support_type").asText()),
+            () -> assertEquals("high", edge.path("confidence").asText()),
+            () -> assertTrue(edge.path("uncertainty").isNull()),
+            () -> assertTrue(edge.path("relation_attributes").isObject()),
+            () -> assertEquals(0, edge.path("relation_attributes").size()),
+            () -> assertEquals("project_map_field", edge.path("derivation").path("kind").asText()),
+            () -> assertEquals(0, edge.path("evidence_ids").size()));
+      } else {
+        assertAll(
+            () -> assertFalse(edge.path("evidence_ids").isEmpty()),
+            () -> assertTrue(edge.path("derivation").isNull()),
+            () -> assertTrue(edge.path("relation_attributes").isObject()),
+            () -> assertFalse(edge.path("relation_attributes").isEmpty()));
+      }
     }
   }
 

@@ -936,17 +936,22 @@ Product outcome: add a bounded deterministic graph artifact that helps humans an
 coding agents navigate relationships between existing project-memory facts without
 turning the graph into a full architecture, runtime dependency, or impact model.
 
-Current development foundation:
+Current development state:
 
 - Supported scans emit `.project-memory/project-graph.json` as a separate machine-
   readable graph artifact with `graph_schema_version: "1.0"`.
 - The foundation graph contains deterministic nodes and direct/structural `owns` and
   `declares` edges derived from existing structured facts, with derivation metadata for
   structural edges and existing `evidence_ids` on evidence-backed nodes.
+- The current graph also carries conservative inferred repository/entity and
+  tested-subject edges only when existing relation rows have concrete graph targets,
+  while unsupported, ambiguous, not-detected, not-analyzed, uncertain, or no-target
+  rows stay in `relation_statuses[]`.
 - Incremental cache output fingerprints include `project-graph.json` as
   `output_kind: "project_graph"`.
-- Inferred relation edges, relation-status expansion, and uncertain document-reference
-  graph edges remain planned follow-up scope within the v1.5 boundary.
+- Document reconciliation graph material remains low-confidence uncertain inspection
+  metadata; rows without both document and source fact nodes remain status records, not
+  edges.
 
 Contract decision:
 

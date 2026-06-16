@@ -123,6 +123,7 @@ import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
 import io.github.dondindondev.agentprojectmemory.graph.GraphDerivation;
 import io.github.dondindondev.agentprojectmemory.graph.GraphEdge;
 import io.github.dondindondev.agentprojectmemory.graph.GraphNode;
+import io.github.dondindondev.agentprojectmemory.graph.GraphRelationStatus;
 import io.github.dondindondev.agentprojectmemory.graph.GraphSourceRef;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraph;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphCollector;
@@ -189,6 +190,10 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String ANNOTATION_SOURCE_TYPE = "annotation";
   private static final String BUILD_FILE_SOURCE_TYPE = "build_file";
   private static final String HIGH_CONFIDENCE = "high";
+  private static final String LOW_CONFIDENCE = "low";
+  private static final String SUPPORT_TYPE_STATUS_ONLY = "status_only";
+  private static final String SUPPORT_TYPE_DOCUMENT_RECONCILIATION_HINT =
+      "document_reconciliation_hint";
   private static final String WARNING_CATEGORY_GENERATED_SOURCE = "generated_source";
   private static final String WARNING_SIGNAL_MAVEN_GENERATOR_PLUGIN = "maven_generator_plugin";
   private static final String WARNING_SIGNAL_MAVEN_OPENAPI_SWAGGER_CODEGEN_PLUGIN =
@@ -732,7 +737,8 @@ public final class SpringMvcEndpointOutputGenerator {
         springBootApplicationAnalysis,
         openApiOperationAnalysis,
         generatedSourceMetadata,
-        documentDiscoveryAnalysis);
+        documentDiscoveryAnalysis,
+        documentReconciliationAnalysis);
 
     List<GeneratedOutputFile> generatedOutputFiles = new ArrayList<>();
     generatedOutputFiles.add(new GeneratedOutputFile(
@@ -2339,7 +2345,8 @@ public final class SpringMvcEndpointOutputGenerator {
       SpringBootApplicationAnalysis springBootApplicationAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
       GeneratedSourceMetadata generatedSourceMetadata,
-      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      DocumentReconciliationAnalysis documentReconciliationAnalysis) {
     ProjectGraphCollector graph = new ProjectGraphCollector();
     addGraphModuleNodes(graph, layout.modules().items());
     addGraphComponentTypes(graph, scan.components());
@@ -2351,6 +2358,9 @@ public final class SpringMvcEndpointOutputGenerator {
     addGraphDocumentNodes(graph, documentDiscoveryAnalysis.documents());
     addGraphGeneratedSourceRootNodes(graph, generatedSourceMetadata.roots());
     addGraphWarningNodes(graph, scan.warnings());
+    addGraphTestedSubjectRelations(graph, scan.tests());
+    addGraphRepositoryEntityRelations(graph, scan.springRepositories());
+    addGraphDocumentReferenceRelations(graph, documentReconciliationAnalysis.signals());
     ProjectGraph projectGraph = graph.build();
     return projectGraphJsonSerializer.serialize(projectGraph);
   }
@@ -2794,6 +2804,190 @@ public final class SpringMvcEndpointOutputGenerator {
     }
   }
 
+  private void addGraphTestedSubjectRelations(
+      ProjectGraphCollector graph,
+      List<ModuleScopedTestFact> tests) {
+    for (ModuleScopedTestFact scopedTest : tests) {
+      TestClassFact test = scopedTest.fact();
+      String testNodeId = testNodeId(scopedTest.moduleId(), test);
+      String testSourceId = testId(scopedTest.moduleId(), test);
+      for (TestedSubjectFact subject : test.testedSubjects()) {
+        String targetModuleId = subject.targetModuleId() == null
+            ? scopedTest.moduleId()
+            : subject.targetModuleId();
+        Map<String, String> relationAttributes = relationAttributes(
+            "relation_type", subject.relationType(),
+            "target_class_name", subject.className(),
+            "target_module_id", subject.className() == null ? null : targetModuleId,
+            "candidate_reference", subject.candidateReference());
+        if ("inferred".equals(subject.relationStatus()) && subject.className() != null) {
+          String targetTypeNodeId = addGraphTypeNode(
+              graph,
+              targetModuleId,
+              subject.className(),
+              "tests.items[].tested_subjects",
+              testSourceId,
+              productionSourceEvidenceIds(subject.evidenceIds()));
+          graph.addEdge(new GraphEdge(
+              relationEdgeId(
+                  "tested_subject",
+                  testNodeId,
+                  targetTypeNodeId,
+                  subject.relationType()),
+              "tested_subject",
+              testNodeId,
+              targetTypeNodeId,
+              "inferred",
+              subject.relationStatus(),
+              supportTypeOrStatusOnly(subject.supportType()),
+              subject.confidence(),
+              subject.uncertainty(),
+              relationAttributes,
+              null,
+              subject.evidenceIds()));
+          continue;
+        }
+        graph.addRelationStatus(new GraphRelationStatus(
+            relationStatusId(
+                "tested_subject",
+                testNodeId,
+                testSourceId + ":" + subject.relationStatus() + ":" + subject.relationType()
+                    + ":" + nullSafe(subject.className()) + ":" + nullSafe(subject.candidateReference())),
+            "tested_subject",
+            testNodeId,
+            null,
+            subject.relationStatus(),
+            supportTypeOrStatusOnly(subject.supportType()),
+            subject.confidence(),
+            subject.uncertainty(),
+            relationAttributes,
+            GraphDerivation.withoutFields(
+                "project_map_relation_status",
+                PROJECT_MAP_FILE_NAME,
+                "tests.items[].tested_subjects"),
+            subject.evidenceIds()));
+      }
+    }
+  }
+
+  private void addGraphRepositoryEntityRelations(
+      ProjectGraphCollector graph,
+      List<ModuleScopedSpringRepositoryFact> repositories) {
+    for (ModuleScopedSpringRepositoryFact scopedRepository : repositories) {
+      SpringRepositoryFact repository = scopedRepository.fact();
+      if (!SpringRepositoryAnalyzer.SURFACE_CATEGORY_SPRING_DATA_INTERFACE.equals(
+          repository.surfaceCategory())
+          || repository.entityRelationStatus() == null) {
+        continue;
+      }
+      String repositoryNodeId = repositoryNodeId(scopedRepository.moduleId(), repository);
+      String repositorySourceId = springRepositoryId(scopedRepository.moduleId(), repository);
+      SpringRepositoryEntityRelationFact relation = repository.entityRelation();
+      if (SpringRepositoryAnalyzer.ENTITY_RELATION_INFERRED.equals(repository.entityRelationStatus())
+          && relation != null) {
+        String entityNodeId = "node:entity:" + ProjectGraphIds.key(relation.targetEntityId());
+        Map<String, String> relationAttributes = relationAttributes(
+            "relation_type", relation.relationType(),
+            "target_entity_id", relation.targetEntityId(),
+            "target_class_name", relation.targetClassName(),
+            "target_module_id", relation.targetModuleId(),
+            "generic_type", relation.genericType());
+        graph.addEdge(new GraphEdge(
+            relationEdgeId(
+                "repository_entity",
+                repositoryNodeId,
+                entityNodeId,
+                relation.relationType() + ":" + relation.genericType()),
+            "repository_entity",
+            repositoryNodeId,
+            entityNodeId,
+            "inferred",
+            repository.entityRelationStatus(),
+            relation.supportType(),
+            relation.confidence(),
+            relation.uncertainty(),
+            relationAttributes,
+            null,
+            relation.evidenceIds()));
+        continue;
+      }
+      graph.addRelationStatus(new GraphRelationStatus(
+          relationStatusId(
+              "repository_entity",
+              repositoryNodeId,
+              repositorySourceId + ":" + repository.entityRelationStatus()),
+          "repository_entity",
+          repositoryNodeId,
+          null,
+          repository.entityRelationStatus(),
+          SUPPORT_TYPE_STATUS_ONLY,
+          LOW_CONFIDENCE,
+          null,
+          relationAttributes(
+              "repository_support_type", repository.supportType(),
+              "repository_signal", repository.repositorySignal()),
+          GraphDerivation.withoutFields(
+              "project_map_relation_status",
+              PROJECT_MAP_FILE_NAME,
+              "spring_application_surface.repositories.items"),
+          repository.evidenceIds()));
+    }
+  }
+
+  private void addGraphDocumentReferenceRelations(
+      ProjectGraphCollector graph,
+      List<DocumentReconciliationSignal> signals) {
+    for (DocumentReconciliationSignal signal : signals) {
+      String documentSideNodeId = documentReferenceDocumentNodeId(signal);
+      String sourceFactNodeId = documentReferenceSourceNodeId(signal);
+      Map<String, String> relationAttributes = relationAttributes(
+          "signal", signal.signal(),
+          "document_id", signal.documentId(),
+          "document_chunk_id", signal.documentChunkId(),
+          "source_fact_kind", signal.sourceFactKind(),
+          "source_fact_id", signal.sourceFactId(),
+          "subject_kind", signal.subjectKind(),
+          "subject_name", signal.subjectName(),
+          "match_basis", signal.matchBasis());
+      if (documentSideNodeId != null && sourceFactNodeId != null) {
+        graph.addEdge(new GraphEdge(
+            relationEdgeId(
+                "document_reference",
+                documentSideNodeId,
+                sourceFactNodeId,
+                signal.signal() + ":" + signal.id()),
+            "document_reference",
+            documentSideNodeId,
+            sourceFactNodeId,
+            "uncertain",
+            signal.status(),
+            SUPPORT_TYPE_DOCUMENT_RECONCILIATION_HINT,
+            signal.confidence(),
+            signal.uncertainty(),
+            relationAttributes,
+            null,
+            signal.evidenceIds()));
+        continue;
+      }
+      String statusSourceId = documentSideNodeId == null ? sourceFactNodeId : documentSideNodeId;
+      graph.addRelationStatus(new GraphRelationStatus(
+          relationStatusId("document_reference", statusSourceId, signal.id()),
+          "document_reference",
+          statusSourceId,
+          null,
+          signal.status(),
+          SUPPORT_TYPE_DOCUMENT_RECONCILIATION_HINT,
+          signal.confidence(),
+          signal.uncertainty(),
+          relationAttributes,
+          GraphDerivation.withoutFields(
+              "project_map_relation_status",
+              PROJECT_MAP_FILE_NAME,
+              "documents.reconciliation.items"),
+          signal.evidenceIds()));
+    }
+  }
+
   private String addGraphTypeNode(
       ProjectGraphCollector graph,
       String moduleId,
@@ -2879,6 +3073,7 @@ public final class SpringMvcEndpointOutputGenerator {
         "project_map_derivation",
         HIGH_CONFIDENCE,
         null,
+        Map.of(),
         new GraphDerivation(
             "project_map_field",
             PROJECT_MAP_FILE_NAME,
@@ -2889,6 +3084,51 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private GraphSourceRef sourceRef(String section, String id) {
     return new GraphSourceRef(PROJECT_MAP_FILE_NAME, section, id);
+  }
+
+  private String relationEdgeId(
+      String type,
+      String sourceNodeId,
+      String targetNodeId,
+      String relationKey) {
+    return ProjectGraphIds.edgeId(type, sourceNodeId, targetNodeId)
+        + ":"
+        + ProjectGraphIds.key(relationKey);
+  }
+
+  private String relationStatusId(String relationFamily, String sourceNodeId, String relationKey) {
+    return "relation-status:"
+        + relationFamily
+        + ":"
+        + (sourceNodeId == null ? "no-source" : sourceNodeId)
+        + ":"
+        + ProjectGraphIds.key(relationKey);
+  }
+
+  private String supportTypeOrStatusOnly(String supportType) {
+    if (supportType == null || supportType.isBlank()) {
+      return SUPPORT_TYPE_STATUS_ONLY;
+    }
+    return supportType;
+  }
+
+  private List<String> productionSourceEvidenceIds(List<String> evidenceIds) {
+    return evidenceIds.stream()
+        .filter(evidenceId -> evidenceId.startsWith("ev:src/main/java/")
+            || evidenceId.contains("/src/main/java/"))
+        .toList();
+  }
+
+  private Map<String, String> relationAttributes(String... keysAndValues) {
+    Map<String, String> attributes = new LinkedHashMap<>();
+    for (int index = 0; index + 1 < keysAndValues.length; index += 2) {
+      String key = keysAndValues[index];
+      String value = keysAndValues[index + 1];
+      if (key != null && !key.isBlank() && value != null && !value.isBlank()) {
+        attributes.put(key, value);
+      }
+    }
+    return attributes;
   }
 
   private String moduleNodeId(String moduleId) {
@@ -2943,6 +3183,37 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private String documentChunkNodeId(DocumentChunkFact chunk) {
     return "node:document_chunk:" + ProjectGraphIds.key(chunk.id());
+  }
+
+  private String documentChunkNodeId(String chunkId) {
+    return "node:document_chunk:" + ProjectGraphIds.key(chunkId);
+  }
+
+  private String documentNodeId(String documentId) {
+    return "node:document:" + ProjectGraphIds.key(documentId);
+  }
+
+  private String documentReferenceDocumentNodeId(DocumentReconciliationSignal signal) {
+    if (signal.documentChunkId() != null && !signal.documentChunkId().isBlank()) {
+      return documentChunkNodeId(signal.documentChunkId());
+    }
+    if (signal.documentId() != null && !signal.documentId().isBlank()) {
+      return documentNodeId(signal.documentId());
+    }
+    return null;
+  }
+
+  private String documentReferenceSourceNodeId(DocumentReconciliationSignal signal) {
+    if (signal.sourceFactKind() == null || signal.sourceFactId() == null
+        || signal.sourceFactKind().isBlank() || signal.sourceFactId().isBlank()) {
+      return null;
+    }
+    return switch (signal.sourceFactKind()) {
+      case "spring_mvc_endpoint" -> "node:endpoint:" + ProjectGraphIds.key(signal.sourceFactId());
+      case "openapi_operation" -> "node:api_operation:" + ProjectGraphIds.key(signal.sourceFactId());
+      case "maven_module" -> moduleNodeId(signal.sourceFactId());
+      default -> null;
+    };
   }
 
   private String generatedSourceRootNodeId(GeneratedSourceRootItem root) {

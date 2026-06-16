@@ -192,7 +192,8 @@ obvious default-scope document mention, plus compact local-document guide render
 structured document inventory, bounded heading/chunk references, and uncertain
 reconciliation hints. Supported scans also emit a bounded deterministic lightweight
 relation graph over existing facts, with direct/structural nodes and `owns`/`declares`
-edges only in the current foundation, then write:
+edges, conservative inferred repository/entity and tested-subject relation edges, and
+status-only or uncertain relation rows kept separate from edges, then write:
 
 ```text
 <path>/.project-memory/project-map.json
@@ -307,7 +308,7 @@ Compatibility and migration notes:
   `.project-memory/cache/v1/` execution metadata. Validated cache hits reuse the
   existing generated output set without adding cache fields to `project-map.json`, and
   normal scans without `--incremental` preserve full-scan behavior.
-- The v1.5 graph foundation keeps `project-map.json` on `schema_version: "1.0"` and
+- The v1.5 graph expansion keeps `project-map.json` on `schema_version: "1.0"` and
   adds `.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a
   separate navigation artifact over existing facts and evidence references.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved

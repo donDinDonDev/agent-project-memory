@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.graph;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public record GraphEdge(
@@ -13,6 +14,7 @@ public record GraphEdge(
     String supportType,
     String confidence,
     String uncertainty,
+    Map<String, String> relationAttributes,
     GraphDerivation derivation,
     List<String> evidenceIds) {
   public GraphEdge {
@@ -24,6 +26,7 @@ public record GraphEdge(
     relationStatus = requireText(relationStatus, "relationStatus");
     supportType = requireText(supportType, "supportType");
     confidence = requireText(confidence, "confidence");
+    relationAttributes = Map.copyOf(Objects.requireNonNull(relationAttributes, "relationAttributes"));
     evidenceIds = List.copyOf(Objects.requireNonNull(evidenceIds, "evidenceIds"));
   }
 

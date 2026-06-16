@@ -497,6 +497,7 @@
       "evidence_ids": [
         "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
         "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol",
         "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping",
         "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id",
         "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand",
@@ -531,6 +532,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -552,6 +554,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -573,6 +576,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -594,6 +598,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -615,6 +620,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -636,6 +642,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -657,6 +664,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -678,6 +686,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -699,6 +708,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -720,6 +730,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -742,6 +753,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -764,6 +776,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -785,6 +798,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -806,6 +820,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -827,6 +842,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -848,6 +864,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -869,6 +886,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -890,6 +908,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -911,6 +930,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -932,6 +952,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -953,6 +974,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -974,6 +996,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -995,6 +1018,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1016,6 +1040,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1037,6 +1062,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1058,6 +1084,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1079,6 +1106,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1100,6 +1128,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1121,6 +1150,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1142,6 +1172,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1163,6 +1194,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1184,6 +1216,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1205,6 +1238,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1226,6 +1260,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1247,6 +1282,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1268,6 +1304,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1289,6 +1326,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1310,6 +1348,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1331,6 +1370,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1352,6 +1392,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1373,6 +1414,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1394,6 +1436,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1415,6 +1458,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1436,6 +1480,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1457,6 +1502,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1477,6 +1523,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1497,6 +1544,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1517,6 +1565,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1537,6 +1586,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1557,6 +1607,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1577,6 +1628,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1597,6 +1649,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1617,6 +1670,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1637,6 +1691,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1657,6 +1712,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1677,6 +1733,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1697,6 +1754,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1717,6 +1775,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1737,6 +1796,7 @@
       "support_type": "project_map_derivation",
       "confidence": "high",
       "uncertainty": null,
+      "relation_attributes": {},
       "derivation": {
         "kind": "project_map_field",
         "artifact": "project-map.json",
@@ -1746,6 +1806,51 @@
         ]
       },
       "evidence_ids": []
+    },
+    {
+      "id": "edge:repository_entity:node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository:node:entity:entity%3Acom.example.domain.ProjectOrder:repository_entity_generic%3Acom.example.domain.ProjectOrder",
+      "type": "repository_entity",
+      "source_id": "node:repository:spring_data_repository_interface_signal%3Amodule%3A.%3Acom.example.repositories.ProjectOrderRepository",
+      "target_id": "node:entity:entity%3Acom.example.domain.ProjectOrder",
+      "claim_category": "inferred",
+      "relation_status": "inferred",
+      "support_type": "inferred",
+      "confidence": "medium",
+      "uncertainty": null,
+      "relation_attributes": {
+        "generic_type": "com.example.domain.ProjectOrder",
+        "relation_type": "repository_entity_generic",
+        "target_class_name": "com.example.domain.ProjectOrder",
+        "target_entity_id": "entity:com.example.domain.ProjectOrder",
+        "target_module_id": "module:."
+      },
+      "derivation": null,
+      "evidence_ids": [
+        "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+        "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+      ]
+    },
+    {
+      "id": "edge:tested_subject:node:test:test%3Acom.example.web.ProjectMapControllerTest:node:type:root:com.example.web.ProjectMapController:naming_convention",
+      "type": "tested_subject",
+      "source_id": "node:test:test%3Acom.example.web.ProjectMapControllerTest",
+      "target_id": "node:type:root:com.example.web.ProjectMapController",
+      "claim_category": "inferred",
+      "relation_status": "inferred",
+      "support_type": "inferred",
+      "confidence": "medium",
+      "uncertainty": null,
+      "relation_attributes": {
+        "relation_type": "naming_convention",
+        "target_class_name": "com.example.web.ProjectMapController",
+        "target_module_id": "module:."
+      },
+      "derivation": null,
+      "evidence_ids": [
+        "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol"
+      ]
     }
   ],
   "relation_statuses": [],

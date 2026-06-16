@@ -3,6 +3,7 @@ package io.github.dondindondev.agentprojectmemory.graph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.List;
+import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 final class ProjectGraphJsonSerializerTest {
@@ -34,6 +35,7 @@ final class ProjectGraphJsonSerializerTest {
             "project_map_derivation",
             "high",
             null,
+            Map.of(),
             new GraphDerivation(
                 "project_map_field",
                 "project-map.json",
@@ -92,6 +94,7 @@ final class ProjectGraphJsonSerializerTest {
               "support_type": "project_map_derivation",
               "confidence": "high",
               "uncertainty": null,
+              "relation_attributes": {},
               "derivation": {
                 "kind": "project_map_field",
                 "artifact": "project-map.json",

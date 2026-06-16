@@ -16,6 +16,11 @@ architecture documents.
   deterministic graph nodes, direct/structural `owns` and `declares` edges,
   derivation-only structural edge metadata, bounded graph warnings, and existing
   `evidence_ids` references without duplicating evidence records as graph nodes.
+- Added conservative inferred and statused graph relation material from existing
+  tested-subject rows, Spring Data repository/entity rows, and document reconciliation
+  hints, preserving relation status, relation attributes, confidence, uncertainty, and
+  existing evidence references while keeping unsupported or no-target rows out of
+  graph edges.
 - Included `project-graph.json` in incremental cache output fingerprints with
   `output_kind: "project_graph"` so cache hits verify the graph digest and size before
   reusing a generated output set.

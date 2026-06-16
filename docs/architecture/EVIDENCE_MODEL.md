@@ -1280,7 +1280,9 @@ Inferred, uncertain, document-backed, spec-backed, warning, metadata-only, and
 not-analyzed graph material keeps the same evidence boundaries as the source facts:
 
 - Existing repository/entity and tested-subject relations keep their existing
-  evidence IDs, relation statuses, support types, confidence, and uncertainty.
+  evidence IDs, relation statuses, support types, confidence, uncertainty, and bounded
+  relation-row attributes such as relation type, candidate reference, target identity,
+  and source-visible repository generic type.
 - Document reconciliation graph edges remain low-confidence uncertain inspection hints.
   They do not prove stale documentation, missing documentation, source/document
   agreement, implementation truth, or code ownership.

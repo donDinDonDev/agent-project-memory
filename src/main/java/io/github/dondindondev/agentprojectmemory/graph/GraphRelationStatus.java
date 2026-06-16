@@ -1,6 +1,7 @@
 package io.github.dondindondev.agentprojectmemory.graph;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public record GraphRelationStatus(
@@ -12,6 +13,7 @@ public record GraphRelationStatus(
     String supportType,
     String confidence,
     String uncertainty,
+    Map<String, String> relationAttributes,
     GraphDerivation derivation,
     List<String> evidenceIds) {
   public GraphRelationStatus {
@@ -20,6 +22,7 @@ public record GraphRelationStatus(
     relationStatus = requireText(relationStatus, "relationStatus");
     supportType = requireText(supportType, "supportType");
     confidence = requireText(confidence, "confidence");
+    relationAttributes = Map.copyOf(Objects.requireNonNull(relationAttributes, "relationAttributes"));
     derivation = Objects.requireNonNull(derivation, "derivation");
     evidenceIds = List.copyOf(Objects.requireNonNull(evidenceIds, "evidenceIds"));
   }
