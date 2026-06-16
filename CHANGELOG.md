@@ -18,8 +18,15 @@ architecture documents.
 - Implemented the first read-only `query` foundation for artifact root resolution,
   bounded loading and validation of `project-map.json`, `evidence-index.jsonl`, and
   optional `project-graph.json`, plus minimal command help and skeleton validation
-  behavior. Full list, explain, find, relations rendering, JSON result envelopes, and
-  lookup UX remain future v1.6 work.
+  behavior. Explain, find, relations rendering, JSON result envelopes, and lookup UX
+  remain future v1.6 work.
+- Implemented deterministic text output for the basic read-only list commands:
+  `query <path> list modules`, `list endpoints`, `list api-operations`,
+  `list entities`, and `list tests`. The commands render existing generated facts
+  without scanning source or writing artifacts, keep source-visible endpoints separate
+  from spec-backed declared operations, keep entities separate from embeddables, and
+  preserve useful module IDs, fact IDs, relation/status labels, confidence,
+  uncertainty, and evidence ID references.
 
 ## [1.5.0] - 2026-06-16
 

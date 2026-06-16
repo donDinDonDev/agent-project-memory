@@ -7,6 +7,7 @@ import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataV
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactReader;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryListRenderer;
 import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -66,8 +67,12 @@ public final class AgentProjectMemoryCli {
 
       Read existing .project-memory artifacts without scanning or writing.
 
-      Foundation commands:
-        list modules               Validate base query artifacts for module listing.
+      Query commands:
+        list modules               List generated modules.
+        list endpoints             List source-visible Spring MVC endpoints.
+        list api-operations        List spec-backed declared API operations.
+        list entities              List JPA entities, embeddables, and repository/entity relation rows.
+        list tests                 List emitted test facts and tested-subject rows.
         relations <id>             Validate base artifacts plus project-graph.json.
 
       Options:
@@ -88,6 +93,7 @@ public final class AgentProjectMemoryCli {
   private final IncrementalCacheMetadataWriter incrementalCacheMetadataWriter;
   private final IncrementalCacheMetadataValidator incrementalCacheMetadataValidator;
   private final ProjectMemoryArtifactReader queryArtifactReader = new ProjectMemoryArtifactReader();
+  private final ProjectMemoryListRenderer queryListRenderer = new ProjectMemoryListRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -289,13 +295,13 @@ public final class AgentProjectMemoryCli {
       if (args.length != 4) {
         return QueryArgs.usageError("Malformed list query command.");
       }
-      if (!"modules".equals(args[3])) {
+      if (!isSupportedListSubject(args[3])) {
         return QueryArgs.usageError("Unsupported query list subject.");
       }
       return QueryArgs.valid(
           queryPath,
           "list",
-          "modules",
+          args[3],
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
     }
@@ -317,6 +323,14 @@ public final class AgentProjectMemoryCli {
     return QueryArgs.usageError("Unsupported query subcommand.");
   }
 
+  private boolean isSupportedListSubject(String subject) {
+    return "modules".equals(subject)
+        || "endpoints".equals(subject)
+        || "api-operations".equals(subject)
+        || "entities".equals(subject)
+        || "tests".equals(subject);
+  }
+
   private int query(QueryArgs queryArgs) {
     Path queryPath;
     try {
@@ -330,6 +344,11 @@ public final class AgentProjectMemoryCli {
       artifacts = queryArtifactReader.load(queryPath, queryArgs.graphRequirement());
     } catch (QueryArtifactException ex) {
       return queryInputError(ex.getMessage());
+    }
+
+    if ("list".equals(queryArgs.command())) {
+      out.print(queryListRenderer.render(artifacts, queryArgs.subject()));
+      return SUCCESS;
     }
 
     out.println("Query artifact validation succeeded.");

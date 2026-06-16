@@ -4743,12 +4743,13 @@ Current v0.9 CLI behavior:
 
 This section defines the planned public contract for the v1.6 local query/read-only
 explorer. The latest published v1.5 command surface remains `scan`, `help`, and
-`version`. Current unreleased v1.6 development starts with only the read-only
-artifact-loading foundation: minimal `query <path> list modules` and
-`query <path> relations <id>` skeletons validate existing artifacts without rendering
-the final list or relation UX. Full list, explain, find, relations output, `--format`,
-`--direction`, and the stable JSON result envelope remain planned until their
-implementation slices ship.
+`version`. Current unreleased v1.6 development includes the read-only artifact-loading
+foundation plus deterministic text output for `query <path> list modules`,
+`list endpoints`, `list api-operations`, `list entities`, and `list tests`.
+`query <path> relations <id>` remains a skeleton that validates existing artifacts
+without rendering the final relation UX. Explain, find, final relations output,
+`--format`, `--direction`, and the stable JSON result envelope remain planned until
+their implementation slices ship.
 
 The planned query layer is a deterministic presentation and lookup layer over existing
 generated artifacts. It does not create project facts, does not create evidence
@@ -4816,6 +4817,9 @@ Artifact validation policy:
 
 List command behavior:
 
+- Current unreleased list-command implementation supports deterministic text output
+  only. The planned `--format text|json` flag and stable JSON result envelope are not
+  implemented yet.
 - `list modules` reads `project.modules.items[]` and emits deterministic module rows
   with module ID, module path, build systems, support status, and available evidence ID
   references. Module path inventory remains a generated fact from `project-map.json`,

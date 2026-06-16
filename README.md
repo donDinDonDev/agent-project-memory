@@ -117,6 +117,27 @@ output generation. Missing, stale, unsafe, corrupted, or mismatched cache state 
 closed to normal full analysis. Scans without `--incremental` ignore persistent cache
 state and do not read, write, delete, or trust cache files.
 
+Current unreleased development builds also include read-only query list commands over
+existing generated artifacts:
+
+```sh
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list tests
+```
+
+`query <path> list ...` accepts either a repository directory containing
+`.project-memory/` or the `.project-memory/` directory itself. These commands read the
+existing `project-map.json` and `evidence-index.jsonl` artifacts, optionally validate a
+present `project-graph.json`, print deterministic human text, and do not run scans,
+create `.project-memory/`, refresh cache/profile artifacts, read repository source
+files, or write repository files. Source-visible endpoint rows and spec-backed declared
+API operation rows stay separate; entity rows and embeddable rows stay separate. Stable
+JSON query output, evidence explain, exact fact/symbol lookup, and graph relation
+rendering remain planned v1.6 work until release notes document them as implemented.
+
 CLI exit codes are stable for automation:
 
 - `0`: success, help, or version.
