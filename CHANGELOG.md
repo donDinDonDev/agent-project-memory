@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-06-16
+
 ### Added
 
 - Implemented the v1.5 lightweight relation graph foundation: supported scans now write
@@ -24,6 +26,8 @@ architecture documents.
 - Included `project-graph.json` in incremental cache output fingerprints with
   `output_kind: "project_graph"` so cache hits verify the graph digest and size before
   reusing a generated output set.
+- Added v1.5.0 release notes covering graph output compatibility, validation, security
+  boundaries, not-included scope, and expected release assets.
 
 ### Changed
 
@@ -32,8 +36,28 @@ architecture documents.
   deterministic node and edge IDs, explicit evidence or derivation basis, bounded
   confidence and uncertainty semantics, size/noise limits, and no `project-map.json`
   schema migration.
+- Aligned the Maven project version, README local build examples, roadmap status, and
+  release notes for the `v1.5.0` release materials.
 - Updated post-release documentation status to mark `v1.4.0` as published with release
   jar and checksum assets.
+
+### Security
+
+- Completed graph evaluation and risk-based security review for the v1.5 graph output
+  surface with no release-blocking findings remaining.
+- Kept graph output local-only and evidence-bounded: graph nodes and edges reference
+  existing evidence IDs or non-evidence derivation metadata, do not duplicate evidence
+  records as graph nodes, do not read generated-source contents, and do not claim call
+  reachability, runtime dependencies, source/spec agreement, documentation freshness,
+  coverage, vulnerabilities, or correctness.
+
+### Not Included
+
+- Query/read-only explorer commands, impact analysis commands, runtime call graphs,
+  dependency graphs, Spring bean/autowiring graphs, source/spec agreement scoring,
+  documentation freshness scoring, generated-source content scanning, connectors,
+  network access, SaaS, web UI, repository chat, generic RAG, LLM calls in the core
+  analyzer, or automatic code modification.
 
 ## [1.4.0] - 2026-06-15
 

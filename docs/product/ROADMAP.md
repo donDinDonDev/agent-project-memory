@@ -4,10 +4,12 @@
 
 The latest published release is `v1.4.0`, with executable jar and `SHA256SUMS` assets.
 Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The v1.4 incremental cache expansion is additive: Maven, Gradle,
-source-visible output, generated-source metadata, agent profile artifacts, and evidence
-semantics are preserved, while opt-in `--incremental` scans may reuse an unchanged
-generated output set after strict metadata validation.
+stable-line marker. The current v1.5.0 release-candidate lightweight relation graph
+expansion is additive: Maven, Gradle, source-visible output, generated-source metadata,
+agent profile artifacts, incremental cache behavior, and evidence semantics are
+preserved, while supported release-candidate scans emit
+`.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a separate
+navigation artifact over existing facts and evidence references.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -22,15 +24,18 @@ orientation, bounded static Gradle Java/Spring layout support, source-visible Sp
 MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
 metadata, source-visible test and quality planning signals, default-scope local Markdown
 document inventory, generated-source/codegen metadata-only inventory, opt-in
-deterministic agent profile artifacts for supported coding-agent consumption, redacted
-scan metadata, safe root-local YAML config support, stable CLI help/version behavior,
-and a documented release-jar verification path.
+deterministic agent profile artifacts for supported coding-agent consumption, opt-in
+incremental cache metadata and whole-output-set reuse, redacted scan metadata, safe
+root-local YAML config support, stable CLI help/version behavior, and a documented
+release-jar verification path. Current local release-candidate builds also include a
+bounded lightweight relation graph artifact.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The published v1.3 expansion is agent output profiles, scoped as an additive
-v1.0-compatible output-contract expansion rather than a schema marker migration.
+started. The current v1.5 release-candidate expansion is the lightweight relation graph,
+scoped as an additive v1.0-compatible output-contract expansion through a separate graph
+artifact rather than a `project-map.json` schema marker migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -930,13 +935,13 @@ Release readiness notes:
 - The `v1.4.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-### v1.5.0: Lightweight Relation Graph (In Development)
+### v1.5.0: Lightweight Relation Graph (Release Candidate)
 
 Product outcome: add a bounded deterministic graph artifact that helps humans and
 coding agents navigate relationships between existing project-memory facts without
 turning the graph into a full architecture, runtime dependency, or impact model.
 
-Current development state:
+Release-candidate implementation status:
 
 - Supported scans emit `.project-memory/project-graph.json` as a separate machine-
   readable graph artifact with `graph_schema_version: "1.0"`.
@@ -997,15 +1002,21 @@ Non-goals:
   optional AI, SaaS, web UI, repository chat, generic RAG, or automatic code
   modification.
 
-Validation expectations before release:
+Release readiness notes:
 
-- Focused tests and goldens for graph schema, deterministic IDs, sorting, node/edge
+- Public release notes are available in
+  [V1_5_RELEASE_NOTES.md](V1_5_RELEASE_NOTES.md).
+- Focused tests and goldens cover graph schema, deterministic IDs, sorting, node/edge
   taxonomy, cap behavior, evidence ID resolution, derivation metadata, existing output
   stability, and incremental cache interaction.
-- Representative scans checking graph size/noise, duplicate IDs, dangling edges,
-  unresolved evidence references, and sensitive-data boundaries.
-- Risk-based review for graph output paths, generated artifact ownership, cache output
-  fingerprints, evidence-reference handling, graph size limits, and JSON rendering.
+- Representative packaged CLI validation covered graph size/noise, duplicate IDs,
+  dangling edges, unresolved evidence references, deterministic repeated digests, and
+  sensitive-data boundaries.
+- Final local release-prep validation passed with `mvn test`, `mvn package`, packaged
+  CLI graph/profile/incremental smoke, checksum dry-run, whitespace checks, public
+  marker audit, and risk-based release-prep review for the final release-prep diff.
+- No release-blocking security finding or bounded security-fix goal remains open for
+  `v1.5.0`.
 
 Possible later tracks:
 

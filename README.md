@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.4.0.jar
+target/agent-project-memory-1.5.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,24 +74,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.4.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.4.0.jar --help
-java -jar target/agent-project-memory-1.4.0.jar help
-java -jar target/agent-project-memory-1.4.0.jar scan --help
-java -jar target/agent-project-memory-1.4.0.jar --version
-java -jar target/agent-project-memory-1.4.0.jar version
+java -jar target/agent-project-memory-1.5.0.jar --help
+java -jar target/agent-project-memory-1.5.0.jar help
+java -jar target/agent-project-memory-1.5.0.jar scan --help
+java -jar target/agent-project-memory-1.5.0.jar --version
+java -jar target/agent-project-memory-1.5.0.jar version
 ```
 
 Current v1.x builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-1.4.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-1.4.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -102,10 +102,10 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
-v1.4.0 release builds also support opt-in incremental scan mode:
+v1.4 and later release builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-1.4.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -365,6 +365,8 @@ navigation, and references back to the source files that prove each fact.
 
 Start here:
 
+- v1.5 release summary:
+  [docs/product/V1_5_RELEASE_NOTES.md](docs/product/V1_5_RELEASE_NOTES.md).
 - v1.4 release summary:
   [docs/product/V1_4_RELEASE_NOTES.md](docs/product/V1_4_RELEASE_NOTES.md).
 - v1.3 release summary:
@@ -426,19 +428,22 @@ references.
 ## Project Status
 
 The latest published release is `v1.4.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds also produce `target/agent-project-memory-1.4.0.jar`. Normal
-generated `project-map.json` files use `schema_version: "1.0"` as a stable-line marker.
-The v1.4 incremental cache expansion is additive: existing Maven, Gradle,
-source-visible output, generated-source metadata, agent profile artifacts, and evidence
-semantics are preserved, while opt-in `--incremental` scans may reuse an unchanged
-generated output set after strict metadata validation.
+asset. The current local release-candidate build is `1.5.0` and produces
+`target/agent-project-memory-1.5.0.jar`. Normal generated `project-map.json` files use
+`schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
+expansion is additive: existing Maven, Gradle, source-visible output, generated-source
+metadata, agent profile artifacts, incremental cache behavior, and evidence semantics
+are preserved, while supported release-candidate scans emit
+`.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a separate
+navigation artifact over existing facts and evidence references.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
 MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
 metadata, source-visible test and quality planning signals, default-scope local Markdown
 document inventory, opt-in deterministic agent profile artifacts, opt-in incremental
-cache metadata under `.project-memory/cache/v1/`, redacted scan metadata, safe
+cache metadata under `.project-memory/cache/v1/`, a bounded lightweight relation graph
+artifact under `.project-memory/project-graph.json`, redacted scan metadata, safe
 root-local YAML config support, stable CLI help/version behavior, and documented
 release-jar verification.
 
@@ -489,7 +494,8 @@ root-local `agent-project-memory.yml` config discovery with optional explicit
 Markdown-only user include/exclude refinement, non-overridable built-in document safety
 exclusions, reserved generated-source and symlink-following modes rejected when enabled,
 redacted `scan` metadata and bounded diagnostics that avoid raw config values and raw
-user path patterns,
+user path patterns, deterministic lightweight relation graph generation in
+`project-graph.json` from existing facts, evidence IDs, and derivation metadata,
 `endpoints.md`, and deterministic `agent-guide.md` generation from the
 structured facts and evidence index, including module-grouped Spring application
 surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
