@@ -3,13 +3,11 @@
 ## Current Status
 
 The latest published release is `v1.5.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The v1.5.0 lightweight relation graph expansion is additive:
-Maven, Gradle, source-visible output, generated-source metadata, agent profile
-artifacts, incremental cache behavior, and evidence semantics are preserved, while
-supported scans emit `.project-memory/project-graph.json` with
-`graph_schema_version: "1.0"` as a separate navigation artifact over existing facts and
-evidence references.
+The current local release-candidate build is `v1.6.0`. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as the stable-line marker. The
+v1.5.0 lightweight relation graph expansion is additive, and the v1.6.0 query
+expansion adds deterministic read-only lookup commands over existing generated
+artifacts without changing generated artifact schemas or evidence semantics.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -26,15 +24,16 @@ metadata, source-visible test and quality planning signals, default-scope local 
 document inventory, generated-source/codegen metadata-only inventory, opt-in
 deterministic agent profile artifacts for supported coding-agent consumption, opt-in
 incremental cache metadata and whole-output-set reuse, a bounded lightweight relation
-graph artifact, redacted scan metadata, safe root-local YAML config support, stable CLI
-help/version behavior, and a documented release-jar verification path.
+graph artifact, read-only text query commands over existing generated artifacts,
+redacted scan metadata, safe root-local YAML config support, stable CLI help/version
+behavior, and a documented release-jar verification path.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
 original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The v1.5 expansion is the lightweight relation graph, scoped as an additive
-v1.0-compatible output-contract expansion through a separate graph artifact rather than
-a `project-map.json` schema marker migration.
+started. The v1.6 expansion is the local query/read-only explorer, scoped as an
+additive v1.0-compatible CLI and output-contract expansion over existing generated
+artifacts rather than a `project-map.json` schema marker migration.
 
 For strategic context, see [POST_V0_1_STRATEGY.md](POST_V0_1_STRATEGY.md). Release
 notes and architecture documents are the public source for shipped behavior, contract
@@ -1019,19 +1018,20 @@ Release readiness notes:
 - The `v1.5.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-### v1.6.0: Local Query And Read-Only Explorer (Planned Design)
+### v1.6.0: Local Query And Read-Only Explorer (Release Candidate)
 
-This section describes the planned v1.6 query contract. It is not shipped in the latest
-published `v1.5.0` release.
+This section describes the v1.6 query release-candidate implementation. It is not
+shipped in the latest published `v1.5.0` release until the `v1.6.0` tag, GitHub
+Release, and release assets are published.
 
 Product outcome: add deterministic read-only CLI lookup commands over existing
 `.project-memory/` artifacts so humans and coding agents can inspect generated facts,
 evidence, and graph relations without running a chat, RAG, source-scan, or write flow.
 
-Planned command boundary:
+Release-candidate command boundary:
 
-- Add a top-level `query` command. The planned executable-jar form is
-  `java -jar agent-project-memory-X.Y.Z.jar query <path> ...`; the installed-command
+- Add a top-level `query` command. The executable-jar form is
+  `java -jar agent-project-memory-1.6.0.jar query <path> ...`; the installed-command
   form remains future distribution work until a release note documents it.
 - Require exactly one local directory path after `query`. If the path names a
   `.project-memory` directory, query commands read artifacts from that directory. For
@@ -1053,11 +1053,11 @@ Planned command boundary:
   edges, relation-status rows, claim categories, support type, confidence, uncertainty,
   evidence IDs, and non-evidence derivation metadata without turning the graph into
   impact analysis.
-- Use deterministic human text output by default and a stable JSON result envelope when
-  `--format json` is selected. Error output remains bounded and deterministic on
-  stderr.
+- Use deterministic human text output. Stable JSON query output and a `--format` option
+  are not included in the v1.6.0 release candidate and remain future work. Error output
+  remains bounded and deterministic on stderr.
 
-Planned non-goals:
+Release-candidate non-goals:
 
 - No source scanning, scan refresh, `.project-memory/` creation, cache refresh, profile
   generation, repository writes, or code modification during query.
@@ -1069,18 +1069,25 @@ Planned non-goals:
   CI status, assertion proof, vulnerability, correctness, production-impact, or
   business-priority claim.
 
-Implementation expectations:
+Release readiness notes:
 
-- Start with a read-only artifact reader and path-validation foundation before adding
-  user-facing lookup commands.
-- Test missing, malformed, incompatible, and absent optional graph artifacts; unsupported
-  schema markers; duplicate IDs; no-result lookup behavior; deterministic text output;
-  stable JSON output; stdout/stderr separation; no-write behavior; and sensitive-output
+- Public release notes are available in
+  [V1_6_RELEASE_NOTES.md](V1_6_RELEASE_NOTES.md).
+- Focused tests cover query path handling, missing and malformed artifacts, optional
+  graph behavior, list commands, evidence explanation, exact fact and symbol lookup,
+  graph relation lookup, no-result behavior, stdout/stderr separation, and no-write
+  behavior.
+- Representative packaged CLI validation covered query behavior over Maven, Gradle,
+  local-document, generated-source metadata, tests/quality, and graph-rich artifact
+  sets, plus deterministic repeated query output checks and sensitive-output
   boundaries.
-- Validate query behavior on representative generated `.project-memory/` outputs before
-  release prep, including graph-rich outputs and artifact sets without graph output.
-- Keep public docs, changelog, release notes, and this output contract synchronized when
-  implementation ships command behavior or stable machine-readable stdout.
+- Final local release-prep validation passed with `mvn test`, `mvn package`, packaged
+  CLI scan/query smoke, checksum dry-run, whitespace checks, public marker audit, and
+  risk-based release-prep review for the final release-prep diff.
+- No release-blocking security finding or bounded security-fix goal remains open for
+  `v1.6.0`.
+- Tag, GitHub Release publication, artifact upload, and release publication remain
+  manual maintainer actions after release-prep review.
 
 Possible later tracks:
 

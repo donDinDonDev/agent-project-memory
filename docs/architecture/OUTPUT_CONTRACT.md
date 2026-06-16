@@ -4739,36 +4739,35 @@ Current v0.9 CLI behavior:
   `Diagnostics: none.` or `Diagnostics: N item(s).` Detailed diagnostics, when a flag is
   added, should still follow the redaction rules above.
 
-### Planned v1.6 Query CLI Contract
+### v1.6 Query CLI Contract
 
-This section defines the planned public contract for the v1.6 local query/read-only
-explorer. The latest published v1.5 command surface remains `scan`, `help`, and
-`version`. Current unreleased v1.6 development includes the read-only artifact-loading
-foundation plus deterministic text output for `query <path> list modules`,
-`list endpoints`, `list api-operations`, `list entities`, `list tests`,
-`explain evidence <id>`, `find fact <term>`, `find symbol <term>`, and
-`relations <id>`. Current relation lookup supports the existing
-`--direction incoming|outgoing|both` behavior with `both` as the default. The planned
-`--format` flag and stable JSON result envelope remain unimplemented until their
-implementation slices ship.
+This section defines the public contract for the v1.6 local query/read-only explorer.
+The latest published v1.5 command surface remains `scan`, `help`, and `version` until
+the `v1.6.0` tag, GitHub Release, and release assets are published. The v1.6
+release-candidate implementation includes the read-only artifact-loading foundation plus
+deterministic text output for `query <path> list modules`, `list endpoints`,
+`list api-operations`, `list entities`, `list tests`, `explain evidence <id>`,
+`find fact <term>`, `find symbol <term>`, and `relations <id>`. Relation lookup
+supports `--direction incoming|outgoing|both` with `both` as the default. A `--format`
+flag and stable JSON result envelope are not included in v1.6.0 and remain future work.
 
-The planned query layer is a deterministic presentation and lookup layer over existing
+The query layer is a deterministic presentation and lookup layer over existing
 generated artifacts. It does not create project facts, does not create evidence
 records, does not mutate `.project-memory/`, does not read repository source files, and
 does not run a scan. Query output is not evidence.
 
-Planned command grammar:
+Implemented command grammar:
 
 ```text
-agent-project-memory query <path> list modules [--format text|json]
-agent-project-memory query <path> list endpoints [--format text|json]
-agent-project-memory query <path> list api-operations [--format text|json]
-agent-project-memory query <path> list entities [--format text|json]
-agent-project-memory query <path> list tests [--format text|json]
-agent-project-memory query <path> explain evidence <evidence-id> [--format text|json]
-agent-project-memory query <path> find fact <term> [--format text|json]
-agent-project-memory query <path> find symbol <term> [--format text|json]
-agent-project-memory query <path> relations <id> [--direction incoming|outgoing|both] [--format text|json]
+agent-project-memory query <path> list modules
+agent-project-memory query <path> list endpoints
+agent-project-memory query <path> list api-operations
+agent-project-memory query <path> list entities
+agent-project-memory query <path> list tests
+agent-project-memory query <path> explain evidence <evidence-id>
+agent-project-memory query <path> find fact <term>
+agent-project-memory query <path> find symbol <term>
+agent-project-memory query <path> relations <id> [--direction incoming|outgoing|both]
 ```
 
 The packaged-jar invocation uses the same arguments after `java -jar
@@ -4793,7 +4792,7 @@ Path and artifact input policy:
   require graph output, and all non-graph query commands must ignore a missing or
   malformed graph artifact.
 - `endpoints.md`, `agent-guide.md`, `agent-profiles/`, and `cache/v1/` are not query
-  input sources in the initial v1.6 design. Generated Markdown, profile artifacts, cache
+  input sources in the initial v1.6 contract. Generated Markdown, profile artifacts, cache
   metadata, diagnostics, graph derivation metadata, and query output are not evidence.
 - Query path handling follows the same conservative local boundary as generated
   artifacts: artifact paths must remain repository-local or artifact-root-local,
@@ -4806,11 +4805,11 @@ Path and artifact input policy:
 Artifact validation policy:
 
 - `project-map.json` must parse as JSON and use a supported `schema_version`.
-  The initial v1.6 design supports the current stable-line marker `"1.0"`.
+  The initial v1.6 contract supports the current stable-line marker `"1.0"`.
 - `evidence-index.jsonl` must parse as newline-delimited JSON with unique evidence
   `id` values and the documented evidence field set.
 - `project-graph.json`, when required by `relations` or graph-backed `find fact`, must
-  parse as JSON and use a supported `graph_schema_version`. The initial v1.6 design
+  parse as JSON and use a supported `graph_schema_version`. The initial v1.6 contract
   supports `"1.0"`.
 - Query commands fail closed for missing required artifacts, malformed JSON/JSONL,
   unsupported schema markers, duplicate IDs in a required lookup index, graph edges that
@@ -4821,9 +4820,9 @@ Artifact validation policy:
 
 List command behavior:
 
-- Current unreleased list-command implementation supports deterministic text output
-  only. The planned `--format text|json` flag and stable JSON result envelope are not
-  implemented yet.
+- The v1.6 list-command implementation supports deterministic text output only. A
+  `--format text|json` flag and stable JSON result envelope are not implemented in
+  v1.6.0.
 - `list modules` reads `project.modules.items[]` and emits deterministic module rows
   with module ID, module path, build systems, support status, and available evidence ID
   references. Module path inventory remains a generated fact from `project-map.json`,
@@ -4847,9 +4846,9 @@ List command behavior:
 
 Evidence explain behavior:
 
-- Current unreleased evidence-explain implementation supports deterministic text output
-  only. The planned `--format text|json` flag and stable JSON result envelope are not
-  implemented yet.
+- The v1.6 evidence-explain implementation supports deterministic text output only. A
+  `--format text|json` flag and stable JSON result envelope are not implemented in
+  v1.6.0.
 - `explain evidence <evidence-id>` performs an exact evidence ID lookup in
   `evidence-index.jsonl`.
 - Successful output renders only the existing evidence record fields: `id`,
@@ -4861,9 +4860,9 @@ Evidence explain behavior:
 
 Fact and symbol lookup behavior:
 
-- Current unreleased fact and symbol lookup implementation supports deterministic text
-  output only. The planned `--format text|json` flag and stable JSON result envelope are
-  not implemented yet.
+- The v1.6 fact and symbol lookup implementation supports deterministic text output
+  only. A `--format text|json` flag and stable JSON result envelope are not implemented
+  in v1.6.0.
 - `find fact <term>` performs exact, case-sensitive lookup over generated fact IDs and
   documented exact keys already present in generated artifacts, such as endpoint IDs,
   operation keys, entity IDs, repository IDs, test IDs, warning IDs, status IDs,
@@ -4880,15 +4879,15 @@ Fact and symbol lookup behavior:
 - Lookup is not substring search, fuzzy search, regex search, glob search,
   natural-language query, semantic search, or embedding search.
 - Multiple exact matches are valid successful results. No-match lookup exits with the
-  planned no-result exit code.
+  no-result exit code.
 - Lookup results must identify the source artifact and section or graph `source_ref`
   that produced the row. These references are navigation metadata, not evidence.
 
 Graph relation lookup behavior:
 
-- Current unreleased relation lookup supports deterministic text output only. The
-  planned `--format text|json` flag and stable JSON result envelope are not implemented
-  yet.
+- The v1.6 relation lookup supports deterministic text output only. A
+  `--format text|json` flag and stable JSON result envelope are not implemented in
+  v1.6.0.
 - `relations <id>` requires a valid `project-graph.json`.
 - `<id>` may be either a graph node ID or a generated fact ID that can be mapped to a
   graph node through the node `source_ref`.
@@ -4908,24 +4907,24 @@ Graph relation lookup behavior:
   non-graph query commands.
 - A missing relation subject ID is a no-result lookup in otherwise valid artifacts.
 
-Text and JSON output behavior:
+Text output and future JSON output behavior:
 
-- Text output is the default. It is deterministic, concise, human-readable, and safe for
-  terminal use, but exact text layout is not the stable parser interface unless a later
-  contract documents a specific text structure.
-- `--format text` is explicit text output. `--format json` emits the stable
-  machine-readable query result envelope.
-- Successful text and JSON results go to stdout. Successful commands should not print to
-  stderr.
+- Text output is the default and only implemented v1.6 output mode. It is deterministic,
+  concise, human-readable, and safe for terminal use, but exact text layout is not the
+  stable parser interface unless a later contract documents a specific text structure.
+- `--format text` and `--format json` are not implemented in v1.6.0. A future JSON
+  mode, if added, should emit a stable machine-readable query result envelope.
+- Successful results go to stdout. Successful commands should not print to stderr.
 - Usage errors, artifact input errors, invalid artifact errors, no-result lookup errors,
   and unexpected internal errors go to stderr and must not produce partial stdout.
 - Error messages must be bounded and deterministic. They must not print stack traces,
   source bodies, document bodies, config contents, generated-source contents, generated
   Markdown bodies, raw command logs, local absolute paths, credentials, tokens, or
   secret-looking values.
-- JSON output must use stable field order and JSON escaping. It must not include local
-  absolute paths or raw user command text.
-- The planned JSON envelope is:
+- Future JSON output must use stable field order and JSON escaping. It must not include
+  local absolute paths or raw user command text.
+- The future JSON envelope is expected to follow this shape unless a later contract
+  changes it:
 
 ```json
 {
@@ -4965,13 +4964,13 @@ JSON envelope rules:
   project evidence, graph evidence, scan diagnostics, security findings, runtime claims,
   or generated facts.
 
-Planned query exit codes:
+Query exit codes:
 
 - `0`: success, including successful empty list results.
 - `1`: unexpected internal error.
 - `2`: usage error, such as an unknown query subcommand, unknown flag, malformed
-  command, invalid `--format` value, invalid `--direction` value, or unexpected extra
-  arguments.
+  command, invalid `--direction` value, or unexpected extra arguments. A future
+  `--format` option should also use exit code `2` for invalid values.
 - `3`: query input or artifact error, such as a missing query path, non-directory query
   path, missing `.project-memory/`, missing required artifact, symlinked artifact root
   or required artifact file, malformed JSON/JSONL, unsupported artifact schema marker,
@@ -4986,14 +4985,14 @@ Planned query exit codes:
 
 Validation requirements before v1.6 release:
 
-- Focused CLI parser tests for every planned query grammar branch and invalid argument
+- Focused CLI parser tests for every implemented query grammar branch and invalid argument
   shape.
 - Artifact path tests for repository-root input, direct `.project-memory` input,
   missing path, missing artifact root, missing required artifacts, symlink rejection,
   malformed JSON/JSONL, unsupported schema markers, duplicate IDs, invalid graph
   references, and graph absence for non-graph commands.
-- Deterministic stdout tests for text output and stable field-order tests for JSON
-  output.
+- Deterministic stdout tests for text output. Stable field-order tests are required if a
+  future JSON output mode is implemented.
 - Focused list, evidence explain, fact lookup, symbol lookup, no-result, multiple-match,
   and graph relation tests over generated-memory fixtures.
 - No-write tests proving query commands do not create, rewrite, delete, or refresh

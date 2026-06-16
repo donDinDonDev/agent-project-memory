@@ -9,17 +9,19 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.6.0] - 2026-06-16
+
 ### Added
 
 - Documented the planned v1.6 local read-only query CLI contract, including `query`
   command grammar, generated-artifact input policy, list/explain/find/relations
-  behavior, text and JSON output modes, exit behavior, and implementation validation
-  expectations.
+  behavior, implemented text output, future JSON output boundaries, exit behavior, and
+  implementation validation expectations.
 - Implemented the first read-only `query` foundation for artifact root resolution,
   bounded loading and validation of `project-map.json`, `evidence-index.jsonl`, and
   optional `project-graph.json`, plus minimal command help and skeleton validation
   behavior. Relations rendering and graph lookup UX are now implemented in the
-  dedicated relation lookup slice; JSON result envelopes remain future v1.6 work.
+  dedicated relation lookup slice; JSON result envelopes remain future work.
 - Implemented deterministic text output for the basic read-only list commands:
   `query <path> list modules`, `list endpoints`, `list api-operations`,
   `list entities`, and `list tests`. The commands render existing generated facts
@@ -40,6 +42,14 @@ architecture documents.
   supports the existing `--direction incoming|outgoing|both` behavior with `both` as
   default, preserves graph edge fields and `relation_statuses[]` separately, and keeps
   graph derivation as non-evidence navigation metadata.
+- Added v1.6.0 release notes covering query command compatibility, validation, security
+  boundaries, not-included scope, and expected release assets.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, output
+  contract status wording, and release notes for the `v1.6.0` release-candidate
+  materials.
 
 ### Fixed
 
@@ -48,6 +58,25 @@ architecture documents.
   lookup when `project-map.json` and `evidence-index.jsonl` are valid. Relation lookup
   and graph ID-shaped fact lookup still require a valid graph artifact when they use
   graph-backed results.
+
+### Security
+
+- Completed query UX evaluation and risk-based security review for the v1.6 query path,
+  artifact reader, JSON/JSONL loading, and deterministic stdout behavior with no
+  release-blocking findings remaining.
+- Kept query local-only, read-only, and artifact-backed: query commands do not scan
+  source, create or mutate `.project-memory/`, refresh cache/profile artifacts, write
+  repository files, call LLMs, use connectors, or treat query output, diagnostics, graph
+  derivation metadata, generated Markdown, profile artifacts, or cache metadata as
+  evidence.
+
+### Not Included
+
+- Stable JSON query output, chat or natural-language query, substring/fuzzy/regex/
+  semantic/vector search, impact analysis, full call graphs, runtime dependency graphs,
+  runtime Spring graphs, source/spec agreement scoring, documentation freshness scoring,
+  coverage or CI claims, connectors, network access, SaaS, web UI, repository chat,
+  generic RAG, LLM calls in the core analyzer, or automatic code modification.
 
 ## [1.5.0] - 2026-06-16
 

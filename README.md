@@ -63,7 +63,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.5.0.jar
+target/agent-project-memory-1.6.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -74,24 +74,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.6.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.5.0.jar --help
-java -jar target/agent-project-memory-1.5.0.jar help
-java -jar target/agent-project-memory-1.5.0.jar scan --help
-java -jar target/agent-project-memory-1.5.0.jar --version
-java -jar target/agent-project-memory-1.5.0.jar version
+java -jar target/agent-project-memory-1.6.0.jar --help
+java -jar target/agent-project-memory-1.6.0.jar help
+java -jar target/agent-project-memory-1.6.0.jar scan --help
+java -jar target/agent-project-memory-1.6.0.jar --version
+java -jar target/agent-project-memory-1.6.0.jar version
 ```
 
 Current v1.x builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-1.6.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-1.6.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -105,7 +105,7 @@ it does not add project facts or evidence records.
 v1.4 and later release builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-1.5.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-1.6.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -117,20 +117,20 @@ output generation. Missing, stale, unsafe, corrupted, or mismatched cache state 
 closed to normal full analysis. Scans without `--incremental` ignore persistent cache
 state and do not read, write, delete, or trust cache files.
 
-Current unreleased development builds also include read-only query commands over
+The v1.6.0 release-candidate local build also includes read-only query commands over
 existing generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -151,8 +151,8 @@ and valid. `relations <id>` requires a valid `project-graph.json`, accepts eithe
 graph node ID or a generated fact ID that maps through node `source_ref`, and renders
 only one-hop incoming, outgoing, or default `both` graph neighbors while keeping graph
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
-are navigation metadata, not evidence. Stable JSON query output remains planned v1.6
-work until release notes document it as implemented.
+are navigation metadata, not evidence. Stable JSON query output remains future work and
+is not part of the v1.6.0 release candidate.
 
 CLI exit codes are stable for automation:
 
@@ -351,6 +351,10 @@ Compatibility and migration notes:
 - The v1.5 graph expansion keeps `project-map.json` on `schema_version: "1.0"` and
   adds `.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a
   separate navigation artifact over existing facts and evidence references.
+- The v1.6 query expansion keeps generated artifact schemas unchanged. Query commands
+  read existing `project-map.json`, `project-graph.json` when graph lookup is needed,
+  and `evidence-index.jsonl` artifacts without scanning source, writing repository
+  files, or treating query output as evidence.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the base `.project-memory/` files together so JSON facts,
   graph nodes, evidence IDs, and Markdown evidence references stay aligned.
@@ -405,6 +409,8 @@ navigation, and references back to the source files that prove each fact.
 
 Start here:
 
+- v1.6 release summary:
+  [docs/product/V1_6_RELEASE_NOTES.md](docs/product/V1_6_RELEASE_NOTES.md).
 - v1.5 release summary:
   [docs/product/V1_5_RELEASE_NOTES.md](docs/product/V1_5_RELEASE_NOTES.md).
 - v1.4 release summary:
@@ -468,13 +474,12 @@ references.
 ## Project Status
 
 The latest published release is `v1.5.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds also produce `target/agent-project-memory-1.5.0.jar`. Normal
+asset. The current local release-candidate build is `v1.6.0`, and local builds produce
+`target/agent-project-memory-1.6.0.jar`. Normal
 generated `project-map.json` files use `schema_version: "1.0"` as a stable-line
-marker. The v1.5 lightweight relation graph expansion is additive: existing Maven,
-Gradle, source-visible output, generated-source metadata, agent profile artifacts,
-incremental cache behavior, and evidence semantics are preserved, while supported scans
-emit `.project-memory/project-graph.json` with `graph_schema_version: "1.0"` as a
-separate navigation artifact over existing facts and evidence references.
+marker. The v1.5 lightweight relation graph expansion is additive, and the v1.6
+read-only query expansion adds deterministic artifact-backed lookup commands without
+changing generated project-memory schemas or evidence semantics.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
@@ -482,9 +487,9 @@ MVC and application-surface signals, declared OpenAPI operations, bounded JPA/do
 metadata, source-visible test and quality planning signals, default-scope local Markdown
 document inventory, opt-in deterministic agent profile artifacts, opt-in incremental
 cache metadata under `.project-memory/cache/v1/`, a bounded lightweight relation graph
-artifact under `.project-memory/project-graph.json`, redacted scan metadata, safe
-root-local YAML config support, stable CLI help/version behavior, and documented
-release-jar verification.
+artifact under `.project-memory/project-graph.json`, read-only text query commands over
+existing generated artifacts, redacted scan metadata, safe root-local YAML config
+support, stable CLI help/version behavior, and documented release-jar verification.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future connector/import work remains a later optional adapter track
