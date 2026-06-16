@@ -9,6 +9,7 @@ import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactRead
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryListRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryLookupRenderer;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryRelationRenderer;
 import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -77,7 +78,8 @@ public final class AgentProjectMemoryCli {
         explain evidence <id>      Explain one evidence-index.jsonl record by exact ID.
         find fact <term>           Find generated fact IDs and exact keys.
         find symbol <term>         Find structured symbol fields.
-        relations <id>             Validate base artifacts plus project-graph.json.
+        relations <id> [--direction incoming|outgoing|both]
+                                   Show one-hop graph relations.
 
       Options:
         --help                     Show this help.
@@ -100,6 +102,8 @@ public final class AgentProjectMemoryCli {
   private final ProjectMemoryArtifactReader queryArtifactReader = new ProjectMemoryArtifactReader();
   private final ProjectMemoryListRenderer queryListRenderer = new ProjectMemoryListRenderer();
   private final ProjectMemoryLookupRenderer queryLookupRenderer = new ProjectMemoryLookupRenderer();
+  private final ProjectMemoryRelationRenderer queryRelationRenderer =
+      new ProjectMemoryRelationRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -309,7 +313,8 @@ public final class AgentProjectMemoryCli {
           "list",
           args[3],
           null,
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("explain".equals(subcommand)) {
       if (args.length != 5 || !"evidence".equals(args[3])) {
@@ -323,7 +328,8 @@ public final class AgentProjectMemoryCli {
           "explain",
           "evidence",
           args[4],
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("find".equals(subcommand)) {
       if (args.length != 5 || (!"fact".equals(args[3]) && !"symbol".equals(args[3]))) {
@@ -337,22 +343,49 @@ public final class AgentProjectMemoryCli {
           "find",
           args[3],
           args[4],
-          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH);
     }
     if ("relations".equals(subcommand)) {
-      if (args.length != 4) {
+      if (args.length < 4) {
         return QueryArgs.usageError("Malformed relations query command.");
       }
       String relationId = args[3];
       if (relationId == null || relationId.isBlank() || relationId.startsWith("--")) {
         return QueryArgs.usageError("Missing relation id.");
       }
+      ProjectMemoryRelationRenderer.Direction direction =
+          ProjectMemoryRelationRenderer.Direction.BOTH;
+      boolean directionSeen = false;
+      int index = 4;
+      while (index < args.length) {
+        String argument = args[index];
+        if (!"--direction".equals(argument)) {
+          return argument != null && argument.startsWith("--")
+              ? QueryArgs.usageError("Unknown flag.")
+              : QueryArgs.usageError("Unexpected extra arguments.");
+        }
+        if (directionSeen) {
+          return QueryArgs.usageError("Duplicate --direction flag.");
+        }
+        if (index + 1 >= args.length) {
+          return QueryArgs.usageError("Missing --direction value.");
+        }
+        direction = ProjectMemoryRelationRenderer.Direction.fromCliValue(args[index + 1])
+            .orElse(null);
+        if (direction == null) {
+          return QueryArgs.usageError("Unsupported --direction value.");
+        }
+        directionSeen = true;
+        index += 2;
+      }
       return QueryArgs.valid(
           queryPath,
           "relations",
           "relations",
           relationId,
-          ProjectMemoryArtifactReader.GraphRequirement.REQUIRED);
+          ProjectMemoryArtifactReader.GraphRequirement.REQUIRED,
+          direction);
     }
     return QueryArgs.usageError("Unsupported query subcommand.");
   }
@@ -395,6 +428,13 @@ public final class AgentProjectMemoryCli {
           : ProjectMemoryLookupRenderer.FindKind.SYMBOL;
       ProjectMemoryLookupRenderer.LookupResult result =
           queryLookupRenderer.renderFind(artifacts, kind, queryArgs.lookupTerm());
+      return printLookupResult(result);
+    }
+    if ("relations".equals(queryArgs.command())) {
+      ProjectMemoryLookupRenderer.LookupResult result = queryRelationRenderer.render(
+          artifacts,
+          queryArgs.lookupTerm(),
+          queryArgs.relationDirection());
       return printLookupResult(result);
     }
 
@@ -725,6 +765,7 @@ public final class AgentProjectMemoryCli {
       String subject,
       String lookupTerm,
       ProjectMemoryArtifactReader.GraphRequirement graphRequirement,
+      ProjectMemoryRelationRenderer.Direction relationDirection,
       boolean help,
       String errorMessage,
       int errorExitCode) {
@@ -733,8 +774,18 @@ public final class AgentProjectMemoryCli {
         String command,
         String subject,
         String lookupTerm,
-        ProjectMemoryArtifactReader.GraphRequirement graphRequirement) {
-      return new QueryArgs(path, command, subject, lookupTerm, graphRequirement, false, null, SUCCESS);
+        ProjectMemoryArtifactReader.GraphRequirement graphRequirement,
+        ProjectMemoryRelationRenderer.Direction relationDirection) {
+      return new QueryArgs(
+          path,
+          command,
+          subject,
+          lookupTerm,
+          graphRequirement,
+          relationDirection,
+          false,
+          null,
+          SUCCESS);
     }
 
     static QueryArgs helpRequested() {
@@ -744,6 +795,7 @@ public final class AgentProjectMemoryCli {
           null,
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH,
           true,
           null,
           SUCCESS);
@@ -756,6 +808,7 @@ public final class AgentProjectMemoryCli {
           null,
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH,
           false,
           message,
           USAGE_ERROR);
@@ -768,6 +821,7 @@ public final class AgentProjectMemoryCli {
           null,
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH,
           false,
           message,
           SCAN_INPUT_ERROR);

@@ -4746,10 +4746,10 @@ explorer. The latest published v1.5 command surface remains `scan`, `help`, and
 `version`. Current unreleased v1.6 development includes the read-only artifact-loading
 foundation plus deterministic text output for `query <path> list modules`,
 `list endpoints`, `list api-operations`, `list entities`, `list tests`,
-`explain evidence <id>`, `find fact <term>`, and `find symbol <term>`.
-`query <path> relations <id>` remains a skeleton that validates existing artifacts
-without rendering the final relation UX. Final relations output, `--format`,
-`--direction`, and the stable JSON result envelope remain planned until their
+`explain evidence <id>`, `find fact <term>`, `find symbol <term>`, and
+`relations <id>`. Current relation lookup supports the existing
+`--direction incoming|outgoing|both` behavior with `both` as the default. The planned
+`--format` flag and stable JSON result envelope remain unimplemented until their
 implementation slices ship.
 
 The planned query layer is a deterministic presentation and lookup layer over existing
@@ -4879,6 +4879,9 @@ Fact and symbol lookup behavior:
 
 Graph relation lookup behavior:
 
+- Current unreleased relation lookup supports deterministic text output only. The
+  planned `--format text|json` flag and stable JSON result envelope are not implemented
+  yet.
 - `relations <id>` requires a valid `project-graph.json`.
 - `<id>` may be either a graph node ID or a generated fact ID that can be mapped to a
   graph node through the node `source_ref`.
@@ -4896,6 +4899,7 @@ Graph relation lookup behavior:
   metadata. `derivation` remains non-evidence.
 - Missing graph output is an artifact input error for `relations` and is ignored by
   non-graph query commands.
+- A missing relation subject ID is a no-result lookup in otherwise valid artifacts.
 
 Text and JSON output behavior:
 

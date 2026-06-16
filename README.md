@@ -129,6 +129,8 @@ java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-proje
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find fact <term>
 java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-1.5.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -141,8 +143,12 @@ API operation rows stay separate; entity rows and embeddable rows stay separate.
 `explain evidence <id>` resolves exact evidence IDs from `evidence-index.jsonl`.
 `find fact <term>` and `find symbol <term>` are exact and case-sensitive; they do not
 perform substring, fuzzy, regex, semantic, natural-language, or embedding search.
-Stable JSON query output and graph relation rendering remain planned v1.6 work until
-release notes document them as implemented.
+`relations <id>` requires a valid `project-graph.json`, accepts either a graph node ID
+or a generated fact ID that maps through node `source_ref`, and renders only one-hop
+incoming, outgoing, or default `both` graph neighbors while keeping graph edges separate
+from `relation_statuses[]`. Graph `source_ref` and `derivation` fields are navigation
+metadata, not evidence. Stable JSON query output remains planned v1.6 work until release
+notes document it as implemented.
 
 CLI exit codes are stable for automation:
 
@@ -154,7 +160,8 @@ CLI exit codes are stable for automation:
   query artifact, or invalid graph artifact for relation lookup.
 - `4`: invalid scan config.
 - `5`: output generation or write error.
-- `6`: query no-result, such as an absent evidence ID or absent exact fact/symbol match.
+- `6`: query no-result, such as an absent evidence ID, absent exact fact/symbol match,
+  or absent relation subject ID.
 
 Normal scan stdout is concise and deterministic: it reports `.project-memory`
 preparation, generated file names with stable fact counts when outputs are written, and

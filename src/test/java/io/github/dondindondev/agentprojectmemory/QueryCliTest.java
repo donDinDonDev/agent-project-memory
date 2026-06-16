@@ -375,20 +375,195 @@ final class QueryCliTest {
   }
 
   @Test
-  void queryRelationsValidatesGraphWhenPresent() throws Exception {
+  void queryRelationsRendersDefaultBothDirectionsForNodeId() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
-    writeBaseArtifacts(artifactRoot);
-    writeValidGraph(artifactRoot);
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
 
-    CliResult result = runCli("query", repositoryRoot.toString(), "relations", "node:module:root");
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:type:root:com.example.web.OrderController");
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
-        () -> assertTrue(result.stdout().contains("Loaded project-graph.json graph_schema_version 1.0.")),
-        () -> assertTrue(result.stdout().contains("query relations is not implemented")),
-        () -> assertFalse(result.stdout().contains("node:module:root")),
+        () -> assertTrue(result.stdout().contains("Query: relations")),
+        () -> assertTrue(result.stdout().contains("project-graph.json graph_schema_version=1.0")),
+        () -> assertTrue(result.stdout().contains("Resolved by: node id")),
+        () -> assertTrue(result.stdout().contains("Direction: both")),
+        () -> assertTrue(result.stdout().contains("Results: 3")),
+        () -> assertTrue(result.stdout().contains("Node\n   id: node:type:root:com.example.web.OrderController")),
+        () -> assertTrue(result.stdout().contains("Edges: 3")),
+        () -> assertTrue(result.stdout().contains("type: owns")),
+        () -> assertTrue(result.stdout().contains("type: declares")),
+        () -> assertTrue(result.stdout().contains("type: tested_subject")),
+        () -> assertTrue(result.stdout().contains(
+            "relation_attributes: relation_type=naming_convention, target_class_name=com.example.web.OrderController")),
+        () -> assertTrue(result.stdout().contains(
+            "derivation: kind=project_map_field artifact=project-map.json section=components.items fields=module_id, class_name (not evidence)")),
+        () -> assertTrue(result.stdout().contains("Relation statuses: 0")),
+        () -> assertFalse(result.stdout().contains("query relations is not implemented")),
+        () -> assertFalse(result.stdout().contains(repositoryRoot.toString())),
         () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryRelationsMapsGeneratedFactIdThroughSourceRef() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "endpoint:com.example.web.OrderController#getOrder");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Resolved by: source_ref.id")),
+        () -> assertTrue(result.stdout().contains(
+            "Resolved node: node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder")),
+        () -> assertTrue(result.stdout().contains(
+            "source_ref: artifact=project-map.json section=endpoints id=endpoint:com.example.web.OrderController#getOrder (not evidence)")),
+        () -> assertTrue(result.stdout().contains("Edges: 1")),
+        () -> assertTrue(result.stdout().contains("direction: incoming")),
+        () -> assertTrue(result.stdout().contains("type: declares")),
+        () -> assertTrue(result.stdout().contains("Relation statuses: 0")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryRelationsKeepsEdgesAndStatusesSeparate() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:test:test%3Acom.example.web.OrderControllerTest");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Edges: 1")),
+        () -> assertTrue(result.stdout().contains("type: tested_subject")),
+        () -> assertTrue(result.stdout().contains("Relation statuses: 1")),
+        () -> assertTrue(result.stdout().contains(
+            "relation-status:tested_subject:node:test:test%3Acom.example.web.OrderControllerTest:no_supported_subject_signal")),
+        () -> assertTrue(result.stdout().contains("relation_family: tested_subject")),
+        () -> assertTrue(result.stdout().contains("target_id: null")),
+        () -> assertTrue(result.stdout().contains("relation_status: not_detected")),
+        () -> assertTrue(result.stdout().contains("support_type: status_only")),
+        () -> assertTrue(result.stdout().contains("uncertainty: no_supported_subject_signal")),
+        () -> assertTrue(result.stdout().contains("relation_attributes: relation_type=not_detected")),
+        () -> assertTrue(result.stdout().contains(
+            "derivation: kind=project_map_relation_status artifact=project-map.json section=tests.items[].tested_subjects fields=null (not evidence)")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryRelationsDirectionFiltersOneHopEdges() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
+
+    CliResult incoming = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:type:root:com.example.web.OrderController",
+        "--direction",
+        "incoming");
+    CliResult outgoing = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:type:root:com.example.web.OrderController",
+        "--direction",
+        "outgoing");
+
+    assertAll(
+        () -> assertEquals(0, incoming.exitCode()),
+        () -> assertTrue(incoming.stdout().contains("Direction: incoming")),
+        () -> assertTrue(incoming.stdout().contains("Results: 2")),
+        () -> assertTrue(incoming.stdout().contains("type: owns")),
+        () -> assertTrue(incoming.stdout().contains("type: tested_subject")),
+        () -> assertFalse(incoming.stdout().contains("type: declares")),
+        () -> assertEquals(0, outgoing.exitCode()),
+        () -> assertTrue(outgoing.stdout().contains("Direction: outgoing")),
+        () -> assertTrue(outgoing.stdout().contains("Results: 1")),
+        () -> assertTrue(outgoing.stdout().contains("type: declares")),
+        () -> assertFalse(outgoing.stdout().contains("type: tested_subject")),
+        () -> assertTrue(incoming.stderr().isEmpty()),
+        () -> assertTrue(outgoing.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryRelationsMissingSubjectReturnsNoResultWithoutEchoingId() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:missing:SECRET_TOKEN");
+
+    assertAll(
+        () -> assertEquals(6, result.exitCode()),
+        () -> assertTrue(result.stdout().isEmpty()),
+        () -> assertTrue(result.stderr().contains("Query no result: No graph node matched")),
+        () -> assertFalse(result.stderr().contains("SECRET_TOKEN")));
+  }
+
+  @Test
+  void queryRelationsRejectsInvalidGraphAndInvalidDirection() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Files.writeString(artifactRoot.resolve("project-graph.json"), """
+        {
+          "graph_schema_version":"1.0",
+          "project_map_schema_version":"1.0",
+          "nodes":[{"id":"node:module:root","evidence_ids":[]}],
+          "edges":[{"id":"edge:bad","source_id":"node:module:root","target_id":"node:missing"}],
+          "relation_statuses":[],
+          "warnings":[]
+        }
+        """);
+
+    CliResult invalidGraph = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:module:root");
+    CliResult invalidDirection = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:module:root",
+        "--direction",
+        "sideways");
+
+    assertAll(
+        () -> assertEquals(3, invalidGraph.exitCode()),
+        () -> assertTrue(invalidGraph.stdout().isEmpty()),
+        () -> assertTrue(invalidGraph.stderr().contains(
+            "Query input error: Invalid project-graph.json graph reference.")),
+        () -> assertEquals(2, invalidDirection.exitCode()),
+        () -> assertTrue(invalidDirection.stdout().isEmpty()),
+        () -> assertTrue(invalidDirection.stderr().contains("Unsupported --direction value.")),
+        () -> assertTrue(invalidDirection.stderr().contains("Usage: agent-project-memory query")),
+        () -> assertFalse(invalidDirection.stderr().contains(repositoryRoot.toString())));
   }
 
   @Test
@@ -576,6 +751,148 @@ final class QueryCliTest {
             }
           ],
           "relation_statuses": [],
+          "warnings": []
+        }
+        """);
+  }
+
+  private void writeRelationGraph(Path artifactRoot) throws IOException {
+    Files.writeString(artifactRoot.resolve("project-graph.json"), """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:module:root",
+              "kind": "module",
+              "label": "root",
+              "claim_category": "structural",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "project.modules.items",
+                "id": "module:."
+              },
+              "evidence_ids": []
+            },
+            {
+              "id": "node:type:root:com.example.web.OrderController",
+              "kind": "type",
+              "label": "OrderController",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "components.items",
+                "id": "component:com.example.web.OrderController"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            },
+            {
+              "id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "kind": "endpoint",
+              "label": "GET /orders/{id}",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "id": "endpoint:com.example.web.OrderController#getOrder"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            },
+            {
+              "id": "node:test:test%3Acom.example.web.OrderControllerTest",
+              "kind": "test",
+              "label": "OrderControllerTest",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "tests.items",
+                "id": "test:com.example.web.OrderControllerTest"
+              },
+              "evidence_ids": ["ev:order:symbol"]
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge:owns:node:module:root:node:type:root:com.example.web.OrderController",
+              "type": "owns",
+              "source_id": "node:module:root",
+              "target_id": "node:type:root:com.example.web.OrderController",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "components.items",
+                "fields": ["module_id", "class_name"]
+              },
+              "evidence_ids": []
+            },
+            {
+              "id": "edge:declares:node:type:root:com.example.web.OrderController:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "type": "declares",
+              "source_id": "node:type:root:com.example.web.OrderController",
+              "target_id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "fields": ["controller_class", "handler_method"]
+              },
+              "evidence_ids": []
+            },
+            {
+              "id": "edge:tested_subject:node:test:test%3Acom.example.web.OrderControllerTest:node:type:root:com.example.web.OrderController",
+              "type": "tested_subject",
+              "source_id": "node:test:test%3Acom.example.web.OrderControllerTest",
+              "target_id": "node:type:root:com.example.web.OrderController",
+              "claim_category": "inferred",
+              "relation_status": "inferred",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "relation_attributes": {
+                "relation_type": "naming_convention",
+                "target_class_name": "com.example.web.OrderController"
+              },
+              "derivation": null,
+              "evidence_ids": ["ev:endpoint:mapping", "ev:order:symbol"]
+            }
+          ],
+          "relation_statuses": [
+            {
+              "id": "relation-status:tested_subject:node:test:test%3Acom.example.web.OrderControllerTest:no_supported_subject_signal",
+              "relation_family": "tested_subject",
+              "source_id": "node:test:test%3Acom.example.web.OrderControllerTest",
+              "target_id": null,
+              "relation_status": "not_detected",
+              "support_type": "status_only",
+              "confidence": "low",
+              "uncertainty": "no_supported_subject_signal",
+              "relation_attributes": {
+                "relation_type": "not_detected"
+              },
+              "derivation": {
+                "kind": "project_map_relation_status",
+                "artifact": "project-map.json",
+                "section": "tests.items[].tested_subjects"
+              },
+              "evidence_ids": []
+            }
+          ],
           "warnings": []
         }
         """);

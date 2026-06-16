@@ -18,8 +18,8 @@ architecture documents.
 - Implemented the first read-only `query` foundation for artifact root resolution,
   bounded loading and validation of `project-map.json`, `evidence-index.jsonl`, and
   optional `project-graph.json`, plus minimal command help and skeleton validation
-  behavior. Relations rendering, JSON result envelopes, and graph lookup UX remain
-  future v1.6 work.
+  behavior. Relations rendering and graph lookup UX are now implemented in the
+  dedicated relation lookup slice; JSON result envelopes remain future v1.6 work.
 - Implemented deterministic text output for the basic read-only list commands:
   `query <path> list modules`, `list endpoints`, `list api-operations`,
   `list entities`, and `list tests`. The commands render existing generated facts
@@ -34,6 +34,12 @@ architecture documents.
   symbol lookup only over generated artifact fields, preserve navigation references as
   non-evidence metadata, and return no-result lookups without falling back to source
   reads or fuzzy search.
+- Implemented deterministic one-hop text output for read-only graph relation lookup:
+  `query <path> relations <id>`. The command requires a valid `project-graph.json`,
+  accepts a graph node ID or generated fact ID mapped through node `source_ref`,
+  supports the existing `--direction incoming|outgoing|both` behavior with `both` as
+  default, preserves graph edge fields and `relation_statuses[]` separately, and keeps
+  graph derivation as non-evidence navigation metadata.
 
 ## [1.5.0] - 2026-06-16
 
