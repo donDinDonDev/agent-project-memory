@@ -4742,14 +4742,12 @@ Current v0.9 CLI behavior:
 ### v1.6 Query CLI Contract
 
 This section defines the public contract for the v1.6 local query/read-only explorer.
-The latest published v1.5 command surface remains `scan`, `help`, and `version` until
-the `v1.6.0` tag, GitHub Release, and release assets are published. The v1.6
-release-candidate implementation includes the read-only artifact-loading foundation plus
-deterministic text output for `query <path> list modules`, `list endpoints`,
+The published v1.6 command surface includes the read-only artifact-loading foundation
+plus deterministic text output for `query <path> list modules`, `list endpoints`,
 `list api-operations`, `list entities`, `list tests`, `explain evidence <id>`,
-`find fact <term>`, `find symbol <term>`, and `relations <id>`. Relation lookup
-supports `--direction incoming|outgoing|both` with `both` as the default. A `--format`
-flag and stable JSON result envelope are not included in v1.6.0 and remain future work.
+`find fact <term>`, `find symbol <term>`, and `relations <id>`. Relation lookup supports
+`--direction incoming|outgoing|both` with `both` as the default. A `--format` flag and
+stable JSON result envelope are not included in v1.6.0 and remain future work.
 
 The query layer is a deterministic presentation and lookup layer over existing
 generated artifacts. It does not create project facts, does not create evidence

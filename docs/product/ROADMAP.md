@@ -2,10 +2,10 @@
 
 ## Current Status
 
-The latest published release is `v1.5.0`, with executable jar and `SHA256SUMS` assets.
-The current local release-candidate build is `v1.6.0`. Normal generated
-`project-map.json` files use `schema_version: "1.0"` as the stable-line marker. The
-v1.5.0 lightweight relation graph expansion is additive, and the v1.6.0 query
+The latest published release is `v1.6.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as the
+stable-line marker. The v1.5.0 lightweight relation graph expansion is additive, and
+the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated
 artifacts without changing generated artifact schemas or evidence semantics.
 
@@ -1018,17 +1018,16 @@ Release readiness notes:
 - The `v1.5.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
-### v1.6.0: Local Query And Read-Only Explorer (Release Candidate)
+### v1.6.0: Local Query And Read-Only Explorer (Published)
 
-This section describes the v1.6 query release-candidate implementation. It is not
-shipped in the latest published `v1.5.0` release until the `v1.6.0` tag, GitHub
-Release, and release assets are published.
+The `v1.6.0` tag and GitHub Release are published with the packaged jar and checksum
+assets. This section describes the shipped v1.6 query implementation.
 
 Product outcome: add deterministic read-only CLI lookup commands over existing
 `.project-memory/` artifacts so humans and coding agents can inspect generated facts,
 evidence, and graph relations without running a chat, RAG, source-scan, or write flow.
 
-Release-candidate command boundary:
+Published command boundary:
 
 - Add a top-level `query` command. The executable-jar form is
   `java -jar agent-project-memory-1.6.0.jar query <path> ...`; the installed-command
@@ -1054,10 +1053,10 @@ Release-candidate command boundary:
   evidence IDs, and non-evidence derivation metadata without turning the graph into
   impact analysis.
 - Use deterministic human text output. Stable JSON query output and a `--format` option
-  are not included in the v1.6.0 release candidate and remain future work. Error output
+  are not included in v1.6.0 and remain future work. Error output
   remains bounded and deterministic on stderr.
 
-Release-candidate non-goals:
+Release non-goals:
 
 - No source scanning, scan refresh, `.project-memory/` creation, cache refresh, profile
   generation, repository writes, or code modification during query.
@@ -1086,8 +1085,8 @@ Release readiness notes:
   risk-based release-prep review for the final release-prep diff.
 - No release-blocking security finding or bounded security-fix goal remains open for
   `v1.6.0`.
-- Tag, GitHub Release publication, artifact upload, and release publication remain
-  manual maintainer actions after release-prep review.
+- The `v1.6.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 Possible later tracks:
 

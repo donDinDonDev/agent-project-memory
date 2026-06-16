@@ -30,13 +30,13 @@ external services by default.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.5.0`. Its release artifact is
-`agent-project-memory-1.5.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.6.0`. Its release artifact is
+`agent-project-memory-1.6.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.5.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.6.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -117,8 +117,8 @@ output generation. Missing, stale, unsafe, corrupted, or mismatched cache state 
 closed to normal full analysis. Scans without `--incremental` ignore persistent cache
 state and do not read, write, delete, or trust cache files.
 
-The v1.6.0 release-candidate local build also includes read-only query commands over
-existing generated artifacts:
+The v1.6.0 release also includes read-only query commands over existing generated
+artifacts:
 
 ```sh
 java -jar target/agent-project-memory-1.6.0.jar query /path/to/java-spring-project list modules
@@ -152,7 +152,7 @@ graph node ID or a generated fact ID that maps through node `source_ref`, and re
 only one-hop incoming, outgoing, or default `both` graph neighbors while keeping graph
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
 are navigation metadata, not evidence. Stable JSON query output remains future work and
-is not part of the v1.6.0 release candidate.
+is not included in v1.6.0.
 
 CLI exit codes are stable for automation:
 
@@ -473,11 +473,10 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.5.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current local release-candidate build is `v1.6.0`, and local builds produce
-`target/agent-project-memory-1.6.0.jar`. Normal
-generated `project-map.json` files use `schema_version: "1.0"` as a stable-line
-marker. The v1.5 lightweight relation graph expansion is additive, and the v1.6
+The latest published release is `v1.6.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds produce `target/agent-project-memory-1.6.0.jar`. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
+lightweight relation graph expansion is additive, and the v1.6
 read-only query expansion adds deterministic artifact-backed lookup commands without
 changing generated project-memory schemas or evidence semantics.
 

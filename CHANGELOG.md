@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated post-release documentation status to mark `v1.6.0` as published with release
+  jar and checksum assets.
+
 ## [1.6.0] - 2026-06-16
 
 ### Added
@@ -48,8 +53,7 @@ architecture documents.
 ### Changed
 
 - Aligned the Maven project version, README local build examples, roadmap status, output
-  contract status wording, and release notes for the `v1.6.0` release-candidate
-  materials.
+  contract status wording, and release notes for the `v1.6.0` release materials.
 
 ### Fixed
 
