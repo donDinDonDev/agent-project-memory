@@ -4023,6 +4023,390 @@ Stop conditions for implementation:
   connectors, repository chat, generic RAG, LLM calls in the core analyzer, automatic
   code modification, or release automation.
 
+### v1.5 Lightweight Relation Graph Contract
+
+This section defines the planned v1.5 lightweight relation graph boundary. It is a
+design contract for future implementation work; it does not claim that current release
+builds already emit the graph artifact.
+
+The v1.5 policy decision is a separate graph artifact:
+
+- The graph artifact path is `.project-memory/project-graph.json`.
+- The graph is not a top-level `project-map.json` section. `project-map.json` remains
+  the source fact surface, and the initial graph expansion keeps
+  `project-map.json` on `schema_version: "1.0"`.
+- The graph artifact uses its own `graph_schema_version: "1.0"` marker.
+- The graph is generated from existing deterministic facts, existing relation/status
+  rows, existing evidence IDs, and existing document reconciliation hints. It must not
+  add new analyzer families merely to populate graph nodes or edges.
+- The graph is a navigation/index artifact over current project memory. It must not
+  strengthen, reinterpret, or override the source facts in `project-map.json` or the
+  evidence records in `evidence-index.jsonl`.
+- The initial contract has no graph CLI selector and no root-local config selector.
+  Once implemented, supported scans that write the base project-memory files should
+  also write `project-graph.json`. Unsupported directories that only prepare
+  `.project-memory/` should not create an orphan graph artifact.
+- `agent-guide.md` and selected agent profile Markdown are not required to render graph
+  content in the initial graph contract. The first graph surface is machine-readable
+  JSON.
+
+Planned graph artifact layout:
+
+```text
+.project-memory/
+  project-map.json
+  project-graph.json
+  evidence-index.jsonl
+  endpoints.md
+  agent-guide.md
+```
+
+High-level `project-graph.json` shape:
+
+```json
+{
+  "graph_schema_version": "1.0",
+  "project_map_schema_version": "1.0",
+  "graph_kind": "lightweight_relation_graph",
+  "source_artifacts": [
+    "project-map.json",
+    "evidence-index.jsonl"
+  ],
+  "limits": {
+    "max_nodes": 20000,
+    "max_edges": 50000,
+    "max_relation_statuses": 10000
+  },
+  "nodes": [],
+  "edges": [],
+  "relation_statuses": [],
+  "warnings": []
+}
+```
+
+Top-level rules:
+
+- `graph_schema_version` is `"1.0"` for the initial graph artifact contract.
+- `project_map_schema_version` records the `project-map.json` schema marker that the
+  graph was generated from. It does not define a new project-map schema.
+- `graph_kind` is `"lightweight_relation_graph"` for the initial graph artifact.
+- `source_artifacts` lists the base artifacts used to generate or validate the graph.
+  The initial contract uses `project-map.json` and `evidence-index.jsonl`, or the same
+  in-memory facts and evidence records used to write those files.
+- `nodes`, `edges`, `relation_statuses`, and `warnings` are emitted as arrays. Empty
+  collections are emitted as empty arrays, not omitted.
+- Graph warnings are bounded generated-output diagnostics for graph construction. They
+  are not project evidence and must not appear in `evidence_ids`.
+
+Node taxonomy:
+
+- `module`: an emitted project module from `project.modules.items[]`.
+- `package`: a Java package deterministically derived from emitted source-visible type
+  facts. Package nodes are emitted only when at least one emitted type node belongs to
+  the package.
+- `type`: a source-visible Java class or interface already represented by existing
+  endpoint, component, Spring application surface, JPA/domain, repository, or test
+  facts.
+- `endpoint`: an existing source-visible Spring MVC endpoint fact.
+- `api_operation`: an existing spec-backed declared OpenAPI/Swagger operation fact.
+- `entity`: an existing JPA entity fact.
+- `embeddable`: an existing JPA embeddable fact.
+- `repository`: an existing Spring repository signal fact.
+- `test`: an emitted test class fact.
+- `document`: an accepted local Markdown document fact.
+- `document_heading`: an emitted local Markdown heading reference.
+- `document_chunk`: an emitted bounded local Markdown chunk reference.
+- `generated_source_root`: an existing generated-source metadata-only root row.
+- `warning`: an existing warning row.
+- `status`: an explicit not-analyzed or unsupported status row that can be represented
+  without inventing a missing target relation.
+
+Evidence records are not graph nodes in the initial v1.5 contract. Nodes and edges
+reference existing evidence through `evidence_ids` so consumers can join to
+`evidence-index.jsonl` without duplicating evidence records in the graph.
+
+Node shape:
+
+```json
+{
+  "id": "node:type:root:com.example.orders.OrderController",
+  "kind": "type",
+  "label": "OrderController",
+  "claim_category": "extracted",
+  "module_id": "root",
+  "source_ref": {
+    "artifact": "project-map.json",
+    "section": "components.items",
+    "id": "component:com.example.orders.OrderController"
+  },
+  "evidence_ids": []
+}
+```
+
+Node rules:
+
+- `id` is stable within a generated graph and uses `node:<kind>:<node_key>`.
+- `kind` is one of the documented node kinds.
+- `label` is deterministic display text derived from the source fact, such as a simple
+  class name, path, HTTP method/path summary, operation ID, warning signal, or status
+  label. It must not serialize source bodies, document bodies, config contents,
+  generated-source contents, raw command output, local absolute paths, credentials,
+  tokens, or secret-looking values.
+- `claim_category` is one of `extracted`, `inferred`, `uncertain`, `document_backed`,
+  `spec_backed`, `metadata_only`, `warning`, `not_analyzed`, or `structural`.
+- `module_id` is the owning module ID when known and `null` otherwise.
+- `source_ref` identifies the source artifact and section or fact ID used to create the
+  node. It is a graph navigation reference, not evidence.
+- `evidence_ids` contains existing evidence IDs from the source fact when available.
+  Nodes derived only from project-map structure may have an empty evidence list.
+
+Edge taxonomy:
+
+- `owns`: structural ownership or containment, such as module-to-package,
+  module-to-fact, package-to-type, document-to-heading, or document-to-chunk.
+- `declares`: declaration relationships already visible in existing facts, such as a
+  type declaring an endpoint, repository signal, entity fact, embeddable fact, or test
+  class structure.
+- `repository_entity`: an existing repository/entity relation or relation status from
+  the current Spring Data/JPA slice.
+- `tested_subject`: an existing tested-subject relation or relation status from the
+  current tests inventory.
+- `document_reference`: an existing document reconciliation uncertain-reference hint.
+- `api_source_relation`: reserved for a future explicitly designed endpoint/spec
+  relation. The initial graph contract must not emit this edge type.
+
+Evidence references are carried by `evidence_ids`, not by `references_evidence` edges.
+The initial graph contract has no `references_evidence` edge type because evidence
+records are not graph nodes.
+
+Edge shape:
+
+```json
+{
+  "id": "edge:owns:node:module:root:node:type:root:com.example.orders.OrderController",
+  "type": "owns",
+  "source_id": "node:module:root",
+  "target_id": "node:type:root:com.example.orders.OrderController",
+  "claim_category": "structural",
+  "relation_status": "derived",
+  "support_type": "project_map_derivation",
+  "confidence": "high",
+  "uncertainty": null,
+  "derivation": {
+    "kind": "project_map_field",
+    "artifact": "project-map.json",
+    "section": "components.items",
+    "fields": [
+      "module_id",
+      "class_name"
+    ]
+  },
+  "evidence_ids": []
+}
+```
+
+Edge rules:
+
+- `id` is stable within a generated graph and uses
+  `edge:<type>:<source_id>:<target_id>` plus a deterministic qualifier when needed.
+- `type` is one of the documented edge types.
+- `source_id` and `target_id` must resolve to emitted node IDs. Edges with missing
+  endpoints are not emitted.
+- `claim_category` follows the same category set as nodes and must preserve the
+  underlying source-fact meaning.
+- `relation_status`, `support_type`, `confidence`, and `uncertainty` preserve existing
+  relation/status values when the edge is derived from repository/entity,
+  tested-subject, or document reconciliation rows. Structural edges use
+  `relation_status: "derived"` and `support_type: "project_map_derivation"`.
+- `derivation` is required when an edge does not have a dedicated evidence-backed
+  relation row. It must identify the source artifact, section, and field family used to
+  derive the edge. For edges backed by an existing evidence-backed relation row,
+  `derivation` may be `null`.
+- `evidence_ids` contains existing evidence IDs from the underlying fact or relation
+  when available. Structural ownership or containment edges that are supported only by a
+  project-map field relationship must use `derivation` and an empty `evidence_ids` array;
+  do not copy fact evidence IDs merely to prove the structural derivation.
+- Status-only relation rows that lack a concrete graph target are emitted in
+  `relation_statuses[]`, not as edges. This prevents unsupported, not-detected,
+  ambiguous, or not-analyzed rows from looking like inferred target relations.
+
+`relation_statuses[]` shape:
+
+```json
+{
+  "id": "relation-status:tested_subject:node:test:root:com.example.orders.OrderControllerTest:no_supported_subject_signal",
+  "relation_family": "tested_subject",
+  "source_id": "node:test:root:com.example.orders.OrderControllerTest",
+  "target_id": null,
+  "relation_status": "not_detected",
+  "support_type": "status_only",
+  "confidence": "low",
+  "uncertainty": "no_supported_subject_signal",
+  "derivation": {
+    "kind": "project_map_relation_status",
+    "artifact": "project-map.json",
+    "section": "tests.items[].tested_subjects"
+  },
+  "evidence_ids": []
+}
+```
+
+Relation-status rules:
+
+- `relation_statuses[]` preserves existing relation/status rows that cannot safely
+  become edges because there is no concrete emitted target node or because the status is
+  explicitly unsupported, not detected, ambiguous, uncertain, or not analyzed.
+- `source_id` must resolve to an emitted source node when present. `target_id` is `null`
+  when no concrete target is represented.
+- Relation statuses are navigation/status records only. They must not be treated as
+  extracted facts, inferred target edges, coverage claims, source/spec agreement,
+  documentation freshness, runtime behavior, or impact proof.
+
+`warnings[]` shape:
+
+```json
+{
+  "id": "graph-warning:cap:nodes",
+  "category": "cap_reached",
+  "severity": "warning",
+  "message": "Graph node cap reached; lower-priority graph material was omitted.",
+  "source_ref": null,
+  "derivation": {
+    "kind": "graph_cap",
+    "artifact": "project-graph.json",
+    "section": "nodes"
+  },
+  "evidence_ids": []
+}
+```
+
+Graph-warning rules:
+
+- Graph warnings are construction diagnostics for the graph artifact only. They are not
+  project evidence, quality findings, security findings, vulnerabilities, runtime
+  claims, or source facts.
+- `id` is stable within a generated graph and uses
+  `graph-warning:<category>:<deterministic_key>`.
+- Initial warning categories include cap warnings and duplicate/collision omission
+  warnings. Additional graph-warning categories require this contract to be updated.
+- `severity` is `"warning"` for non-fatal graph construction diagnostics in the initial
+  contract.
+- `source_ref` identifies the source artifact or graph section when applicable and is
+  `null` when the warning applies to the graph artifact as a whole.
+- `derivation` explains the graph-construction condition that produced the warning. It
+  is not evidence.
+- `evidence_ids` is always an empty array for graph warnings.
+
+Deterministic ID and sorting rules:
+
+- Node keys and edge qualifiers reuse existing stable fact IDs when available. When no
+  existing ID exists, they use normalized repository-relative paths, module IDs, fully
+  qualified class names, operation keys, or status keys from the source fact.
+- Graph ID key escaping should reuse the percent-encoding rules used for path-backed
+  evidence IDs in this document: preserve the readable bounded key set and uppercase
+  UTF-8 byte percent-encode separators or control characters that would make IDs
+  ambiguous.
+- If two generated IDs would otherwise collide, the implementation must add a
+  deterministic `decl:<zero-padded-ordinal>` suffix based on source-order within the
+  already sorted source collection or emit a graph warning and omit the duplicate.
+- Nodes are sorted by `kind`, `id`.
+- Edges are sorted by `type`, `source_id`, `target_id`, `id`.
+- Relation statuses are sorted by `relation_family`, `source_id`, `target_id`, `id`.
+- Graph warnings are sorted by warning category, source reference, and ID.
+- JSON field order must remain stable for deterministic golden outputs.
+
+Confidence and uncertainty rules:
+
+- The graph uses the existing confidence labels `high`, `medium`, and `low`.
+- Structural edges derived from deterministic project-map fields may use
+  `confidence: "high"` only for the graph derivation, not for a stronger source claim.
+- Inferred relation edges must preserve the confidence and uncertainty from the source
+  relation row.
+- Uncertain document reconciliation edges must remain low-confidence uncertain
+  inspection hints.
+- Missing uncertainty is represented as JSON `null`; unsupported or not-analyzed status
+  is represented explicitly rather than by omitting a row.
+
+Size and noise limits:
+
+- The initial graph contract caps emitted graph material at 20,000 nodes, 50,000 edges,
+  and 10,000 relation-status rows per scan.
+- The implementation must apply caps deterministically and emit graph warnings when
+  graph output is capped.
+- Cap hits are not evidence and must not create evidence records.
+- Cap priority should preserve higher-signal graph material first: module/type/fact
+  nodes, structural ownership/declaration edges for emitted facts, existing inferred
+  relation edges, relation statuses, and finally uncertain document-reference edges.
+- Package nodes are emitted only for packages with emitted type nodes.
+- Evidence records are not duplicated as graph nodes in the initial contract to avoid
+  evidence fan-out.
+- Document nodes are limited to the existing accepted document, heading, and chunk facts
+  already emitted under the local document ingestion caps.
+- Generated-source material remains metadata-only and must not read generated-source
+  contents to populate graph nodes or edges.
+
+Incremental cache interaction:
+
+- Once `project-graph.json` is implemented as part of the base generated output set,
+  incremental cache output fingerprints must include it as `.project-memory`-relative
+  path `project-graph.json` with `output_kind: "project_graph"`.
+- The cache schema can remain `cache_schema_version: "1.0"` if the cache file field
+  shape remains unchanged; the tool-version and selected output fingerprint set still
+  make older cache state miss safely.
+- A validated cache hit must verify `project-graph.json` digest and size together with
+  `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, `agent-guide.md`, and any
+  selected profile artifacts before skipping full analysis.
+- A missing, stale, unsafe, or mismatched graph output fingerprint fails closed to full
+  analysis. Full analysis then regenerates the complete selected output set.
+- Normal scans without `--incremental` continue to ignore cache state.
+
+Validation requirements:
+
+- Focused model and serialization tests for graph schema, field order, nullability, and
+  deterministic sorting.
+- Focused node and edge builder tests for every documented node kind, edge type,
+  relation-status row, ID escaping rule, collision rule, cap warning, and claim
+  category.
+- Golden output tests proving `project-graph.json` is stable and that existing
+  `project-map.json`, `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`
+  behavior remains stable except for the intentional new graph artifact.
+- Evidence-reference integrity checks proving every graph `evidence_ids` value resolves
+  to `evidence-index.jsonl` and that graph derivation-only rows do not fabricate
+  evidence IDs.
+- Incremental cache tests proving graph output participates in selected output
+  fingerprints, cache hits validate graph digests, graph mismatches fail closed to full
+  analysis, and non-incremental scans ignore cache state.
+- Content-safety checks proving graph output does not serialize source bodies, local
+  document bodies, config contents, raw build-script bodies, generated-source contents,
+  generated Markdown bodies, raw command logs, stack traces, local absolute paths,
+  credentials, tokens, secret-looking values, downstream agent output, or LLM output.
+- Representative fixture and packaged CLI checks for graph size/noise, duplicate IDs,
+  dangling edges, unresolved evidence references, and deterministic repeated digests
+  before release.
+- Risk-based review is required before release for implementation that changes graph
+  output paths, generated artifact ownership, cache output fingerprints, evidence
+  reference handling, graph size limits, JSON rendering, filesystem/path behavior, CLI
+  behavior, or config behavior.
+
+Stop conditions for implementation:
+
+- Graph semantics imply full call reachability, dependency reachability, runtime Spring
+  wiring, runtime routing, runtime data access, source/spec agreement, documentation
+  freshness, test coverage, CI status, assertion behavior, vulnerability, correctness,
+  production impact, business priority, or complete architecture ownership.
+- Graph nodes or edges cannot keep extracted, inferred, uncertain, document-backed,
+  spec-backed, generated-source metadata-only, warning, and not-analyzed categories
+  distinct.
+- Node or edge identity cannot be made deterministic and stable enough for golden
+  outputs.
+- Evidence and derivation semantics are unclear, or derivation starts acting as
+  evidence.
+- Graph output would require source body serialization, local document body
+  serialization, config value serialization, generated-source content scanning, build
+  execution, runtime analysis, complete type solving, dependency resolution, network
+  access, connectors, optional AI, repository chat, generic RAG, automatic code
+  modification, query/impact commands, release automation, or publication automation.
+
 ### v0.9 CLI And Scan Configuration Contract
 
 This section defines the v0.9 public output boundary for CLI/config behavior. The v0.9

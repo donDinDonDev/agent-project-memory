@@ -1242,6 +1242,63 @@ Any future cache feature that treats cache entries, generated outputs, timing da
 diagnostics, or output digests as evidence must update this document and
 `OUTPUT_CONTRACT.md` before implementation.
 
+### v1.5 Relation Graph Evidence And Derivation Decision
+
+The planned v1.5 relation graph does not add evidence types, evidence fields, evidence
+records, confidence labels, excerpt semantics, path semantics, runtime evidence, or
+tool-config evidence.
+
+Graph state is generated navigation metadata over existing project-memory facts:
+
+- `.project-memory/project-graph.json` is not an evidence source.
+- Graph schema markers, node IDs, edge IDs, graph warnings, graph cap observations,
+  graph derivation records, graph sorting, generated JSON, generated Markdown, cache
+  fingerprints, downstream agent output, chat output, and LLM output are not evidence
+  for project facts or relations.
+- Graph nodes and edges may reference existing `evidence_ids` from `evidence-index.jsonl`
+  when the underlying fact or relation already has evidence.
+- Evidence records remain in `evidence-index.jsonl`; the initial graph contract does not
+  duplicate evidence records as graph nodes.
+- A graph node or edge must not strengthen, replace, suppress, or weaken evidence for
+  an underlying generated fact. The underlying project-map fact and its evidence remain
+  authoritative for the claim category already documented in this evidence model.
+
+Structural graph edges may use derivation metadata instead of new evidence:
+
+- Ownership and containment edges, such as module-to-fact, package-to-type, or
+  document-to-heading edges, may be derived from existing `project-map.json` fields and
+  graph node construction rules.
+- Such derivation metadata identifies the source artifact, source section or field, and
+  derivation kind. It is a reproducibility explanation for the graph edge, not an
+  evidence record.
+- Structural derivation must not be cited from `evidence_ids`, must not create
+  `evidence-index.jsonl` records, and must not be used to prove runtime behavior,
+  reachability, ownership semantics beyond current project-map fields, or source/spec
+  agreement.
+
+Inferred, uncertain, document-backed, spec-backed, warning, metadata-only, and
+not-analyzed graph material keeps the same evidence boundaries as the source facts:
+
+- Existing repository/entity and tested-subject relations keep their existing
+  evidence IDs, relation statuses, support types, confidence, and uncertainty.
+- Document reconciliation graph edges remain low-confidence uncertain inspection hints.
+  They do not prove stale documentation, missing documentation, source/document
+  agreement, implementation truth, or code ownership.
+- OpenAPI operation graph nodes remain spec-backed declared-operation facts. A graph
+  connection involving a source-visible endpoint and a spec operation must not claim
+  implementation agreement unless a later explicit relation contract adds separate
+  evidence-backed semantics.
+- Generated-source metadata graph nodes remain metadata-only and must not read or cite
+  generated-source contents.
+- Warning and not-analyzed graph records are orientation/status records only. They do
+  not become extracted facts, inferred relations, runtime claims, coverage claims,
+  security findings, vulnerabilities, or business-priority evidence.
+
+Any future graph feature that introduces new evidence sources, emits evidence nodes as
+first-class facts, changes confidence semantics, treats derivation as evidence, scans
+generated-source contents, or adds runtime, connector, or AI-derived evidence must
+update this document and `OUTPUT_CONTRACT.md` before implementation.
+
 ## Evidence Discipline
 
 - Do not fabricate evidence.

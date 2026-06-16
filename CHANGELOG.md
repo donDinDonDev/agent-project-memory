@@ -11,6 +11,11 @@ architecture documents.
 
 ### Changed
 
+- Documented the planned v1.5 lightweight relation graph contract boundary: a separate
+  `.project-memory/project-graph.json` artifact with its own graph schema marker,
+  deterministic node and edge IDs, explicit evidence or derivation basis, bounded
+  confidence and uncertainty semantics, size/noise limits, and no `project-map.json`
+  schema migration.
 - Updated post-release documentation status to mark `v1.4.0` as published with release
   jar and checksum assets.
 

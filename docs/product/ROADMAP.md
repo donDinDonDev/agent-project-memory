@@ -930,9 +930,69 @@ Release readiness notes:
 - The `v1.4.0` tag and GitHub release are published with the packaged jar and checksum
   assets.
 
+### v1.5.0: Lightweight Relation Graph (Planned)
+
+Product outcome: add a bounded deterministic graph artifact that helps humans and
+coding agents navigate relationships between existing project-memory facts without
+turning the graph into a full architecture, runtime dependency, or impact model.
+
+Planned contract decision:
+
+- Emit a separate `.project-memory/project-graph.json` artifact once the feature is
+  implemented. The graph is not a top-level `project-map.json` section, and the design
+  is not parked.
+- Keep `project-map.json` on `schema_version: "1.0"` for the initial graph expansion.
+  The graph artifact has its own `graph_schema_version: "1.0"` marker.
+- Generate the graph only from already extracted deterministic facts, existing
+  relation/status rows, existing evidence IDs, and existing document reconciliation
+  hints. Do not add new analyzer families merely to populate graph edges.
+- Keep evidence records in `evidence-index.jsonl`. Graph nodes and edges reference
+  existing `evidence_ids`; evidence records are not duplicated as graph nodes in the
+  initial contract.
+- Use explicit derivation metadata for structural edges that are derived from current
+  project-map fields rather than directly supported by a dedicated evidence record.
+- Keep extracted facts, inferred relations, uncertain signals, document-backed hints,
+  spec-backed declared operations, generated-source metadata-only observations,
+  warnings, and not-analyzed areas distinct in graph node and edge metadata.
+- Treat graph output as an additive navigation/index artifact over deterministic facts,
+  not as a stronger authority than `project-map.json` and `evidence-index.jsonl`.
+
+Planned graph scope:
+
+- Node families: modules, packages derived from emitted source-visible types,
+  source-visible types already represented by existing facts, Spring MVC endpoints,
+  declared OpenAPI operations, JPA entities and embeddables, Spring repository signals,
+  emitted tests, local Markdown documents/headings/chunks, generated-source metadata
+  rows, warnings, and selected status/not-analyzed markers when they can be represented
+  without implying a missing target relation.
+- Edge families: structural ownership edges, declaration edges, existing
+  repository/entity and tested-subject relation edges, document reconciliation
+  uncertain-reference edges, and fact-to-evidence references through `evidence_ids`
+  rather than evidence-node duplication.
+- Status-only relation rows that lack a concrete graph target remain status records,
+  not inferred graph edges.
+
+Non-goals:
+
+- No full call graph, runtime dependency graph, runtime Spring bean/autowiring graph,
+  runtime handler mapping, complete type solving, source/spec agreement scoring,
+  documentation freshness scoring, coverage/CI/assertion proof, behavior-impact
+  guarantee, query/impact command, generated-source content scanning, connectors,
+  optional AI, SaaS, web UI, repository chat, generic RAG, or automatic code
+  modification.
+
+Validation expectations before release:
+
+- Focused tests and goldens for graph schema, deterministic IDs, sorting, node/edge
+  taxonomy, cap behavior, evidence ID resolution, derivation metadata, existing output
+  stability, and incremental cache interaction.
+- Representative scans checking graph size/noise, duplicate IDs, dangling edges,
+  unresolved evidence references, and sensitive-data boundaries.
+- Risk-based review for graph output paths, generated artifact ownership, cache output
+  fingerprints, evidence-reference handling, graph size limits, and JSON rendering.
+
 Possible later tracks:
 
-- Lightweight relation graph.
 - Local query/read-only explorer.
 - Security and secrets safety.
 - Public adoption polish.
