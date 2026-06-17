@@ -109,6 +109,9 @@ Planned v2 adapter security defaults:
   regular files under the scanned repository root and rejects absolute paths, escaping
   paths, generated-output paths, directories, symlinked inputs, and missing inputs
   before adapter-backed output is emitted;
+- the current implementation validates the future local structured import path before
+  any adapter reader or parser exists, records only bounded adapter feature metadata,
+  and does not read raw export contents or emit adapter-backed records;
 - network access remains off by default and must be explicitly enabled for any future
   API connector mode;
 - source upload is not a default behavior;

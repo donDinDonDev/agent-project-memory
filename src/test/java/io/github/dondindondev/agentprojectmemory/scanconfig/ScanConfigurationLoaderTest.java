@@ -8,6 +8,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterImportMode;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,7 +38,10 @@ final class ScanConfigurationLoaderTest {
         () -> assertTrue(configuration.localMarkdownEnabled()),
         () -> assertEquals("default", configuration.localMarkdownSource()),
         () -> assertEquals(List.of(), configuration.documentIncludes()),
-        () -> assertEquals(List.of(), configuration.documentExcludes()));
+        () -> assertEquals(List.of(), configuration.documentExcludes()),
+        () -> assertFalse(configuration.adapterConfiguration().enabled()),
+        () -> assertFalse(configuration.adapterConfiguration().networkEnabled()),
+        () -> assertEquals(List.of(), configuration.adapterConfiguration().localImports()));
   }
 
   @Test
@@ -68,6 +73,38 @@ final class ScanConfigurationLoaderTest {
         () -> assertEquals("config_file", configuration.localMarkdownSource()),
         () -> assertTrue(configuration.documentIncludes().get(0).matches("notes/a/b/guide.md")),
         () -> assertTrue(configuration.documentExcludes().get(0).matches("docs/archive/old.md")));
+  }
+
+  @Test
+  void parsesExplicitOptInAdapterLocalImportWithoutReadingInput() throws Exception {
+    Path repositoryRoot = repository("adapter-valid");
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Files.writeString(repositoryRoot.resolve("exports/issues.json"), """
+        {"token":"FAKE_ADAPTER_EXPORT_CONTENT"}
+        """);
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    ScanConfiguration configuration = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+    AdapterLocalImport localImport = configuration.adapterConfiguration().localImports().get(0);
+
+    assertAll(
+        () -> assertTrue(configuration.adapterConfiguration().enabled()),
+        () -> assertFalse(configuration.adapterConfiguration().networkEnabled()),
+        () -> assertEquals(1, configuration.adapterConfiguration().localImports().size()),
+        () -> assertEquals(
+            AdapterLocalImport.LOCAL_STRUCTURED_IMPORT_ADAPTER,
+            localImport.adapterName()),
+        () -> assertEquals(AdapterImportMode.LOCAL_EXPORT, localImport.importMode()),
+        () -> assertEquals("exports/issues.json", localImport.path()));
   }
 
   @Test
@@ -123,6 +160,109 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void rejectsMalformedAdapterConfigWithoutEchoingCredentialsOrValues() throws Exception {
+    Path repositoryRoot = repository("adapter-malformed");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters: true
+        """);
+    assertInvalid(repositoryRoot, null, "adapters must be a mapping");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            path: exports/issues.json
+        """);
+    assertInvalid(repositoryRoot, null, "disabled adapter config must not declare an import path");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+        """);
+    assertInvalid(repositoryRoot, null, "adapter import path is required");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: 123
+        """);
+    assertInvalid(repositoryRoot, null, "adapter import path must be a string");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+            network: true
+        """);
+    InvalidScanConfigException network = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+            api_token: FAKE_ADAPTER_CONFIG_TOKEN
+        """);
+    InvalidScanConfigException credential = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    assertAll(
+        () -> assertTrue(network.getMessage().contains("unsupported key")),
+        () -> assertFalse(network.getMessage().contains("network")),
+        () -> assertFalse(network.getMessage().contains("true")),
+        () -> assertTrue(credential.getMessage().contains("unsupported key")),
+        () -> assertFalse(credential.getMessage().contains("api_token")),
+        () -> assertFalse(credential.getMessage().contains("FAKE_ADAPTER_CONFIG_TOKEN")));
+  }
+
+  @Test
+  void rejectsUnsafeAdapterImportPathsAndFilesystemTargets() throws Exception {
+    Path repositoryRoot = repository("adapter-unsafe");
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Files.writeString(repositoryRoot.resolve("exports/issues.json"), "{}\n");
+    Files.createDirectories(repositoryRoot.resolve(".project-memory"));
+    Files.createDirectories(repositoryRoot.resolve("exports/directory.json"));
+
+    assertInvalidAdapterImportPath(repositoryRoot, "../outside.json", "unsafe path segment");
+    assertInvalidAdapterImportPath(repositoryRoot, "/tmp/adapter-export.json", "repository-relative");
+    assertInvalidAdapterImportPath(repositoryRoot, "C:/adapter-export.json", "repository-relative");
+    assertInvalidAdapterImportPath(repositoryRoot, ".project-memory/source.json", "generated output");
+    assertInvalidAdapterImportPath(repositoryRoot, "exports/missing.json", "adapter import file was not found");
+    assertInvalidAdapterImportPath(repositoryRoot, "exports/directory.json", "regular file");
+  }
+
+  @Test
+  void rejectsAdapterImportSymlinkAndSymlinkedPathSegments() throws Exception {
+    Path repositoryRoot = repository("adapter-symlink");
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Path outsideDirectory = tempDir.resolve("outside-adapter-export");
+    Files.createDirectories(outsideDirectory);
+    Path outsideFile = outsideDirectory.resolve("issues.json");
+    Files.writeString(outsideFile, "{}\n");
+    try {
+      Files.createSymbolicLink(repositoryRoot.resolve("exports/link.json"), outsideFile);
+      Files.createSymbolicLink(repositoryRoot.resolve("exports/link-dir"), outsideDirectory);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+
+    assertInvalidAdapterImportPath(repositoryRoot, "exports/link.json", "symbolic link");
+    assertInvalidAdapterImportPath(repositoryRoot, "exports/link-dir/issues.json", "symbolic link");
+  }
+
+  @Test
   void rejectsReservedModeEnablementAndUnknownKeysWithoutEchoingValues() throws Exception {
     Path repositoryRoot = repository("reserved");
     writeConfig(repositoryRoot, """
@@ -173,6 +313,20 @@ final class ScanConfigurationLoaderTest {
             ScanPathContainment.canonicalRoot(repositoryRoot),
             explicitConfigPath));
     assertTrue(exception.getMessage().contains(expectedMessage));
+  }
+
+  private void assertInvalidAdapterImportPath(
+      Path repositoryRoot,
+      String importPath,
+      String expectedMessage) throws Exception {
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: %s
+        """.formatted(importPath));
+    assertInvalid(repositoryRoot, null, expectedMessage);
   }
 
   private Path repository(String name) throws Exception {

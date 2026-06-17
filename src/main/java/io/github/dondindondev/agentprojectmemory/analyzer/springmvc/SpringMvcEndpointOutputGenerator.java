@@ -3276,6 +3276,30 @@ public final class SpringMvcEndpointOutputGenerator {
     json.append("      \"follow_symlinks\": {\n");
     appendIndentedBooleanField(json, 4, "enabled", false, true);
     appendIndentedStringField(json, 4, "status", "reserved_disabled", false);
+    json.append("      },\n");
+    json.append("      \"adapters\": {\n");
+    appendIndentedBooleanField(json, 4, "enabled", scanConfiguration.adapterConfiguration().enabled(), true);
+    appendIndentedIntegerField(
+        json,
+        4,
+        "selected_count",
+        scanConfiguration.adapterConfiguration().localImports().size(),
+        true);
+    appendIndentedIntegerField(
+        json,
+        4,
+        "local_import_count",
+        scanConfiguration.adapterConfiguration().localImports().size(),
+        true);
+    appendIndentedStringField(json, 4, "network_access", "disabled", true);
+    appendIndentedStringField(
+        json,
+        4,
+        "status",
+        scanConfiguration.adapterConfiguration().enabled()
+            ? "config_validated_no_reader"
+            : "disabled_by_default",
+        false);
     json.append("      }\n");
     json.append("    },\n");
     json.append("    \"path_policy\": {\n");

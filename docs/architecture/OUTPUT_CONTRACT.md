@@ -42,10 +42,13 @@ The current v1.x implementation does not emit this artifact. A normal scan with 
 adapter explicitly enabled must keep the current base artifact set and must not create a
 source registry.
 
-The initial adapter-domain contract foundation does not change generated output. It
-adds source-document/provenance identity validation for future adapters only; scans
-without an explicitly enabled adapter still do not emit `source-registry.json` or
-adapter-backed `project-map.json` sections.
+The initial adapter-domain contract foundation added source-document/provenance
+identity validation for future adapters only. The current adapter config safety layer
+adds bounded `scan.features.adapters` metadata for disabled-by-default selection and
+validated local import counts, but scans without an explicitly enabled adapter still do
+not emit `source-registry.json` or adapter-backed `project-map.json` fact sections.
+Enabled adapter config is validation-only until a later implementation adds a reader,
+parser, source registry writer, and adapter-backed output integration.
 
 ## Planned v2 Adapter Output Boundary
 
@@ -4641,6 +4644,13 @@ Current `project-map.json` excerpt. Unchanged v0.8 fields are omitted for focus:
       "follow_symlinks": {
         "enabled": false,
         "status": "reserved_disabled"
+      },
+      "adapters": {
+        "enabled": false,
+        "selected_count": 0,
+        "local_import_count": 0,
+        "network_access": "disabled",
+        "status": "disabled_by_default"
       }
     },
     "path_policy": {
@@ -4693,6 +4703,9 @@ Current config file rules:
       - notes/**/*.md
     exclude:
       - docs/archive/**
+  adapters:
+    local_structured_import:
+      enabled: false
   ```
 
 - `version` is required and must be integer `1`.
@@ -4702,16 +4715,33 @@ Current config file rules:
 - `documents` is optional. `documents.include` and `documents.exclude` are optional
   lists of string path rules. Include rules must target Markdown files ending in `.md`
   or `.markdown`; exclude rules may target files or path trees.
+- `adapters` is optional and disabled by default. The current v2 config safety layer
+  recognizes only `adapters.local_structured_import.enabled` and
+  `adapters.local_structured_import.path`.
+- `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
+  it is `true`, `path` is required and must identify one existing repository-relative
+  regular file under the scan root. The path must not be absolute, start with `./`, use
+  backslash separators, contain empty, `.` or `..` segments, point into
+  `.project-memory/`, point to a directory, point to a symlink, pass through a symlinked
+  path segment, or resolve outside the scanned repository root. When the adapter is
+  disabled, `path` must be omitted.
+- The current adapter config behavior validates selection and local import path safety
+  only. It does not read or parse the configured import file, serialize the configured
+  import path, emit `.project-memory/source-registry.json`, add adapter-backed
+  `project-map.json` fact sections, create evidence records, enable network access,
+  accept credentials, load plugins, call AI providers, or upload source.
 - Unknown top-level keys, unknown `features` or `documents` keys, unsupported values,
-  unsupported future-mode enables, invalid YAML, unsafe path values, oversized config
-  files, YAML aliases that exceed parser limits, and non-scalar values where scalars are
-  required fail as invalid config before output generation.
+  unknown `adapters` keys, unsupported values, unsupported future-mode enables, invalid
+  YAML, unsafe path values, oversized config files, YAML aliases that exceed parser
+  limits, and non-scalar values where scalars are required fail as invalid config before
+  output generation.
 - Config parsing must not perform environment-variable interpolation, file includes,
-  remote imports, command execution, credential lookup, plugin loading, or network
-  access.
+  remote imports, command execution, credential lookup, plugin loading, network access,
+  or adapter import parsing.
 - Generated outputs must not serialize raw config values, raw user include/exclude
-  patterns, config file contents, config excerpts, environment variables, decrypted
-  values, credentials, tokens, secret-looking values, or local absolute paths.
+  patterns, config file contents, config excerpts, adapter import paths, raw connector
+  or export contents, environment variables, decrypted values, credentials, tokens,
+  secret-looking values, or local absolute paths.
 
 Current feature toggle rules:
 
@@ -4731,6 +4761,13 @@ Current feature toggle rules:
 - `follow_symlinks` is reserved and disabled. A value or flag that attempts to enable
   symlink following must be rejected until a later explicit symlink policy defines safe
   containment and evidence behavior.
+- `adapters` defaults to disabled. When `local_structured_import` is explicitly enabled
+  and its path is valid, `scan.features.adapters.enabled` is `true`,
+  `selected_count` and `local_import_count` reflect the validated selection,
+  `network_access` remains `"disabled"`, and `status` is
+  `"config_validated_no_reader"`. This status means the config gate succeeded but no
+  adapter reader, parser, source registry writer, or adapter-backed generated output is
+  implemented in the current slice.
 
 Current include/exclude path semantics:
 

@@ -797,11 +797,15 @@ Current limitations:
   IDE settings, source files, docs, or config files.
 - Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
-  `features.generated_sources: false` and `features.follow_symlinks: false`, and optional
-  `documents.include`/`documents.exclude` path rules. User include/exclude rules apply
-  only to local Markdown discovery through normalized repository-relative paths, cannot
-  override built-in safety exclusions, and are summarized only through redacted counts
-  and statuses in `scan` metadata.
+  `features.generated_sources: false` and `features.follow_symlinks: false`, optional
+  `documents.include`/`documents.exclude` path rules, and disabled-by-default adapter
+  config for a future local structured import. Adapter config currently validates only
+  explicitly enabled repository-relative regular-file import paths under the scan root;
+  it does not read or parse import contents, enable network access, accept credentials,
+  emit a source registry, or create adapter-backed project facts. User include/exclude
+  rules apply only to local Markdown discovery through normalized repository-relative
+  paths, cannot override built-in safety exclusions, and are summarized only through
+  redacted counts and statuses in `scan` metadata.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, accepted Gradle build-file and static include `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and

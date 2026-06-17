@@ -81,9 +81,11 @@ as an adapter-domain contract object for future explicit adapters, not as an ena
 reader, parser, or generated-output integration point.
 
 The initial contract foundation validates deterministic source-document identity and
-required provenance references for accepted adapter records. It does not read local
-imports, validate adapter configuration, emit `.project-memory/source-registry.json`,
-add adapter-backed `project-map.json` sections, or change no-adapter scan/query
+required provenance references for accepted adapter records. The current adapter config
+safety layer adds disabled-by-default selection and repository-relative local import
+path validation before any adapter reader or parser exists. It still does not read local
+import contents, normalize records, emit `.project-memory/source-registry.json`, add
+adapter-backed `project-map.json` fact sections, or change no-adapter scan/query
 behavior.
 
 Fields stable enough for the v2.0 design are:

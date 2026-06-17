@@ -1141,12 +1141,13 @@ The v0.9 scan config summary is execution metadata, not project evidence:
 
 - It may record redacted effective scan policy under `project-map.json` `scan` metadata.
 - It may record a normalized repository-relative selected config path when safe.
-- It may record feature enablement, path-policy status, counts, and bounded non-fatal
-  diagnostic metadata.
+- It may record feature enablement, adapter enablement counts, path-policy status,
+  counts, and bounded non-fatal diagnostic metadata.
 - It must not record raw config values, raw user include/exclude patterns, config file
-  contents, YAML nodes, environment variables, decrypted values, credentials, tokens,
-  secret-looking values, source excerpts, document bodies, stack traces, local absolute
-  paths, or generated output contents.
+  contents, YAML nodes, adapter import paths, raw connector or export contents,
+  environment variables, decrypted values, credentials, tokens, secret-looking values,
+  source excerpts, document bodies, stack traces, local absolute paths, or generated
+  output contents.
 
 Existing `config_file` evidence remains reserved for project application/logging config
 file presence and legacy filename-only OpenAPI/Swagger warning evidence. It must not be

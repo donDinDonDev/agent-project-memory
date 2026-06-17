@@ -20,6 +20,11 @@ architecture documents.
   IDs and required provenance validation without adding adapter readers, generated
   adapter output, source registry emission, evidence types, network/auth, plugin, or AI
   behavior.
+- Added the disabled-by-default adapter configuration safety gate for a future local
+  structured import adapter, including repository-relative regular-file path
+  validation, network-off defaults, redacted scan metadata, and focused unsafe-path
+  tests without adding an adapter reader, parser, source registry writer, or
+  adapter-backed project facts.
 
 ## [1.9.0] - 2026-06-17
 

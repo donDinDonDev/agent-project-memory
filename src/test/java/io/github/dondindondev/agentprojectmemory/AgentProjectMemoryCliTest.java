@@ -1534,6 +1534,72 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRejectsUnsafeAdapterConfigBeforeCreatingOutputDirectoryWithoutLeakingValues()
+      throws Exception {
+    Path rawAbsoluteImportPath = tempDir.resolve("exports/token=FAKE_ADAPTER_CLI_SECRET.json");
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: %s
+        """.formatted(rawAbsoluteImportPath));
+
+    CliResult result = runCli("scan", tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("adapter import path must be repository-relative")),
+        () -> assertFalse(result.stderr().contains(rawAbsoluteImportPath.toString())),
+        () -> assertFalse(result.stderr().contains("FAKE_ADAPTER_CLI_SECRET")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void scanAcceptsExplicitAdapterConfigWithoutReadingOrSerializingImportContent()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/issues.json"), """
+        {"api_token":"FAKE_ADAPTER_EXPORT_SECRET"}
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String generatedSurfaces = String.join("\n", projectMap, evidenceIndex, agentGuide);
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(projectMap.contains("\"adapters\": {")),
+        () -> assertTrue(projectMap.contains("\"enabled\": true")),
+        () -> assertTrue(projectMap.contains("\"selected_count\": 1")),
+        () -> assertTrue(projectMap.contains("\"local_import_count\": 1")),
+        () -> assertTrue(projectMap.contains("\"network_access\": \"disabled\"")),
+        () -> assertTrue(projectMap.contains("\"status\": \"config_validated_no_reader\"")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
+        () -> assertFalse(generatedSurfaces.contains("exports/issues.json")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_ADAPTER_EXPORT_SECRET")),
+        () -> assertFalse(generatedSurfaces.contains("api_token")),
+        () -> assertFalse((result.stdout() + result.stderr()).contains("exports/issues.json")),
+        () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_EXPORT_SECRET")));
+  }
+
+  @Test
   void scanMalformedJavaReturnsBoundedDiagnosticAndGeneratedContractOutputFiles()
       throws Exception {
     Path javaFile = tempDir.resolve("src/main/java/com/example/BrokenController.java");

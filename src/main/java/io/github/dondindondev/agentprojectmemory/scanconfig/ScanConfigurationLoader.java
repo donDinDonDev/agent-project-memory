@@ -1,6 +1,8 @@
 package io.github.dondindondev.agentprojectmemory.scanconfig;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterConfiguration;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -27,12 +29,18 @@ public final class ScanConfigurationLoader {
       java.util.regex.Pattern.compile("^[A-Za-z]:.*");
   private static final java.util.regex.Pattern URL_LIKE_SCHEME =
       java.util.regex.Pattern.compile("^[A-Za-z][A-Za-z0-9+.-]*://.*");
-  private static final Set<String> ROOT_KEYS = Set.of("version", "features", "documents");
+  private static final Set<String> ROOT_KEYS = Set.of(
+      "version",
+      "features",
+      "documents",
+      "adapters");
   private static final Set<String> FEATURE_KEYS = Set.of(
       "local_markdown",
       "generated_sources",
       "follow_symlinks");
   private static final Set<String> DOCUMENT_KEYS = Set.of("include", "exclude");
+  private static final Set<String> ADAPTER_KEYS = Set.of("local_structured_import");
+  private static final Set<String> LOCAL_STRUCTURED_IMPORT_KEYS = Set.of("enabled", "path");
 
   public ScanConfiguration load(
       Path repositoryRoot,
@@ -40,14 +48,19 @@ public final class ScanConfigurationLoader {
       String explicitConfigPath) throws InvalidScanConfigException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(canonicalRepositoryRoot, "canonicalRepositoryRoot");
+    Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path normalizedCanonicalRepositoryRoot = canonicalRepositoryRoot.toAbsolutePath().normalize();
 
-    Path selectedConfig = selectedConfig(repositoryRoot, canonicalRepositoryRoot, explicitConfigPath);
+    Path selectedConfig = selectedConfig(
+        normalizedRepositoryRoot,
+        normalizedCanonicalRepositoryRoot,
+        explicitConfigPath);
     if (selectedConfig == null) {
       return ScanConfiguration.defaultsOnly();
     }
 
-    String sourcePath = repositoryRelativePath(repositoryRoot, selectedConfig);
-    ParsedConfig parsedConfig = parsedConfig(selectedConfig);
+    String sourcePath = repositoryRelativePath(normalizedRepositoryRoot, selectedConfig);
+    ParsedConfig parsedConfig = parsedConfig(normalizedRepositoryRoot, selectedConfig);
     return new ScanConfiguration(
         "config_file",
         sourcePath,
@@ -57,7 +70,8 @@ public final class ScanConfigurationLoader {
         parsedConfig.localMarkdownEnabled(),
         parsedConfig.localMarkdownConfigured() ? "config_file" : "default",
         parsedConfig.documentIncludes(),
-        parsedConfig.documentExcludes());
+        parsedConfig.documentExcludes(),
+        parsedConfig.adapterConfiguration());
   }
 
   private Path selectedConfig(
@@ -161,7 +175,7 @@ public final class ScanConfigurationLoader {
     return false;
   }
 
-  private ParsedConfig parsedConfig(Path config) throws InvalidScanConfigException {
+  private ParsedConfig parsedConfig(Path repositoryRoot, Path config) throws InvalidScanConfigException {
     Object root;
     try {
       String content = Files.readString(config, StandardCharsets.UTF_8);
@@ -198,11 +212,15 @@ public final class ScanConfigurationLoader {
 
     FeatureConfig featureConfig = featureConfig(rootMap.get("features"));
     DocumentRules documentRules = documentRules(rootMap.get("documents"));
+    AdapterConfiguration adapterConfiguration = adapterConfiguration(
+        rootMap.get("adapters"),
+        repositoryRoot);
     return new ParsedConfig(
         featureConfig.localMarkdownEnabled(),
         featureConfig.localMarkdownConfigured(),
         documentRules.includes(),
-        documentRules.excludes());
+        documentRules.excludes(),
+        adapterConfiguration);
   }
 
   private void rejectUnknownKeys(Map<?, ?> map, Set<String> allowedKeys, String location)
@@ -259,6 +277,119 @@ public final class ScanConfigurationLoader {
         pathRules(documents.get("exclude"), "documents.exclude", false));
   }
 
+  private AdapterConfiguration adapterConfiguration(Object value, Path repositoryRoot)
+      throws InvalidScanConfigException {
+    if (value == null) {
+      return AdapterConfiguration.disabled();
+    }
+    if (!(value instanceof Map<?, ?> adapters)) {
+      throw new InvalidScanConfigException("Invalid config: adapters must be a mapping.");
+    }
+    rejectUnknownKeys(adapters, ADAPTER_KEYS, "adapters");
+
+    Object localImportValue = adapters.get("local_structured_import");
+    if (localImportValue == null) {
+      return AdapterConfiguration.disabled();
+    }
+    if (!(localImportValue instanceof Map<?, ?> localImport)) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapters.local_structured_import must be a mapping.");
+    }
+    rejectUnknownKeys(
+        localImport,
+        LOCAL_STRUCTURED_IMPORT_KEYS,
+        "adapters.local_structured_import");
+
+    Object pathValue = localImport.get("path");
+    Object enabledValue = localImport.get("enabled");
+    if (enabledValue == null) {
+      if (pathValue != null) {
+        throw new InvalidScanConfigException(
+            "Invalid config: disabled adapter config must not declare an import path.");
+      }
+      return AdapterConfiguration.disabled();
+    }
+    if (!(enabledValue instanceof Boolean enabled)) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapters.local_structured_import.enabled must be boolean.");
+    }
+
+    if (!enabled) {
+      if (pathValue != null) {
+        throw new InvalidScanConfigException(
+            "Invalid config: disabled adapter config must not declare an import path.");
+      }
+      return AdapterConfiguration.disabled();
+    }
+    if (pathValue == null) {
+      throw new InvalidScanConfigException("Invalid config: adapter import path is required.");
+    }
+    if (!(pathValue instanceof String importPath)) {
+      throw new InvalidScanConfigException("Invalid config: adapter import path must be a string.");
+    }
+
+    return AdapterConfiguration.enabledLocalImport(
+        AdapterLocalImport.localStructuredImport(validAdapterLocalImportPath(repositoryRoot, importPath)));
+  }
+
+  private String validAdapterLocalImportPath(Path repositoryRoot, String importPath)
+      throws InvalidScanConfigException {
+    Path rawPath;
+    try {
+      rawPath = Path.of(importPath);
+    } catch (InvalidPathException exception) {
+      throw new InvalidScanConfigException("Invalid config: adapter import path is invalid.");
+    }
+    if (importPath.isBlank()
+        || rawPath.isAbsolute()
+        || importPath.startsWith("./")
+        || importPath.contains("\\")
+        || DRIVE_LETTER.matcher(importPath).matches()
+        || URL_LIKE_SCHEME.matcher(importPath).matches()) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapter import path must be repository-relative.");
+    }
+
+    List<String> segments = List.of(importPath.split("/", -1));
+    for (String segment : segments) {
+      if (segment.isEmpty() || ".".equals(segment) || "..".equals(segment)) {
+        throw new InvalidScanConfigException(
+            "Invalid config: adapter import path contains an unsafe path segment.");
+      }
+      if (".project-memory".equals(segment)) {
+        throw new InvalidScanConfigException(
+            "Invalid config: adapter import path points to generated output.");
+      }
+    }
+
+    Path importFile = repositoryRoot.resolve(importPath).toAbsolutePath().normalize();
+    if (!importFile.startsWith(repositoryRoot)) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapter import path must stay under scan root.");
+    }
+    if (Files.notExists(importFile, LinkOption.NOFOLLOW_LINKS)) {
+      throw new InvalidScanConfigException("Invalid config: adapter import file was not found.");
+    }
+    if (Files.isSymbolicLink(importFile) || hasSymbolicLinkSegment(repositoryRoot, importFile)) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapter import file must not be a symbolic link.");
+    }
+    if (!Files.isRegularFile(importFile, LinkOption.NOFOLLOW_LINKS)) {
+      throw new InvalidScanConfigException("Invalid config: adapter import path must be a regular file.");
+    }
+    Path canonicalRepositoryRoot;
+    try {
+      canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(repositoryRoot);
+    } catch (IOException exception) {
+      throw new InvalidScanConfigException("Invalid config: scan root could not be resolved.");
+    }
+    if (ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, importFile).isEmpty()) {
+      throw new InvalidScanConfigException(
+          "Invalid config: adapter import path must stay under scan root.");
+    }
+    return repositoryRelativePath(repositoryRoot, importFile);
+  }
+
   private List<ScanConfigPathPattern> pathRules(Object value, String field, boolean includeRule)
       throws InvalidScanConfigException {
     if (value == null) {
@@ -298,6 +429,7 @@ public final class ScanConfigurationLoader {
       boolean localMarkdownEnabled,
       boolean localMarkdownConfigured,
       List<ScanConfigPathPattern> documentIncludes,
-      List<ScanConfigPathPattern> documentExcludes) {
+      List<ScanConfigPathPattern> documentExcludes,
+      AdapterConfiguration adapterConfiguration) {
   }
 }

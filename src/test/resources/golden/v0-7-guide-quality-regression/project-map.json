@@ -21,6 +21,13 @@
       "follow_symlinks": {
         "enabled": false,
         "status": "reserved_disabled"
+      },
+      "adapters": {
+        "enabled": false,
+        "selected_count": 0,
+        "local_import_count": 0,
+        "network_access": "disabled",
+        "status": "disabled_by_default"
       }
     },
     "path_policy": {
