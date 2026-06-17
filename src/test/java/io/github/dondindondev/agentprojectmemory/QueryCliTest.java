@@ -900,6 +900,81 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryGraphRenderingRedactsLegacySourceRefIdWithoutChangingLookupSemantics()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    String legacySourceRefId =
+        "document_heading:README.md:heading:Authorization: Bearer "
+            + "FAKE_V170_GRAPH_SOURCE_REF_SECRET:occ:000001";
+    String legacyGraphArtifact = """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:secret",
+              "kind": "document_heading",
+              "label": "Authorization: Bearer FAKE_V170_GRAPH_LABEL_SECRET",
+              "claim_category": "document_backed",
+              "module_id": null,
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "documents.items[].headings[]",
+                "id": "%s"
+              },
+              "evidence_ids": []
+            }
+          ],
+          "edges": [],
+          "relation_statuses": [],
+          "warnings": []
+        }
+        """.formatted(legacySourceRefId);
+    Files.writeString(artifactRoot.resolve("project-graph.json"), legacyGraphArtifact);
+
+    CliResult relationsByNodeId = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        "node:secret");
+    CliResult relationsBySourceRefId = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "relations",
+        legacySourceRefId);
+    CliResult findByNodeId = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        "node:secret");
+    String redactedSourceRefId = OutputRedactor.redact(legacySourceRefId);
+
+    assertAll(
+        () -> assertTrue(redactedSourceRefId.contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(redactedSourceRefId.contains("FAKE_V170_GRAPH_SOURCE_REF_SECRET")),
+        () -> assertEquals(0, relationsByNodeId.exitCode()),
+        () -> assertTrue(relationsByNodeId.stdout().contains("Resolved by: node id")),
+        () -> assertTrue(relationsByNodeId.stdout().contains("id=" + redactedSourceRefId)),
+        () -> assertFalse(relationsByNodeId.stdout().contains("FAKE_V170_GRAPH_SOURCE_REF_SECRET")),
+        () -> assertEquals(0, relationsBySourceRefId.exitCode()),
+        () -> assertTrue(relationsBySourceRefId.stdout().contains("Resolved by: source_ref.id")),
+        () -> assertTrue(relationsBySourceRefId.stdout().contains("Subject: " + redactedSourceRefId)),
+        () -> assertTrue(relationsBySourceRefId.stdout().contains("id=" + redactedSourceRefId)),
+        () -> assertFalse(relationsBySourceRefId.stdout().contains("FAKE_V170_GRAPH_SOURCE_REF_SECRET")),
+        () -> assertEquals(0, findByNodeId.exitCode()),
+        () -> assertTrue(findByNodeId.stdout().contains("navigation: project-graph.json#/nodes/0")),
+        () -> assertTrue(findByNodeId.stdout().contains("id=" + redactedSourceRefId)),
+        () -> assertFalse(findByNodeId.stdout().contains("FAKE_V170_GRAPH_SOURCE_REF_SECRET")),
+        () -> assertTrue(relationsByNodeId.stderr().isEmpty()),
+        () -> assertTrue(relationsBySourceRefId.stderr().isEmpty()),
+        () -> assertTrue(findByNodeId.stderr().isEmpty()),
+        () -> assertEquals(legacyGraphArtifact, Files.readString(artifactRoot.resolve("project-graph.json"))));
+  }
+
+  @Test
   void queryMissingPathAndNonDirectoryPathReturnQueryInputErrorsWithoutAbsolutePath()
       throws Exception {
     Path missingPath = tempDir.resolve("missing");

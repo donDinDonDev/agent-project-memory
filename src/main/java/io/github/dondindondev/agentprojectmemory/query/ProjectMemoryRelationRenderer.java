@@ -10,6 +10,7 @@ import java.util.Optional;
 
 public final class ProjectMemoryRelationRenderer {
   private static final int MAX_TEXT_CHARS = 4096;
+  private static final String SOURCE_REF_ID_FIELD = "source_ref.id";
 
   public ProjectMemoryLookupRenderer.LookupResult render(
       ProjectMemoryArtifacts artifacts,
@@ -98,7 +99,7 @@ public final class ProjectMemoryRelationRenderer {
             + artifacts.evidenceRecords().size()
             + ", project-graph.json graph_schema_version="
             + safe(artifacts.projectGraphSchemaVersion()));
-    lines.add("Subject: " + safe(subjectId));
+    lines.add("Subject: " + safe(subjectId, resolvedBySourceRefId(selectedNode, subjectId)));
     lines.add("Resolved node: " + text(selectedNode.path("id")));
     lines.add("Resolved by: " + resolvedBy(selectedNode, subjectId));
     lines.add("Direction: " + direction.label());
@@ -108,7 +109,12 @@ public final class ProjectMemoryRelationRenderer {
   }
 
   private String resolvedBy(JsonNode node, String subjectId) {
-    return subjectId.equals(rawText(node.path("id"))) ? "node id" : "source_ref.id";
+    return resolvedBySourceRefId(node, subjectId) ? "source_ref.id" : "node id";
+  }
+
+  private boolean resolvedBySourceRefId(JsonNode node, String subjectId) {
+    return !subjectId.equals(rawText(node.path("id")))
+        && subjectId.equals(rawText(node.at("/source_ref/id")));
   }
 
   private void appendNode(List<String> lines, JsonNode node) {
@@ -196,7 +202,7 @@ public final class ProjectMemoryRelationRenderer {
             + " section="
             + text(sourceRef.path("section"))
             + " id="
-            + text(sourceRef.path("id"))
+            + text(sourceRef.path("id"), SOURCE_REF_ID_FIELD)
             + " (not evidence)");
   }
 
@@ -334,7 +340,8 @@ public final class ProjectMemoryRelationRenderer {
   }
 
   private boolean shouldRedactField(String fieldName) {
-    return OutputRedactor.shouldRedactFreeTextField(fieldName)
+    return SOURCE_REF_ID_FIELD.equals(fieldName)
+        || OutputRedactor.shouldRedactFreeTextField(fieldName)
         || OutputRedactor.isCredentialKey(fieldName);
   }
 

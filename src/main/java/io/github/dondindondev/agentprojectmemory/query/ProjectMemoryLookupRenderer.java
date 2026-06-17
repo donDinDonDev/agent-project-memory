@@ -8,6 +8,7 @@ import java.util.Set;
 
 public final class ProjectMemoryLookupRenderer {
   private static final int MAX_TEXT_CHARS = 4096;
+  private static final String SOURCE_REF_ID_FIELD = "source_ref.id";
   private static final Set<String> SYMBOL_FIELDS = Set.of(
       "annotation",
       "annotation_symbol",
@@ -260,7 +261,7 @@ public final class ProjectMemoryLookupRenderer {
             + " section="
             + text(sourceRef.path("section"))
             + " id="
-            + text(sourceRef.path("id"))
+            + text(sourceRef.path("id"), SOURCE_REF_ID_FIELD)
             + " (not evidence)");
   }
 
@@ -439,7 +440,8 @@ public final class ProjectMemoryLookupRenderer {
   }
 
   private boolean shouldRedactField(String fieldName) {
-    return OutputRedactor.shouldRedactFreeTextField(fieldName)
+    return SOURCE_REF_ID_FIELD.equals(fieldName)
+        || OutputRedactor.shouldRedactFreeTextField(fieldName)
         || OutputRedactor.isCredentialKey(fieldName);
   }
 
