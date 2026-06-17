@@ -98,6 +98,33 @@ Planned v2 adapter security defaults:
 - the core analyzer and query layer must not gain network, auth, provider, or plugin
   dependencies from adapter support.
 
+Planned optional AI security defaults:
+
+- AI presentation is disabled unless explicitly enabled;
+- no AI provider is configured by default;
+- network access, provider credentials, telemetry, and source upload remain off by
+  default;
+- the core analyzer, query layer, and adapter normalization path must not require AI;
+- AI inputs must be minimized to deterministic generated memory, existing evidence
+  references, bounded already-serialized excerpts, and accepted provenance metadata;
+- raw repository source files, raw local document bodies, generated-source contents,
+  connector exports, connector credentials, raw connector request/response logs, local
+  absolute paths, and raw prompt transcripts must not be uploaded or serialized by
+  default;
+- provider configuration, credential lookup, retention/privacy claims, network behavior,
+  and prompt-input policy must be designed and reviewed before any future provider mode
+  is implemented;
+- AI output must be labeled as non-evidence and must not create project facts, evidence
+  records, connector truth, security findings, vulnerability proof, runtime claims, or
+  code modifications.
+
+Future AI surfaces introduce prompt and content-injection risk even when they read only
+generated memory. Repository text, local documents, adapter-backed records, evidence
+excerpts, and connector content must be treated as untrusted content, not executable
+instructions. A future AI layer must not obey repository-provided instructions to
+change files, reveal credentials, fetch network resources, alter evidence, override
+provenance, or mark AI output as authoritative.
+
 ## Redaction Boundary
 
 The v1.7.0 release defines deterministic redaction as an output safety

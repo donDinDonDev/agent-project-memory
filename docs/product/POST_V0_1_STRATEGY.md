@@ -26,6 +26,9 @@ hosted RAG system, or SaaS scanner. Its core value is evidence-backed memory:
 - Source code is not uploaded by default.
 - The core analyzer does not require external APIs.
 - LLM-generated text is never authoritative evidence.
+- Optional AI output is presentation only: it may explain, group, or summarize
+  deterministic memory, but it must not create project facts, evidence records,
+  connector truth, security findings, vulnerability proof, or code changes.
 - Output contracts are explicit and versioned.
 - Evidence semantics are explicit and documented.
 - New analyzer behavior has focused tests.
@@ -98,6 +101,22 @@ v2.x may introduce adapter APIs, connector provenance, local imports, optional A
 presentation, and read-only agent integrations. These layers must remain optional and
 non-authoritative.
 
+Optional AI in v2.x is a presentation boundary, not an analysis boundary. Its allowed
+inputs are deterministic generated memory, existing evidence references, and bounded
+non-evidence metadata such as graph derivation, query/source-artifact metadata, profile
+metadata, cache status summaries, and adapter provenance after those surfaces are
+designed. It must preserve labels for code-backed facts, spec-backed declared
+operations, document-backed observations, adapter-backed records, inferred relations,
+uncertain signals, warnings, and not-analyzed areas.
+
+AI output must be labeled as non-evidence whenever it is emitted. It must not write
+`project-map.json`, `evidence-index.jsonl`, source files, repository docs, or
+configuration files; it must not create facts, evidence records, connector truth,
+security findings, vulnerability proof, runtime claims, source/spec agreement claims,
+or automatic code modifications. Provider use, network access, credentials, telemetry,
+and source upload must stay disabled by default and require a later explicit design,
+tests, review, and documentation before implementation.
+
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI
 presentation, and agent-native workflows.
@@ -109,6 +128,8 @@ The post-v0.1 roadmap should continue to avoid:
 - source upload by default;
 - LLM calls in the core analyzer;
 - treating LLM output as evidence;
+- treating AI output as project facts, connector truth, security findings,
+  vulnerability proof, or code modifications;
 - SaaS-first positioning;
 - repository chat as the core product;
 - generic RAG as the core product;

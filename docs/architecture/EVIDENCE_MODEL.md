@@ -114,6 +114,45 @@ Adapter-backed evidence and provenance must not:
 - treat connector summaries, query output, generated Markdown, cache metadata, graph
   derivation metadata, profile output, chat output, or LLM output as evidence.
 
+## Planned Optional AI Presentation Evidence Decision
+
+Future optional AI presentation output is not evidence. It must not add evidence types,
+evidence fields, evidence records, confidence labels, evidence IDs, source references,
+security findings, vulnerability proof, connector truth, runtime claims, source/spec
+agreement claims, or code-modification authority.
+
+AI presentation may reference existing evidence IDs, source-artifact names, graph IDs,
+or future adapter provenance IDs to help humans navigate deterministic memory. Those
+references are citations to existing deterministic material, not new evidence created
+by the AI layer. An AI summary that cites an evidence ID must not strengthen, weaken,
+replace, suppress, reinterpret, or fabricate the underlying fact or evidence record.
+
+Allowed AI inputs for any future presentation surface are limited to deterministic
+generated facts, existing evidence references, already serialized bounded excerpts,
+and bounded non-evidence metadata such as graph derivation, cache/profile/query
+metadata, and future adapter provenance accepted by deterministic adapter contracts.
+AI must not read repository source files, generated-source contents, raw local document
+bodies, connector credentials, raw connector request/response logs, or remote API
+responses directly as evidence.
+
+AI output must preserve the existing claim categories:
+
+- code-backed source-visible facts remain code-backed facts;
+- spec-backed declared operations remain spec-backed declared operations;
+- local Markdown and future adapter-backed records remain document-backed or
+  provenance-backed material;
+- graph derivation, cache metadata, profile Markdown, query output, diagnostics, and AI
+  output remain non-evidence;
+- inferred relations, uncertain signals, warnings, and not-analyzed areas keep their
+  confidence, uncertainty, status, and support labels.
+
+Any future change that treats AI output, prompts, embeddings, vector-store entries,
+provider responses, chat transcripts, generated Markdown, or AI presentation artifacts
+as evidence must update this document and `OUTPUT_CONTRACT.md` before implementation.
+Such a change would also need focused tests or goldens where applicable, a changelog
+entry, release notes, and a separate security review. The preferred boundary is that AI
+output remains permanently non-evidence.
+
 ## Fact Categories
 
 ### Extracted Facts

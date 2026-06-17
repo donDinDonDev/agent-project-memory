@@ -73,6 +73,70 @@ generated artifact, evidence type, or schema marker change requires synchronized
 to this contract, `EVIDENCE_MODEL.md`, focused tests or goldens where applicable, the
 changelog, and release notes.
 
+## Planned v2 Optional AI Presentation Output Boundary
+
+The current v1.x implementation does not emit AI presentation artifacts, AI summaries,
+AI provider metadata, prompts, provider configuration, provider credentials, network
+metadata, embeddings, vector indexes, chat transcripts, or AI-generated project facts.
+Normal `project-map.json` files remain on `schema_version: "1.0"` unless a future
+release explicitly documents a schema marker change.
+
+Future AI presentation output, if introduced, must be optional and absent unless an AI
+presentation mode is explicitly enabled. It must be a presentation surface over
+deterministic generated memory, not a stronger authority than `project-map.json`,
+`project-graph.json`, `evidence-index.jsonl`, adapter provenance, or deterministic query
+results.
+
+Allowed AI presentation inputs are limited to:
+
+- generated structured facts from documented artifacts;
+- existing evidence IDs and already serialized bounded evidence excerpts;
+- graph navigation metadata and derivation metadata labeled as non-evidence;
+- query/source-artifact metadata labeled as non-evidence;
+- deterministic profile/cache/status metadata labeled as non-evidence;
+- future adapter-backed documents and provenance only after those surfaces are accepted
+  by deterministic adapter contracts.
+
+Future AI presentation output must not:
+
+- add, remove, rename, or reinterpret `project-map.json` facts;
+- create `evidence-index.jsonl` records, evidence fields, evidence types, confidence
+  labels, or evidence IDs;
+- create connector truth, source-of-truth claims, security findings, vulnerability
+  proof, runtime behavior claims, source/spec agreement claims, coverage/CI/assertion
+  claims, business-priority claims, or code modifications;
+- rewrite source files, repository docs, root instruction files, configuration files,
+  generated artifacts, cache metadata, profile artifacts, adapter exports, or evidence
+  records;
+- make repository chat, generic RAG, embeddings, vector search, or automatic code
+  modification the core product experience.
+
+If a future AI presentation artifact is emitted, it must carry visible non-evidence
+labeling in both human-readable wording and machine-readable metadata. The metadata
+should identify the source artifacts, input scope, generation mode, provider mode when
+applicable, and an evidence policy such as "references_existing_evidence_only" or a
+later documented equivalent. These metadata fields would be output metadata only; they
+must not become project evidence.
+
+Provider, privacy, network, credential, telemetry, and source-upload defaults remain
+closed. No provider is configured by default, no network access is enabled by default,
+and no source code, local document body, generated-source content, connector export,
+credential, token, cookie, local absolute path, or raw prompt transcript may be
+serialized or uploaded by default. Any future provider-backed output mode requires a
+separate output contract update, focused tests or goldens where applicable, threat-model
+review, changelog entry, and release notes before implementation.
+
+Draft v2/v2.3 AI output design questions:
+
+- whether AI presentation belongs in a separate `.project-memory/` artifact, a profile
+  extension, a query output mode, or another explicitly optional surface;
+- whether AI presentation metadata needs its own schema marker or can reuse a generic
+  generated-presentation manifest;
+- how source-artifact IDs, evidence IDs, graph IDs, adapter provenance IDs, and AI
+  presentation sections should stay joinable without making AI output evidence;
+- how downstream consumers should detect and ignore AI presentation artifacts they do
+  not understand.
+
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
 uniquely bound interface-declared Spring MVC mappings to the v0.1 endpoint semantics. It

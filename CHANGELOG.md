@@ -15,6 +15,10 @@ architecture documents.
   responsibilities, core/adapters separation, normalized source-document and connector
   provenance requirements, network-off defaults, and draft output/evidence migration
   questions.
+- Documented the planned optional v2 AI presentation boundary, including allowed
+  deterministic-memory inputs, forbidden authoritative outputs, non-evidence labeling,
+  provider/privacy/network/source-upload defaults, and adapter-provenance interaction
+  without adding AI provider implementation.
 
 ## [1.8.0] - 2026-06-17
 

@@ -1244,6 +1244,8 @@ Expected outcome:
 - Adapter responsibilities and forbidden responsibilities are explicit.
 - Source/document normalization and connector provenance are defined as design
   boundaries, not shipped behavior.
+- Optional AI presentation is defined as a non-authoritative boundary over deterministic
+  memory, not as a source of facts or evidence.
 - Network access, source upload, connector credentials, plugin loading, and AI providers
   remain absent from the current core and disabled by default in future designs.
 - Draft output and evidence migration questions are recorded without changing current
@@ -1256,14 +1258,17 @@ Design scope:
 - Local export import as the first safe adapter implementation candidate for a later
   v2 release.
 - Future evidence/provenance requirements for adapter-backed records.
+- Optional AI presentation inputs, forbidden outputs, non-evidence labeling, provider
+  privacy defaults, and adapter-provenance interaction.
 - v1-to-v2 compatibility questions for generated-output consumers.
 
 Non-goals:
 
 - No production adapter API, connector implementation, network/auth behavior, plugin
-  loading, AI provider code, new CLI command or flag, generated artifact schema change,
-  evidence field/type change, release prep, package publication, SaaS, web UI,
-  repository chat, generic RAG, or automatic code modification.
+  loading, AI provider code, source upload, embeddings/vector/RAG implementation, new
+  CLI command or flag, generated artifact schema change, evidence field/type change,
+  release prep, package publication, SaaS, web UI, repository chat as the core product,
+  generic RAG, or automatic code modification.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
@@ -1282,6 +1287,13 @@ Expected direction:
 The core analyzer must continue to run without adapters, network access, credentials,
 plugin loading, source upload, or AI. Adapter-backed records must remain backed by
 provenance and distinct from code-backed facts.
+Any optional AI layer must be explicitly enabled, must treat deterministic memory and
+adapter provenance as inputs rather than authority it can rewrite, and must label its
+output as non-evidence. It must not create `project-map.json` facts,
+`evidence-index.jsonl` records, connector truth, security findings, vulnerability proof,
+runtime claims, source/spec agreement claims, repository-file edits, or code changes.
+Provider use, credentials, network access, telemetry, and source upload remain off by
+default unless a later release explicitly designs and implements them.
 
 ## v3.0.0: Agent-Native Project Memory Platform
 

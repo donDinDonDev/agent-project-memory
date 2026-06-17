@@ -195,9 +195,31 @@ The adapter layer must not:
 
 ### Optional LLM Layer
 
-An optional LLM layer may be considered later for presentation, grouping, or summarization. It must not be required for core analysis, and it must not be treated as the source of truth.
+An optional LLM layer may be considered later for presentation, grouping, or
+summarization. It must not be required for core analysis or query, and it must not be
+treated as the source of truth.
 
-Any LLM-generated output must be derived from deterministic facts and evidence references.
+The allowed input boundary is generated deterministic memory: structured project facts,
+existing evidence IDs and bounded evidence excerpts, graph navigation metadata,
+query/source-artifact metadata, profile metadata, cache status summaries, and future
+adapter provenance after those adapter surfaces are explicitly designed. The layer must
+not read repository source files, local documents, generated-source contents, connector
+exports, remote APIs, credentials, or provider responses directly as a substitute for
+the deterministic analyzer and adapter contracts.
+
+Any LLM-generated output must be derived from deterministic facts and evidence
+references, must preserve claim labels, and must be visibly labeled as non-evidence if
+it is emitted. It may help a human compare, group, or summarize existing facts and
+uncertain signals, but it must not create or modify `project-map.json` facts,
+`evidence-index.jsonl` records, connector truth, source-backed evidence, security
+findings, vulnerability proof, runtime behavior claims, source/spec agreement claims,
+or repository-file/code modifications.
+
+Provider use is also outside the current core. No provider, network access,
+credentials, telemetry, or source upload may be configured or implied by default. Any
+future remote provider mode must be explicitly enabled, minimize prompt inputs, avoid
+serializing credentials or local absolute paths, document privacy implications, and pass
+a separate implementation and security review before release.
 
 ## Pipeline
 
@@ -231,6 +253,11 @@ Adapter-backed data must join generated memory only through documented output an
 evidence contracts. It must remain distinguishable from code-backed Java/Spring facts
 and from deterministic local Markdown document observations.
 
+An optional future AI presentation layer, if implemented, should sit after deterministic
+memory generation and should consume generated memory as a presentation input. It should
+not sit before analyzers, alter adapter normalization, write evidence, or feed AI text
+back into source-document ingestion as project truth.
+
 ## Architectural Constraints
 
 - The core analyzer runs locally.
@@ -241,3 +268,7 @@ and from deterministic local Markdown document observations.
 - Optional future integrations must be adapters around the core, not dependencies inside it.
 - Future adapter-backed observations must carry provenance and must not be promoted to
   code-backed facts or authoritative evidence.
+- Future AI presentation must be optional, explicitly enabled, non-authoritative, and
+  labeled as non-evidence whenever emitted.
+- Provider use, network access, credentials, telemetry, and source upload must remain
+  off by default.

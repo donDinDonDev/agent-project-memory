@@ -491,9 +491,13 @@ Public evaluation summaries are linked from the release notes as supporting deta
 - a tool that treats LLM output as the source of truth,
 - an automatic code modification system.
 
-AI may become an optional presentation or summarization layer later, but the core project
-memory must come from deterministic analysis, explicit output contracts, and evidence
-references.
+AI may become an optional presentation, grouping, or summarization layer later, but the
+core project memory must come from deterministic analysis, explicit output contracts,
+and evidence references. Any future AI output must be labeled as non-evidence, must not
+create project facts or security findings, and must not require source upload, network
+access, provider credentials, repository chat, generic RAG, or automatic code
+modification by default. The current v1.x product line includes no AI provider
+integration.
 
 ## Project Status
 

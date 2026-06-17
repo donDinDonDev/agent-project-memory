@@ -107,6 +107,41 @@ Credential names, credential values, authorization headers, tokens, cookies, loc
 machine paths, and raw connector request/response logs must not be serialized as
 provenance.
 
+## Optional AI And Adapter Provenance
+
+Optional AI presentation is not an ingestion adapter. It must not normalize connector
+records, create `SourceDocument` objects, fetch remote systems, read repository source
+directly, or decide whether external records become project memory. That work belongs
+to deterministic adapters and analyzers with documented provenance and evidence
+contracts.
+
+If future AI presentation reads adapter-backed records, it may use only the normalized
+documents, structured facts, existing evidence references, and provenance metadata that
+the deterministic pipeline has already accepted. It must preserve the distinction
+between code-backed facts, local Markdown document observations, spec-backed declared
+operations, adapter-backed records, metadata-only rows, warnings, inferred relations,
+uncertain signals, and not-analyzed areas.
+
+AI output must not become connector truth. A summary of a Jira issue, GitHub pull
+request, local export bundle, or Confluence page is a generated presentation over the
+accepted record and its provenance, not proof that the external service is current,
+reachable, complete, authoritative, or aligned with repository source. AI-generated
+grouping or summarization must be labeled as non-evidence and must not create facts,
+evidence records, security findings, vulnerability proof, source/spec agreement claims,
+or repository-file changes.
+
+Provider, privacy, network, credential, telemetry, and source-upload defaults remain
+closed:
+
+- no provider is configured by default;
+- no network access is enabled by default;
+- no source code, local document body, generated-source content, connector export,
+  evidence excerpt, credential, token, cookie, or local absolute path is uploaded by
+  default;
+- future remote provider use must require explicit enablement, prompt-input
+  minimization, documented privacy implications, and separate implementation/security
+  review.
+
 ## Connector Role
 
 Future connectors for YouTrack, Jira, Confluence, GitHub, and GitLab should produce
