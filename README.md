@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.8.0`. Its release artifact is
-`agent-project-memory-1.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.9.0`. Its release artifact is
+`agent-project-memory-1.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.8.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.9.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -429,7 +429,7 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
-- v1.9 release candidate summary:
+- v1.9 release summary:
   [docs/product/V1_9_RELEASE_NOTES.md](docs/product/V1_9_RELEASE_NOTES.md).
 - v1.8 release summary:
   [docs/product/V1_8_RELEASE_NOTES.md](docs/product/V1_8_RELEASE_NOTES.md).
@@ -503,7 +503,7 @@ integration.
 
 ## Project Status
 
-The latest published release is `v1.8.0`. It ships an executable jar and `SHA256SUMS`
+The latest published release is `v1.9.0`. It ships an executable jar and `SHA256SUMS`
 asset. Local builds produce `target/agent-project-memory-1.9.0.jar`. Normal generated
 `project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
 lightweight relation graph expansion is additive, the v1.6 read-only query expansion
@@ -512,14 +512,10 @@ project-memory schemas or evidence semantics, the v1.7 release adds deterministi
 redaction hardening for selected generated and rendered strings without adding evidence
 fields or schema markers, and the v1.8 release adds public examples and contributor
 onboarding polish without changing analyzer behavior, generated artifact schemas, or
-evidence semantics.
-
-The current local release candidate is `v1.9.0` for v2 architecture preparation. It is
-documentation and design preparation only: it records planned adapter, connector
-provenance, optional AI presentation, plugin/API security, and v1-to-v2 migration
-boundaries without changing analyzer behavior, CLI commands or flags, generated artifact
-schemas, evidence semantics, or packaged runtime behavior. Until publication occurs,
-`v1.8.0` remains the latest published release.
+evidence semantics. The v1.9 release adds public v2 architecture preparation for
+planned adapters, connector provenance, optional AI presentation, plugin/API security,
+and v1-to-v2 migration boundaries without changing analyzer behavior, CLI commands or
+flags, generated artifact schemas, evidence semantics, or packaged runtime behavior.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring

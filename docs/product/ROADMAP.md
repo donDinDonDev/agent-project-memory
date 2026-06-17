@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v1.8.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v1.9.0`, with executable jar and `SHA256SUMS` assets.
 Normal generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
 marker. The v1.5.0 lightweight relation graph expansion is additive, the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated artifacts
@@ -10,15 +10,12 @@ without changing generated artifact schemas or evidence semantics, the v1.7.0 re
 adds deterministic redaction hardening for selected generated and rendered strings
 without adding evidence fields or schema markers, and the v1.8.0 release adds public
 examples and contributor onboarding polish without changing analyzer behavior, generated
-artifact schemas, or evidence semantics.
-
-The current local release candidate is `v1.9.0`, scoped to v2 architecture preparation.
-It documents planned adapter, connector provenance, optional AI presentation, plugin/API
-security, and v1-to-v2 migration boundaries without implementing adapters, connectors,
-network/auth behavior, plugin loading, AI providers, new CLI commands or flags,
-generated artifact schema changes, evidence semantic changes, or analyzer behavior
-changes. `v1.8.0` remains the latest published release until `v1.9.0` is explicitly
-published.
+artifact schemas, or evidence semantics. The v1.9.0 release adds public v2 architecture
+preparation for planned adapter, connector provenance, optional AI presentation,
+plugin/API security, and v1-to-v2 migration boundaries without implementing adapters,
+connectors, network/auth behavior, plugin loading, AI providers, new CLI commands or
+flags, generated artifact schema changes, evidence semantic changes, or analyzer
+behavior changes.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1243,7 +1240,7 @@ Possible later tracks:
 
 - v2 architecture preparation.
 
-## v1.9.0: v2 Architecture Preparation (Release Candidate)
+## v1.9.0: v2 Architecture Preparation (Published)
 
 Expected outcome:
 

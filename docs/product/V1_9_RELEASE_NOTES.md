@@ -124,13 +124,11 @@ v1.9.0 does not add:
   commands or flags, stable JSON query output, generated output schema changes, evidence
   field/type changes, or evidence semantic changes.
 - Package-manager publication, installed-command distribution, signing, native images,
-  container images, release automation, GitHub Release publication, artifact upload, or
-  automatic code modification.
+  container images, release automation, or automatic code modification.
 
-## Expected Release Assets
+## Release Assets
 
-No release assets are created or published by these notes. If v1.9.0 is published, the
-standard release process expects:
+The `v1.9.0` GitHub Release publishes the standard release assets:
 
 - `agent-project-memory-1.9.0.jar`
 - `SHA256SUMS`

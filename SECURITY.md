@@ -3,7 +3,7 @@
 ## Supported Versions
 
 The latest published v1.x release line is the supported public line for vulnerability
-reports. The latest published release is currently `v1.8.0`.
+reports. The latest published release is currently `v1.9.0`.
 
 Older release lines are generally unsupported unless a maintainer explicitly states
 otherwise in release notes or a security advisory.

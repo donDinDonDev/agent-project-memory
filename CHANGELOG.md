@@ -30,10 +30,11 @@ architecture documents.
 ### Changed
 
 - Aligned public release status, roadmap wording, the README documentation map, and
-  security-policy supported-version wording for the `v1.9.0` release candidate while
-  keeping `v1.8.0` as the latest published release until publication occurs.
+  security-policy supported-version wording for the `v1.9.0` release.
 - Aligned the Maven project version and README local build examples for the `v1.9.0`
-  release candidate.
+  release.
+- Updated post-release documentation status to mark `v1.9.0` as published with release
+  jar and checksum assets.
 
 ### Not Included
 
