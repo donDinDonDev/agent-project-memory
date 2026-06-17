@@ -55,16 +55,14 @@ references, and path safety before rendering results.
 The current core product has no network trust boundary because it does not fetch remote
 resources, call external APIs, upload source, load remote config, or invoke LLMs.
 
-Future v2 adapters and connectors would introduce a separate adapter trust boundary.
-That boundary is planned only; it is not part of the current core product. Adapter
-inputs, exported connector records, remote API responses, connector configuration, and
-adapter-generated provenance must be treated as untrusted input.
+The v2 local structured import adapter introduces a separate adapter trust boundary.
+Adapter inputs, exported connector records, remote API responses, connector
+configuration, and adapter-generated provenance must be treated as untrusted input.
 
-Future local import adapters would add a local-export trust boundary. Export files and
-bundles can be stale, malformed, oversized, intentionally confusing, or authored by a
-different system than the scanned repository. They must be validated before
-normalization, tied to explicit import provenance, and kept separate from repository
-source facts.
+The local structured import adapter adds a local-export trust boundary. Export files can
+be stale, malformed, oversized, intentionally confusing, or authored by a different
+system than the scanned repository. They are validated before normalization, tied to
+explicit import provenance, and kept separate from repository source facts.
 
 Future API connector modes would add remote service, network, authentication, and
 credential trust boundaries. Remote API responses, pagination state, rate-limit state,
@@ -101,7 +99,7 @@ The intended security properties are:
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
 
-Planned v2 adapter security defaults:
+v2 adapter security defaults:
 
 - adapters are disabled unless explicitly configured;
 - local export import is the preferred first adapter mode;
@@ -109,9 +107,14 @@ Planned v2 adapter security defaults:
   regular files under the scanned repository root and rejects absolute paths, escaping
   paths, generated-output paths, directories, symlinked inputs, and missing inputs
   before adapter-backed output is emitted;
-- the current implementation validates the future local structured import path before
-  any adapter reader or parser exists, records only bounded adapter feature metadata,
-  and does not read raw export contents or emit adapter-backed records;
+- the current implementation reads at most 256 KiB from the configured local import
+  file, parses only the documented local structured import JSON format, processes at
+  most 64 records, accepts only `local_export` records with `status: "current"`, and
+  rejects stale, partial, malformed, duplicate, unsupported, oversized, or
+  provenance-missing records as bounded diagnostics;
+- adapter-enabled incremental scans skip persistent cache metadata refresh in this
+  slice so configured import paths and raw adapter config values are not serialized into
+  cache manifests;
 - network access remains off by default and must be explicitly enabled for any future
   API connector mode;
 - source upload is not a default behavior;
@@ -123,7 +126,7 @@ Planned v2 adapter security defaults:
 - the core analyzer and query layer must not gain network, auth, provider, or plugin
   dependencies from adapter support.
 
-Planned v2 external-data risk controls:
+v2 external-data risk controls:
 
 - imported records must carry source identity, import mode, content hash, import or
   fetch timestamp when known, and trust-boundary labels;

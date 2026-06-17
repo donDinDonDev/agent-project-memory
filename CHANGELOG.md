@@ -25,6 +25,12 @@ architecture documents.
   validation, network-off defaults, redacted scan metadata, and focused unsafe-path
   tests without adding an adapter reader, parser, source registry writer, or
   adapter-backed project facts.
+- Implemented the local structured import reference adapter for explicitly configured
+  repository-relative export files, including bounded JSON parsing, deterministic
+  source-document/provenance IDs, `source-registry.json`, `project-map.json`
+  `schema_version: "2.0"` adapter context, malformed/partial/stale diagnostics,
+  no raw body/path serialization, and regression/golden coverage that keeps adapter
+  records out of Java/Spring facts and `evidence-index.jsonl`.
 
 ## [1.9.0] - 2026-06-17
 

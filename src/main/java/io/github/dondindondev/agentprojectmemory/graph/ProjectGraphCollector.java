@@ -83,6 +83,10 @@ public final class ProjectGraphCollector {
   }
 
   public ProjectGraph build() {
+    return build("1.0");
+  }
+
+  public ProjectGraph build(String projectMapSchemaVersion) {
     List<GraphNode> selectedNodes = selectedNodes();
     Set<String> emittedNodeIds = selectedNodes.stream()
         .map(GraphNode::id)
@@ -96,7 +100,7 @@ public final class ProjectGraphCollector {
         emittedNodeIds);
     return new ProjectGraph(
         "1.0",
-        "1.0",
+        projectMapSchemaVersion,
         "lightweight_relation_graph",
         List.of("project-map.json", "evidence-index.jsonl"),
         limits,

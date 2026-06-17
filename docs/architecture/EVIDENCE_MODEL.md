@@ -77,20 +77,21 @@ scanned repository root. The root build file path is `pom.xml`; the scan root mo
 may be represented as `"."` in `project-map.json`, but evidence paths do not use `"."` as
 a file path.
 
-## Planned Adapter And Connector Provenance
+## Adapter And Connector Provenance
 
-Future v2 adapters may introduce adapter-backed provenance, but the initial v2.0
-evidence strategy is to keep adapter provenance outside `evidence-index.jsonl` in the
-separate source registry documented by `OUTPUT_CONTRACT.md`. The initial v2.0 adapter
-platform does not add an adapter-specific evidence type and does not reuse code evidence
-categories for external records. Connector issues, pages, comments, tickets, exported
-records, and API responses are not Java classes, annotations, build files, tests, or
-repository config files.
+The v2 local structured import adapter introduces adapter-backed provenance while
+keeping that provenance outside `evidence-index.jsonl` in the separate source registry
+documented by `OUTPUT_CONTRACT.md`. The v2.0 adapter platform does not add an
+adapter-specific evidence type and does not reuse code evidence categories for external
+records. Connector issues, pages, comments, tickets, exported records, and API
+responses are not Java classes, annotations, build files, tests, or repository config
+files.
 
-The initial adapter-domain contract foundation preserves this evidence boundary. It
-validates source-document and provenance identifiers for future accepted adapter
-records, but it does not emit adapter evidence records, add adapter-specific evidence
-fields, or treat adapter provenance as project evidence.
+The adapter-domain contract foundation preserves this evidence boundary. It validates
+source-document and provenance identifiers for accepted adapter records, emits
+`source-registry.json` provenance for the local structured import adapter, and does not
+emit adapter evidence records, add adapter-specific evidence fields, or treat adapter
+provenance as project evidence.
 
 The v2.0 design uses a source-document envelope with provenance instead of embedding
 connector metadata in free-form excerpts. Provenance should identify:
@@ -101,8 +102,8 @@ connector metadata in free-form excerpts. Provenance should identify:
 - source URL or namespace when applicable;
 - content hash;
 - export, fetch, or import timestamp when known;
-- whether the record came from a local repository file, an out-of-repository local
-  export, or a remote API response;
+- whether the record came from an explicitly configured repository-relative local export
+  file, a future out-of-repository local export, or a future remote API response;
 - trust-boundary labels needed to keep external records distinct from repository source.
 
 `document` evidence remains reserved for accepted local project documents handled by

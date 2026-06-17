@@ -516,6 +516,11 @@ evidence semantics. The v1.9 release adds public v2 architecture preparation for
 planned adapters, connector provenance, optional AI presentation, plugin/API security,
 and v1-to-v2 migration boundaries without changing analyzer behavior, CLI commands or
 flags, generated artifact schemas, evidence semantics, or packaged runtime behavior.
+Unreleased v2 development includes a disabled-by-default local structured import
+reference adapter for explicitly configured repository-relative export files. Adapter
+enabled scans emit `source-registry.json` and `project-map.json`
+`schema_version: "2.0"` adapter context as provenance-backed external/document context
+only.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
@@ -529,8 +534,8 @@ secret-looking values, redacted scan metadata, safe root-local YAML config suppo
 stable CLI help/version behavior, and documented release-jar verification.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
-validation details. Future connector/import work remains a later optional adapter track
-and is not started.
+validation details. Network connector work remains a later optional adapter track and is
+not started.
 
 The current implementation includes a Java 21 Maven-built CLI, root-declared Maven
 module discovery, bounded static Gradle root and multi-project discovery,
@@ -799,13 +804,15 @@ Current limitations:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional
   `documents.include`/`documents.exclude` path rules, and disabled-by-default adapter
-  config for a future local structured import. Adapter config currently validates only
-  explicitly enabled repository-relative regular-file import paths under the scan root;
-  it does not read or parse import contents, enable network access, accept credentials,
-  emit a source registry, or create adapter-backed project facts. User include/exclude
-  rules apply only to local Markdown discovery through normalized repository-relative
-  paths, cannot override built-in safety exclusions, and are summarized only through
-  redacted counts and statuses in `scan` metadata.
+  config for local structured import. When explicitly enabled, the adapter reads one
+  validated repository-relative regular-file import path under the scan root, parses the
+  bounded local structured import JSON format, emits `source-registry.json`, and adds
+  `project-map.json` adapter context as provenance-backed external/document context. It
+  does not enable network access, accept credentials, serialize raw bodies or configured
+  import paths, create `evidence-index.jsonl` records, or create Java/Spring project
+  facts. User include/exclude rules apply only to local Markdown discovery through
+  normalized repository-relative paths, cannot override built-in safety exclusions, and
+  are summarized only through redacted counts and statuses in `scan` metadata.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
   evidence when present, accepted Gradle build-file and static include `build_file`
   evidence when present, bounded source-visible Maven metadata, dependency, plugin, and

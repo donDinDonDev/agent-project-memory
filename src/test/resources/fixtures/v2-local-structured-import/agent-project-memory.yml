@@ -1,0 +1,5 @@
+version: 1
+adapters:
+  local_structured_import:
+    enabled: true
+    path: exports/issues.json

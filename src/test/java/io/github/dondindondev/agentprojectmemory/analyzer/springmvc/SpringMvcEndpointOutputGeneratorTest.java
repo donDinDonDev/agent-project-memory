@@ -12,6 +12,8 @@ import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.JavaSourceParser;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenPomInput;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterConfiguration;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -71,6 +73,41 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("agent-guide.md"),
             Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void localStructuredImportSourceRegistryMatchesGoldenFile() throws Exception {
+    Path projectPath = tempDir.resolve("v2-local-structured-import");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(localStructuredImportFixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    ScanConfiguration scanConfiguration = new ScanConfiguration(
+        "config_file",
+        "agent-project-memory.yml",
+        "applied",
+        false,
+        false,
+        true,
+        "default",
+        List.of(),
+        List.of(),
+        AdapterConfiguration.enabledLocalImport(
+            AdapterLocalImport.localStructuredImport("exports/issues.json")));
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory,
+        scanConfiguration,
+        List.of());
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertTrue(result.sourceRegistryGenerated()),
+        () -> assertEquals(2, result.sourceDocumentCount()),
+        () -> assertEquals(2, result.adapterDiagnosticCount()),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "source-registry.json"),
+            Files.readString(outputDirectory.resolve("source-registry.json"))));
   }
 
   @Test
@@ -3109,6 +3146,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private Path fixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/stage3-project-map")).toURI());
+  }
+
+  private Path localStructuredImportFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/v2-local-structured-import")).toURI());
   }
 
   private Path goldenRoot() throws Exception {

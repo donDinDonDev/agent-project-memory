@@ -39,6 +39,21 @@ final class StableAdapterIds {
         requiredText(contentHash, "content hash"));
   }
 
+  static String adapterRunId(
+      AdapterIdentity adapterIdentity,
+      AdapterImportMode importMode,
+      String inputContentHash) {
+    return "adapter-run:sha256:" + sha256(
+        Objects.requireNonNull(adapterIdentity, "adapter identity").name(),
+        adapterIdentity.version(),
+        Objects.requireNonNull(importMode, "import mode").contractValue(),
+        requiredText(inputContentHash, "input content hash"));
+  }
+
+  static String contentHash(String... parts) {
+    return "sha256:" + sha256(parts);
+  }
+
   static String requiredText(String value, String fieldName) {
     if (value == null || value.isBlank()) {
       throw new IllegalArgumentException(fieldName + " is required");

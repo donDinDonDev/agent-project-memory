@@ -16,6 +16,11 @@ plugin/API security, and v1-to-v2 migration boundaries without implementing adap
 connectors, network/auth behavior, plugin loading, AI providers, new CLI commands or
 flags, generated artifact schema changes, evidence semantic changes, or analyzer
 behavior changes.
+Unreleased v2 development has started with an explicitly enabled local structured
+import reference adapter. No-adapter scans remain on the current base artifact set and
+`project-map.json` `schema_version: "1.0"`; adapter-enabled scans emit
+`source-registry.json` and `project-map.json` `schema_version: "2.0"` adapter context
+for provenance-backed external/document context only.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -35,9 +40,11 @@ incremental cache metadata and whole-output-set reuse, a bounded lightweight rel
 graph artifact, read-only text query commands over existing generated artifacts,
 redacted scan metadata, safe root-local YAML config support, stable CLI help/version
 behavior, deterministic output redaction for obvious secret-looking values, and a
-documented release-jar verification path. The current public adoption surface also
-includes a checked-in generated-output example snapshot and contributor/reporting
-templates that point readers back to the output and evidence contracts.
+documented release-jar verification path. Unreleased v2 development also includes a
+bounded local structured import adapter that is disabled by default, local-only, and
+provenance-backed. The current public adoption surface also includes a checked-in
+generated-output example snapshot and contributor/reporting templates that point readers
+back to the output and evidence contracts.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
@@ -1301,15 +1308,14 @@ responses, plugin manifests, API requests, API responses, and AI prompt inputs m
 treated as untrusted content that cannot bypass provenance, evidence, redaction,
 credential, or network defaults.
 
-The planned initial v2.0 adapter boundary keeps no-adapter scans compatible with the
-current v1.x generated artifact set and `project-map.json` `schema_version: "1.0"`.
-Adapter-enabled output, when implemented, should use a separate source registry for
-normalized source documents and provenance, and should use an explicit v2 schema marker
-for any adapter-backed `project-map.json` sections. Adapter provenance is navigation and
-review metadata, not code evidence and not proof that an external service is current or
-authoritative.
+The initial v2.0 adapter boundary keeps no-adapter scans compatible with the current
+v1.x generated artifact set and `project-map.json` `schema_version: "1.0"`.
+Adapter-enabled output uses a separate source registry for normalized source documents
+and provenance, and uses `project-map.json` `schema_version: "2.0"` for adapter-backed
+context sections. Adapter provenance is navigation and review metadata, not code
+evidence and not proof that an external service is current or authoritative.
 
-The first implementation path should land in conservative order: adapter contract
+The first implementation path is landing in conservative order: adapter contract
 foundation, disabled-by-default configuration and local path safety, then a local
 structured import reference adapter and output integration. Networked connector modes,
 credential handling, provider-backed AI, plugin loading, and public API/server surfaces

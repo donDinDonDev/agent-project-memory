@@ -550,8 +550,9 @@ public final class AgentProjectMemoryCli {
     }
 
     out.println("Prepared .project-memory.");
+    boolean adapterSelected = scanConfiguration.adapterConfiguration().enabled();
 
-    if (incremental) {
+    if (incremental && !adapterSelected) {
       IncrementalCacheMetadataValidator.CacheValidationResult cacheValidation =
           incrementalCacheMetadataValidator.validateHit(
               normalizedProjectPath,
@@ -592,23 +593,35 @@ public final class AgentProjectMemoryCli {
                 + result.evidenceCount()
                 + " evidence records.");
         out.println("Generated project-graph.json.");
+        if (result.sourceRegistryGenerated()) {
+          out.println(
+              "Generated source-registry.json with "
+                  + result.sourceDocumentCount()
+                  + " source document(s) and "
+                  + result.adapterDiagnosticCount()
+                  + " adapter diagnostic(s).");
+        }
         out.println("Generated agent-guide.md.");
         if (result.profileCount() > 0) {
           out.println("Generated agent profile artifacts: " + result.profileCount() + ".");
         }
         if (incremental) {
-          IncrementalCacheMetadataWriter.CacheWriteResult cacheResult =
-              incrementalCacheMetadataWriter.write(
-                  normalizedProjectPath,
-                  canonicalProjectPath,
-                  containedOutputDirectory,
-                  scanConfiguration,
-                  agentProfiles,
-                  version());
-          if (cacheResult.written()) {
-            out.println("Updated incremental cache metadata.");
-          } else {
+          if (adapterSelected) {
             out.println("Skipped incremental cache metadata refresh.");
+          } else {
+            IncrementalCacheMetadataWriter.CacheWriteResult cacheResult =
+                incrementalCacheMetadataWriter.write(
+                    normalizedProjectPath,
+                    canonicalProjectPath,
+                    containedOutputDirectory,
+                    scanConfiguration,
+                    agentProfiles,
+                    version());
+            if (cacheResult.written()) {
+              out.println("Updated incremental cache metadata.");
+            } else {
+              out.println("Skipped incremental cache metadata refresh.");
+            }
           }
         }
       } else {

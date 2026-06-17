@@ -9,11 +9,12 @@ bounded chunk references, resolving document evidence, conservative code-doc
 reconciliation signals, and compact local documentation guide rendering from structured
 document facts and evidence only.
 
-External connectors are future input adapters. They should not be part of the MVP core
-analyzer, and they should not be required to generate `.project-memory/` from a
-Java/Spring repository.
+The v2 line adds one disabled-by-default local structured import adapter for explicitly
+configured repository-relative export files. Network/API connectors remain future input
+adapters. They should not be part of the MVP core analyzer, and they should not be
+required to generate `.project-memory/` from a Java/Spring repository.
 
-## Planned v2 Adapter Boundary
+## v2 Adapter Boundary
 
 The v2 adapter platform is planned as an optional ingestion layer around the
 deterministic core, not as a replacement for the local Java/Spring analyzer. The core
@@ -46,7 +47,7 @@ Adapters must not:
 - load plugin code or expose an API/server trust boundary without a separate permission
   and security design.
 
-The planned v2.0 lifecycle is:
+The v2.0 lifecycle is:
 
 1. No adapter is selected unless configuration explicitly enables one. A scan with no
    adapter configuration follows the current Java/Spring pipeline and does not create
@@ -75,18 +76,18 @@ The planned v2.0 lifecycle is:
 
 ## SourceDocument
 
-Future external ingestors and any broader local document modes should normalize inputs
-into a `SourceDocument` abstraction. For v2 design, `SourceDocument` should be treated
-as an adapter-domain contract object for future explicit adapters, not as an enabled
-reader, parser, or generated-output integration point.
+External ingestors and any broader local document modes should normalize inputs into a
+`SourceDocument` abstraction. For v2 design, `SourceDocument` is an adapter-domain
+contract object for explicit adapters, not a replacement for code-backed Java/Spring
+facts.
 
 The initial contract foundation validates deterministic source-document identity and
-required provenance references for accepted adapter records. The current adapter config
-safety layer adds disabled-by-default selection and repository-relative local import
-path validation before any adapter reader or parser exists. It still does not read local
-import contents, normalize records, emit `.project-memory/source-registry.json`, add
-adapter-backed `project-map.json` fact sections, or change no-adapter scan/query
-behavior.
+required provenance references for accepted adapter records. The current local
+structured import adapter adds disabled-by-default selection, repository-relative local
+import path validation, bounded JSON parsing, source-document normalization,
+`.project-memory/source-registry.json` emission, and `project-map.json` adapter context
+for accepted records. No-adapter scan behavior remains unchanged, and the query layer
+continues to support the no-adapter `schema_version: "1.0"` artifact contract.
 
 Fields stable enough for the v2.0 design are:
 
@@ -112,7 +113,7 @@ Fields stable enough for the v2.0 design are:
 Fields that are analyzer-internal or postponed beyond the initial v2.0 boundary are:
 
 - `body` or `normalizedBody`: normalized text body used in memory by an analyzer. Full
-  bodies must not be serialized by default.
+  bodies are not serialized by the local structured import adapter.
 - `localPath`: allowed only as a repository-relative configured import path for the
   initial v2.0 local import mode. Out-of-repository local export paths are postponed
   until a later path-safety design; local absolute paths must not be serialized.
@@ -160,12 +161,16 @@ They can be stale, malicious, partially exported, deleted after export, edited b
 fetches, inconsistent with repository source, or intentionally shaped to confuse
 Markdown rendering, optional AI prompts, provenance joins, or future API responses.
 
-Future adapter contracts should require deterministic validation before normalization:
-bounded file sizes and record counts, explicit source kind, explicit import mode,
-content hash, import or fetch timestamp when known, and provenance labels that keep
-local repository files, out-of-repository local exports, and remote API responses
-separate. Missing or ambiguous provenance should block the record or keep it as an
-uncertain warning/status row, not a fact.
+Adapter contracts require deterministic validation before normalization: bounded file
+sizes and record counts, explicit source kind, explicit import mode, content hash, and
+provenance labels that keep local repository files, out-of-repository local exports, and
+remote API responses separate. The current local structured import adapter reads at most
+256 KiB, processes at most 64 records, accepts only the
+`agent-project-memory.local_structured_import.v1` format, accepts only
+`source_type: "local_export"` records with `status: "current"`, rejects stale, partial,
+malformed, duplicate, unsupported, oversized, or provenance-missing records as bounded
+diagnostics, and fails closed for unsupported top-level import files. Missing or
+ambiguous provenance blocks the record or keeps it as a warning/status row, not a fact.
 
 External content must not become executable instruction text. Adapter records, issue
 comments, page bodies, titles, labels, exported Markdown, and connector metadata must
@@ -211,10 +216,10 @@ closed:
 ## Connector Role
 
 Future connectors for YouTrack, Jira, Confluence, GitHub, and GitLab should produce
-`SourceDocument` records plus provenance metadata. The first safe v2 implementation
-candidate should be a local import adapter over user-provided export files, because it
-can exercise normalization and provenance without adding network or credential behavior
-to the product.
+`SourceDocument` records plus provenance metadata. The first v2 implementation is a
+local structured import adapter over user-provided repository-relative export files; it
+exercises normalization and provenance without adding network or credential behavior to
+the product.
 
 They should not:
 

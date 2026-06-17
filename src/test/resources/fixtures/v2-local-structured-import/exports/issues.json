@@ -1,0 +1,32 @@
+{
+  "format": "agent-project-memory.local_structured_import.v1",
+  "records": [
+    {
+      "source_type": "local_export",
+      "source_identity": "issues/PM-200",
+      "title": "Second imported issue",
+      "body": "Second imported body",
+      "status": "current"
+    },
+    {
+      "source_type": "local_export",
+      "source_identity": "issues/PM-101",
+      "title": "Partial imported issue",
+      "status": "current"
+    },
+    {
+      "source_type": "local_export",
+      "source_identity": "issues/PM-100",
+      "title": "First imported issue",
+      "body": "First imported body",
+      "status": "current"
+    },
+    {
+      "source_type": "local_export",
+      "source_identity": "issues/PM-102",
+      "title": "Stale imported issue",
+      "body": "Stale imported body",
+      "status": "stale"
+    }
+  ]
+}

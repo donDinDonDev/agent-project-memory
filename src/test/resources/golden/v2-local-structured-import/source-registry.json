@@ -1,0 +1,91 @@
+{
+  "source_registry_schema_version": "1.0",
+  "adapter_runs": [
+    {
+      "id": "adapter-run:sha256:b9da2b634206f1919a1e16c0644a0aebe897448327f8649d40bb5b952cddf004",
+      "adapter": {
+        "name": "local-structured-import",
+        "version": "2.0.0"
+      },
+      "import_mode": "local_export",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "input_content_hash": "sha256:516be88411b4b96bcbd11b5ce9c5613caf5d4630cce5b82c725bfd7a0dd4b791",
+      "content_status": "not_serialized",
+      "accepted_count": 2,
+      "rejected_count": 2,
+      "diagnostic_count": 2
+    }
+  ],
+  "source_documents": [
+    {
+      "id": "source-document:sha256:5c29c5a53f1d051160b88a63663e3f5c5bdbae79d3f906f8ebd245c3c6d8672b",
+      "source_type": "local_export",
+      "source_identity": "issues/PM-100",
+      "title": "First imported issue",
+      "content_hash": "sha256:8d5baa97d368eef7fd3f07fdb2d64deafdae721ffbf1bb9757464bbc5c9cfc6c",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:45a03c8df24cad79ecd71ce606fd823a8dc08426cd75a9918243b4c73f68c70d"
+    },
+    {
+      "id": "source-document:sha256:5f2d50ff6c10852c7e6b85d08790db9f89d7d81c3b7e0a3ff97319d9e69f5eec",
+      "source_type": "local_export",
+      "source_identity": "issues/PM-200",
+      "title": "Second imported issue",
+      "content_hash": "sha256:8465624e62176f6f24457642540ff2b5148ed7aded024360992ad5de83068ac7",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:6953b31cfe45fe916116b484b9ea378efb1d7f84956d6be18840c9ab0d676b03"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "source-provenance:sha256:45a03c8df24cad79ecd71ce606fd823a8dc08426cd75a9918243b4c73f68c70d",
+      "adapter": {
+        "name": "local-structured-import",
+        "version": "2.0.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "local_export",
+      "source_identity": "issues/PM-100",
+      "content_hash": "sha256:8d5baa97d368eef7fd3f07fdb2d64deafdae721ffbf1bb9757464bbc5c9cfc6c",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "trust_boundary_labels": ["local_structured_import", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence"]
+    },
+    {
+      "id": "source-provenance:sha256:6953b31cfe45fe916116b484b9ea378efb1d7f84956d6be18840c9ab0d676b03",
+      "adapter": {
+        "name": "local-structured-import",
+        "version": "2.0.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "local_export",
+      "source_identity": "issues/PM-200",
+      "content_hash": "sha256:8465624e62176f6f24457642540ff2b5148ed7aded024360992ad5de83068ac7",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "trust_boundary_labels": ["local_structured_import", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence"]
+    }
+  ],
+  "diagnostics": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "adapter-diagnostic:local-structured-import:record:000002:partial_record_rejected",
+        "severity": "warning",
+        "category": "local_structured_import",
+        "signal": "partial_record_rejected",
+        "message": "Local structured import record rejected because normalized body is missing.",
+        "record_ordinal": 2
+      },
+      {
+        "id": "adapter-diagnostic:local-structured-import:record:000004:stale_record_rejected",
+        "severity": "warning",
+        "category": "local_structured_import",
+        "signal": "stale_record_rejected",
+        "message": "Local structured import record rejected because it is marked stale.",
+        "record_ordinal": 4
+      }
+    ]
+  }
+}

@@ -129,6 +129,11 @@ import io.github.dondindondev.agentprojectmemory.graph.ProjectGraph;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphCollector;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphIds;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphJsonSerializer;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterIngestionResult;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.LocalStructuredImportAdapter;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceDocument;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceRegistryJsonSerializer;
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
@@ -159,6 +164,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String TEST_RESOURCE_ROOT = "src/test/resources";
   private static final String ROOT_BUILD_FILE = "pom.xml";
   private static final String SCHEMA_VERSION = "1.0";
+  private static final String ADAPTER_SCHEMA_VERSION = "2.0";
   private static final String ANALYSIS_ANALYZED = "analyzed";
   private static final String ANALYSIS_NOT_ANALYZED = "not_analyzed";
   private static final String ANALYSIS_NOT_DETECTED = "not_detected";
@@ -181,6 +187,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private static final String PROJECT_GRAPH_FILE_NAME = "project-graph.json";
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
+  private static final String SOURCE_REGISTRY_FILE_NAME = "source-registry.json";
   private static final String AGENT_GUIDE_FILE_NAME = "agent-guide.md";
   private static final String AGENT_PROFILE_MANIFEST_FILE_NAME =
       "agent-profiles/manifest.json";
@@ -474,6 +481,10 @@ public final class SpringMvcEndpointOutputGenerator {
       new AgentProfileMarkdownGenerator();
   private final ProjectGraphJsonSerializer projectGraphJsonSerializer =
       new ProjectGraphJsonSerializer();
+  private final LocalStructuredImportAdapter localStructuredImportAdapter =
+      new LocalStructuredImportAdapter();
+  private final SourceRegistryJsonSerializer sourceRegistryJsonSerializer =
+      new SourceRegistryJsonSerializer();
 
   public SpringMvcEndpointOutputGenerator() {
     this(
@@ -647,6 +658,9 @@ public final class SpringMvcEndpointOutputGenerator {
             scanConfiguration.localMarkdownEnabled(),
             scanConfiguration.documentIncludes(),
             scanConfiguration.documentExcludes()));
+    AdapterIngestionResult adapterIngestionResult = adapterIngestionResult(
+        normalizedRepositoryRoot,
+        scanConfiguration);
     if (!shouldGenerate(
         layout,
         moduleDiscoveryAnalysis,
@@ -659,7 +673,8 @@ public final class SpringMvcEndpointOutputGenerator {
         generatedSourceRootDetection,
         openApiSpecDiscoveryAnalysis,
         openApiOperationAnalysis,
-        documentDiscoveryAnalysis)) {
+        documentDiscoveryAnalysis,
+        adapterIngestionResult)) {
       return new Result(false, 0, 0, 0, 0, 0, 0, 0);
     }
 
@@ -731,7 +746,9 @@ public final class SpringMvcEndpointOutputGenerator {
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis,
         scanConfiguration,
+        adapterIngestionResult,
         scanDiagnostics);
+    String projectMapSchemaVersion = projectMapSchemaVersion(adapterIngestionResult);
     String projectGraphJson = projectGraphJson(
         layout,
         scan,
@@ -739,7 +756,8 @@ public final class SpringMvcEndpointOutputGenerator {
         openApiOperationAnalysis,
         generatedSourceMetadata,
         documentDiscoveryAnalysis,
-        documentReconciliationAnalysis);
+        documentReconciliationAnalysis,
+        projectMapSchemaVersion);
 
     List<GeneratedOutputFile> generatedOutputFiles = new ArrayList<>();
     generatedOutputFiles.add(new GeneratedOutputFile(
@@ -755,6 +773,11 @@ public final class SpringMvcEndpointOutputGenerator {
     generatedOutputFiles.add(new GeneratedOutputFile(
         PROJECT_MAP_FILE_NAME,
         projectMapJson));
+    if (adapterIngestionResult.enabled()) {
+      generatedOutputFiles.add(new GeneratedOutputFile(
+          SOURCE_REGISTRY_FILE_NAME,
+          sourceRegistryJsonSerializer.serialize(adapterIngestionResult)));
+    }
     generatedOutputFiles.add(new GeneratedOutputFile(
         PROJECT_GRAPH_FILE_NAME,
         projectGraphJson));
@@ -763,6 +786,7 @@ public final class SpringMvcEndpointOutputGenerator {
         agentGuideGenerator.generate(projectMapJson, evidenceIndexJsonl)));
     generatedOutputFiles.addAll(agentProfileOutputFiles(
         selectedAgentProfiles,
+        projectMapSchemaVersion,
         projectMapJson,
         evidenceIndexJsonl));
 
@@ -780,7 +804,23 @@ public final class SpringMvcEndpointOutputGenerator {
         documentDiscoveryAnalysis.documents().size(),
         evidenceRecords.size(),
         scanDiagnostics.size(),
-        selectedAgentProfiles.size());
+        selectedAgentProfiles.size(),
+        adapterIngestionResult.enabled(),
+        adapterIngestionResult.acceptedCount(),
+        adapterIngestionResult.diagnostics().size());
+  }
+
+  private AdapterIngestionResult adapterIngestionResult(
+      Path repositoryRoot,
+      ScanConfiguration scanConfiguration) throws IOException {
+    if (!scanConfiguration.adapterConfiguration().enabled()) {
+      return AdapterIngestionResult.disabled();
+    }
+    List<AdapterLocalImport> localImports = scanConfiguration.adapterConfiguration().localImports();
+    if (localImports.isEmpty()) {
+      return AdapterIngestionResult.disabled();
+    }
+    return localStructuredImportAdapter.read(repositoryRoot, localImports.get(0));
   }
 
   private boolean shouldGenerate(
@@ -795,7 +835,8 @@ public final class SpringMvcEndpointOutputGenerator {
       GeneratedSourceRootDetection generatedSourceRootDetection,
       OpenApiSpecDiscoveryAnalysis openApiSpecDiscoveryAnalysis,
       OpenApiOperationAnalysis openApiOperationAnalysis,
-      DocumentDiscoveryAnalysis documentDiscoveryAnalysis) {
+      DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
+      AdapterIngestionResult adapterIngestionResult) {
     return !layout.sourceRoots().isEmpty()
         || !layout.testRoots().isEmpty()
         || !layout.diagnostics().isEmpty()
@@ -824,7 +865,8 @@ public final class SpringMvcEndpointOutputGenerator {
         || !openApiOperationAnalysis.operations().isEmpty()
         || !openApiOperationAnalysis.warnings().isEmpty()
         || !documentDiscoveryAnalysis.documents().isEmpty()
-        || !documentDiscoveryAnalysis.diagnostics().isEmpty();
+        || !documentDiscoveryAnalysis.diagnostics().isEmpty()
+        || adapterIngestionResult.enabled();
   }
 
   private ProjectLayout detectLayout(
@@ -2273,12 +2315,16 @@ public final class SpringMvcEndpointOutputGenerator {
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
       DocumentReconciliationAnalysis documentReconciliationAnalysis,
       ScanConfiguration scanConfiguration,
+      AdapterIngestionResult adapterIngestionResult,
       List<ScanDiagnostic> scanDiagnostics) {
     StringBuilder json = new StringBuilder();
     json.append("{\n");
-    appendIndentedStringField(json, 1, "schema_version", SCHEMA_VERSION, true);
-    appendScanMetadata(json, scanConfiguration, scanDiagnostics, true);
+    appendIndentedStringField(json, 1, "schema_version", projectMapSchemaVersion(adapterIngestionResult), true);
+    appendScanMetadata(json, scanConfiguration, adapterIngestionResult, scanDiagnostics, true);
     appendGeneratedSources(json, generatedSourceMetadata, true);
+    if (adapterIngestionResult.enabled()) {
+      appendAdapterContext(json, adapterIngestionResult, true);
+    }
     json.append("  \"project\": {\n");
     appendIndentedStringField(json, 2, "root", ".", true);
     json.append("    \"build\": {\n");
@@ -2347,7 +2393,8 @@ public final class SpringMvcEndpointOutputGenerator {
       OpenApiOperationAnalysis openApiOperationAnalysis,
       GeneratedSourceMetadata generatedSourceMetadata,
       DocumentDiscoveryAnalysis documentDiscoveryAnalysis,
-      DocumentReconciliationAnalysis documentReconciliationAnalysis) {
+      DocumentReconciliationAnalysis documentReconciliationAnalysis,
+      String projectMapSchemaVersion) {
     ProjectGraphCollector graph = new ProjectGraphCollector();
     addGraphModuleNodes(graph, layout.modules().items());
     addGraphComponentTypes(graph, scan.components());
@@ -2362,8 +2409,12 @@ public final class SpringMvcEndpointOutputGenerator {
     addGraphTestedSubjectRelations(graph, scan.tests());
     addGraphRepositoryEntityRelations(graph, scan.springRepositories());
     addGraphDocumentReferenceRelations(graph, documentReconciliationAnalysis.signals());
-    ProjectGraph projectGraph = graph.build();
+    ProjectGraph projectGraph = graph.build(projectMapSchemaVersion);
     return projectGraphJsonSerializer.serialize(projectGraph);
+  }
+
+  private String projectMapSchemaVersion(AdapterIngestionResult adapterIngestionResult) {
+    return adapterIngestionResult.enabled() ? ADAPTER_SCHEMA_VERSION : SCHEMA_VERSION;
   }
 
   private void addGraphModuleNodes(ProjectGraphCollector graph, List<MavenModuleItem> modules) {
@@ -3252,6 +3303,7 @@ public final class SpringMvcEndpointOutputGenerator {
   private void appendScanMetadata(
       StringBuilder json,
       ScanConfiguration scanConfiguration,
+      AdapterIngestionResult adapterIngestionResult,
       List<ScanDiagnostic> scanDiagnostics,
       boolean trailingComma) {
     boolean documentPathRulesApplied = scanConfiguration.localMarkdownEnabled();
@@ -3296,9 +3348,7 @@ public final class SpringMvcEndpointOutputGenerator {
         json,
         4,
         "status",
-        scanConfiguration.adapterConfiguration().enabled()
-            ? "config_validated_no_reader"
-            : "disabled_by_default",
+        adapterFeatureStatus(scanConfiguration, adapterIngestionResult),
         false);
     json.append("      }\n");
     json.append("    },\n");
@@ -3338,6 +3388,103 @@ public final class SpringMvcEndpointOutputGenerator {
     appendScanDiagnosticItems(json, scanDiagnostics, false);
     json.append("    }\n");
     json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private String adapterFeatureStatus(
+      ScanConfiguration scanConfiguration,
+      AdapterIngestionResult adapterIngestionResult) {
+    if (!scanConfiguration.adapterConfiguration().enabled()) {
+      return "disabled_by_default";
+    }
+    if (!adapterIngestionResult.enabled()) {
+      return "config_validated_no_reader";
+    }
+    if (adapterIngestionResult.diagnostics().isEmpty()) {
+      return "local_import_read";
+    }
+    if (adapterIngestionResult.acceptedCount() == 0) {
+      return "local_import_read_with_rejections";
+    }
+    return "local_import_read_with_partial_rejections";
+  }
+
+  private void appendAdapterContext(
+      StringBuilder json,
+      AdapterIngestionResult adapterIngestionResult,
+      boolean trailingComma) {
+    json.append("  \"adapter_context\": {\n");
+    appendIndentedStringField(json, 2, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringField(
+        json,
+        2,
+        "context_kind",
+        "provenance_backed_external_context",
+        true);
+    appendIndentedStringField(json, 2, "source_registry", SOURCE_REGISTRY_FILE_NAME, true);
+    appendIndentedIntegerField(json, 2, "diagnostic_count", adapterIngestionResult.diagnostics().size(), true);
+    appendAdapterContextItems(json, adapterIngestionResult.sourceDocuments(), false);
+    json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendAdapterContextItems(
+      StringBuilder json,
+      List<SourceDocument> sourceDocuments,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("\"items\": [");
+    if (sourceDocuments.isEmpty()) {
+      json.append("]\n");
+      return;
+    }
+
+    json.append("\n");
+    for (int index = 0; index < sourceDocuments.size(); index++) {
+      SourceDocument sourceDocument = sourceDocuments.get(index);
+      indent(json, 3);
+      json.append("{\n");
+      appendIndentedStringField(
+          json,
+          4,
+          "id",
+          "adapter_context:" + idKey(sourceDocument.id()),
+          true);
+      appendIndentedStringField(json, 4, "context_kind", "external_document_context", true);
+      appendIndentedStringField(json, 4, "source_type", sourceDocument.sourceType(), true);
+      appendIndentedStringField(
+          json,
+          4,
+          "source_identity",
+          OutputRedactor.redact(sourceDocument.sourceIdentity()),
+          true);
+      appendIndentedNullableStringField(json, 4, "title", sourceDocument.title(), true);
+      appendIndentedStringField(
+          json,
+          4,
+          "content_status",
+          sourceDocument.contentStatus().contractValue(),
+          true);
+      appendIndentedStringField(json, 4, "support_type", "provenance_only", true);
+      appendIndentedStringField(json, 4, "confidence", LOW_CONFIDENCE, true);
+      appendIndentedStringArrayField(
+          json,
+          4,
+          "source_document_ids",
+          List.of(sourceDocument.id()),
+          true);
+      appendIndentedStringArrayField(
+          json,
+          4,
+          "provenance_ids",
+          List.of(sourceDocument.provenanceId()),
+          false);
+      indent(json, 3);
+      json.append("}");
+      appendLineEnding(json, index < sourceDocuments.size() - 1);
+    }
+    indent(json, 2);
+    json.append("]\n");
     appendLineEnding(json, trailingComma);
   }
 
@@ -7581,6 +7728,7 @@ public final class SpringMvcEndpointOutputGenerator {
 
   private List<GeneratedOutputFile> agentProfileOutputFiles(
       List<AgentOutputProfile> profiles,
+      String projectMapSchemaVersion,
       String projectMapJson,
       String evidenceIndexJsonl) throws IOException {
     if (profiles.isEmpty()) {
@@ -7590,7 +7738,7 @@ public final class SpringMvcEndpointOutputGenerator {
     List<GeneratedOutputFile> files = new ArrayList<>();
     files.add(new GeneratedOutputFile(
         AGENT_PROFILE_MANIFEST_FILE_NAME,
-        agentProfileManifestJson(profiles)));
+        agentProfileManifestJson(profiles, projectMapSchemaVersion)));
     for (AgentOutputProfile profile : profiles) {
       files.add(new GeneratedOutputFile(
           profile.artifactPath(),
@@ -7599,12 +7747,14 @@ public final class SpringMvcEndpointOutputGenerator {
     return List.copyOf(files);
   }
 
-  private String agentProfileManifestJson(List<AgentOutputProfile> profiles) {
+  private String agentProfileManifestJson(
+      List<AgentOutputProfile> profiles,
+      String projectMapSchemaVersion) {
     StringBuilder manifest = new StringBuilder();
     manifest.append("{\n");
     manifest.append("  \"manifest_version\": \"").append(AGENT_PROFILE_MANIFEST_VERSION)
         .append("\",\n");
-    manifest.append("  \"project_map_schema_version\": \"").append(SCHEMA_VERSION)
+    manifest.append("  \"project_map_schema_version\": \"").append(projectMapSchemaVersion)
         .append("\",\n");
     manifest.append("  \"source_artifacts\": [\n");
     manifest.append("    \"").append(PROJECT_MAP_FILE_NAME).append("\",\n");
@@ -7782,7 +7932,10 @@ public final class SpringMvcEndpointOutputGenerator {
       int documentCount,
       int evidenceCount,
       int diagnosticCount,
-      int profileCount) {
+      int profileCount,
+      boolean sourceRegistryGenerated,
+      int sourceDocumentCount,
+      int adapterDiagnosticCount) {
     public Result(
         boolean generated,
         int endpointCount,
@@ -7801,6 +7954,34 @@ public final class SpringMvcEndpointOutputGenerator {
           documentCount,
           evidenceCount,
           diagnosticCount,
+          0,
+          false,
+          0,
+          0);
+    }
+
+    public Result(
+        boolean generated,
+        int endpointCount,
+        int componentCount,
+        int entityCount,
+        int testCount,
+        int documentCount,
+        int evidenceCount,
+        int diagnosticCount,
+        int profileCount) {
+      this(
+          generated,
+          endpointCount,
+          componentCount,
+          entityCount,
+          testCount,
+          documentCount,
+          evidenceCount,
+          diagnosticCount,
+          profileCount,
+          false,
+          0,
           0);
     }
   }

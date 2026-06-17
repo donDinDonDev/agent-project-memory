@@ -32,33 +32,35 @@ without `--agent-profile` does not create profile artifacts, and unsupported
 directories that only prepare `.project-memory/` do not create orphan profile
 artifacts.
 
-The planned v2.0 adapter source registry is a separate optional artifact:
+The v2.0 local structured import adapter source registry is a separate optional
+artifact:
 
 ```text
 .project-memory/source-registry.json
 ```
 
-The current v1.x implementation does not emit this artifact. A normal scan with no
-adapter explicitly enabled must keep the current base artifact set and must not create a
-source registry.
+The current implementation emits this artifact only when
+`adapters.local_structured_import.enabled` is explicitly set to `true` and the
+configured import file is accepted for reading. A normal scan with no adapter explicitly
+enabled keeps the current base artifact set and must not create a source registry.
 
 The initial adapter-domain contract foundation added source-document/provenance
-identity validation for future adapters only. The current adapter config safety layer
-adds bounded `scan.features.adapters` metadata for disabled-by-default selection and
-validated local import counts, but scans without an explicitly enabled adapter still do
-not emit `source-registry.json` or adapter-backed `project-map.json` fact sections.
-Enabled adapter config is validation-only until a later implementation adds a reader,
-parser, source registry writer, and adapter-backed output integration.
+identity validation for adapters. The current local structured import layer adds bounded
+`scan.features.adapters` metadata for disabled-by-default selection, validated local
+import counts, bounded parsing, `source-registry.json` emission, and
+`project-map.json` adapter context for accepted adapter-backed records. Scans without an
+explicitly enabled adapter still do not emit `source-registry.json` or adapter-backed
+`project-map.json` sections.
 
-## Planned v2 Adapter Output Boundary
+## v2 Adapter Output Boundary
 
-The current v1.x implementation does not emit adapter packages, connector output,
-adapter provenance sections, adapter evidence records, connector credentials, network
-metadata, or AI provider metadata. Normal `project-map.json` files remain on
-`schema_version: "1.0"` unless a future release explicitly documents a schema marker
-change.
+The current implementation does not emit adapter packages, network connector output,
+adapter evidence records, connector credentials, network metadata, or AI provider
+metadata. Normal no-adapter `project-map.json` files remain on
+`schema_version: "1.0"`. Adapter-backed `project-map.json` output uses
+`schema_version: "2.0"` and emits the optional source registry.
 
-Future v2 adapter-backed output must keep these boundaries:
+Adapter-backed output must keep these boundaries:
 
 - adapter-backed records are optional and absent when no adapter is explicitly enabled;
 - the normal Java/Spring scan path must continue without adapters, network access,
@@ -72,7 +74,7 @@ Future v2 adapter-backed output must keep these boundaries:
   raw request/response logs, local absolute paths, and raw source/document bodies must
   not be serialized as generated project-memory metadata.
 
-Planned v2.0 adapter output decisions:
+Current v2.0 local structured import output decisions:
 
 - The canonical placement for normalized adapter records and provenance is the separate
   `.project-memory/source-registry.json` artifact, not free-form Markdown and not
@@ -89,11 +91,12 @@ Planned v2.0 adapter output decisions:
 - `provenance[]` records carry adapter/source metadata and trust-boundary labels. They
   are required for every accepted adapter-backed record and are generated-output
   metadata, not project evidence.
-- Adapter-backed rows in `project-map.json`, if introduced by a later implementation
-  slice, may reference `source_document_ids` and `provenance_ids` from the source
-  registry. They must remain labeled as adapter-backed external/document context,
-  metadata-only rows, warnings, or uncertain inspection hints. They must not be emitted
-  as Java/Spring source-visible facts.
+- Adapter-backed rows in `project-map.json` live under top-level `adapter_context`.
+  Each item references `source_document_ids` and `provenance_ids` from the source
+  registry, carries `context_kind: "external_document_context"`,
+  `support_type: "provenance_only"`, and `confidence: "low"`, and does not carry
+  `evidence_ids`. These rows remain provenance-backed external/document context. They
+  must not be emitted as Java/Spring source-visible facts.
 - A no-adapter scan keeps `project-map.json` on `schema_version: "1.0"` and preserves
   the current v1.x artifact set. Any scan output that adds adapter-backed
   `project-map.json` fields or sections uses a documented v2 schema marker such as
@@ -103,9 +106,109 @@ Planned v2.0 adapter output decisions:
   no-adapter `schema_version: "1.0"` outputs. Consumers that encounter a v2 schema
   marker or `source-registry.json` must either implement the v2 adapter contract or
   ignore adapter-backed sections and provenance-aware joins explicitly.
-- Generated graph nodes, query output, profile Markdown, and agent guide text may point
-  to adapter source-document IDs only after their own contracts are updated. Such
-  references remain navigation metadata and must not become evidence.
+- Generated graph nodes, query output, profile Markdown, and agent guide text do not
+  gain adapter-specific behavior in this slice. The query reader continues to support
+  no-adapter `schema_version: "1.0"` outputs. Such references remain navigation
+  metadata and must not become evidence if introduced later.
+
+Current `source-registry.json` shape:
+
+```json
+{
+  "source_registry_schema_version": "1.0",
+  "adapter_runs": [
+    {
+      "id": "adapter-run:sha256:<stable>",
+      "adapter": {
+        "name": "local-structured-import",
+        "version": "2.0.0"
+      },
+      "import_mode": "local_export",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "input_content_hash": "sha256:<normalized-input-content>",
+      "content_status": "not_serialized",
+      "accepted_count": 0,
+      "rejected_count": 0,
+      "diagnostic_count": 0
+    }
+  ],
+  "source_documents": [
+    {
+      "id": "source-document:sha256:<stable>",
+      "source_type": "local_export",
+      "source_identity": "source-system/record-id",
+      "title": "bounded redacted title",
+      "content_hash": "sha256:<normalized-record-content>",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:<stable>"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "source-provenance:sha256:<stable>",
+      "adapter": {
+        "name": "local-structured-import",
+        "version": "2.0.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "local_export",
+      "source_identity": "source-system/record-id",
+      "content_hash": "sha256:<normalized-record-content>",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "trust_boundary_labels": [
+        "local_structured_import",
+        "repository_relative_file",
+        "provenance_backed_external_context",
+        "not_code_evidence"
+      ]
+    }
+  ],
+  "diagnostics": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "adapter-diagnostic:local-structured-import:record:000001:<signal>",
+        "severity": "warning",
+        "category": "local_structured_import",
+        "signal": "partial_record_rejected",
+        "message": "bounded diagnostic message",
+        "record_ordinal": 1
+      }
+    ]
+  }
+}
+```
+
+Current `project-map.json` adapter context shape when a local structured import adapter
+is enabled:
+
+```json
+{
+  "schema_version": "2.0",
+  "adapter_context": {
+    "analysis_status": "analyzed",
+    "context_kind": "provenance_backed_external_context",
+    "source_registry": "source-registry.json",
+    "diagnostic_count": 0,
+    "items": [
+      {
+        "id": "adapter_context:source-document-sha256-<stable>",
+        "context_kind": "external_document_context",
+        "source_type": "local_export",
+        "source_identity": "source-system/record-id",
+        "title": "bounded redacted title",
+        "content_status": "not_serialized",
+        "support_type": "provenance_only",
+        "confidence": "low",
+        "source_document_ids": ["source-document:sha256:<stable>"],
+        "provenance_ids": ["source-provenance:sha256:<stable>"]
+      }
+    ]
+  }
+}
+```
 
 Any future adapter output field addition, removal, rename, semantic change, new
 generated artifact, evidence type, or schema marker change requires synchronized updates
@@ -3918,6 +4021,12 @@ The v1.4 policy decision is optional metadata-only cache-assisted reuse:
 - Later incremental runs may skip full analysis only when cache schema, tool version,
   selected CLI options, selected config, selected agent profiles, input fingerprints,
   and existing generated output fingerprints all match the current repository state.
+- In this v2 local structured import slice, `scan <path> --incremental` with an
+  explicitly enabled adapter runs the normal full analysis path and skips cache metadata
+  refresh. Adapter-enabled cache reuse is postponed until cache input/output contracts
+  explicitly include adapter import inputs and `source-registry.json` without
+  serializing configured import paths, raw adapter config values, raw export contents,
+  or raw record bodies.
 - The initial v1.4 reuse granularity is the whole generated output set for an unchanged
   repository state. Partial per-module, per-analyzer, per-source-file, or per-section
   fact reuse is out of scope for the initial v1.4 contract.
@@ -4084,6 +4193,8 @@ Output fingerprint rules:
   the selected scan option set.
 - Base output fingerprints cover `project-map.json`, `project-graph.json`,
   `evidence-index.jsonl`, `endpoints.md`, and `agent-guide.md`.
+- `source-registry.json` is not part of the v1.4 cache output fingerprint set in this
+  slice because adapter-enabled scans skip cache metadata refresh.
 - When agent profiles are selected, output fingerprints also cover
   `agent-profiles/manifest.json` and the selected profile Markdown files.
 - Unselected profile files are not part of the selected generated output set. They
@@ -4715,8 +4826,8 @@ Current config file rules:
 - `documents` is optional. `documents.include` and `documents.exclude` are optional
   lists of string path rules. Include rules must target Markdown files ending in `.md`
   or `.markdown`; exclude rules may target files or path trees.
-- `adapters` is optional and disabled by default. The current v2 config safety layer
-  recognizes only `adapters.local_structured_import.enabled` and
+- `adapters` is optional and disabled by default. The current v2 local structured
+  import layer recognizes only `adapters.local_structured_import.enabled` and
   `adapters.local_structured_import.path`.
 - `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
   it is `true`, `path` is required and must identify one existing repository-relative
@@ -4725,19 +4836,25 @@ Current config file rules:
   `.project-memory/`, point to a directory, point to a symlink, pass through a symlinked
   path segment, or resolve outside the scanned repository root. When the adapter is
   disabled, `path` must be omitted.
-- The current adapter config behavior validates selection and local import path safety
-  only. It does not read or parse the configured import file, serialize the configured
-  import path, emit `.project-memory/source-registry.json`, add adapter-backed
-  `project-map.json` fact sections, create evidence records, enable network access,
-  accept credentials, load plugins, call AI providers, or upload source.
+- When enabled, the local structured import adapter reads and parses the configured
+  import file after config validation. The import file must be a JSON object with
+  `format: "agent-project-memory.local_structured_import.v1"` and a `records` array.
+  Each accepted record must use `source_type: "local_export"`, a stable safe
+  `source_identity`, `status: "current"`, and a non-empty bounded `body`.
+- The adapter emits `.project-memory/source-registry.json` and top-level
+  `project-map.json` `adapter_context` as provenance-backed external/document context.
+  It does not serialize the configured import path, raw record bodies, raw connector or
+  export contents, create evidence records, enable network access, accept credentials,
+  load plugins, call AI providers, or upload source.
 - Unknown top-level keys, unknown `features` or `documents` keys, unsupported values,
   unknown `adapters` keys, unsupported values, unsupported future-mode enables, invalid
   YAML, unsafe path values, oversized config files, YAML aliases that exceed parser
   limits, and non-scalar values where scalars are required fail as invalid config before
   output generation.
 - Config parsing must not perform environment-variable interpolation, file includes,
-  remote imports, command execution, credential lookup, plugin loading, network access,
-  or adapter import parsing.
+  remote imports, command execution, credential lookup, plugin loading, or network
+  access. Adapter import parsing happens only after the selected config has passed the
+  bounded repository-relative local import path gate.
 - Generated outputs must not serialize raw config values, raw user include/exclude
   patterns, config file contents, config excerpts, adapter import paths, raw connector
   or export contents, environment variables, decrypted values, credentials, tokens,
@@ -4764,10 +4881,11 @@ Current feature toggle rules:
 - `adapters` defaults to disabled. When `local_structured_import` is explicitly enabled
   and its path is valid, `scan.features.adapters.enabled` is `true`,
   `selected_count` and `local_import_count` reflect the validated selection,
-  `network_access` remains `"disabled"`, and `status` is
-  `"config_validated_no_reader"`. This status means the config gate succeeded but no
-  adapter reader, parser, source registry writer, or adapter-backed generated output is
-  implemented in the current slice.
+  `network_access` remains `"disabled"`, and `status` is one of:
+  `local_import_read`, `local_import_read_with_rejections`,
+  `local_import_read_with_partial_rejections`, or `disabled_by_default` when adapters
+  are not enabled. The legacy `config_validated_no_reader` status is reserved for an
+  enabled adapter configuration that validates but has no reader result.
 
 Current include/exclude path semantics:
 

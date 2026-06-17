@@ -1557,7 +1557,7 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
-  void scanAcceptsExplicitAdapterConfigWithoutReadingOrSerializingImportContent()
+  void scanReadsLocalStructuredImportIntoSourceRegistryWithoutPromotingFactsOrRawBodies()
       throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
         <project>
@@ -1566,7 +1566,18 @@ final class AgentProjectMemoryCliTest {
         """);
     Files.createDirectories(tempDir.resolve("exports"));
     Files.writeString(tempDir.resolve("exports/issues.json"), """
-        {"api_token":"FAKE_ADAPTER_EXPORT_SECRET"}
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "api_token:FAKE_ADAPTER_ID_SECRET",
+              "title": "Imported issue",
+              "body": "FAKE_ADAPTER_EXPORT_SECRET raw connector body",
+              "status": "current"
+            }
+          ]
+        }
         """);
     Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
         version: 1
@@ -1578,25 +1589,166 @@ final class AgentProjectMemoryCliTest {
 
     CliResult result = runCli("scan", tempDir.toString());
     Path outputDirectory = tempDir.resolve(".project-memory");
-    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
+    JsonNode projectGraph = JSON.readTree(Files.readString(outputDirectory.resolve("project-graph.json")));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
-    String generatedSurfaces = String.join("\n", projectMap, evidenceIndex, agentGuide);
+    String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
+    String generatedSurfaces = String.join(
+        "\n",
+        projectMap.toString(),
+        sourceRegistryJson,
+        evidenceIndex,
+        agentGuide);
+    JsonNode adapterItem = projectMap.path("adapter_context").path("items").get(0);
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
-        () -> assertTrue(projectMap.contains("\"adapters\": {")),
-        () -> assertTrue(projectMap.contains("\"enabled\": true")),
-        () -> assertTrue(projectMap.contains("\"selected_count\": 1")),
-        () -> assertTrue(projectMap.contains("\"local_import_count\": 1")),
-        () -> assertTrue(projectMap.contains("\"network_access\": \"disabled\"")),
-        () -> assertTrue(projectMap.contains("\"status\": \"config_validated_no_reader\"")),
-        () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
+        () -> assertTrue(result.stdout().contains("Generated source-registry.json with 1 source document(s)")),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals("2.0", projectGraph.path("project_map_schema_version").asText()),
+        () -> assertTrue(projectMap.path("scan").path("features").path("adapters").path("enabled").asBoolean()),
+        () -> assertEquals(
+            "local_import_read",
+            projectMap.path("scan").path("features").path("adapters").path("status").asText()),
+        () -> assertEquals(
+            "provenance_backed_external_context",
+            projectMap.path("adapter_context").path("context_kind").asText()),
+        () -> assertEquals("source-registry.json", projectMap.path("adapter_context").path("source_registry").asText()),
+        () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
+        () -> assertEquals("external_document_context", adapterItem.path("context_kind").asText()),
+        () -> assertEquals("provenance_only", adapterItem.path("support_type").asText()),
+        () -> assertEquals("low", adapterItem.path("confidence").asText()),
+        () -> assertTrue(adapterItem.has("source_document_ids")),
+        () -> assertTrue(adapterItem.has("provenance_ids")),
+        () -> assertFalse(adapterItem.has("evidence_ids")),
+        () -> assertEquals(0, projectMap.path("endpoints").size()),
+        () -> assertEquals(0, projectMap.path("components").path("items").size()),
+        () -> assertEquals(0, projectMap.path("entities").path("items").size()),
+        () -> assertEquals(0, projectMap.path("tests").path("items").size()),
+        () -> assertEquals("1.0", sourceRegistry.path("source_registry_schema_version").asText()),
+        () -> assertEquals(1, sourceRegistry.path("adapter_runs").size()),
+        () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
+        () -> assertEquals(1, sourceRegistry.path("provenance").size()),
+        () -> assertEquals("local_export", sourceRegistry.path("source_documents").get(0).path("source_type").asText()),
+        () -> assertEquals(
+            "api_token:[REDACTED_SECRET_LIKE_VALUE]",
+            sourceRegistry.path("source_documents").get(0).path("source_identity").asText()),
+        () -> assertEquals(
+            "api_token:[REDACTED_SECRET_LIKE_VALUE]",
+            adapterItem.path("source_identity").asText()),
+        () -> assertEquals(
+            "not_serialized",
+            sourceRegistry.path("source_documents").get(0).path("content_status").asText()),
+        () -> assertTrue(sourceRegistry.path("provenance").get(0).path("trust_boundary_labels").toString()
+            .contains("not_code_evidence")),
+        () -> assertEquals("disabled", sourceRegistry.path("adapter_runs").get(0).path("network_access").asText()),
+        () -> assertEquals("disabled", sourceRegistry.path("provenance").get(0).path("network_access").asText()),
+        () -> assertFalse(evidenceIndex.contains("local_export")),
+        () -> assertFalse(evidenceIndex.contains("source-provenance")),
         () -> assertFalse(generatedSurfaces.contains("exports/issues.json")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_ADAPTER_ID_SECRET")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_ADAPTER_EXPORT_SECRET")),
-        () -> assertFalse(generatedSurfaces.contains("api_token")),
+        () -> assertFalse(generatedSurfaces.contains("raw connector body")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("exports/issues.json")),
+        () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_ID_SECRET")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_EXPORT_SECRET")));
+  }
+
+  @Test
+  void scanLocalStructuredImportWithAgentProfileManifestUsesAdapterSchemaVersion()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/issues.json"), """
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-202",
+              "title": "Imported issue",
+              "body": "Imported body",
+              "status": "current"
+            }
+          ]
+        }
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--agent-profile",
+        "codex");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode manifest = JSON.readTree(
+        Files.readString(outputDirectory.resolve("agent-profiles/manifest.json")));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals("2.0", manifest.path("project_map_schema_version").asText()),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("source-registry.json"))),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("agent-profiles/codex.md"))));
+  }
+
+  @Test
+  void scanIncrementalWithLocalStructuredImportSkipsCacheMetadataContainingImportPath()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/issues.json"), """
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-201",
+              "title": "Imported issue",
+              "body": "Imported body",
+              "status": "current"
+            }
+          ]
+        }
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString(), "--incremental");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated source-registry.json with 1 source document(s)")),
+        () -> assertTrue(result.stdout().contains("Skipped incremental cache metadata refresh.")),
+        () -> assertFalse(result.stdout().contains("Updated incremental cache metadata.")),
+        () -> assertFalse(result.stdout().contains("Reused incremental cache output set.")),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("source-registry.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("cache/v1/manifest.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("cache/v1/inputs.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("cache/v1/outputs.jsonl"))));
   }
 
   @Test
