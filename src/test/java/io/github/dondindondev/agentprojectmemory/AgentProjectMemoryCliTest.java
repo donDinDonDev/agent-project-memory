@@ -1645,6 +1645,35 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRejectsGeneratedOutputFileSymlinkThroughSymlinkedRootWithoutCanonicalPath()
+      throws Exception {
+    Path realProjectPath = tempDir.resolve("real-fixture-project");
+    copyDirectory(fixtureRoot(), realProjectPath);
+    Path symlinkedProjectPath = tempDir.resolve("scan-root-link");
+    createSymbolicLink(symlinkedProjectPath, realProjectPath);
+    Path outputDirectory = realProjectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+    Path outsideOutputFile = tempDir.resolve("outside-endpoints.md");
+    Files.writeString(outsideOutputFile, "outside content");
+    createSymbolicLink(outputDirectory.resolve("endpoints.md"), outsideOutputFile);
+    Path canonicalRealProjectPath = realProjectPath.toRealPath();
+
+    CliResult result = runCli("scan", symlinkedProjectPath.toString());
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Output file must not be a symbolic link")),
+        () -> assertFalse(result.stderr().contains(symlinkedProjectPath.toString())),
+        () -> assertFalse(result.stderr().contains(realProjectPath.toString())),
+        () -> assertFalse(result.stderr().contains(canonicalRealProjectPath.toString())),
+        () -> assertEquals("outside content", Files.readString(outsideOutputFile)),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
   void scanRejectsGeneratedOutputFileHardLinkAndDoesNotWriteOutsideAlias() throws Exception {
     Path projectPath = tempDir.resolve("fixture-project");
     copyDirectory(fixtureRoot(), projectPath);

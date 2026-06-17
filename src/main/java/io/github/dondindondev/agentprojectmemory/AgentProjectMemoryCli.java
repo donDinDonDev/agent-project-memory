@@ -616,7 +616,7 @@ public final class AgentProjectMemoryCli {
       }
       printDiagnosticsSummary(result.diagnosticCount());
     } catch (IOException ex) {
-      String message = boundedExceptionMessage(ex, normalizedProjectPath);
+      String message = boundedExceptionMessage(ex, normalizedProjectPath, canonicalProjectPath);
       if (isOutputPathValidationError(message)) {
         return scanInputError(message);
       }
@@ -693,23 +693,36 @@ public final class AgentProjectMemoryCli {
         || message.startsWith("Output directory is not contained under scan root:");
   }
 
-  private String boundedExceptionMessage(IOException exception, Path scanRoot) {
+  private String boundedExceptionMessage(IOException exception, Path... scanRoots) {
     String message = exception.getMessage();
     if (message == null || message.isBlank()) {
       return "I/O error.";
     }
-    return OutputRedactor.redact(stripLocalRoot(message, scanRoot));
+    return OutputRedactor.redact(stripLocalRoots(message, scanRoots));
   }
 
-  private String stripLocalRoot(String message, Path scanRoot) {
-    String root = scanRoot.toAbsolutePath().normalize().toString();
-    String slashRoot = root.replace('\\', '/');
+  private String stripLocalRoots(String message, Path... scanRoots) {
+    List<String> roots = new ArrayList<>();
+    for (Path scanRoot : scanRoots) {
+      if (scanRoot == null) {
+        continue;
+      }
+      String root = scanRoot.toAbsolutePath().normalize().toString();
+      addRootVariant(roots, root);
+      addRootVariant(roots, root.replace('\\', '/'));
+    }
+    roots.sort((left, right) -> Integer.compare(right.length(), left.length()));
     String result = message;
-    result = stripRootVariant(result, root);
-    if (!slashRoot.equals(root)) {
-      result = stripRootVariant(result, slashRoot);
+    for (String root : roots) {
+      result = stripRootVariant(result, root);
     }
     return result;
+  }
+
+  private void addRootVariant(List<String> roots, String root) {
+    if (!root.isBlank() && !roots.contains(root)) {
+      roots.add(root);
+    }
   }
 
   private String stripRootVariant(String message, String root) {
