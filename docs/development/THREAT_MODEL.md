@@ -80,8 +80,8 @@ The intended security properties are:
 
 ## Redaction Boundary
 
-The current unreleased v1.7 security track defines deterministic redaction as an output
-safety boundary, not as a repository-wide secret scan.
+The v1.7.0 release candidate defines deterministic redaction as an output safety
+boundary, not as a repository-wide secret scan.
 
 The marker is:
 
@@ -123,8 +123,7 @@ artifact files.
 
 ## Path And Symlink Audit Matrix
 
-The planned v1.7 hardening work should audit these surfaces against the documented
-target policy:
+The v1.7 hardening work audits these surfaces against the documented target policy:
 
 | Surface | Target policy |
 | --- | --- |
@@ -140,7 +139,7 @@ target policy:
 | Query artifact root and files | Read only required direct child artifacts; reject symlinked artifact roots or required artifact files; never write during query. |
 | CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, or secret-looking values. |
 
-Findings from that audit should become bounded fixes. The audit must not expand the
+Findings from that audit become bounded fixes. The audit must not expand the
 product into generated-source content scanning, symlink-following modes, connector
 auth, external scanning, or broad filesystem traversal without a separate public
 contract update.
@@ -148,9 +147,9 @@ contract update.
 ## Evidence And Output Limitations
 
 Generated evidence is a local source reference, not a security proof. Evidence excerpts
-may be redacted in future versions, and the marker should be read as "a secret-looking
-value was masked in this selected output string", not as proof that the original value
-was a valid credential or that all similar values were found.
+may be redacted in v1.7.0 and later versions, and the marker should be read as
+"a secret-looking value was masked in this selected output string", not as proof that
+the original value was a valid credential or that all similar values were found.
 
 Generated Markdown, agent profile Markdown, graph derivation metadata, cache metadata,
 diagnostics, query output, release notes, chat output, and LLM output are not project

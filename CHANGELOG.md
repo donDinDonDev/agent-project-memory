@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.7.0] - 2026-06-17
+
 ### Added
 
 - Implemented the initial v1.7 deterministic redaction primitive for obvious
@@ -22,9 +24,14 @@ architecture documents.
   describe the local-first trust boundary, vulnerability reporting scope, and redaction
   hardening without positioning the tool as a vulnerability scanner or
   general-purpose secret scanner.
+- Added v1.7.0 release notes covering redaction compatibility, security boundaries,
+  validation, not-included scope, and expected release assets.
 
 ### Changed
 
+- Aligned the Maven project version, README local build examples, roadmap status,
+  output contract status wording, public threat model wording, and release notes for
+  the `v1.7.0` release materials.
 - Updated post-release documentation status to mark `v1.6.0` as published with release
   jar and checksum assets.
 
@@ -34,6 +41,31 @@ architecture documents.
   generated document heading IDs, heading anchors, chunk heading links, graph source
   references, and heading evidence symbol keys by deriving those keys from the
   redaction-safe heading text.
+- Hardened JSON-style quoted credential-key redaction so generated excerpts and
+  rendered output mask the full value without leaving suffixes after the redaction
+  marker.
+- Sanitized bounded CLI error text for symlinked scan-root output-safety failures so
+  canonical local absolute paths are not exposed.
+- Redacted legacy graph `source_ref.id` rendering in graph-backed query output while
+  preserving exact lookup semantics and leaving artifact files unchanged.
+
+### Security
+
+- Kept v1.7 redaction local, deterministic, and bounded to selected generated or
+  rendered strings. Redaction remains output hardening, not complete secret discovery,
+  a credential classifier, a secret inventory, vulnerability evidence, or security
+  correctness proof.
+- Completed the v1.7 surface-safety, path-safety, and release-prep review sequence with
+  no release-blocking findings remaining.
+
+### Not Included
+
+- Complete secret detection, secret inventory, credential validation, vulnerability
+  scanning, security correctness claims, external secret scanners, network access,
+  telemetry, connectors, SaaS, web UI, repository chat, generic RAG, embeddings, LLM
+  calls in the core analyzer or query layer, generated-source content scanning, default
+  symlink following, package-manager publication, signing, native images, container
+  images, release automation, or automatic code modification.
 
 ## [1.6.0] - 2026-06-16
 

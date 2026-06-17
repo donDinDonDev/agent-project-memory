@@ -3,11 +3,13 @@
 ## Current Status
 
 The latest published release is `v1.6.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the
-stable-line marker. The v1.5.0 lightweight relation graph expansion is additive, and
-the v1.6.0 query
-expansion adds deterministic read-only lookup commands over existing generated
-artifacts without changing generated artifact schemas or evidence semantics.
+The current local release candidate is `v1.7.0`. Normal generated `project-map.json`
+files use `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight
+relation graph expansion is additive, the v1.6.0 query expansion adds deterministic
+read-only lookup commands over existing generated artifacts without changing generated
+artifact schemas or evidence semantics, and the v1.7.0 release candidate adds
+deterministic redaction hardening for selected generated and rendered strings without
+adding evidence fields or schema markers.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -26,7 +28,8 @@ deterministic agent profile artifacts for supported coding-agent consumption, op
 incremental cache metadata and whole-output-set reuse, a bounded lightweight relation
 graph artifact, read-only text query commands over existing generated artifacts,
 redacted scan metadata, safe root-local YAML config support, stable CLI help/version
-behavior, and a documented release-jar verification path.
+behavior, deterministic output redaction for obvious secret-looking values, and a
+documented release-jar verification path.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
@@ -1088,47 +1091,64 @@ Release readiness notes:
 - The `v1.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-### v1.7.0: Security And Secrets Safety Maturity (Planned)
+### v1.7.0: Security And Secrets Safety Maturity (Release Candidate)
 
 Product outcome: harden the accumulated local scan, generated-output, and read-only
 query surfaces against accidental sensitive-data exposure and path-safety regressions
 while preserving deterministic evidence-backed project memory.
 
-Planned design boundary:
+Release-candidate boundary:
 
-- Define deterministic redaction for obvious secret-looking values that may otherwise
+- Defines deterministic redaction for obvious secret-looking values that may otherwise
   appear in selected generated excerpts, generated Markdown, selected agent profile
   Markdown, graph labels or attributes, cache/scan diagnostics, CLI stdout/stderr, or
   query-rendered text.
-- Use `[REDACTED_SECRET_LIKE_VALUE]` as the plain-text redaction marker.
-- Treat redaction as output hardening, not as complete secret detection, a secret
+- Uses `[REDACTED_SECRET_LIKE_VALUE]` as the plain-text redaction marker.
+- Treats redaction as output hardening, not as complete secret detection, a secret
   inventory, vulnerability scanning, or security correctness proof.
-- Apply redaction at generation time for newly produced artifacts and at query render
+- Applies redaction at generation time for newly produced artifacts and at query render
   time for existing artifacts. Query render-time redaction must not rewrite or repair
   artifact files.
-- Preserve evidence usefulness after redaction: evidence IDs, normalized
+- Preserves evidence usefulness after redaction: evidence IDs, normalized
   repository-relative paths, symbols, line ranges, confidence, uncertainty, relation
   statuses, and claim categories should remain navigable.
-- Keep redaction markers inside existing excerpt or rendered-output strings. The
+- Keeps redaction markers inside existing excerpt or rendered-output strings. The
   initial v1.7 design does not add evidence fields, evidence types, a new
   `project-map.json` schema marker, or a new `graph_schema_version` by itself.
-- Audit path and symlink behavior across scan roots, output writes, root-local config,
+- Audits path and symlink behavior across scan roots, output writes, root-local config,
   local Markdown discovery, generated-source metadata, cache metadata, graph output,
   agent profile output, query artifact reads, CLI stdout, and CLI stderr.
-- Keep public security documentation in the root `SECURITY.md` and the public threat
+- Keeps public security documentation in the root `SECURITY.md` and the public threat
   model in [../development/THREAT_MODEL.md](../development/THREAT_MODEL.md).
 
-Implementation sequence:
+Implemented scope:
 
-- Initial implementation: the shared bounded redaction/excerpt primitive is applied to
+- The shared bounded redaction/excerpt primitive is applied to
   evidence excerpts and selected generated-output serialization and rendering points
   that can carry selected source or artifact text.
-- Add fake-only security regression fixtures and output checks for generated artifacts,
+- Fake-only security regression fixtures and output checks cover generated artifacts,
   generated Markdown, profile output, graph output, cache metadata, query output, and
   terminal output.
-- Run a path/symlink audit over existing surface behavior and convert broad findings
-  into bounded fixes instead of expanding the release track.
-- Run release-track validation and security review before release prep.
+- The path/symlink audit over existing surface behavior is complete, with bounded fixes
+  for JSON-style credential strings, symlinked-root CLI error path sanitization, and
+  legacy graph source-reference render-time redaction.
+- Release-track validation and release-prep review are complete with no
+  release-blocking findings remaining.
+
+Release readiness notes:
+
+- Public release notes are available in
+  [V1_7_RELEASE_NOTES.md](V1_7_RELEASE_NOTES.md).
+- Focused tests cover redaction primitives, evidence excerpt handling, selected
+  generated JSON and Markdown surfaces, profile output, graph output, cache metadata,
+  query render-time redaction, bounded CLI error text, and fake-sensitive surface
+  regressions.
+- Final local release-prep validation passed with `mvn test`, `mvn package`, packaged
+  CLI scan/query smoke over representative and fake-sensitive fixtures, checksum
+  dry-run, whitespace checks, public marker audit, and risk-based release-prep review.
+- No release-blocking finding remains open for `v1.7.0`.
+- `v1.7.0` is not yet tagged or published; `v1.6.0` remains the latest published
+  release until manual release publication occurs.
 
 Non-goals:
 
