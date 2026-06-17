@@ -3,12 +3,15 @@
 ## Current Status
 
 The latest published release is `v1.7.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
-marker. The v1.5.0 lightweight relation graph expansion is additive, the v1.6.0 query
-expansion adds deterministic read-only lookup commands over existing generated artifacts
-without changing generated artifact schemas or evidence semantics, and the v1.7.0
-release adds deterministic redaction hardening for selected generated and rendered
-strings without adding evidence fields or schema markers.
+The current local release candidate is `v1.8.0`. Normal generated `project-map.json`
+files use `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight
+relation graph expansion is additive, the v1.6.0 query expansion adds deterministic
+read-only lookup commands over existing generated artifacts without changing generated
+artifact schemas or evidence semantics, the v1.7.0 release adds deterministic
+redaction hardening for selected generated and rendered strings without adding evidence
+fields or schema markers, and the v1.8.0 release candidate adds public examples and
+contributor onboarding polish without changing analyzer behavior, generated artifact
+schemas, or evidence semantics.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -28,7 +31,9 @@ incremental cache metadata and whole-output-set reuse, a bounded lightweight rel
 graph artifact, read-only text query commands over existing generated artifacts,
 redacted scan metadata, safe root-local YAML config support, stable CLI help/version
 behavior, deterministic output redaction for obvious secret-looking values, and a
-documented release-jar verification path.
+documented release-jar verification path. The current public adoption surface also
+includes a checked-in generated-output example snapshot and contributor/reporting
+templates that point readers back to the output and evidence contracts.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
@@ -1090,7 +1095,7 @@ Release readiness notes:
 - The `v1.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-### v1.7.0: Security And Secrets Safety Maturity (Release Candidate)
+### v1.7.0: Security And Secrets Safety Maturity (Published)
 
 Product outcome: harden the accumulated local scan, generated-output, and read-only
 query surfaces against accidental sensitive-data exposure and path-safety regressions
@@ -1164,9 +1169,72 @@ Non-goals:
 - No real secrets in fixtures, tests, docs, examples, release materials, or public
   vulnerability reports.
 
+### v1.8.0: Public Adoption Polish (Release Candidate)
+
+Product outcome: reduce first-run and first-contribution friction for public users
+without changing the deterministic analyzer, generated output schemas, evidence
+semantics, installation channel, release process, or release authority.
+
+Release-candidate boundary:
+
+- Adds a small checked-in generated-output example snapshot for readers who want to
+  inspect the base `.project-memory/` output set before running the CLI.
+- Keeps public examples as documentation aids only. Examples are not evidence sources,
+  not a second output schema contract, and not a stable Markdown parser contract.
+- Uses the existing fake `stage3-project-map` fixture/golden pair as the deterministic
+  source for the public example snapshot.
+- Improves contributor path guidance for docs-only, examples/templates, fixtures/tests,
+  analyzer behavior, output/evidence contract, and release-prep changes.
+- Refines issue and PR templates so reports and reviews capture version, command,
+  generated-file, evidence-ID, contract-impact, and sensitive-data context.
+- Preserves the executable jar plus optional `SHA256SUMS` as the supported public
+  release path. Installed commands and package-manager channels remain future work until
+  a release note explicitly documents them.
+
+Implemented scope:
+
+- Added `examples/stage3-project-map/README.md` and committed the base generated output
+  snapshot under `examples/stage3-project-map/.project-memory/`.
+- Linked the example from the README public documentation map and documented the
+  packaged-jar regenerate-and-compare workflow.
+- Expanded `CONTRIBUTING.md` with a bounded contribution-path guide and good-first
+  scope guidance.
+- Updated the bug report, feature request, and PR templates in place without adding
+  remote GitHub issue, label, milestone, project-board, CI, script, dependency, or
+  publication workflow changes.
+
+Release readiness notes:
+
+- Public release notes are available in
+  [V1_8_RELEASE_NOTES.md](V1_8_RELEASE_NOTES.md).
+- Example snapshot verification compares the committed base example files with packaged
+  CLI output regenerated from the deterministic `stage3-project-map` fixture.
+- Final local release-prep validation passed with `mvn test`, `mvn package`, packaged
+  CLI scan/query/help/version smoke, example snapshot comparison, whitespace checks, and
+  public marker audit.
+- No analyzer, CLI, generated-output, evidence, release-process, CI, dependency,
+  package-distribution, publication, or security-policy change is included in v1.8.0.
+- `v1.8.0` is not yet tagged or published; `v1.7.0` remains the latest published
+  release until manual release publication occurs.
+
+Non-goals:
+
+- No analyzer feature expansion, output field addition/removal/rename, schema marker
+  change, evidence field/type/semantic change, stable JSON query output, new CLI command,
+  new CLI flag, or generated-source content scanning.
+- No package-manager publication, installed-command distribution, signing, native image,
+  container image, release automation, GitHub Release upload, or additional
+  distribution channel.
+- No connectors, adapter APIs, plugin platform, MCP/server surface, source upload,
+  external service calls, telemetry, SaaS, web UI, repository chat, generic RAG,
+  embeddings, LLM calls in the core analyzer or query layer, or automatic code
+  modification.
+- No real secrets, credentials, private repository data, local machine paths, raw
+  command transcripts, or maintainer-only workflow details in public examples,
+  templates, docs, release notes, or release metadata.
+
 Possible later tracks:
 
-- Public adoption polish.
 - v2 architecture preparation.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI

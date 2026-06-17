@@ -9,16 +9,30 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.8.0] - 2026-06-17
+
 ### Added
 
 - Added a public `stage3-project-map` generated-output example snapshot with
   regeneration instructions and README discoverability.
+- Added v1.8.0 release notes covering adoption polish, output compatibility,
+  validation, not-included scope, and expected release assets.
 
 ### Changed
 
 - Expanded the public contributor guide and issue/PR templates with bounded
   contribution paths, good-first scope guidance, and clearer output/evidence context
   prompts.
+- Aligned the Maven project version, README local build examples, roadmap status,
+  public examples regeneration command, and release notes for the `v1.8.0` release
+  materials.
+
+### Not Included
+
+- Analyzer features, CLI commands or flags, generated output schema changes, evidence
+  semantic changes, release automation, package-manager publication, signing, native
+  images, container images, connectors, SaaS, web UI, repository chat, generic RAG, LLM
+  calls in the core analyzer or query layer, or automatic code modification.
 
 ## [1.7.0] - 2026-06-17
 
