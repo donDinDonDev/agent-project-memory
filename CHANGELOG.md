@@ -9,6 +9,8 @@ architecture documents.
 
 ## [Unreleased]
 
+## [1.9.0] - 2026-06-17
+
 ### Added
 
 - Documented the planned v2 adapter platform design boundary, including optional adapter
@@ -22,6 +24,22 @@ architecture documents.
 - Extended the planned v2 threat model for adapters, connectors, optional AI, plugin/API
   surfaces, external data, credential handling, network defaults, provenance boundaries,
   and future security review gates without adding implementation behavior.
+- Added v1.9.0 release notes covering v2 architecture preparation, compatibility,
+  validation, not-included scope, and expected release assets.
+
+### Changed
+
+- Aligned public release status, roadmap wording, the README documentation map, and
+  security-policy supported-version wording for the `v1.9.0` release candidate while
+  keeping `v1.8.0` as the latest published release until publication occurs.
+
+### Not Included
+
+- Production adapter APIs, connector implementations, network or authentication
+  behavior, plugin platforms, MCP/server surfaces, AI provider code, embeddings, generic
+  RAG, repository chat, SaaS, web UI, generated output schema changes, evidence
+  semantic changes, analyzer behavior changes, new CLI commands or flags, package
+  publication, release automation, or automatic code modification.
 
 ## [1.8.0] - 2026-06-17
 

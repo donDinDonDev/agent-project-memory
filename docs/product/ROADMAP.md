@@ -12,6 +12,14 @@ without adding evidence fields or schema markers, and the v1.8.0 release adds pu
 examples and contributor onboarding polish without changing analyzer behavior, generated
 artifact schemas, or evidence semantics.
 
+The current local release candidate is `v1.9.0`, scoped to v2 architecture preparation.
+It documents planned adapter, connector provenance, optional AI presentation, plugin/API
+security, and v1-to-v2 migration boundaries without implementing adapters, connectors,
+network/auth behavior, plugin loading, AI providers, new CLI commands or flags,
+generated artifact schema changes, evidence semantic changes, or analyzer behavior
+changes. `v1.8.0` remains the latest published release until `v1.9.0` is explicitly
+published.
+
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
 `agent-guide.md` remain
@@ -1235,7 +1243,7 @@ Possible later tracks:
 
 - v2 architecture preparation.
 
-## v1.9.0: v2 Architecture Preparation (Design)
+## v1.9.0: v2 Architecture Preparation (Release Candidate)
 
 Expected outcome:
 
@@ -1272,8 +1280,8 @@ Non-goals:
 - No production adapter API, connector implementation, network/auth behavior, plugin
   loading, AI provider code, source upload, embeddings/vector/RAG implementation, new
   CLI command or flag, generated artifact schema change, evidence field/type change,
-  release prep, package publication, SaaS, web UI, repository chat as the core product,
-  generic RAG, or automatic code modification.
+  release publication, package publication, SaaS, web UI, repository chat as the core
+  product, generic RAG, or automatic code modification.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

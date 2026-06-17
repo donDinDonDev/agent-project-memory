@@ -429,6 +429,8 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
+- v1.9 release candidate summary:
+  [docs/product/V1_9_RELEASE_NOTES.md](docs/product/V1_9_RELEASE_NOTES.md).
 - v1.8 release summary:
   [docs/product/V1_8_RELEASE_NOTES.md](docs/product/V1_8_RELEASE_NOTES.md).
 - v1.7 release summary:
@@ -511,6 +513,13 @@ redaction hardening for selected generated and rendered strings without adding e
 fields or schema markers, and the v1.8 release adds public examples and contributor
 onboarding polish without changing analyzer behavior, generated artifact schemas, or
 evidence semantics.
+
+The current local release candidate is `v1.9.0` for v2 architecture preparation. It is
+documentation and design preparation only: it records planned adapter, connector
+provenance, optional AI presentation, plugin/API security, and v1-to-v2 migration
+boundaries without changing analyzer behavior, CLI commands or flags, generated artifact
+schemas, evidence semantics, or packaged runtime behavior. Until publication occurs,
+`v1.8.0` remains the latest published release.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
