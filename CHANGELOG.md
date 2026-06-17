@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Finalized the planned initial v2.0 adapter design boundary in architecture docs,
+  including the no-adapter runtime invariant, source registry placement, provenance
+  versus evidence separation, explicit v2 schema-marker strategy for adapter-backed
+  output, disabled-by-default local import configuration, and conservative
+  implementation order.
+
 ## [1.9.0] - 2026-06-17
 
 ### Added

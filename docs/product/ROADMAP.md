@@ -1300,6 +1300,21 @@ provenance and distinct from code-backed facts. Local export files, remote API
 responses, plugin manifests, API requests, API responses, and AI prompt inputs must be
 treated as untrusted content that cannot bypass provenance, evidence, redaction,
 credential, or network defaults.
+
+The planned initial v2.0 adapter boundary keeps no-adapter scans compatible with the
+current v1.x generated artifact set and `project-map.json` `schema_version: "1.0"`.
+Adapter-enabled output, when implemented, should use a separate source registry for
+normalized source documents and provenance, and should use an explicit v2 schema marker
+for any adapter-backed `project-map.json` sections. Adapter provenance is navigation and
+review metadata, not code evidence and not proof that an external service is current or
+authoritative.
+
+The first implementation path should land in conservative order: adapter contract
+foundation, disabled-by-default configuration and local path safety, then a local
+structured import reference adapter and output integration. Networked connector modes,
+credential handling, provider-backed AI, plugin loading, and public API/server surfaces
+remain later work requiring separate design, tests, and security review.
+
 Any optional AI layer must be explicitly enabled, must treat deterministic memory and
 adapter provenance as inputs rather than authority it can rewrite, and must label its
 output as non-evidence. It must not create `project-map.json` facts,

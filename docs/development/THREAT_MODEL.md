@@ -105,12 +105,16 @@ Planned v2 adapter security defaults:
 
 - adapters are disabled unless explicitly configured;
 - local export import is the preferred first adapter mode;
+- the initial local import mode accepts only explicitly configured repository-relative
+  regular files under the scanned repository root and rejects absolute paths, escaping
+  paths, generated-output paths, directories, symlinked inputs, and missing inputs
+  before adapter-backed output is emitted;
 - network access remains off by default and must be explicitly enabled for any future
   API connector mode;
 - source upload is not a default behavior;
-- credential storage, credential echoing, committed connector credentials, and raw
-  connector request/response logs are out of scope until a separate credential boundary
-  is designed;
+- credential storage, credential lookup, credential echoing, committed connector
+  credentials, and raw connector request/response logs are out of scope until a
+  separate credential boundary is designed;
 - adapter output must preserve source provenance and must not turn external records into
   code-backed facts or authoritative evidence;
 - the core analyzer and query layer must not gain network, auth, provider, or plugin
@@ -120,6 +124,9 @@ Planned v2 external-data risk controls:
 
 - imported records must carry source identity, import mode, content hash, import or
   fetch timestamp when known, and trust-boundary labels;
+- accepted adapter-backed records must reference source-document and provenance IDs
+  from the source registry; provenance must not be hidden only in free-form document
+  text or evidence excerpts;
 - stale, partial, deleted, edited, or source-system-disconnected records must remain
   provenance-backed observations rather than current-state claims;
 - malicious exported records and connector content must not inject instructions into
@@ -147,6 +154,10 @@ Planned v2 credential and network defaults:
   absolute paths, and raw connector configuration values must not be serialized into
   provenance, evidence, generated artifacts, query output, AI prompts, or public logs by
   default.
+- normalized adapter bodies are in-memory input only by default; generated artifacts may
+  serialize bounded redacted display metadata and hashes, but must not serialize full
+  connector exports, raw source/document bodies, prompt transcripts, or local absolute
+  paths by default.
 
 Planned optional AI security defaults:
 

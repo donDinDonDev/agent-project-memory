@@ -46,15 +46,32 @@ Adapters must not:
 - load plugin code or expose an API/server trust boundary without a separate permission
   and security design.
 
-The smallest planned lifecycle is:
+The planned v2.0 lifecycle is:
 
-1. Adapter configuration is selected explicitly and defaults to no adapters.
-2. The adapter validates the source boundary and import mode before reading input.
-3. Local import adapters read local export files only; future API adapters must require
-   explicit network enablement.
-4. The adapter emits normalized documents and separate provenance metadata.
-5. The core ingests adapter output only through documented document/spec/metadata
-   boundaries and keeps adapter-backed observations distinct from code-backed facts.
+1. No adapter is selected unless configuration explicitly enables one. A scan with no
+   adapter configuration follows the current Java/Spring pipeline and does not create
+   adapter artifacts, adapter diagnostics, network activity, credentials, plugin
+   loading, AI provider use, or source upload.
+2. Adapter configuration is validated before any adapter reads input. The initial v2.0
+   local import boundary accepts only configured repository-relative regular files
+   under the scanned repository root, rejects escaping paths, absolute paths, generated
+   output paths, directories, and symlinked inputs, and does not accept credentials.
+3. The adapter validates import mode, source kind, size and record-count limits, and
+   required source identity before normalization. Unsafe, missing, or malformed
+   configured inputs fail closed before adapter-backed output is emitted. Malformed,
+   oversized, partial, contradictory, stale, or provenance-missing records inside an
+   otherwise accepted input are rejected, capped, or emitted only as bounded
+   warning/status material.
+4. The adapter normalizes accepted records into `SourceDocument` records and separate
+   provenance records. Normalized bodies are in-memory analyzer input only and are not
+   serialized by default.
+5. Deterministic ingestion consumes adapter output only through documented
+   document/spec/metadata boundaries. Adapter-backed material can become
+   provenance-backed external/document context, metadata-only rows, warnings, or
+   uncertain inspection hints, but not code-backed Java/Spring facts.
+6. Serialization writes adapter-backed records only through the output and provenance
+   strategy documented in `OUTPUT_CONTRACT.md` and the evidence strategy documented in
+   `EVIDENCE_MODEL.md`.
 
 ## SourceDocument
 
@@ -62,42 +79,52 @@ Future external ingestors and any broader local document modes should normalize 
 into a `SourceDocument` abstraction. For v2 design, `SourceDocument` should be treated
 as a planned boundary object rather than a stable public API.
 
-Fields stable enough for the v2 design are:
+Fields stable enough for the v2.0 design are:
 
-- `id`: stable document identifier.
-- `sourceType`: source category, such as `local_markdown`, `local_export`,
-  `youtrack_issue`, `jira_issue`, `confluence_page`, `github_issue`, or
-  `gitlab_issue`.
-- `title`: document title.
-- `contentHash`: hash of the normalized content.
-- `contentStatus`: whether normalized content is available only in memory, bounded,
-  not serialized, or unavailable.
-- `provenance`: connector/source metadata described below.
+- `id`: deterministic source-document identifier derived from adapter identity, import
+  mode, source type, and a normalized logical source identity such as a source-system
+  record ID, source namespace plus record ID, source URL key, or repository-relative
+  local import record key. Import timestamp, local absolute path, and content hash must
+  not be the primary identifier when a stable logical source identity exists.
+- `sourceType`: source category, such as `local_export`, `youtrack_issue`,
+  `jira_issue`, `confluence_page`, `github_issue`, `github_pull_request`,
+  `gitlab_issue`, or `gitlab_merge_request`. Existing default-scope local Markdown
+  remains owned by the current local document ingestor rather than the v2 adapter layer.
+- `sourceIdentity`: normalized source-system identity used to derive `id`. Accepted
+  adapter records must have this identity; records without one are rejected or kept as
+  bounded warning/status material.
+- `title`: bounded, redacted display title when known.
+- `contentHash`: hash of the normalized content used by the adapter.
+- `contentStatus`: default `"not_serialized"` for generated artifacts. Future values
+  such as bounded excerpts require an explicit output contract update before use.
+- `provenanceId`: stable reference to a separate provenance record in the source
+  registry.
 
-Fields that remain draft until v2 output and evidence contracts are updated are:
+Fields that are analyzer-internal or postponed beyond the initial v2.0 boundary are:
 
-- `body` or `normalizedBody`: normalized text body used by an analyzer. Full bodies
-  should not be serialized by default.
-- `localPath`: repository-relative path when the input is inside the scanned repository,
-  or a redacted/non-output filesystem reference when the source is outside it.
-- `url`: source URL when applicable.
-- `sourceId`: external issue/page/record identifier when applicable.
-- `createdAt`: creation timestamp when known.
-- `updatedAt`: update timestamp when known.
-- `exportedAt` or `fetchedAt`: timestamp for the import source snapshot.
-- `tags`: source labels, project keys, or other classification tags.
-- `adapterName` and `adapterVersion`: identity of the adapter that normalized the
-  record.
+- `body` or `normalizedBody`: normalized text body used in memory by an analyzer. Full
+  bodies must not be serialized by default.
+- `localPath`: allowed only as a repository-relative configured import path for the
+  initial v2.0 local import mode. Out-of-repository local export paths are postponed
+  until a later path-safety design; local absolute paths must not be serialized.
+- `url`: provenance metadata when applicable, not source truth and not reachability
+  proof.
+- `sourceId`: provenance metadata when applicable; the normalized
+  `sourceIdentity` remains the generated-output join key.
+- `createdAt`, `updatedAt`, `exportedAt`, `fetchedAt`, `tags`, `adapterName`, and
+  `adapterVersion`: provenance or bounded metadata owned by the source registry rather
+  than free-form document text.
 
-`SourceDocument` identity should be stable within one import snapshot, but future v2
-contracts must still decide whether generated output uses adapter-assigned IDs,
-content-addressed IDs, source-system IDs, or a combination. External IDs and URLs are
-provenance, not proof that the external service is currently reachable or authoritative.
+`SourceDocument` IDs should be stable across regenerated outputs for the same adapter,
+import mode, source type, and logical source identity. If a record's content changes,
+`contentHash` changes while `id` remains stable. If a record lacks a stable logical
+source identity, it must not be accepted as a normal adapter-backed record.
 
 ## Connector Provenance
 
-Connector provenance should be emitted as a separate source envelope rather than hidden
-inside free-form document text. At minimum, future v2 provenance should identify:
+Connector provenance should be emitted in a separate source registry rather than hidden
+inside free-form document text or evidence excerpts. At minimum, v2.0 provenance should
+identify:
 
 - source kind and adapter identity;
 - import mode, such as local export import or explicitly enabled API import;
@@ -110,6 +137,12 @@ inside free-form document text. At minimum, future v2 provenance should identify
 Credential names, credential values, authorization headers, tokens, cookies, local
 machine paths, and raw connector request/response logs must not be serialized as
 provenance.
+
+For the initial v2.0 implementation, provenance is required for every accepted
+adapter-backed record and is referenced by `provenanceId`. Missing or ambiguous
+provenance blocks normal record acceptance. API import provenance remains future work;
+the v2.0 reference mode is local structured import with network marked as
+not applicable or disabled.
 
 ## External Data Risk Controls
 

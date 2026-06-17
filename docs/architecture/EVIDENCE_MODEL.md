@@ -79,13 +79,16 @@ a file path.
 
 ## Planned Adapter And Connector Provenance
 
-Future v2 adapters may introduce adapter-backed evidence or provenance, but they must not
-reuse code evidence categories for external records. Connector issues, pages, comments,
-tickets, exported records, and API responses are not Java classes, annotations, build
-files, tests, or repository config files.
+Future v2 adapters may introduce adapter-backed provenance, but the initial v2.0
+evidence strategy is to keep adapter provenance outside `evidence-index.jsonl` in the
+separate source registry documented by `OUTPUT_CONTRACT.md`. The initial v2.0 adapter
+platform does not add an adapter-specific evidence type and does not reuse code evidence
+categories for external records. Connector issues, pages, comments, tickets, exported
+records, and API responses are not Java classes, annotations, build files, tests, or
+repository config files.
 
-The initial v2 design should prefer a source-document envelope with provenance over
-embedding connector metadata in free-form excerpts. Provenance should identify:
+The v2.0 design uses a source-document envelope with provenance instead of embedding
+connector metadata in free-form excerpts. Provenance should identify:
 
 - adapter name and version;
 - source type and source-system record ID where applicable;
@@ -97,12 +100,24 @@ embedding connector metadata in free-form excerpts. Provenance should identify:
   export, or a remote API response;
 - trust-boundary labels needed to keep external records distinct from repository source.
 
-Future v2 implementation must decide whether adapter-backed records reuse the existing
-`document` evidence type for normalized local documents, introduce a new evidence type
-for external records, or keep adapter provenance outside `evidence-index.jsonl` in a
-separate metadata section. Any of those choices is a public evidence semantic decision
-and requires synchronized updates to this document, `OUTPUT_CONTRACT.md`, tests or
-goldens where applicable, the changelog, and release notes.
+`document` evidence remains reserved for accepted local project documents handled by
+the local Markdown/document ingestion contract. Adapter-backed records from local
+structured exports or future connectors must reference `source_document_ids` and
+`provenance_ids` from the source registry instead of `evidence_ids`, unless a later
+contract explicitly introduces an adapter/external evidence type. This keeps
+adapter-backed records provenance-backed external/document context rather than
+authoritative evidence.
+
+Adapter provenance can help users inspect where external context came from, but it does
+not prove that an external service is current, reachable, complete, authoritative, or
+aligned with repository source. A source-document ID or provenance ID is a deterministic
+generated-output join key, not evidence for Java/Spring facts.
+
+Any future change that treats adapter-backed records as evidence, reuses `document`
+evidence for connector records, adds an adapter-specific evidence type, or adds
+adapter-specific fields to `evidence-index.jsonl` requires synchronized updates to this
+document, `OUTPUT_CONTRACT.md`, tests or goldens where applicable, the changelog,
+release notes, and security review before implementation.
 
 Adapter-backed evidence and provenance must not:
 

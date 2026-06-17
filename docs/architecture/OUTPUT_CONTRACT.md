@@ -32,6 +32,16 @@ without `--agent-profile` does not create profile artifacts, and unsupported
 directories that only prepare `.project-memory/` do not create orphan profile
 artifacts.
 
+The planned v2.0 adapter source registry is a separate optional artifact:
+
+```text
+.project-memory/source-registry.json
+```
+
+The current v1.x implementation does not emit this artifact. A normal scan with no
+adapter explicitly enabled must keep the current base artifact set and must not create a
+source registry.
+
 ## Planned v2 Adapter Output Boundary
 
 The current v1.x implementation does not emit adapter packages, connector output,
@@ -54,19 +64,40 @@ Future v2 adapter-backed output must keep these boundaries:
   raw request/response logs, local absolute paths, and raw source/document bodies must
   not be serialized as generated project-memory metadata.
 
-Draft v2 output design questions:
+Planned v2.0 adapter output decisions:
 
-- whether normalized source documents belong under an additive `project-map.json`
-  section, a separate `.project-memory/` artifact, or both;
-- whether adapter provenance belongs on each document, in a separate source registry, or
-  in evidence records;
-- whether local export imports can remain an additive `schema_version: "1.0"`
-  compatibility expansion when disabled by default, or whether any adapter-backed
-  output requires a v2 schema marker;
-- how regenerated v2 outputs should preserve joins between project-map facts,
-  graph nodes, evidence IDs, source-document IDs, and adapter provenance IDs;
-- how downstream consumers should detect and ignore adapter sections they do not
-  understand.
+- The canonical placement for normalized adapter records and provenance is the separate
+  `.project-memory/source-registry.json` artifact, not free-form Markdown and not
+  `evidence-index.jsonl`.
+- `source-registry.json` owns `source_registry_schema_version`, `adapter_runs`,
+  `source_documents`, `provenance`, and bounded adapter diagnostics. It may be emitted
+  only when an adapter is explicitly enabled.
+- `source_documents[]` records use stable `id` values as documented in
+  `INGESTION_ARCHITECTURE.md`, reference `provenance_id`, and default to
+  `content_status: "not_serialized"`. They may include bounded redacted display
+  metadata such as `source_type`, `source_identity`, `title`, and `content_hash`, but
+  not full bodies, raw connector exports, raw request/response logs, credentials, local
+  absolute paths, or raw config values.
+- `provenance[]` records carry adapter/source metadata and trust-boundary labels. They
+  are required for every accepted adapter-backed record and are generated-output
+  metadata, not project evidence.
+- Adapter-backed rows in `project-map.json`, if introduced by a later implementation
+  slice, may reference `source_document_ids` and `provenance_ids` from the source
+  registry. They must remain labeled as adapter-backed external/document context,
+  metadata-only rows, warnings, or uncertain inspection hints. They must not be emitted
+  as Java/Spring source-visible facts.
+- A no-adapter scan keeps `project-map.json` on `schema_version: "1.0"` and preserves
+  the current v1.x artifact set. Any scan output that adds adapter-backed
+  `project-map.json` fields or sections uses a documented v2 schema marker such as
+  `schema_version: "2.0"`. The separate source registry carries its own schema marker
+  so downstream consumers can ignore it independently.
+- Downstream consumers that do not understand adapter output can continue to consume
+  no-adapter `schema_version: "1.0"` outputs. Consumers that encounter a v2 schema
+  marker or `source-registry.json` must either implement the v2 adapter contract or
+  ignore adapter-backed sections and provenance-aware joins explicitly.
+- Generated graph nodes, query output, profile Markdown, and agent guide text may point
+  to adapter source-document IDs only after their own contracts are updated. Such
+  references remain navigation metadata and must not become evidence.
 
 Any future adapter output field addition, removal, rename, semantic change, new
 generated artifact, evidence type, or schema marker change requires synchronized updates

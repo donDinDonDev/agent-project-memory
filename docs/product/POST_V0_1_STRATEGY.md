@@ -101,6 +101,21 @@ v2.x may introduce adapter APIs, connector provenance, local imports, optional A
 presentation, and read-only agent integrations. These layers must remain optional and
 non-authoritative.
 
+The initial v2 adapter platform should preserve no-adapter scans as the compatibility
+baseline: the core analyzer, query layer, and normal generated artifact set continue to
+work without adapter configuration, network access, credentials, plugin loading,
+provider use, or source upload. Adapter-enabled output should keep normalized source
+documents and provenance in a separate source registry, use explicit v2 schema markers
+when adapter-backed `project-map.json` sections are added, and keep adapter-backed
+records as provenance-backed external/document context rather than code-backed facts or
+project evidence.
+
+The safest implementation order is adapter contract foundation first, then
+disabled-by-default configuration and local path safety, then a local structured import
+reference adapter. Networked connectors, credential handling, plugin loading,
+provider-backed AI, public API/server modes, and broad local document imports require
+separate later design and review.
+
 Optional AI in v2.x is a presentation boundary, not an analysis boundary. Its allowed
 inputs are deterministic generated memory, existing evidence references, and bounded
 non-evidence metadata such as graph derivation, query/source-artifact metadata, profile

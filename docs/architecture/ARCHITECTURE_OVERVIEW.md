@@ -178,7 +178,8 @@ The adapter layer should:
 - keep the Java/Spring core runnable with no adapter configuration;
 - default to no network access and no source upload;
 - start from explicit local import modes before any future API connector mode;
-- produce normalized source documents plus structured provenance;
+- produce normalized source documents plus structured provenance in a separate source
+  registry;
 - label adapter-backed observations as document-backed, spec-backed, metadata-only, or
   warning/status material before they reach generated memory;
 - keep adapter provenance available for review without exposing credentials or local
@@ -196,6 +197,16 @@ The adapter layer must not:
 - make network/auth/provider dependencies part of the core analyzer or query layer;
 - load plugin code, accept plugin-provided authority, or expose public API/server
   behavior without a separate permission, provenance, and security design.
+
+The planned v2.0 no-adapter invariant is that a normal scan with no explicitly enabled
+adapter keeps the current core pipeline, current artifact set, and current
+`project-map.json` `schema_version: "1.0"` behavior. Adapter source documents and
+provenance are absent in that mode.
+
+The initial v2.0 implementation order should introduce the adapter contract foundation
+first, then disabled-by-default configuration and path safety, then the local import
+reference adapter and output integration. This keeps the source-document and provenance
+contract reviewable before any reader consumes external records.
 
 ### Optional LLM Layer
 
@@ -261,7 +272,7 @@ local repository
   -> deterministic core pipeline
 optional configured adapter inputs
   -> adapter validation and normalization
-  -> source documents plus provenance
+  -> source documents plus provenance in source-registry.json
   -> documented document/spec/metadata boundaries
   -> .project-memory/
 ```
