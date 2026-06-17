@@ -159,22 +159,25 @@ the structured local-document facts emitted by the analyzer.
 These files must not invent architecture beyond the extracted facts, documented
 inferences, and explicitly labeled uncertainty.
 
-### Local Docs And Future Issue Ingestors
+### Local Docs And Adapter Ingestors
 
 The current local Markdown ingestor handles a conservative default scope and keeps
-document facts separate from code-backed facts. Future external ingestors may import
-materials from systems such as YouTrack, Jira, Confluence, GitHub, and GitLab.
+document facts separate from code-backed facts. The current v2 development line adds a
+disabled-by-default local structured import adapter for explicitly configured
+repository-relative export files. Future external ingestors may import materials from
+systems such as YouTrack, Jira, Confluence, GitHub, and GitLab.
 
 Connectors are input adapters. They should normalize external records into source
 documents and should not become part of the core Java/Spring analyzer.
 
-### Planned Adapter Layer
+### v2 Adapter Layer
 
-The planned v2 adapter layer is an optional input boundary before document/spec/metadata
-analysis. The current development line includes only the first adapter-domain contract
-foundation for source-document identity and provenance validation; it does not include
-adapter execution, adapter configuration, local import readers, generated adapter
-output, network/auth behavior, plugin loading, or AI provider behavior.
+The v2 adapter layer is an optional input boundary before document/spec/metadata
+analysis. The current development line includes adapter-domain source-document identity
+and provenance validation, disabled-by-default local import configuration and path
+safety, bounded local structured import parsing, `source-registry.json` emission, and
+`project-map.json` adapter context. It does not include network/auth behavior, plugin
+loading, AI provider behavior, source upload, or connector credentials.
 
 The adapter layer should:
 
@@ -201,15 +204,16 @@ The adapter layer must not:
 - load plugin code, accept plugin-provided authority, or expose public API/server
   behavior without a separate permission, provenance, and security design.
 
-The planned v2.0 no-adapter invariant is that a normal scan with no explicitly enabled
+The v2.0 no-adapter invariant is that a normal scan with no explicitly enabled
 adapter keeps the current core pipeline, current artifact set, and current
 `project-map.json` `schema_version: "1.0"` behavior. Adapter source documents and
 provenance are absent in that mode.
 
-The initial v2.0 implementation order should introduce the adapter contract foundation
-first, then disabled-by-default configuration and path safety, then the local import
-reference adapter and output integration. This keeps the source-document and provenance
-contract reviewable before any reader consumes external records.
+The initial v2.0 implementation order keeps the source-document and provenance contract
+separate from the no-adapter analyzer path, then adds disabled-by-default configuration,
+path safety, and the local structured import reference adapter. Current query support
+remains focused on no-adapter v1 artifact sets until a later contract documents
+adapter-aware query behavior.
 
 ### Optional LLM Layer
 
@@ -268,7 +272,7 @@ local repository
   -> .project-memory/
 ```
 
-A future v2 adapter-enabled pipeline should remain a wrapper around that core pipeline:
+A v2 adapter-enabled pipeline remains a wrapper around that core pipeline:
 
 ```text
 local repository

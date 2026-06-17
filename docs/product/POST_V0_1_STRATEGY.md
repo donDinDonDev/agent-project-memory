@@ -108,7 +108,9 @@ provider use, or source upload. Adapter-enabled output should keep normalized so
 documents and provenance in a separate source registry, use explicit v2 schema markers
 when adapter-backed `project-map.json` sections are added, and keep adapter-backed
 records as provenance-backed external/document context rather than code-backed facts or
-project evidence.
+project evidence. Downstream consumers should treat adapter-enabled output as a v2
+artifact set, regenerate it as one set, and keep using no-adapter v1 artifacts for query
+workflows until adapter-aware query behavior is separately documented.
 
 The safest implementation order is adapter contract foundation first, then
 disabled-by-default configuration and local path safety, then a local structured import

@@ -20,7 +20,9 @@ Unreleased v2 development has started with an explicitly enabled local structure
 import reference adapter. No-adapter scans remain on the current base artifact set and
 `project-map.json` `schema_version: "1.0"`; adapter-enabled scans emit
 `source-registry.json` and `project-map.json` `schema_version: "2.0"` adapter context
-for provenance-backed external/document context only.
+for provenance-backed external/document context only. Current query support remains
+focused on no-adapter v1 artifact sets unless a later release explicitly documents
+adapter-aware query behavior.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1314,6 +1316,18 @@ Adapter-enabled output uses a separate source registry for normalized source doc
 and provenance, and uses `project-map.json` `schema_version: "2.0"` for adapter-backed
 context sections. Adapter provenance is navigation and review metadata, not code
 evidence and not proof that an external service is current or authoritative.
+
+Migration and release-prep notes for the initial v2 adapter boundary:
+
+- No-adapter scans are the compatibility baseline for existing v1 consumers. They do
+  not emit `source-registry.json` and keep the current base artifact set.
+- Adapter-enabled scans should be treated as v2 artifact sets. Regenerate
+  `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+  `source-registry.json`, and generated Markdown together when adapter input changes,
+  and do not mix artifacts from different scans.
+- Downstream consumers that do not implement the v2 adapter contract should continue
+  using no-adapter `schema_version: "1.0"` outputs or explicitly reject v2 adapter
+  sections. The current query layer remains focused on no-adapter v1 artifacts.
 
 The first implementation path is landing in conservative order: adapter contract
 foundation, disabled-by-default configuration and local path safety, then a local

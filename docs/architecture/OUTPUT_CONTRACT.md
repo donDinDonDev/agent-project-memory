@@ -210,6 +210,52 @@ is enabled:
 }
 ```
 
+### v2.0 Adapter Migration And Consumer Compatibility
+
+The v1-to-v2 compatibility line has two generated-output modes:
+
+- A scan with no explicitly enabled adapter remains v1-compatible. It keeps
+  `project-map.json` on `schema_version: "1.0"`, preserves the current base artifact
+  set, and does not emit `.project-memory/source-registry.json`.
+- A scan with an explicitly enabled local structured import adapter that accepts input
+  emits `.project-memory/source-registry.json` and uses `project-map.json`
+  `schema_version: "2.0"` for adapter-backed context. This is a v2 artifact set, even
+  though the Java/Spring facts and `evidence-index.jsonl` evidence model remain
+  separate from adapter provenance.
+
+Regeneration expectations:
+
+- Treat `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+  `source-registry.json`, generated Markdown, selected profile artifacts, and cache
+  metadata as one generated output set for a scan. Do not mix a v2
+  `source-registry.json` with an older or no-adapter `project-map.json`, and do not
+  carry an old source registry forward after a no-adapter regeneration.
+- Regenerate the full output set when adapter input, adapter config, repository source,
+  or the tool version changes. Adapter source-document IDs are designed to remain stable
+  for the same adapter/import mode/source identity, while `content_hash` changes when
+  normalized content changes.
+- The absence of `source-registry.json` in a successful no-adapter output set is
+  expected and should not be treated as missing evidence or a partial scan.
+
+Downstream consumer expectations:
+
+- Consumers that support only the v1 stable line should continue to read no-adapter
+  `schema_version: "1.0"` outputs and ignore or reject v2 adapter-enabled output
+  explicitly.
+- Consumers that read `schema_version: "2.0"` must understand top-level
+  `adapter_context` and the source registry join keys before using adapter-backed rows.
+  They must not promote `adapter_context` items to Java/Spring facts and must not look
+  for `evidence_ids` on those items.
+- `source-registry.json` is adapter provenance metadata. It is not a replacement for
+  `evidence-index.jsonl`, not a new evidence index, and not proof that an external
+  source is current, reachable, complete, authoritative, or aligned with repository
+  source.
+- The current query contract remains focused on no-adapter
+  `project-map.json` `schema_version: "1.0"` artifacts. Current query commands do not
+  read `source-registry.json` and do not provide adapter-context lookup, source-document
+  lookup, or provenance joins. Adapter-aware query behavior requires a later contract
+  update before consumers should rely on it.
+
 Any future adapter output field addition, removal, rename, semantic change, new
 generated artifact, evidence type, or schema marker change requires synchronized updates
 to this contract, `EVIDENCE_MODEL.md`, focused tests or goldens where applicable, the
@@ -5085,6 +5131,8 @@ Path and artifact input policy:
 - The required artifacts for non-graph commands are `project-map.json` and
   `evidence-index.jsonl`. Non-graph commands must not require, read, or validate
   `project-graph.json`.
+- `source-registry.json` is not a query input source in this slice. The current query
+  layer does not look up source-document IDs, provenance IDs, or adapter context rows.
 - `project-graph.json` is required only for `relations`. `find fact` may include graph
   node, edge, relation-status, and graph-warning IDs only for graph ID-shaped lookup
   terms when graph output is present and valid. Other non-graph query commands must not
@@ -5105,6 +5153,8 @@ Artifact validation policy:
 
 - `project-map.json` must parse as JSON and use a supported `schema_version`.
   The initial v1.6 contract supports the current stable-line marker `"1.0"`.
+  Adapter-enabled `schema_version: "2.0"` artifact sets are outside current query
+  support unless a later query contract explicitly adds adapter-aware behavior.
 - `evidence-index.jsonl` must parse as newline-delimited JSON with unique evidence
   `id` values and the documented evidence field set.
 - `project-graph.json`, when required by `relations` or graph-backed `find fact`, must

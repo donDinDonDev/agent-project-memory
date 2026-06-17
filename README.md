@@ -136,7 +136,7 @@ closed to normal full analysis. Scans without `--incremental` ignore persistent 
 state and do not read, write, delete, or trust cache files.
 
 v1.6 and later release builds also include read-only query commands over existing
-generated artifacts:
+no-adapter generated artifacts:
 
 ```sh
 java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list modules
@@ -155,7 +155,10 @@ java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-proje
 `.project-memory/` or the `.project-memory/` directory itself. These commands read the
 existing `project-map.json` and `evidence-index.jsonl` artifacts, print deterministic
 human text, and do not run scans, create `.project-memory/`, refresh cache/profile
-artifacts, read repository source files, or write repository files. Non-graph query
+artifacts, read repository source files, or write repository files. Current query
+support remains focused on no-adapter `project-map.json` `schema_version: "1.0"`
+artifact sets; adapter-enabled `schema_version: "2.0"` outputs and
+`source-registry.json` are not query input sources in this slice. Non-graph query
 commands do not require or parse `project-graph.json`; a missing or malformed graph
 artifact is ignored unless the command needs graph-backed lookup. Source-visible
 endpoint rows and spec-backed declared API operation rows stay separate; entity rows
@@ -170,7 +173,7 @@ graph node ID or a generated fact ID that maps through node `source_ref`, and re
 only one-hop incoming, outgoing, or default `both` graph neighbors while keeping graph
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
 are navigation metadata, not evidence. Stable JSON query output remains future work and
-is not included in v1.8.0.
+is not included in the current published release line.
 
 CLI exit codes are stable for automation:
 
@@ -289,9 +292,10 @@ not store source bodies, local document bodies, config contents, generated-sourc
 contents, generated Markdown bodies, local absolute paths, command logs, timing
 measurements, credentials, tokens, or secret-looking values.
 
-`project-map.json` is the minimal stable machine-readable project map. Current
-development output uses `schema_version: "1.0"` and includes redacted scan metadata for
-safe root-local config selection, detected root `pom.xml` build metadata when present,
+`project-map.json` is the minimal stable machine-readable project map. No-adapter
+current development output uses `schema_version: "1.0"` and includes redacted scan
+metadata for safe root-local config selection, detected root `pom.xml` build metadata
+when present,
 accepted Gradle build-file summary fields when present, Maven or Gradle module
 inventory,
 module-owned source-visible Maven metadata under
@@ -373,6 +377,22 @@ Compatibility and migration notes:
   read existing `project-map.json`, `project-graph.json` when graph lookup is needed,
   and `evidence-index.jsonl` artifacts without scanning source, writing repository
   files, or treating query output as evidence.
+- The unreleased v2 local structured import work keeps no-adapter scans v1-compatible:
+  `project-map.json` remains on `schema_version: "1.0"` and
+  `.project-memory/source-registry.json` is not emitted. When the local structured
+  import adapter is explicitly enabled and an import file is accepted, the scan emits
+  `.project-memory/source-registry.json` and uses `project-map.json`
+  `schema_version: "2.0"` for adapter context. Treat that as a v2 artifact set:
+  regenerate the base artifacts and source registry together, and do not mix
+  `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+  `source-registry.json`, or generated Markdown from different scans.
+- Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
+  `schema_version: "1.0"` outputs. Consumers that encounter
+  `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
+  adapter context and provenance joins instead of treating adapter-backed rows as
+  Java/Spring facts. Current query support remains focused on no-adapter v1 artifact
+  sets unless later release notes and architecture docs document adapter-aware query
+  behavior.
 - Consumers that accept only known schema markers should add `"1.0"` for the preserved
   v0.9 shape. Regenerate the base `.project-memory/` files together so JSON facts,
   graph nodes, evidence IDs, and Markdown evidence references stay aligned.
@@ -520,7 +540,9 @@ Unreleased v2 development includes a disabled-by-default local structured import
 reference adapter for explicitly configured repository-relative export files. Adapter
 enabled scans emit `source-registry.json` and `project-map.json`
 `schema_version: "2.0"` adapter context as provenance-backed external/document context
-only.
+only. No-adapter scans remain v1-compatible with `schema_version: "1.0"` and no
+`source-registry.json`; current query support remains focused on those no-adapter
+artifact sets.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring

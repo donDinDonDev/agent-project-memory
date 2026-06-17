@@ -135,6 +135,31 @@ Adapter-backed evidence and provenance must not:
 - treat connector summaries, query output, generated Markdown, cache metadata, graph
   derivation metadata, profile output, chat output, or LLM output as evidence.
 
+### v2.0 Evidence And Provenance Compatibility
+
+No-adapter v2 development scans preserve the v1 evidence model: `project-map.json`
+stays on `schema_version: "1.0"`, generated facts continue to reference
+`evidence_ids`, and no `.project-memory/source-registry.json` artifact is emitted.
+
+Adapter-enabled scans add provenance metadata without extending
+`evidence-index.jsonl`. The source registry is a separate generated artifact with
+source-document and provenance join keys. Adapter-backed rows in `project-map.json`
+reference `source_document_ids` and `provenance_ids`; they intentionally do not carry
+`evidence_ids`.
+
+Downstream evidence consumers should treat this as a compatibility boundary:
+
+- Missing `evidence_ids` on adapter context rows are expected and must not be repaired
+  by copying document, code, graph, cache, profile, query, or generated Markdown IDs.
+- `document` evidence remains limited to accepted local Markdown/document observations.
+  Local structured import records and future connector records must not reuse
+  `document` evidence unless a later contract explicitly changes that boundary.
+- `source_document_ids` and `provenance_ids` are deterministic navigation and review
+  keys, not evidence IDs. They should be resolved through `source-registry.json`, not
+  through `evidence-index.jsonl`.
+- Query output, graph derivation metadata, generated Markdown, profile artifacts, cache
+  metadata, adapter diagnostics, and release notes remain non-evidence.
+
 ## Planned Optional AI Presentation Evidence Decision
 
 Future optional AI presentation output is not evidence. It must not add evidence types,

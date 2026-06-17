@@ -31,6 +31,10 @@ architecture documents.
   `schema_version: "2.0"` adapter context, malformed/partial/stale diagnostics,
   no raw body/path serialization, and regression/golden coverage that keeps adapter
   records out of Java/Spring facts and `evidence-index.jsonl`.
+- Documented v1-to-v2 migration and compatibility expectations for adapter-enabled
+  output, including no-adapter `schema_version: "1.0"` compatibility,
+  `source-registry.json` handling, full artifact-set regeneration, downstream consumer
+  behavior, current query limits, and evidence/provenance separation.
 
 ## [1.9.0] - 2026-06-17
 
