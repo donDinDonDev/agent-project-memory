@@ -85,14 +85,22 @@ The v1.9.0 security boundary remains conservative:
 
 The v1.9.0 local release-prep validation passed:
 
+- `mvn test`: 448 tests, 0 failures, 0 errors, 0 skipped.
+- `mvn package`: 448 tests, 0 failures, 0 errors, 0 skipped, including the packaged
+  CLI smoke bound to the Maven package lifecycle.
+- Packaged CLI `--version` reported `agent-project-memory 1.9.0`.
+- Packaged jar metadata inspection confirmed the CLI manifest entrypoint and Maven
+  artifact metadata for `1.9.0`.
+- In a clean local dry-run asset directory, `SHA256SUMS` was generated with the release
+  asset filename only and verified successfully for
+  `agent-project-memory-1.9.0.jar`.
 - `git diff --check`: passed.
 - Release-notes whitespace check: passed.
 - Public release-document marker audit passed.
 
-Maven tests and packaging were not run for this release-prep goal because the v1.9
-architecture-prep work and this release-prep update changed only documentation/design
-text. No code, tests, fixtures, goldens, build files, generated artifacts, dependencies,
-scripts, CLI behavior, or packaged runtime behavior changed.
+The v1.9 architecture-prep work changed documentation/design text and Maven version
+metadata only. No production code, tests, fixtures, goldens, generated artifacts,
+dependencies, scripts, CLI behavior, or packaged runtime behavior changed.
 
 ## Not Included
 

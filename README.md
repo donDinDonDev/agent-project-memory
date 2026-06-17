@@ -81,7 +81,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.8.0.jar
+target/agent-project-memory-1.9.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -92,24 +92,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.8.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.8.0.jar --help
-java -jar target/agent-project-memory-1.8.0.jar help
-java -jar target/agent-project-memory-1.8.0.jar scan --help
-java -jar target/agent-project-memory-1.8.0.jar --version
-java -jar target/agent-project-memory-1.8.0.jar version
+java -jar target/agent-project-memory-1.9.0.jar --help
+java -jar target/agent-project-memory-1.9.0.jar help
+java -jar target/agent-project-memory-1.9.0.jar scan --help
+java -jar target/agent-project-memory-1.9.0.jar --version
+java -jar target/agent-project-memory-1.9.0.jar version
 ```
 
 Current v1.x builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-1.8.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-1.8.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -123,7 +123,7 @@ it does not add project facts or evidence records.
 v1.4 and later release builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-1.8.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -139,16 +139,16 @@ v1.6 and later release builds also include read-only query commands over existin
 generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-1.8.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -504,7 +504,7 @@ integration.
 ## Project Status
 
 The latest published release is `v1.8.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds produce `target/agent-project-memory-1.8.0.jar`. Normal generated
+asset. Local builds produce `target/agent-project-memory-1.9.0.jar`. Normal generated
 `project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
 lightweight relation graph expansion is additive, the v1.6 read-only query expansion
 adds deterministic artifact-backed lookup commands without changing generated
