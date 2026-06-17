@@ -14,6 +14,12 @@ architecture documents.
 - Added a public `stage3-project-map` generated-output example snapshot with
   regeneration instructions and README discoverability.
 
+### Changed
+
+- Expanded the public contributor guide and issue/PR templates with bounded
+  contribution paths, good-first scope guidance, and clearer output/evidence context
+  prompts.
+
 ## [1.7.0] - 2026-06-17
 
 ### Added
