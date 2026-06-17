@@ -16,6 +16,10 @@ architecture documents.
   versus evidence separation, explicit v2 schema-marker strategy for adapter-backed
   output, disabled-by-default local import configuration, and conservative
   implementation order.
+- Added the initial adapter-domain contract foundation for deterministic source-document
+  IDs and required provenance validation without adding adapter readers, generated
+  adapter output, source registry emission, evidence types, network/auth, plugin, or AI
+  behavior.
 
 ## [1.9.0] - 2026-06-17
 

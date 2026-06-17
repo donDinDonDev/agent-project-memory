@@ -77,7 +77,14 @@ The planned v2.0 lifecycle is:
 
 Future external ingestors and any broader local document modes should normalize inputs
 into a `SourceDocument` abstraction. For v2 design, `SourceDocument` should be treated
-as a planned boundary object rather than a stable public API.
+as an adapter-domain contract object for future explicit adapters, not as an enabled
+reader, parser, or generated-output integration point.
+
+The initial contract foundation validates deterministic source-document identity and
+required provenance references for accepted adapter records. It does not read local
+imports, validate adapter configuration, emit `.project-memory/source-registry.json`,
+add adapter-backed `project-map.json` sections, or change no-adapter scan/query
+behavior.
 
 Fields stable enough for the v2.0 design are:
 

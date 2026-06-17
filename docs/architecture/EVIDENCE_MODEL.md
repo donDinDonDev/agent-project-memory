@@ -87,6 +87,11 @@ categories for external records. Connector issues, pages, comments, tickets, exp
 records, and API responses are not Java classes, annotations, build files, tests, or
 repository config files.
 
+The initial adapter-domain contract foundation preserves this evidence boundary. It
+validates source-document and provenance identifiers for future accepted adapter
+records, but it does not emit adapter evidence records, add adapter-specific evidence
+fields, or treat adapter provenance as project evidence.
+
 The v2.0 design uses a source-document envelope with provenance instead of embedding
 connector metadata in free-form excerpts. Provenance should identify:
 

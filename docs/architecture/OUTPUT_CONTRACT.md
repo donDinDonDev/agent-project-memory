@@ -42,6 +42,11 @@ The current v1.x implementation does not emit this artifact. A normal scan with 
 adapter explicitly enabled must keep the current base artifact set and must not create a
 source registry.
 
+The initial adapter-domain contract foundation does not change generated output. It
+adds source-document/provenance identity validation for future adapters only; scans
+without an explicitly enabled adapter still do not emit `source-registry.json` or
+adapter-backed `project-map.json` sections.
+
 ## Planned v2 Adapter Output Boundary
 
 The current v1.x implementation does not emit adapter packages, connector output,

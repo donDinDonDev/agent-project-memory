@@ -217,6 +217,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))));
   }
 
@@ -245,6 +246,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("endpoints.md"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("agent-guide.md"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))),
         () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"scan\": {")),

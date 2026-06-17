@@ -171,7 +171,10 @@ documents and should not become part of the core Java/Spring analyzer.
 ### Planned Adapter Layer
 
 The planned v2 adapter layer is an optional input boundary before document/spec/metadata
-analysis. It is not implemented in the current v1.x product line.
+analysis. The current development line includes only the first adapter-domain contract
+foundation for source-document identity and provenance validation; it does not include
+adapter execution, adapter configuration, local import readers, generated adapter
+output, network/auth behavior, plugin loading, or AI provider behavior.
 
 The adapter layer should:
 
