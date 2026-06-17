@@ -427,6 +427,8 @@ navigation, and references back to the source files that prove each fact.
 
 Start here:
 
+- Generated-output example:
+  [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
 - v1.7 release summary:
   [docs/product/V1_7_RELEASE_NOTES.md](docs/product/V1_7_RELEASE_NOTES.md).
 - v1.6 release summary:

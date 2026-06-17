@@ -1,0 +1,1661 @@
+{
+  "schema_version": "1.0",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "defaults_only",
+      "config_file_path": null,
+      "config_file_status": "not_detected",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "generated_sources": {
+    "analysis_status": "analyzed",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [],
+      "maven_plugin_ids": []
+    }
+  },
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [
+      "src/main/java"
+    ],
+    "test_roots": [
+      "src/test/java"
+    ],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [
+            "src/main/java"
+          ],
+          "test_roots": [
+            "src/test/java"
+          ],
+          "support_status": "supported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:7-7:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "stage3-project-map",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:8-8:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:9-9:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:.:direct:com.example:inventory-client:decl:000002",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 2,
+                    "group_id": {
+                      "value": "com.example",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:30-30:build_file:maven:dependency:000002:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "inventory-client",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:31-31:build_file:maven:dependency:000002:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "scope": {
+                      "value": "test",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:32-32:build_file:maven:dependency:000002:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": "true",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:33-33:build_file:maven:dependency:000002:optional"
+                      ]
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:29-34:build_file:maven:dependency:000002"
+                    ]
+                  },
+                  {
+                    "id": "maven_dependency:module:.:direct:org.springframework.boot:spring-boot-starter-web:decl:000001",
+                    "declaration_kind": "direct_dependency",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:25-25:build_file:maven:dependency:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-starter-web",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:26-26:build_file:maven:dependency:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:27-27:build_file:maven:dependency:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:24-28:build_file:maven:dependency:000001"
+                    ]
+                  }
+                ]
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_dependency:module:.:dependency_management:org.springframework.boot:spring-boot-dependencies:decl:000001",
+                    "declaration_kind": "dependency_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:14-14:build_file:maven:dependency_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-dependencies",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:15-15:build_file:maven:dependency_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:16-16:build_file:maven:dependency_management:000001:version"
+                      ]
+                    },
+                    "scope": {
+                      "value": "import",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:18-18:build_file:maven:dependency_management:000001:scope"
+                      ]
+                    },
+                    "optional": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "type": {
+                      "value": "pom",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:17-17:build_file:maven:dependency_management:000001:type"
+                      ]
+                    },
+                    "classifier": {
+                      "value": null,
+                      "value_kind": "not_declared",
+                      "evidence_ids": []
+                    },
+                    "evidence_ids": [
+                      "ev:pom.xml:13-19:build_file:maven:dependency_management:000001"
+                    ]
+                  }
+                ]
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_plugin:module:.:direct:org.springframework.boot:spring-boot-maven-plugin:decl:000001",
+                    "declaration_kind": "direct_plugin",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.springframework.boot",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:49-49:build_file:maven:plugin:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "spring-boot-maven-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:50-50:build_file:maven:plugin:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "${spring.boot.version}",
+                      "value_kind": "property_reference",
+                      "evidence_ids": [
+                        "ev:pom.xml:51-51:build_file:maven:plugin:000001:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:pom.xml:48-52:build_file:maven:plugin:000001"
+                    ]
+                  }
+                ]
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "maven_plugin:module:.:plugin_management:org.apache.maven.plugins:maven-surefire-plugin:decl:000001",
+                    "declaration_kind": "plugin_management",
+                    "declaration_ordinal": 1,
+                    "group_id": {
+                      "value": "org.apache.maven.plugins",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:41-41:build_file:maven:plugin_management:000001:groupId"
+                      ]
+                    },
+                    "artifact_id": {
+                      "value": "maven-surefire-plugin",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:42-42:build_file:maven:plugin_management:000001:artifactId"
+                      ]
+                    },
+                    "version": {
+                      "value": "3.2.5",
+                      "value_kind": "literal",
+                      "evidence_ids": [
+                        "ev:pom.xml:43-43:build_file:maven:plugin_management:000001:version"
+                      ]
+                    },
+                    "executions": [],
+                    "configuration_signals": [],
+                    "generator_signals": [],
+                    "evidence_ids": [
+                      "ev:pom.xml:40-44:build_file:maven:plugin_management:000001"
+                    ]
+                  }
+                ]
+              }
+            },
+            "resources": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "resource_root:module:.:main:src/main/resources",
+                  "scope": "main",
+                  "path": "src/main/resources",
+                  "evidence_ids": []
+                }
+              ]
+            },
+            "config_files": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "config_file:module:.:spring_application:src/main/resources/application.yml",
+                  "path": "src/main/resources/application.yml",
+                  "resource_scope": "main",
+                  "config_kind": "spring_application",
+                  "format": "yaml",
+                  "profile_name": null,
+                  "profile_source": null,
+                  "evidence_ids": [
+                    "ev:src/main/resources/application.yml:unknown:config_file:application.yml"
+                  ]
+                }
+              ]
+            },
+            "spring_boot_applications": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "spring_boot_application:module:.:com.example.Stage3Application",
+                  "class_name": "com.example.Stage3Application",
+                  "source_path": "src/main/java/com/example/Stage3Application.java",
+                  "application_signal": "spring_boot_application_with_main_method",
+                  "main_method": {
+                    "present": true,
+                    "evidence_ids": [
+                      "ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol"
+                    ]
+                  },
+                  "evidence_ids": [
+                    "ev:src/main/java/com/example/Stage3Application.java:5-5:com.example.Stage3Application:@SpringBootApplication",
+                    "ev:src/main/java/com/example/Stage3Application.java:7-7:com.example.Stage3Application#main:code_symbol"
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [
+    {
+      "id": "endpoint:com.example.web.ProjectMapController#createItem",
+      "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "controller_class": "com.example.web.ProjectMapController",
+      "handler_method": "createItem",
+      "http_methods": [
+        "POST"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/api/items"
+      ],
+      "request_parameters": [],
+      "request_body_type": "CreateItemRequest",
+      "response_type": "ItemResponse",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.ProjectMapController",
+        "declaring_method": "createItem",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+          "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:21-21:com.example.web.ProjectMapController#createItem:@PostMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:22-22:com.example.web.ProjectMapController#createItem:@RequestBody:parameter:0:request"
+      ]
+    },
+    {
+      "id": "endpoint:com.example.web.ProjectMapController#getItem",
+      "module_id": "module:.",
+      "api_surface_category": "source_visible_spring_mvc_endpoint",
+      "controller_class": "com.example.web.ProjectMapController",
+      "handler_method": "getItem",
+      "http_methods": [
+        "GET"
+      ],
+      "http_method_semantics": "declared",
+      "paths": [
+        "/api/items/{id}"
+      ],
+      "request_parameters": [
+        {
+          "name": "id",
+          "source": "path_variable",
+          "java_type": "Long",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id"
+          ]
+        },
+        {
+          "name": "expand",
+          "source": "request_param",
+          "java_type": "String",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand"
+          ]
+        }
+      ],
+      "request_body_type": null,
+      "response_type": "ItemResponse",
+      "mapping_source": {
+        "kind": "direct_handler_method",
+        "declaring_type": "com.example.web.ProjectMapController",
+        "declaring_method": "getItem",
+        "binding": "direct",
+        "uncertainty": null,
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+          "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping"
+        ]
+      },
+      "evidence_ids": [
+        "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:12-12:com.example.web.ProjectMapController:@RequestMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:14-14:com.example.web.ProjectMapController#getItem:@GetMapping",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:16-16:com.example.web.ProjectMapController#getItem:@PathVariable:parameter:0:id",
+        "ev:src/main/java/com/example/web/ProjectMapController.java:17-17:com.example.web.ProjectMapController#getItem:@RequestParam:parameter:1:expand"
+      ]
+    }
+  ],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": [
+        "endpoint:com.example.web.ProjectMapController#createItem",
+        "endpoint:com.example.web.ProjectMapController#getItem"
+      ]
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "analyzed",
+    "repositories": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+          "module_id": "module:.",
+          "surface_category": "spring_repository_stereotype",
+          "support_type": "extracted",
+          "class_name": "com.example.components.InventoryRepository",
+          "source_path": "src/main/java/com/example/components/InventoryComponents.java",
+          "repository_signal": "direct_repository_stereotype",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+          ]
+        },
+        {
+          "id": "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+          "module_id": "module:.",
+          "surface_category": "spring_data_repository_interface_signal",
+          "support_type": "inferred",
+          "class_name": "com.example.repositories.ProjectOrderRepository",
+          "source_path": "src/main/java/com/example/repositories/ProjectOrderRepository.java",
+          "repository_signal": "spring_data_repository_interface_extension",
+          "extends_types": [
+            "org.springframework.data.jpa.repository.JpaRepository"
+          ],
+          "entity_relation_status": "inferred",
+          "entity_relation": {
+            "support_type": "inferred",
+            "relation_type": "repository_entity_generic",
+            "target_entity_id": "entity:com.example.domain.ProjectOrder",
+            "target_module_id": "module:.",
+            "target_class_name": "com.example.domain.ProjectOrder",
+            "generic_type": "com.example.domain.ProjectOrder",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+            ]
+          },
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "analyzed",
+        "items": [
+          {
+            "id": "spring_configuration_class:module:.:com.example.components.AppConfiguration",
+            "module_id": "module:.",
+            "surface_category": "spring_configuration_class",
+            "support_type": "extracted",
+            "class_name": "com.example.components.AppConfiguration",
+            "source_path": "src/main/java/com/example/components/InventoryComponents.java",
+            "configuration_signal": "direct_configuration_class",
+            "evidence_ids": [
+              "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+            ]
+          }
+        ]
+      },
+      "configuration_properties": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "analyzed",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "analyzed",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "analyzed",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "component:com.example.components.AppConfiguration",
+        "module_id": "module:.",
+        "class_name": "com.example.components.AppConfiguration",
+        "stereotypes": [
+          "@Configuration"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryComponent",
+        "module_id": "module:.",
+        "class_name": "com.example.components.InventoryComponent",
+        "stereotypes": [
+          "@Component"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:8-8:com.example.components.InventoryComponent:@Component"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryRepository",
+        "module_id": "module:.",
+        "class_name": "com.example.components.InventoryRepository",
+        "stereotypes": [
+          "@Repository"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+        ]
+      },
+      {
+        "id": "component:com.example.components.InventoryService",
+        "module_id": "module:.",
+        "class_name": "com.example.components.InventoryService",
+        "stereotypes": [
+          "@Service"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service"
+        ]
+      },
+      {
+        "id": "component:com.example.web.ProjectMapController",
+        "module_id": "module:.",
+        "class_name": "com.example.web.ProjectMapController",
+        "stereotypes": [
+          "@RestController"
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/web/ProjectMapController.java:11-11:com.example.web.ProjectMapController:@RestController"
+        ]
+      }
+    ]
+  },
+  "entities": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "entity:com.example.domain.ProjectCustomer",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectCustomer",
+        "table_name": null,
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectCustomer",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:36-36:com.example.domain.ProjectCustomer:@Id:field:id"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectLegacyOrder",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectLegacyOrder",
+        "table_name": null,
+        "id_class": {
+          "type_name": "ProjectLegacyOrderKey",
+          "field_matching_status": "not_analyzed",
+          "semantic_reconstruction_status": "not_analyzed",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+          ]
+        },
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "orderNumber",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectLegacyOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:113-113:com.example.domain.ProjectLegacyOrder:@Id:field:orderNumber"
+            ]
+          },
+          {
+            "field_name": "tenantId",
+            "java_type": "String",
+            "declaring_class": "com.example.domain.ProjectLegacyOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:110-110:com.example.domain.ProjectLegacyOrder:@Id:field:tenantId"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectOrder",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectOrder",
+        "table_name": "orders",
+        "id_class": null,
+        "fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "simple_id",
+            "annotations": [
+              "@GeneratedValue"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": {
+              "strategy": "GenerationType.IDENTITY",
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              ]
+            },
+            "version": null,
+            "embedded": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+            ]
+          },
+          {
+            "field_name": "status",
+            "java_type": "ProjectOrderStatus",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "basic",
+            "annotations": [
+              "@Column",
+              "@Enumerated"
+            ],
+            "column": {
+              "name": "status",
+              "nullable": false,
+              "unique": null,
+              "length": 32,
+              "precision": null,
+              "scale": null,
+              "insertable": null,
+              "updatable": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectOrder:@Column:field:status"
+              ]
+            },
+            "enumerated": {
+              "value": "EnumType.STRING",
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:60-60:com.example.domain.ProjectOrder:@Enumerated:field:status"
+              ]
+            },
+            "generated_value": null,
+            "version": null,
+            "embedded": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:59-59:com.example.domain.ProjectOrder:@Column:field:status",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:60-60:com.example.domain.ProjectOrder:@Enumerated:field:status"
+            ]
+          },
+          {
+            "field_name": "version",
+            "java_type": "long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "persistence_role": "version",
+            "annotations": [
+              "@Version"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": {
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:63-63:com.example.domain.ProjectOrder:@Version:field:version"
+              ]
+            },
+            "embedded": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:63-63:com.example.domain.ProjectOrder:@Version:field:version"
+            ]
+          }
+        ],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectOrder",
+            "source_kind": "declared",
+            "identifier_kind": "simple_id",
+            "generated_value": {
+              "strategy": "GenerationType.IDENTITY",
+              "generator": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:55-55:com.example.domain.ProjectOrder:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:56-56:com.example.domain.ProjectOrder:@GeneratedValue:field:id"
+            ]
+          }
+        ],
+        "relationships": [
+          {
+            "field_name": "customer",
+            "annotation": "@ManyToOne",
+            "cardinality": "many_to_one",
+            "java_type": "ProjectCustomer",
+            "target": {
+              "declared_type": "ProjectCustomer",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "join_metadata_present",
+            "optional": false,
+            "fetch": "FetchType.LAZY",
+            "cascade": [
+              "CascadeType.PERSIST",
+              "CascadeType.MERGE"
+            ],
+            "orphan_removal": null,
+            "join_columns": [
+              {
+                "name": "customer_id",
+                "referenced_column_name": "id",
+                "nullable": false,
+                "unique": true,
+                "insertable": false,
+                "updatable": true,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:67-73:com.example.domain.ProjectOrder:@JoinColumn:field:customer"
+                ]
+              }
+            ],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:66-66:com.example.domain.ProjectOrder:@ManyToOne:field:customer",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:67-73:com.example.domain.ProjectOrder:@JoinColumn:field:customer"
+            ]
+          },
+          {
+            "field_name": "invoice",
+            "annotation": "@OneToOne",
+            "cardinality": "one_to_one",
+            "java_type": "ProjectInvoice",
+            "target": {
+              "declared_type": "ProjectInvoice",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "join_metadata_present",
+            "optional": false,
+            "fetch": "FetchType.LAZY",
+            "cascade": [],
+            "orphan_removal": true,
+            "join_columns": [
+              {
+                "name": "invoice_id",
+                "referenced_column_name": null,
+                "nullable": null,
+                "unique": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectOrder:@JoinColumn:field:invoice"
+                ]
+              }
+            ],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:79-79:com.example.domain.ProjectOrder:@OneToOne:field:invoice",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectOrder:@JoinColumn:field:invoice"
+            ]
+          },
+          {
+            "field_name": "lines",
+            "annotation": "@OneToMany",
+            "cardinality": "one_to_many",
+            "java_type": "List<ProjectOrderLine>",
+            "target": {
+              "declared_type": "List<ProjectOrderLine>",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": "order",
+            "ownership_signal": "mapped_by_present",
+            "optional": null,
+            "fetch": null,
+            "cascade": [
+              "CascadeType.ALL"
+            ],
+            "orphan_removal": true,
+            "join_columns": [],
+            "join_table": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:76-76:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+            ]
+          },
+          {
+            "field_name": "tags",
+            "annotation": "@ManyToMany",
+            "cardinality": "many_to_many",
+            "java_type": "Set<ProjectTag>",
+            "target": {
+              "declared_type": "Set<ProjectTag>",
+              "target_resolution": "declared_type_only",
+              "target_entity_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "target_type_not_resolved",
+              "evidence_ids": []
+            },
+            "mapped_by": null,
+            "ownership_signal": "join_metadata_present",
+            "optional": null,
+            "fetch": "FetchType.LAZY",
+            "cascade": [],
+            "orphan_removal": null,
+            "join_columns": [],
+            "join_table": {
+              "name": "order_tags",
+              "schema": "sales",
+              "catalog": "crm",
+              "join_columns": [
+                {
+                  "name": "order_id",
+                  "referenced_column_name": "id",
+                  "nullable": null,
+                  "unique": null,
+                  "insertable": null,
+                  "updatable": null,
+                  "evidence_ids": [
+                    "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+                  ]
+                }
+              ],
+              "inverse_join_columns": [
+                {
+                  "name": "tag_id",
+                  "referenced_column_name": "id",
+                  "nullable": false,
+                  "unique": null,
+                  "insertable": null,
+                  "updatable": null,
+                  "evidence_ids": [
+                    "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+                  ]
+                }
+              ],
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectOrder:@ManyToMany:field:tags",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectShipment",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectShipment",
+        "table_name": null,
+        "id_class": null,
+        "fields": [
+          {
+            "field_name": "destination",
+            "java_type": "ProjectAddress",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded",
+            "annotations": [
+              "@Embedded"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@Embedded",
+              "java_type": "ProjectAddress",
+              "target_resolution": "source_visible_embeddable",
+              "target_embeddable_id": "embeddable:com.example.domain.ProjectAddress",
+              "target_module_id": "module:.",
+              "target_class_name": "com.example.domain.ProjectAddress",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:100-100:com.example.domain.ProjectShipment:@Embedded:field:destination",
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectAddress:@Embeddable"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:100-100:com.example.domain.ProjectShipment:@Embedded:field:destination",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectAddress:@Embeddable"
+            ]
+          },
+          {
+            "field_name": "externalAddress",
+            "java_type": "ExternalProjectAddress",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded",
+            "annotations": [
+              "@Embedded"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@Embedded",
+              "java_type": "ExternalProjectAddress",
+              "target_resolution": "declared_type_only",
+              "target_embeddable_id": null,
+              "target_module_id": null,
+              "target_class_name": null,
+              "support_type": null,
+              "confidence": null,
+              "uncertainty": "embeddable_target_not_resolved",
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:103-103:com.example.domain.ProjectShipment:@Embedded:field:externalAddress"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:103-103:com.example.domain.ProjectShipment:@Embedded:field:externalAddress"
+            ]
+          },
+          {
+            "field_name": "id",
+            "java_type": "ProjectShipmentId",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "persistence_role": "embedded_id",
+            "annotations": [
+              "@EmbeddedId"
+            ],
+            "column": null,
+            "enumerated": null,
+            "generated_value": null,
+            "version": null,
+            "embedded": {
+              "annotation": "@EmbeddedId",
+              "java_type": "ProjectShipmentId",
+              "target_resolution": "source_visible_embeddable",
+              "target_embeddable_id": "embeddable:com.example.domain.ProjectShipmentId",
+              "target_module_id": "module:.",
+              "target_class_name": "com.example.domain.ProjectShipmentId",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:97-97:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+              ]
+            },
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:97-97:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+            ]
+          }
+        ],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "ProjectShipmentId",
+            "declaring_class": "com.example.domain.ProjectShipment",
+            "source_kind": "declared",
+            "identifier_kind": "embedded_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:97-97:com.example.domain.ProjectShipment:@EmbeddedId:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity"
+        ]
+      },
+      {
+        "id": "entity:com.example.domain.ProjectVisit",
+        "module_id": "module:.",
+        "class_name": "com.example.domain.ProjectVisit",
+        "table_name": "visits",
+        "id_class": null,
+        "fields": [],
+        "identifier_fields": [
+          {
+            "field_name": "id",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.ProjectBaseEntity",
+            "source_kind": "mapped_superclass",
+            "identifier_kind": "simple_id",
+            "generated_value": null,
+            "evidence_ids": [
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:30-30:com.example.domain.ProjectBaseEntity:@Id:field:id",
+              "ev:src/main/java/com/example/domain/ProjectEntities.java:28-28:com.example.domain.ProjectBaseEntity:@MappedSuperclass"
+            ]
+          }
+        ],
+        "relationships": [],
+        "evidence_ids": [
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity",
+          "ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table"
+        ]
+      }
+    ],
+    "embeddables": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "embeddable:com.example.domain.ProjectAddress",
+          "module_id": "module:.",
+          "class_name": "com.example.domain.ProjectAddress",
+          "source_path": "src/main/java/com/example/domain/ProjectEntities.java",
+          "fields": [
+            {
+              "field_name": "postalCode",
+              "java_type": "String",
+              "declaring_class": "com.example.domain.ProjectAddress",
+              "source_kind": "declared",
+              "persistence_role": "basic",
+              "annotations": [
+                "@Column"
+              ],
+              "column": {
+                "name": "postal_code",
+                "nullable": null,
+                "unique": null,
+                "length": null,
+                "precision": null,
+                "scale": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectAddress:@Column:field:postalCode"
+                ]
+              },
+              "enumerated": null,
+              "generated_value": null,
+              "version": null,
+              "embedded": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:42-42:com.example.domain.ProjectAddress:@Column:field:postalCode"
+              ]
+            }
+          ],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:40-40:com.example.domain.ProjectAddress:@Embeddable"
+          ]
+        },
+        {
+          "id": "embeddable:com.example.domain.ProjectShipmentId",
+          "module_id": "module:.",
+          "class_name": "com.example.domain.ProjectShipmentId",
+          "source_path": "src/main/java/com/example/domain/ProjectEntities.java",
+          "fields": [
+            {
+              "field_name": "trackingNumber",
+              "java_type": "String",
+              "declaring_class": "com.example.domain.ProjectShipmentId",
+              "source_kind": "declared",
+              "persistence_role": "basic",
+              "annotations": [
+                "@Column"
+              ],
+              "column": {
+                "name": "tracking_number",
+                "nullable": null,
+                "unique": null,
+                "length": null,
+                "precision": null,
+                "scale": null,
+                "insertable": null,
+                "updatable": null,
+                "evidence_ids": [
+                  "ev:src/main/java/com/example/domain/ProjectEntities.java:48-48:com.example.domain.ProjectShipmentId:@Column:field:trackingNumber"
+                ]
+              },
+              "enumerated": null,
+              "generated_value": null,
+              "version": null,
+              "embedded": null,
+              "evidence_ids": [
+                "ev:src/main/java/com/example/domain/ProjectEntities.java:48-48:com.example.domain.ProjectShipmentId:@Column:field:trackingNumber"
+              ]
+            }
+          ],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:46-46:com.example.domain.ProjectShipmentId:@Embeddable"
+          ]
+        }
+      ]
+    }
+  },
+  "tests": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "test:com.example.web.ProjectMapControllerTest",
+        "module_id": "module:.",
+        "class_name": "com.example.web.ProjectMapControllerTest",
+        "source_path": "src/test/java/com/example/web/ProjectMapControllerTest.java",
+        "framework_signals": [],
+        "spring_test_slices": [],
+        "mock_signals": [],
+        "methods": [],
+        "tested_subjects": [
+          {
+            "relation_status": "inferred",
+            "relation_type": "naming_convention",
+            "class_name": "com.example.web.ProjectMapController",
+            "target_module_id": "module:.",
+            "candidate_reference": null,
+            "support_type": "inferred",
+            "confidence": "medium",
+            "uncertainty": null,
+            "evidence_ids": [
+              "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file",
+              "ev:src/main/java/com/example/web/ProjectMapController.java:13-13:com.example.web.ProjectMapController:code_symbol"
+            ]
+          }
+        ],
+        "evidence_ids": [
+          "ev:src/test/java/com/example/web/ProjectMapControllerTest.java:3-3:com.example.web.ProjectMapControllerTest:test_file"
+        ]
+      }
+    ]
+  },
+  "documents": {
+    "analysis_status": "not_detected",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "quality": {
+    "analysis_status": "analyzed",
+    "test_gap_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectCustomer",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectCustomer",
+          "subject_name": "com.example.domain.ProjectCustomer",
+          "subject_class_name": "com.example.domain.ProjectCustomer",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:34-34:com.example.domain.ProjectCustomer:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectLegacyOrder",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectLegacyOrder",
+          "subject_name": "com.example.domain.ProjectLegacyOrder",
+          "subject_class_name": "com.example.domain.ProjectLegacyOrder",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:107-107:com.example.domain.ProjectLegacyOrder:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:108-108:com.example.domain.ProjectLegacyOrder:@IdClass"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectOrder",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectOrder",
+          "subject_name": "com.example.domain.ProjectOrder",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:52-52:com.example.domain.ProjectOrder:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:53-53:com.example.domain.ProjectOrder:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectShipment",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectShipment",
+          "subject_name": "com.example.domain.ProjectShipment",
+          "subject_class_name": "com.example.domain.ProjectShipment",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:95-95:com.example.domain.ProjectShipment:@Entity"
+          ]
+        },
+        {
+          "id": "quality:test_gap:entity_without_obvious_test:entity:com.example.domain.ProjectVisit",
+          "module_id": "module:.",
+          "signal": "entity_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "jpa_entity",
+          "subject_id": "entity:com.example.domain.ProjectVisit",
+          "subject_name": "com.example.domain.ProjectVisit",
+          "subject_class_name": "com.example.domain.ProjectVisit",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:122-122:com.example.domain.ProjectVisit:@Entity",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:123-123:com.example.domain.ProjectVisit:@Table"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_repository_stereotype:module:.:com.example.components.InventoryRepository",
+          "subject_name": "com.example.components.InventoryRepository",
+          "subject_class_name": "com.example.components.InventoryRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:16-16:com.example.components.InventoryRepository:@Repository"
+          ]
+        },
+        {
+          "id": "quality:test_gap:repository_without_obvious_test:spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+          "module_id": "module:.",
+          "signal": "repository_without_obvious_test",
+          "status": "no_obvious_test",
+          "subject_kind": "spring_repository",
+          "subject_id": "spring_data_repository_interface_signal:module:.:com.example.repositories.ProjectOrderRepository",
+          "subject_name": "com.example.repositories.ProjectOrderRepository",
+          "subject_class_name": "com.example.repositories.ProjectOrderRepository",
+          "subject_member_name": null,
+          "inference_basis": "no_inferred_tested_subject_relation_for_subject_class",
+          "confidence": "low",
+          "uncertainty": "bounded_test_inventory_supported_relations_only",
+          "related_test_ids": [],
+          "evidence_ids": [
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-7:com.example.repositories.ProjectOrderRepository:com.example.repositories.ProjectOrderRepository",
+            "ev:src/main/java/com/example/repositories/ProjectOrderRepository.java:6-6:com.example.repositories.ProjectOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository"
+          ]
+        }
+      ]
+    },
+    "change_risk_signals": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:customer",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:customer",
+          "subject_name": "com.example.domain.ProjectOrder#customer",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "customer",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:66-66:com.example.domain.ProjectOrder:@ManyToOne:field:customer",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:67-73:com.example.domain.ProjectOrder:@JoinColumn:field:customer"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:invoice",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:invoice",
+          "subject_name": "com.example.domain.ProjectOrder#invoice",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "invoice",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:79-79:com.example.domain.ProjectOrder:@OneToOne:field:invoice",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:80-80:com.example.domain.ProjectOrder:@JoinColumn:field:invoice"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:lines",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:lines",
+          "subject_name": "com.example.domain.ProjectOrder#lines",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "lines",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:76-76:com.example.domain.ProjectOrder:@OneToMany:field:lines"
+          ]
+        },
+        {
+          "id": "quality:change_risk:jpa_relationship_change_surface:entity:com.example.domain.ProjectOrder#relationship:tags",
+          "module_id": "module:.",
+          "signal": "jpa_relationship_change_surface",
+          "status": "uncertain_planning_hint",
+          "subject_kind": "jpa_relationship",
+          "subject_id": "entity:com.example.domain.ProjectOrder#relationship:tags",
+          "subject_name": "com.example.domain.ProjectOrder#tags",
+          "subject_class_name": "com.example.domain.ProjectOrder",
+          "subject_member_name": "tags",
+          "risk_basis": "source_visible_jpa_relationship_metadata",
+          "confidence": "low",
+          "uncertainty": "relationship_target_declared_type_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:83-83:com.example.domain.ProjectOrder:@ManyToMany:field:tags",
+            "ev:src/main/java/com/example/domain/ProjectEntities.java:84-91:com.example.domain.ProjectOrder:@JoinTable:field:tags"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_configuration_change_surface:spring_configuration_class:module:.:com.example.components.AppConfiguration",
+          "module_id": "module:.",
+          "signal": "spring_configuration_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_configuration_class",
+          "subject_id": "spring_configuration_class:module:.:com.example.components.AppConfiguration",
+          "subject_name": "com.example.components.AppConfiguration",
+          "subject_class_name": "com.example.components.AppConfiguration",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_spring_configuration",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:20-20:com.example.components.AppConfiguration:@Configuration"
+          ]
+        },
+        {
+          "id": "quality:change_risk:spring_service_change_surface:component:com.example.components.InventoryService",
+          "module_id": "module:.",
+          "signal": "spring_service_change_surface",
+          "status": "planning_hint",
+          "subject_kind": "spring_service",
+          "subject_id": "component:com.example.components.InventoryService",
+          "subject_name": "com.example.components.InventoryService",
+          "subject_class_name": "com.example.components.InventoryService",
+          "subject_member_name": null,
+          "risk_basis": "source_visible_service_stereotype",
+          "confidence": "low",
+          "uncertainty": "source_visible_change_surface_only",
+          "evidence_ids": [
+            "ev:src/main/java/com/example/components/InventoryComponents.java:12-12:com.example.components.InventoryService:@Service"
+          ]
+        }
+      ]
+    }
+  }
+}

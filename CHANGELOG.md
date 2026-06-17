@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added a public `stage3-project-map` generated-output example snapshot with
+  regeneration instructions and README discoverability.
+
 ## [1.7.0] - 2026-06-17
 
 ### Added
