@@ -31,7 +31,9 @@ Adapters should have these responsibilities:
 - preserve source identity, timestamps, content hashes, source URLs or source IDs where
   applicable, and the trust boundary that produced the record;
 - avoid exposing credentials, tokens, local absolute paths, raw command logs, or raw
-  connector configuration values in generated output.
+  connector configuration values in generated output;
+- reject, cap, or mark uncertain stale, malformed, partial, contradictory, or
+  provenance-missing records before they reach generated memory.
 
 Adapters must not:
 
@@ -40,7 +42,9 @@ Adapters must not:
 - mutate repository source files;
 - become required for normal `scan <path>` behavior;
 - add network, auth, AI, or plugin dependencies to the core analyzer;
-- make external text, connector summaries, query output, or AI output authoritative.
+- make external text, connector summaries, query output, or AI output authoritative;
+- load plugin code or expose an API/server trust boundary without a separate permission
+  and security design.
 
 The smallest planned lifecycle is:
 
@@ -106,6 +110,26 @@ inside free-form document text. At minimum, future v2 provenance should identify
 Credential names, credential values, authorization headers, tokens, cookies, local
 machine paths, and raw connector request/response logs must not be serialized as
 provenance.
+
+## External Data Risk Controls
+
+Local export files and future remote API responses must be treated as untrusted records.
+They can be stale, malicious, partially exported, deleted after export, edited between
+fetches, inconsistent with repository source, or intentionally shaped to confuse
+Markdown rendering, optional AI prompts, provenance joins, or future API responses.
+
+Future adapter contracts should require deterministic validation before normalization:
+bounded file sizes and record counts, explicit source kind, explicit import mode,
+content hash, import or fetch timestamp when known, and provenance labels that keep
+local repository files, out-of-repository local exports, and remote API responses
+separate. Missing or ambiguous provenance should block the record or keep it as an
+uncertain warning/status row, not a fact.
+
+External content must not become executable instruction text. Adapter records, issue
+comments, page bodies, titles, labels, exported Markdown, and connector metadata must
+not be allowed to override evidence records, confidence, uncertainty, redaction,
+network settings, credential handling, plugin permissions, or generated-output
+authority.
 
 ## Optional AI And Adapter Provenance
 

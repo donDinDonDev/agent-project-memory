@@ -182,7 +182,9 @@ The adapter layer should:
 - label adapter-backed observations as document-backed, spec-backed, metadata-only, or
   warning/status material before they reach generated memory;
 - keep adapter provenance available for review without exposing credentials or local
-  absolute paths.
+  absolute paths;
+- reject or mark uncertain stale, partial, malformed, or ambiguous external records
+  instead of turning them into current-state claims.
 
 The adapter layer must not:
 
@@ -191,7 +193,9 @@ The adapter layer must not:
   config analyzers as if they were repository source;
 - make connector data, connector summaries, LLM output, graph metadata, profile
   Markdown, cache metadata, or query output authoritative evidence;
-- make network/auth/provider dependencies part of the core analyzer or query layer.
+- make network/auth/provider dependencies part of the core analyzer or query layer;
+- load plugin code, accept plugin-provided authority, or expose public API/server
+  behavior without a separate permission, provenance, and security design.
 
 ### Optional LLM Layer
 
@@ -220,6 +224,19 @@ credentials, telemetry, or source upload may be configured or implied by default
 future remote provider mode must be explicitly enabled, minimize prompt inputs, avoid
 serializing credentials or local absolute paths, document privacy implications, and pass
 a separate implementation and security review before release.
+
+### Planned Plugin And API Surfaces
+
+Plugin loading, public API service modes, MCP/server surfaces, and extension runtimes
+are outside the current product. Future platform work must define a default-deny
+permission model before implementation, including filesystem access, network access,
+credential access, generated-output writes, adapter/provenance authority, and whether an
+extension can emit source documents.
+
+Plugin manifests, API requests, API responses, connector records, and repository text
+must be treated as untrusted input. They must not bypass adapter validation, path
+containment, redaction, evidence requirements, provenance labels, or no-source-upload
+defaults.
 
 ## Pipeline
 

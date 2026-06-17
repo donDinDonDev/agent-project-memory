@@ -60,6 +60,24 @@ That boundary is planned only; it is not part of the current core product. Adapt
 inputs, exported connector records, remote API responses, connector configuration, and
 adapter-generated provenance must be treated as untrusted input.
 
+Future local import adapters would add a local-export trust boundary. Export files and
+bundles can be stale, malformed, oversized, intentionally confusing, or authored by a
+different system than the scanned repository. They must be validated before
+normalization, tied to explicit import provenance, and kept separate from repository
+source facts.
+
+Future API connector modes would add remote service, network, authentication, and
+credential trust boundaries. Remote API responses, pagination state, rate-limit state,
+timestamps, deleted or edited records, partial exports, and service-specific IDs must be
+treated as untrusted connector input, not as proof that a service is current, reachable,
+complete, or authoritative.
+
+Future plugin or public API surfaces would add an extension trust boundary. Plugin code,
+plugin manifests, adapter packages, external schemas, API requests, API responses, and
+agent integration inputs must remain outside the current core product until their load
+path, permissions, provenance, filesystem access, network access, credential access, and
+output authority are designed and reviewed.
+
 ## Security Properties
 
 The intended security properties are:
@@ -98,6 +116,38 @@ Planned v2 adapter security defaults:
 - the core analyzer and query layer must not gain network, auth, provider, or plugin
   dependencies from adapter support.
 
+Planned v2 external-data risk controls:
+
+- imported records must carry source identity, import mode, content hash, import or
+  fetch timestamp when known, and trust-boundary labels;
+- stale, partial, deleted, edited, or source-system-disconnected records must remain
+  provenance-backed observations rather than current-state claims;
+- malicious exported records and connector content must not inject instructions into
+  generated Markdown, query output, optional AI prompts, plugin manifests, or future API
+  responses;
+- external text must not override source-visible repository facts, evidence records,
+  confidence labels, uncertainty labels, or provenance labels;
+- connector summaries, AI summaries, query output, graph metadata, cache metadata,
+  profile Markdown, release notes, and chat output remain non-evidence;
+- adapter-backed observations must be rejected or marked uncertain when provenance is
+  missing, ambiguous, contradictory, or outside the configured import boundary.
+
+Planned v2 credential and network defaults:
+
+- network access is disabled by default for adapters, connectors, optional AI, plugin
+  surfaces, public API surfaces, telemetry, update checks, and remote configuration;
+- future networked modes must require explicit user configuration and must identify
+  which source, provider, or service is contacted;
+- credentials must not be accepted from committed repository files, generated artifacts,
+  local export bundles, plugin manifests, prompts, or connector records by default;
+- credential lookup, storage, rotation, validation, redaction, and error reporting must
+  be designed before any future authenticated connector, provider, plugin, or API mode
+  is implemented;
+- credentials, tokens, cookies, authorization headers, raw request/response logs, local
+  absolute paths, and raw connector configuration values must not be serialized into
+  provenance, evidence, generated artifacts, query output, AI prompts, or public logs by
+  default.
+
 Planned optional AI security defaults:
 
 - AI presentation is disabled unless explicitly enabled;
@@ -124,6 +174,39 @@ excerpts, and connector content must be treated as untrusted content, not execut
 instructions. A future AI layer must not obey repository-provided instructions to
 change files, reveal credentials, fetch network resources, alter evidence, override
 provenance, or mark AI output as authoritative.
+
+Planned plugin and API surface gates:
+
+- no plugin code loading, plugin marketplace, extension runtime, server mode, or public
+  API service is part of the current core product;
+- a future plugin or API design must define a default-deny permission model before code
+  exists, including filesystem scope, network scope, credential scope, generated-output
+  write scope, and whether plugins may emit adapter-backed records;
+- plugins must not bypass adapter validation, evidence requirements, provenance labels,
+  redaction boundaries, path containment, or no-source-upload defaults;
+- plugin manifests, API requests, API responses, connector records, prompts, and local
+  repository text must be treated as untrusted input and must not become executable
+  instructions;
+- any future plugin or API output must be labeled by source and authority, and must not
+  create Java/Spring facts, evidence records, connector truth, security findings,
+  vulnerability proof, runtime claims, or repository-file changes unless a later public
+  contract explicitly designs that behavior.
+
+Future v2 security review expectations:
+
+- design-only documentation changes can be reviewed with a lightweight documentation
+  security assessment when they do not change implementation behavior;
+- implementation diffs that touch adapters, parsers, import validation, filesystem/path
+  handling, output rendering, evidence serialization, redaction, credentials, network
+  access, plugin loading, provider calls, API/server surfaces, dependencies, scripts, or
+  command execution need a focused implementation security review before release;
+- major or high-risk release gates that introduce networked connectors, authentication,
+  credential handling, plugin execution, provider-backed AI, public API/server surfaces,
+  or broad ingestion changes need a broader release-level security review before tag or
+  publication;
+- review is blocked when credential handling is undefined, network defaults are not
+  explicitly off, plugin authority is unclear, or external data can bypass evidence and
+  provenance requirements.
 
 ## Redaction Boundary
 

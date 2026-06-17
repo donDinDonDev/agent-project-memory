@@ -1246,6 +1246,8 @@ Expected outcome:
   boundaries, not shipped behavior.
 - Optional AI presentation is defined as a non-authoritative boundary over deterministic
   memory, not as a source of facts or evidence.
+- The planned v2 threat model covers external data, credentials, network/auth defaults,
+  plugin/API surfaces, and provenance boundaries before implementation starts.
 - Network access, source upload, connector credentials, plugin loading, and AI providers
   remain absent from the current core and disabled by default in future designs.
 - Draft output and evidence migration questions are recorded without changing current
@@ -1260,6 +1262,9 @@ Design scope:
 - Future evidence/provenance requirements for adapter-backed records.
 - Optional AI presentation inputs, forbidden outputs, non-evidence labeling, provider
   privacy defaults, and adapter-provenance interaction.
+- Planned threat-model controls for stale or malicious exported records, prompt/content
+  injection, credential handling, network enablement, plugin/API permissions, and future
+  implementation or release-level security review gates.
 - v1-to-v2 compatibility questions for generated-output consumers.
 
 Non-goals:
@@ -1286,7 +1291,10 @@ Expected direction:
 
 The core analyzer must continue to run without adapters, network access, credentials,
 plugin loading, source upload, or AI. Adapter-backed records must remain backed by
-provenance and distinct from code-backed facts.
+provenance and distinct from code-backed facts. Local export files, remote API
+responses, plugin manifests, API requests, API responses, and AI prompt inputs must be
+treated as untrusted content that cannot bypass provenance, evidence, redaction,
+credential, or network defaults.
 Any optional AI layer must be explicitly enabled, must treat deterministic memory and
 adapter provenance as inputs rather than authority it can rewrite, and must label its
 output as non-evidence. It must not create `project-map.json` facts,

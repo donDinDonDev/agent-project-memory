@@ -19,6 +19,9 @@ architecture documents.
   deterministic-memory inputs, forbidden authoritative outputs, non-evidence labeling,
   provider/privacy/network/source-upload defaults, and adapter-provenance interaction
   without adding AI provider implementation.
+- Extended the planned v2 threat model for adapters, connectors, optional AI, plugin/API
+  surfaces, external data, credential handling, network defaults, provenance boundaries,
+  and future security review gates without adding implementation behavior.
 
 ## [1.8.0] - 2026-06-17
 
