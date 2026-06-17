@@ -80,7 +80,7 @@ The intended security properties are:
 
 ## Redaction Boundary
 
-The v1.7.0 release candidate defines deterministic redaction as an output safety
+The v1.7.0 release defines deterministic redaction as an output safety
 boundary, not as a repository-wide secret scan.
 
 The marker is:

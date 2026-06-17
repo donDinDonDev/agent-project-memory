@@ -2,14 +2,13 @@
 
 ## Current Status
 
-The latest published release is `v1.6.0`, with executable jar and `SHA256SUMS` assets.
-The current local release candidate is `v1.7.0`. Normal generated `project-map.json`
-files use `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight
-relation graph expansion is additive, the v1.6.0 query expansion adds deterministic
-read-only lookup commands over existing generated artifacts without changing generated
-artifact schemas or evidence semantics, and the v1.7.0 release candidate adds
-deterministic redaction hardening for selected generated and rendered strings without
-adding evidence fields or schema markers.
+The latest published release is `v1.7.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
+marker. The v1.5.0 lightweight relation graph expansion is additive, the v1.6.0 query
+expansion adds deterministic read-only lookup commands over existing generated artifacts
+without changing generated artifact schemas or evidence semantics, and the v1.7.0
+release adds deterministic redaction hardening for selected generated and rendered
+strings without adding evidence fields or schema markers.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1147,8 +1146,8 @@ Release readiness notes:
   CLI scan/query smoke over representative and fake-sensitive fixtures, checksum
   dry-run, whitespace checks, public marker audit, and risk-based release-prep review.
 - No release-blocking finding remains open for `v1.7.0`.
-- `v1.7.0` is not yet tagged or published; `v1.6.0` remains the latest published
-  release until manual release publication occurs.
+- The `v1.7.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 Non-goals:
 

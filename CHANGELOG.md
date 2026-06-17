@@ -32,6 +32,8 @@ architecture documents.
 - Aligned the Maven project version, README local build examples, roadmap status,
   output contract status wording, public threat model wording, and release notes for
   the `v1.7.0` release materials.
+- Updated post-release documentation status to mark `v1.7.0` as published with release
+  jar and checksum assets.
 - Updated post-release documentation status to mark `v1.6.0` as published with release
   jar and checksum assets.
 

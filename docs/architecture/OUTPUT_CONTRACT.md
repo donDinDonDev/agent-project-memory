@@ -5026,8 +5026,8 @@ Stop conditions for implementation:
 
 ### v1.7 Redaction And Security Hardening Contract
 
-This section records the v1.7 output-safety boundary. The v1.7.0 release-candidate
-artifacts apply the initial redaction policy described here. Existing released
+This section records the v1.7 output-safety boundary. The v1.7.0 release artifacts
+apply the initial redaction policy described here. Existing released
 artifacts before this implementation are not guaranteed to have been generated with
 this redaction policy.
 
