@@ -2,16 +2,15 @@
 
 ## Current Status
 
-The latest published release is `v1.7.0`, with executable jar and `SHA256SUMS` assets.
-The current local release candidate is `v1.8.0`. Normal generated `project-map.json`
-files use `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight
-relation graph expansion is additive, the v1.6.0 query expansion adds deterministic
-read-only lookup commands over existing generated artifacts without changing generated
-artifact schemas or evidence semantics, the v1.7.0 release adds deterministic
-redaction hardening for selected generated and rendered strings without adding evidence
-fields or schema markers, and the v1.8.0 release candidate adds public examples and
-contributor onboarding polish without changing analyzer behavior, generated artifact
-schemas, or evidence semantics.
+The latest published release is `v1.8.0`, with executable jar and `SHA256SUMS` assets.
+Normal generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
+marker. The v1.5.0 lightweight relation graph expansion is additive, the v1.6.0 query
+expansion adds deterministic read-only lookup commands over existing generated artifacts
+without changing generated artifact schemas or evidence semantics, the v1.7.0 release
+adds deterministic redaction hardening for selected generated and rendered strings
+without adding evidence fields or schema markers, and the v1.8.0 release adds public
+examples and contributor onboarding polish without changing analyzer behavior, generated
+artifact schemas, or evidence semantics.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1169,7 +1168,7 @@ Non-goals:
 - No real secrets in fixtures, tests, docs, examples, release materials, or public
   vulnerability reports.
 
-### v1.8.0: Public Adoption Polish (Release Candidate)
+### v1.8.0: Public Adoption Polish (Published)
 
 Product outcome: reduce first-run and first-contribution friction for public users
 without changing the deterministic analyzer, generated output schemas, evidence
@@ -1213,9 +1212,9 @@ Release readiness notes:
   CLI scan/query/help/version smoke, example snapshot comparison, whitespace checks, and
   public marker audit.
 - No analyzer, CLI, generated-output, evidence, release-process, CI, dependency,
-  package-distribution, publication, or security-policy change is included in v1.8.0.
-- `v1.8.0` is not yet tagged or published; `v1.7.0` remains the latest published
-  release until manual release publication occurs.
+  package-distribution, or security-policy change is included in v1.8.0.
+- The `v1.8.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 Non-goals:
 
@@ -1223,8 +1222,7 @@ Non-goals:
   change, evidence field/type/semantic change, stable JSON query output, new CLI command,
   new CLI flag, or generated-source content scanning.
 - No package-manager publication, installed-command distribution, signing, native image,
-  container image, release automation, GitHub Release upload, or additional
-  distribution channel.
+  container image, release automation, or additional distribution channel.
 - No connectors, adapter APIs, plugin platform, MCP/server surface, source upload,
   external service calls, telemetry, SaaS, web UI, repository chat, generic RAG,
   embeddings, LLM calls in the core analyzer or query layer, or automatic code

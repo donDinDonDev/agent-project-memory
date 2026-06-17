@@ -89,8 +89,7 @@ v1.8.0 does not add:
 - Analyzer features, output field changes, evidence field changes, evidence semantic
   changes, stable JSON query output, new CLI commands, or new CLI flags.
 - Release automation, package-manager publication, installed-command distribution,
-  signing, native images, container images, GitHub Release upload, or additional
-  distribution channels.
+  signing, native images, container images, or additional distribution channels.
 - Connectors, adapter APIs, plugin platforms, MCP/server surfaces, source upload,
   external service calls, telemetry, SaaS, web UI, repository chat, generic RAG,
   embeddings, LLM calls in the core analyzer or query layer, or automatic code
@@ -102,7 +101,7 @@ v1.8.0 does not add:
   transcripts, or maintainer-only workflow details in public examples, templates, docs,
   release notes, or release metadata.
 
-## Expected Release Assets
+## Release Assets
 
 - `agent-project-memory-1.8.0.jar`
 - `SHA256SUMS`

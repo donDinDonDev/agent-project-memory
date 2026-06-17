@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.7.0`. Its release artifact is
-`agent-project-memory-1.7.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v1.8.0`. Its release artifact is
+`agent-project-memory-1.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.7.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-1.8.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -497,16 +497,16 @@ references.
 
 ## Project Status
 
-The latest published release is `v1.7.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current local release candidate is `v1.8.0`; local builds produce
-`target/agent-project-memory-1.8.0.jar`. Normal generated `project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
-expansion is additive, the v1.6 read-only query expansion adds deterministic
-artifact-backed lookup commands without changing generated project-memory schemas or
-evidence semantics, the v1.7 release adds deterministic redaction hardening for selected
-generated and rendered strings without adding evidence fields or schema markers, and the
-v1.8 release candidate adds public examples and contributor onboarding polish without
-changing analyzer behavior, generated artifact schemas, or evidence semantics.
+The latest published release is `v1.8.0`. It ships an executable jar and `SHA256SUMS`
+asset. Local builds produce `target/agent-project-memory-1.8.0.jar`. Normal generated
+`project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
+lightweight relation graph expansion is additive, the v1.6 read-only query expansion
+adds deterministic artifact-backed lookup commands without changing generated
+project-memory schemas or evidence semantics, the v1.7 release adds deterministic
+redaction hardening for selected generated and rendered strings without adding evidence
+fields or schema markers, and the v1.8 release adds public examples and contributor
+onboarding polish without changing analyzer behavior, generated artifact schemas, or
+evidence semantics.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
