@@ -46,6 +46,8 @@ Evidence types defined by the model:
   chunk observations, plus bounded document-side mention observations used only by
   uncertain reconciliation signals.
 
+No adapter-specific evidence type is emitted in the current v1.x product line.
+
 ## Evidence Fields
 
 Evidence entries use these fields:
@@ -74,6 +76,43 @@ must not start with `./`, must use slash separators in output, and must not esca
 scanned repository root. The root build file path is `pom.xml`; the scan root module path
 may be represented as `"."` in `project-map.json`, but evidence paths do not use `"."` as
 a file path.
+
+## Planned Adapter And Connector Provenance
+
+Future v2 adapters may introduce adapter-backed evidence or provenance, but they must not
+reuse code evidence categories for external records. Connector issues, pages, comments,
+tickets, exported records, and API responses are not Java classes, annotations, build
+files, tests, or repository config files.
+
+The initial v2 design should prefer a source-document envelope with provenance over
+embedding connector metadata in free-form excerpts. Provenance should identify:
+
+- adapter name and version;
+- source type and source-system record ID where applicable;
+- import mode, such as local export import or explicitly enabled API import;
+- source URL or namespace when applicable;
+- content hash;
+- export, fetch, or import timestamp when known;
+- whether the record came from a local repository file, an out-of-repository local
+  export, or a remote API response;
+- trust-boundary labels needed to keep external records distinct from repository source.
+
+Future v2 implementation must decide whether adapter-backed records reuse the existing
+`document` evidence type for normalized local documents, introduce a new evidence type
+for external records, or keep adapter provenance outside `evidence-index.jsonl` in a
+separate metadata section. Any of those choices is a public evidence semantic decision
+and requires synchronized updates to this document, `OUTPUT_CONTRACT.md`, tests or
+goldens where applicable, the changelog, and release notes.
+
+Adapter-backed evidence and provenance must not:
+
+- create code-backed facts for Java/Spring endpoints, components, entities,
+  repositories, tests, build metadata, or config semantics;
+- imply that an external service is current, reachable, complete, or authoritative;
+- store credentials, tokens, cookies, authorization headers, raw request/response logs,
+  local absolute paths, or raw connector configuration values;
+- treat connector summaries, query output, generated Markdown, cache metadata, graph
+  derivation metadata, profile output, chat output, or LLM output as evidence.
 
 ## Fact Categories
 

@@ -55,6 +55,11 @@ references, and path safety before rendering results.
 The current core product has no network trust boundary because it does not fetch remote
 resources, call external APIs, upload source, load remote config, or invoke LLMs.
 
+Future v2 adapters and connectors would introduce a separate adapter trust boundary.
+That boundary is planned only; it is not part of the current core product. Adapter
+inputs, exported connector records, remote API responses, connector configuration, and
+adapter-generated provenance must be treated as untrusted input.
+
 ## Security Properties
 
 The intended security properties are:
@@ -77,6 +82,21 @@ The intended security properties are:
 - evidence-backed facts remain distinct from inferred relations, uncertain signals,
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
+
+Planned v2 adapter security defaults:
+
+- adapters are disabled unless explicitly configured;
+- local export import is the preferred first adapter mode;
+- network access remains off by default and must be explicitly enabled for any future
+  API connector mode;
+- source upload is not a default behavior;
+- credential storage, credential echoing, committed connector credentials, and raw
+  connector request/response logs are out of scope until a separate credential boundary
+  is designed;
+- adapter output must preserve source provenance and must not turn external records into
+  code-backed facts or authoritative evidence;
+- the core analyzer and query layer must not gain network, auth, provider, or plugin
+  dependencies from adapter support.
 
 ## Redaction Boundary
 

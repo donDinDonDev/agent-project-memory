@@ -1235,6 +1235,36 @@ Possible later tracks:
 
 - v2 architecture preparation.
 
+## v1.9.0: v2 Architecture Preparation (Design)
+
+Expected outcome:
+
+- Public architecture docs describe the planned v2 adapter boundary before v2
+  implementation starts.
+- Adapter responsibilities and forbidden responsibilities are explicit.
+- Source/document normalization and connector provenance are defined as design
+  boundaries, not shipped behavior.
+- Network access, source upload, connector credentials, plugin loading, and AI providers
+  remain absent from the current core and disabled by default in future designs.
+- Draft output and evidence migration questions are recorded without changing current
+  `schema_version: "1.0"` behavior.
+
+Design scope:
+
+- Optional adapter layer around the deterministic core.
+- Normalized source document model and connector provenance model.
+- Local export import as the first safe adapter implementation candidate for a later
+  v2 release.
+- Future evidence/provenance requirements for adapter-backed records.
+- v1-to-v2 compatibility questions for generated-output consumers.
+
+Non-goals:
+
+- No production adapter API, connector implementation, network/auth behavior, plugin
+  loading, AI provider code, new CLI command or flag, generated artifact schema change,
+  evidence field/type change, release prep, package publication, SaaS, web UI,
+  repository chat, generic RAG, or automatic code modification.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:
@@ -1242,14 +1272,16 @@ Expected direction:
 - Stable input adapter API.
 - Normalized source document model.
 - Connector provenance model.
-- Local import format.
+- Local import format before network-backed connector modes.
 - GitHub/GitLab/Jira/YouTrack/Confluence adapters when explicitly enabled.
 - Optional AI presentation layer that reads deterministic memory and never creates
   authoritative evidence.
 - Read-only agent integrations such as MCP or agent prompt bundles.
 - Workspace and change-impact workflows.
 
-The core analyzer must continue to run without adapters, network access, or AI.
+The core analyzer must continue to run without adapters, network access, credentials,
+plugin loading, source upload, or AI. Adapter-backed records must remain backed by
+provenance and distinct from code-backed facts.
 
 ## v3.0.0: Agent-Native Project Memory Platform
 

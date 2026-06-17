@@ -9,29 +9,111 @@ bounded chunk references, resolving document evidence, conservative code-doc
 reconciliation signals, and compact local documentation guide rendering from structured
 document facts and evidence only.
 
-External connectors are future input adapters. They should not be part of the MVP core analyzer, and they should not be required to generate `.project-memory/` from a Java/Spring repository.
+External connectors are future input adapters. They should not be part of the MVP core
+analyzer, and they should not be required to generate `.project-memory/` from a
+Java/Spring repository.
+
+## Planned v2 Adapter Boundary
+
+The v2 adapter platform is planned as an optional ingestion layer around the
+deterministic core, not as a replacement for the local Java/Spring analyzer. The core
+scanner, analyzers, graph builder, evidence index builder, query layer, and generators
+must continue to run without adapters, connector configuration, network access,
+credential handling, plugin loading, AI providers, or source upload.
+
+Adapters should have these responsibilities:
+
+- read one explicitly configured input source;
+- validate that the requested import mode is allowed;
+- normalize accepted records into source documents plus provenance metadata;
+- classify records as document-backed, metadata-only, spec-backed, or warning/status
+  material before they reach generated memory;
+- preserve source identity, timestamps, content hashes, source URLs or source IDs where
+  applicable, and the trust boundary that produced the record;
+- avoid exposing credentials, tokens, local absolute paths, raw command logs, or raw
+  connector configuration values in generated output.
+
+Adapters must not:
+
+- create code-backed Java/Spring facts;
+- bypass evidence or provenance requirements;
+- mutate repository source files;
+- become required for normal `scan <path>` behavior;
+- add network, auth, AI, or plugin dependencies to the core analyzer;
+- make external text, connector summaries, query output, or AI output authoritative.
+
+The smallest planned lifecycle is:
+
+1. Adapter configuration is selected explicitly and defaults to no adapters.
+2. The adapter validates the source boundary and import mode before reading input.
+3. Local import adapters read local export files only; future API adapters must require
+   explicit network enablement.
+4. The adapter emits normalized documents and separate provenance metadata.
+5. The core ingests adapter output only through documented document/spec/metadata
+   boundaries and keeps adapter-backed observations distinct from code-backed facts.
 
 ## SourceDocument
 
 Future external ingestors and any broader local document modes should normalize inputs
-into a `SourceDocument` abstraction.
+into a `SourceDocument` abstraction. For v2 design, `SourceDocument` should be treated
+as a planned boundary object rather than a stable public API.
 
-Proposed fields:
+Fields stable enough for the v2 design are:
 
 - `id`: stable document identifier.
-- `sourceType`: source category, such as `local_markdown`, `youtrack_issue`, `jira_issue`, `confluence_page`, `github_issue`, or `gitlab_issue`.
+- `sourceType`: source category, such as `local_markdown`, `local_export`,
+  `youtrack_issue`, `jira_issue`, `confluence_page`, `github_issue`, or
+  `gitlab_issue`.
 - `title`: document title.
-- `body`: normalized text body.
-- `localPath`: repository-relative or filesystem path when applicable.
+- `contentHash`: hash of the normalized content.
+- `contentStatus`: whether normalized content is available only in memory, bounded,
+  not serialized, or unavailable.
+- `provenance`: connector/source metadata described below.
+
+Fields that remain draft until v2 output and evidence contracts are updated are:
+
+- `body` or `normalizedBody`: normalized text body used by an analyzer. Full bodies
+  should not be serialized by default.
+- `localPath`: repository-relative path when the input is inside the scanned repository,
+  or a redacted/non-output filesystem reference when the source is outside it.
 - `url`: source URL when applicable.
+- `sourceId`: external issue/page/record identifier when applicable.
 - `createdAt`: creation timestamp when known.
 - `updatedAt`: update timestamp when known.
-- `contentHash`: hash of the normalized content.
+- `exportedAt` or `fetchedAt`: timestamp for the import source snapshot.
 - `tags`: source labels, project keys, or other classification tags.
+- `adapterName` and `adapterVersion`: identity of the adapter that normalized the
+  record.
+
+`SourceDocument` identity should be stable within one import snapshot, but future v2
+contracts must still decide whether generated output uses adapter-assigned IDs,
+content-addressed IDs, source-system IDs, or a combination. External IDs and URLs are
+provenance, not proof that the external service is currently reachable or authoritative.
+
+## Connector Provenance
+
+Connector provenance should be emitted as a separate source envelope rather than hidden
+inside free-form document text. At minimum, future v2 provenance should identify:
+
+- source kind and adapter identity;
+- import mode, such as local export import or explicitly enabled API import;
+- source-system record ID, URL, project key, repository, or namespace when applicable;
+- content hash and import snapshot timestamp;
+- whether content came from a local file, local export bundle, or remote API response;
+- whether network access was disabled, explicitly enabled, or not applicable;
+- trust-boundary notes needed to keep external records separate from repository source.
+
+Credential names, credential values, authorization headers, tokens, cookies, local
+machine paths, and raw connector request/response logs must not be serialized as
+provenance.
 
 ## Connector Role
 
-Future connectors for YouTrack, Jira, Confluence, GitHub, and GitLab should produce `SourceDocument` records.
+Future connectors for YouTrack, Jira, Confluence, GitHub, and GitLab should produce
+`SourceDocument` records plus provenance metadata. The first safe v2 implementation
+candidate should be a local import adapter over user-provided export files, because it
+can exercise normalization and provenance without adding network or credential behavior
+to the product.
 
 They should not:
 
@@ -39,7 +121,9 @@ They should not:
 - bypass evidence requirements,
 - make LLM output authoritative,
 - become required for local repository scanning,
-- add network dependencies to the core Java/Spring analyzer.
+- add network dependencies to the core Java/Spring analyzer,
+- upload source code or generated project memory by default,
+- treat connector metadata as code evidence.
 
 ## v0.8 Local Markdown Ingestion Boundary
 

@@ -165,7 +165,33 @@ The current local Markdown ingestor handles a conservative default scope and kee
 document facts separate from code-backed facts. Future external ingestors may import
 materials from systems such as YouTrack, Jira, Confluence, GitHub, and GitLab.
 
-Connectors are input adapters. They should normalize external records into source documents and should not become part of the core Java/Spring analyzer.
+Connectors are input adapters. They should normalize external records into source
+documents and should not become part of the core Java/Spring analyzer.
+
+### Planned Adapter Layer
+
+The planned v2 adapter layer is an optional input boundary before document/spec/metadata
+analysis. It is not implemented in the current v1.x product line.
+
+The adapter layer should:
+
+- keep the Java/Spring core runnable with no adapter configuration;
+- default to no network access and no source upload;
+- start from explicit local import modes before any future API connector mode;
+- produce normalized source documents plus structured provenance;
+- label adapter-backed observations as document-backed, spec-backed, metadata-only, or
+  warning/status material before they reach generated memory;
+- keep adapter provenance available for review without exposing credentials or local
+  absolute paths.
+
+The adapter layer must not:
+
+- create Java/Spring source-visible facts;
+- feed external records into endpoint, component, entity, repository, test, build, or
+  config analyzers as if they were repository source;
+- make connector data, connector summaries, LLM output, graph metadata, profile
+  Markdown, cache metadata, or query output authoritative evidence;
+- make network/auth/provider dependencies part of the core analyzer or query layer.
 
 ### Optional LLM Layer
 
@@ -189,6 +215,22 @@ local repository
   -> .project-memory/
 ```
 
+A future v2 adapter-enabled pipeline should remain a wrapper around that core pipeline:
+
+```text
+local repository
+  -> deterministic core pipeline
+optional configured adapter inputs
+  -> adapter validation and normalization
+  -> source documents plus provenance
+  -> documented document/spec/metadata boundaries
+  -> .project-memory/
+```
+
+Adapter-backed data must join generated memory only through documented output and
+evidence contracts. It must remain distinguishable from code-backed Java/Spring facts
+and from deterministic local Markdown document observations.
+
 ## Architectural Constraints
 
 - The core analyzer runs locally.
@@ -197,3 +239,5 @@ local repository
 - Facts must be traceable to evidence.
 - Output contracts must be explicit and documented.
 - Optional future integrations must be adapters around the core, not dependencies inside it.
+- Future adapter-backed observations must carry provenance and must not be promoted to
+  code-backed facts or authoritative evidence.

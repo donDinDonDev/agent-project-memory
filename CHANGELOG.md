@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2 adapter platform design boundary, including optional adapter
+  responsibilities, core/adapters separation, normalized source-document and connector
+  provenance requirements, network-off defaults, and draft output/evidence migration
+  questions.
+
 ## [1.8.0] - 2026-06-17
 
 ### Added

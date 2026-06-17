@@ -32,6 +32,47 @@ without `--agent-profile` does not create profile artifacts, and unsupported
 directories that only prepare `.project-memory/` do not create orphan profile
 artifacts.
 
+## Planned v2 Adapter Output Boundary
+
+The current v1.x implementation does not emit adapter packages, connector output,
+adapter provenance sections, adapter evidence records, connector credentials, network
+metadata, or AI provider metadata. Normal `project-map.json` files remain on
+`schema_version: "1.0"` unless a future release explicitly documents a schema marker
+change.
+
+Future v2 adapter-backed output must keep these boundaries:
+
+- adapter-backed records are optional and absent when no adapter is explicitly enabled;
+- the normal Java/Spring scan path must continue without adapters, network access,
+  credentials, AI, plugin loading, or source upload;
+- adapter output must carry structured provenance rather than relying on free-form text;
+- adapter-backed observations must stay distinct from code-backed facts, inferred
+  relations, uncertain signals, spec-backed declared operations, warning/status rows,
+  graph derivation metadata, cache metadata, profile Markdown, query output, and AI
+  output;
+- connector credentials, tokens, authorization headers, raw connector config values,
+  raw request/response logs, local absolute paths, and raw source/document bodies must
+  not be serialized as generated project-memory metadata.
+
+Draft v2 output design questions:
+
+- whether normalized source documents belong under an additive `project-map.json`
+  section, a separate `.project-memory/` artifact, or both;
+- whether adapter provenance belongs on each document, in a separate source registry, or
+  in evidence records;
+- whether local export imports can remain an additive `schema_version: "1.0"`
+  compatibility expansion when disabled by default, or whether any adapter-backed
+  output requires a v2 schema marker;
+- how regenerated v2 outputs should preserve joins between project-map facts,
+  graph nodes, evidence IDs, source-document IDs, and adapter provenance IDs;
+- how downstream consumers should detect and ignore adapter sections they do not
+  understand.
+
+Any future adapter output field addition, removal, rename, semantic change, new
+generated artifact, evidence type, or schema marker change requires synchronized updates
+to this contract, `EVIDENCE_MODEL.md`, focused tests or goldens where applicable, the
+changelog, and release notes.
+
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
 uniquely bound interface-declared Spring MVC mappings to the v0.1 endpoint semantics. It
