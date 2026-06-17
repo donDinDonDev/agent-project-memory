@@ -682,6 +682,48 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryExplainEvidenceRedactsLegacyJsonStyleQuotedCredentialExcerptWithoutMutatingArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String evidenceIndex = evidenceRecord(
+        "ev:legacy:json-secret",
+        "annotation",
+        "src/main/java/com/example/SecretController.java",
+        "com.example.SecretController",
+        "secret",
+        "@GetMapping",
+        7,
+        7,
+        "metadata {\"password\":\"FAKE_V170_QUERY_JSON_EXCERPT_SECRET\"}",
+        "high");
+    writeArtifacts(
+        artifactRoot,
+        "{\"schema_version\":\"1.0\",\"project\":{\"modules\":{\"items\":[]}}}\n",
+        evidenceIndex);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:legacy:json-secret");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("1. ev:legacy:json-secret")),
+        () -> assertTrue(result.stdout().contains(
+            "path: src/main/java/com/example/SecretController.java")),
+        () -> assertTrue(result.stdout().contains("symbol_name: @GetMapping")),
+        () -> assertTrue(result.stdout().contains(
+            "excerpt: metadata {\"password\":\"" + OutputRedactor.REDACTION_MARKER + "\"}")),
+        () -> assertFalse(result.stdout().contains("FAKE_V170_QUERY_JSON_EXCERPT_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(Files.readString(artifactRoot.resolve("evidence-index.jsonl"))
+            .contains("FAKE_V170_QUERY_JSON_EXCERPT_SECRET")));
+  }
+
+  @Test
   void queryListTestsRedactsLegacyDisplayNameWhilePreservingNavigationFields()
       throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");

@@ -1217,7 +1217,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
           <modelVersion>4.0.0</modelVersion>
           <groupId>com.example</groupId>
           <artifactId>password=FAKE_V170_MAVEN_SECRET</artifactId>
-          <version>1.0.0</version>
+          <version>{"password":"FAKE_V170_JSON_MAVEN_SECRET"}</version>
         </project>
         """);
     writeFile(projectPath.resolve("agent-project-memory.yml"), """
@@ -1255,7 +1255,12 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
         @RestController("clientSecret=FAKE_V170_JAVA_SECRET")
         class SecretController {
-          @GetMapping(value = "/redaction", headers = "Authorization: Bearer FAKE_V170_HEADER_SECRET")
+          @GetMapping(
+              value = "/redaction",
+              headers = {
+                  "Authorization: Bearer FAKE_V170_HEADER_SECRET",
+                  "{\\"password\\":\\"FAKE_V170_JSON_QUOTED_SECRET\\"}"
+              })
           String redaction() {
             return "ok";
           }
@@ -1309,9 +1314,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertTrue(result.generated()),
         () -> assertTrue(joinedOutput.contains(OutputRedactor.REDACTION_MARKER)),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_MAVEN_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JSON_MAVEN_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_OPENAPI_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JAVA_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_HEADER_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JSON_QUOTED_SECRET"),
         () -> assertEquals(
             "src/main/java/com/example/SecretController.java",
             restControllerEvidence.path("path").asText()),
@@ -1322,6 +1329,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
             .contains("clientSecret=" + OutputRedactor.REDACTION_MARKER)),
         () -> assertTrue(endpointEvidence.path("excerpt").asText()
             .contains("Authorization: Bearer " + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(endpointEvidence.path("excerpt").asText()
+            .contains("\\\"password\\\":\\\"" + OutputRedactor.REDACTION_MARKER + "\\\"")),
         () -> assertEquals(
             "endpoint:com.example.SecretController#redaction",
             endpoint.path("id").asText()),

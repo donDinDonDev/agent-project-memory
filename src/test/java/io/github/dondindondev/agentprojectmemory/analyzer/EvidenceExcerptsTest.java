@@ -20,4 +20,20 @@ final class EvidenceExcerptsTest {
         () -> assertTrue(redacted.length() <= EvidenceExcerpts.MAX_EXCERPT_LENGTH + 3),
         () -> assertTrue(redacted.startsWith("@GetMapping(headers = \"Authorization: Bearer ")));
   }
+
+  @Test
+  void boundedRedactsJsonStyleQuotedCredentialKeysBeforeApplyingExcerptLimit() {
+    String excerpt = "@GetMapping(headers = \"{\\\"password\\\":\\\""
+        + "FAKE_V170_JSON_EXCERPT_SECRET\\\"}\") "
+        + "A".repeat(1_000);
+
+    String redacted = EvidenceExcerpts.bounded(excerpt);
+
+    assertAll(
+        () -> assertTrue(redacted.contains(
+            "\\\"password\\\":\\\"[REDACTED_SECRET_LIKE_VALUE]\\\"")),
+        () -> assertFalse(redacted.contains("FAKE_V170_JSON_EXCERPT_SECRET")),
+        () -> assertTrue(redacted.length() <= EvidenceExcerpts.MAX_EXCERPT_LENGTH + 3),
+        () -> assertTrue(redacted.startsWith("@GetMapping(headers = \"{\\\"password\\\":")));
+  }
 }

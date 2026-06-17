@@ -24,6 +24,40 @@ final class OutputRedactorTest {
   }
 
   @Test
+  void redactsJsonStyleQuotedCredentialKeysWhilePreservingNonCredentialValues() {
+    String redacted = OutputRedactor.redact(
+        "{\"password\":\"FAKE_V170_JSON_PASSWORD\","
+            + "\"client_secret\" : \"FAKE_V170_JSON_CLIENT_SECRET\","
+            + "\"display_name\":\"visible\"}");
+
+    assertAll(
+        () -> assertTrue(redacted.contains(
+            "\"password\":\"[REDACTED_SECRET_LIKE_VALUE]\"")),
+        () -> assertTrue(redacted.contains(
+            "\"client_secret\" : \"[REDACTED_SECRET_LIKE_VALUE]\"")),
+        () -> assertTrue(redacted.contains("\"display_name\":\"visible\"")),
+        () -> assertFalse(redacted.contains("FAKE_V170_JSON_PASSWORD")),
+        () -> assertFalse(redacted.contains("FAKE_V170_JSON_CLIENT_SECRET")));
+  }
+
+  @Test
+  void redactsJsonStyleQuotedCredentialValuesWithEscapedQuotes() {
+    String redacted = OutputRedactor.redact(
+        "{\"password\":\"FAKE_V170_JSON_PREFIX\\\"FAKE_V170_JSON_SUFFIX\"} "
+            + "{\\\"password\\\":\\\"FAKE_V170_SOURCE_PREFIX\\\\\\\"FAKE_V170_SOURCE_SUFFIX\\\"}");
+
+    assertAll(
+        () -> assertTrue(redacted.contains(
+            "\"password\":\"[REDACTED_SECRET_LIKE_VALUE]\"")),
+        () -> assertTrue(redacted.contains(
+            "\\\"password\\\":\\\"[REDACTED_SECRET_LIKE_VALUE]\\\"")),
+        () -> assertFalse(redacted.contains("FAKE_V170_JSON_PREFIX")),
+        () -> assertFalse(redacted.contains("FAKE_V170_JSON_SUFFIX")),
+        () -> assertFalse(redacted.contains("FAKE_V170_SOURCE_PREFIX")),
+        () -> assertFalse(redacted.contains("FAKE_V170_SOURCE_SUFFIX")));
+  }
+
+  @Test
   void redactsXmlCredentialValuesAndPrivateKeyMaterial() {
     String redacted = OutputRedactor.redact(
         "<clientSecret>FAKE_V170_XML_SECRET</clientSecret>\n"
