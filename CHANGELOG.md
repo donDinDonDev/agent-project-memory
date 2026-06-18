@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+No changes yet.
+
+## [2.0.0] - 2026-06-18
+
+Release status: release candidate. The `v2.0.0` tag, GitHub Release, and release
+assets are not published until the manual release step occurs.
+
 ### Added
 
 - Finalized the planned initial v2.0 adapter design boundary in architecture docs,
@@ -42,6 +49,20 @@ architecture documents.
   resource config, OpenAPI/spec, Markdown/document, adapter import, and query artifact
   readers reject multi-link regular files before treating repository-relative content as
   source-owned input.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  security-policy wording, and v2.0 release notes for release-prep review.
+
+### Not Included
+
+- Networked GitHub, GitLab, Jira, YouTrack, Confluence, or other API connectors;
+  connector credentials or credential storage; source upload; telemetry; plugin
+  loading; MCP/server surfaces; AI provider behavior; embeddings; generic RAG;
+  repository chat; SaaS; web UI; adapter-aware query support; package-manager
+  publication; installed-command distribution; signing; native images; container
+  images; release automation; or automatic code modification.
 
 ## [1.9.0] - 2026-06-17
 

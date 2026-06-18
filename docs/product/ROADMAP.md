@@ -3,8 +3,11 @@
 ## Current Status
 
 The latest published release is `v1.9.0`, with executable jar and `SHA256SUMS` assets.
-Normal generated `project-map.json` files use `schema_version: "1.0"` as the stable-line
-marker. The v1.5.0 lightweight relation graph expansion is additive, the v1.6.0 query
+The current repository state is prepared as a `v2.0.0` release candidate, but no
+`v2.0.0` tag, GitHub Release, or release assets are published until the manual release
+step occurs. Normal no-adapter generated `project-map.json` files use
+`schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
+graph expansion is additive, the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated artifacts
 without changing generated artifact schemas or evidence semantics, the v1.7.0 release
 adds deterministic redaction hardening for selected generated and rendered strings
@@ -16,9 +19,9 @@ plugin/API security, and v1-to-v2 migration boundaries without implementing adap
 connectors, network/auth behavior, plugin loading, AI providers, new CLI commands or
 flags, generated artifact schema changes, evidence semantic changes, or analyzer
 behavior changes.
-Unreleased v2 development has started with an explicitly enabled local structured
-import reference adapter. No-adapter scans remain on the current base artifact set and
-`project-map.json` `schema_version: "1.0"`; adapter-enabled scans emit
+The v2.0 release candidate includes a disabled-by-default local structured import
+reference adapter. No-adapter scans remain on the current base artifact set and
+`project-map.json` `schema_version: "1.0"`; explicitly adapter-enabled scans emit
 `source-registry.json` and `project-map.json` `schema_version: "2.0"` adapter context
 for provenance-backed external/document context only. Current query support remains
 focused on no-adapter v1 artifact sets unless a later release explicitly documents
@@ -42,7 +45,7 @@ incremental cache metadata and whole-output-set reuse, a bounded lightweight rel
 graph artifact, read-only text query commands over existing generated artifacts,
 redacted scan metadata, safe root-local YAML config support, stable CLI help/version
 behavior, deterministic output redaction for obvious secret-looking values, and a
-documented release-jar verification path. Unreleased v2 development also includes a
+documented release-jar verification path. The v2.0 release candidate also includes a
 bounded local structured import adapter that is disabled by default, local-only, and
 provenance-backed. The current public adoption surface also includes a checked-in
 generated-output example snapshot and contributor/reporting templates that point readers
@@ -50,8 +53,9 @@ back to the output and evidence contracts.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
-original v0.1 baseline. Connector/import work remains post-v0.1 future work and is not
-started. The v1.6 expansion is the local query/read-only explorer, scoped as an
+original v0.1 baseline. Networked connector work remains future work after the initial
+local structured import boundary. The v1.6 expansion is the local query/read-only
+explorer, scoped as an
 additive v1.0-compatible CLI and output-contract expansion over existing generated
 artifacts rather than a `project-map.json` schema marker migration.
 
@@ -1288,6 +1292,44 @@ Non-goals:
   CLI command or flag, generated artifact schema change, evidence field/type change,
   release publication, package publication, SaaS, web UI, repository chat as the core
   product, generic RAG, or automatic code modification.
+
+## v2.0.0: Extensible Ingestion And Adapter Platform (Release Candidate)
+
+Expected outcome:
+
+- Introduce the first production adapter-domain boundary while keeping the
+  deterministic Java/Spring analyzer independent from adapters.
+- Preserve no-adapter scan compatibility with the current base artifact set and
+  `project-map.json` `schema_version: "1.0"`.
+- Add a disabled-by-default local structured import adapter for explicitly configured
+  repository-relative export files.
+- Emit `.project-memory/source-registry.json` and `project-map.json`
+  `schema_version: "2.0"` adapter context only when that local import adapter is
+  explicitly enabled and accepted.
+- Keep adapter-backed records provenance-backed external/document context, not
+  Java/Spring source facts and not evidence records.
+- Keep current query commands focused on no-adapter v1 artifact sets.
+
+Release-candidate scope:
+
+- Adapter contract foundation with deterministic source-document IDs and required
+  provenance validation.
+- Safe adapter config and path validation with adapters disabled by default and network
+  access disabled.
+- Local structured import parsing, bounded diagnostics, source registry output, and
+  adapter context output.
+- v1-to-v2 migration and downstream consumer compatibility documentation.
+- Release-level security review and targeted follow-up hardening completed before
+  release prep.
+
+Non-goals:
+
+- No networked GitHub, GitLab, Jira, YouTrack, Confluence, or other API connectors.
+- No connector credentials, credential lookup/storage/validation, source upload,
+  telemetry, plugin loading, MCP/server surfaces, AI provider behavior, embeddings,
+  generic RAG, repository chat, SaaS, web UI, adapter-aware query support, package
+  publication, installed-command distribution, signing, native images, container
+  images, release automation, or automatic code modification.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

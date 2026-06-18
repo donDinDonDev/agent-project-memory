@@ -81,7 +81,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-1.9.0.jar
+target/agent-project-memory-2.0.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -92,24 +92,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-1.9.0.jar --help
-java -jar target/agent-project-memory-1.9.0.jar help
-java -jar target/agent-project-memory-1.9.0.jar scan --help
-java -jar target/agent-project-memory-1.9.0.jar --version
-java -jar target/agent-project-memory-1.9.0.jar version
+java -jar target/agent-project-memory-2.0.0.jar --help
+java -jar target/agent-project-memory-2.0.0.jar help
+java -jar target/agent-project-memory-2.0.0.jar scan --help
+java -jar target/agent-project-memory-2.0.0.jar --version
+java -jar target/agent-project-memory-2.0.0.jar version
 ```
 
-Current v1.x builds also support opt-in agent profile artifact selection:
+Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -120,10 +120,10 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
-v1.4 and later release builds also support opt-in incremental scan mode:
+Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-1.9.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -135,20 +135,20 @@ output generation. Missing, stale, unsafe, corrupted, or mismatched cache state 
 closed to normal full analysis. Scans without `--incremental` ignore persistent cache
 state and do not read, write, delete, or trust cache files.
 
-v1.6 and later release builds also include read-only query commands over existing
+Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-1.9.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -377,7 +377,8 @@ Compatibility and migration notes:
   read existing `project-map.json`, `project-graph.json` when graph lookup is needed,
   and `evidence-index.jsonl` artifacts without scanning source, writing repository
   files, or treating query output as evidence.
-- The unreleased v2 local structured import work keeps no-adapter scans v1-compatible:
+- The v2.0 local structured import release candidate keeps no-adapter scans
+  v1-compatible:
   `project-map.json` remains on `schema_version: "1.0"` and
   `.project-memory/source-registry.json` is not emitted. When the local structured
   import adapter is explicitly enabled and an import file is accepted, the scan emits
@@ -449,6 +450,8 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
+- v2.0 release candidate summary:
+  [docs/product/V2_0_RELEASE_NOTES.md](docs/product/V2_0_RELEASE_NOTES.md).
 - v1.9 release summary:
   [docs/product/V1_9_RELEASE_NOTES.md](docs/product/V1_9_RELEASE_NOTES.md).
 - v1.8 release summary:
@@ -518,13 +521,13 @@ core project memory must come from deterministic analysis, explicit output contr
 and evidence references. Any future AI output must be labeled as non-evidence, must not
 create project facts or security findings, and must not require source upload, network
 access, provider credentials, repository chat, generic RAG, or automatic code
-modification by default. The current v1.x product line includes no AI provider
-integration.
+modification by default. The current product line includes no AI provider integration.
 
 ## Project Status
 
 The latest published release is `v1.9.0`. It ships an executable jar and `SHA256SUMS`
-asset. Local builds produce `target/agent-project-memory-1.9.0.jar`. Normal generated
+asset. The current repository state is prepared as a `v2.0.0` release candidate, and
+local builds produce `target/agent-project-memory-2.0.0.jar`. Normal no-adapter generated
 `project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
 lightweight relation graph expansion is additive, the v1.6 read-only query expansion
 adds deterministic artifact-backed lookup commands without changing generated
@@ -536,7 +539,7 @@ evidence semantics. The v1.9 release adds public v2 architecture preparation for
 planned adapters, connector provenance, optional AI presentation, plugin/API security,
 and v1-to-v2 migration boundaries without changing analyzer behavior, CLI commands or
 flags, generated artifact schemas, evidence semantics, or packaged runtime behavior.
-Unreleased v2 development includes a disabled-by-default local structured import
+The v2.0 release candidate includes a disabled-by-default local structured import
 reference adapter for explicitly configured repository-relative export files. Adapter
 enabled scans emit `source-registry.json` and `project-map.json`
 `schema_version: "2.0"` adapter context as provenance-backed external/document context

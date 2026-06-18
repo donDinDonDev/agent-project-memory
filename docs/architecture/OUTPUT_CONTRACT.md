@@ -263,7 +263,7 @@ changelog, and release notes.
 
 ## Planned v2 Optional AI Presentation Output Boundary
 
-The current v1.x implementation does not emit AI presentation artifacts, AI summaries,
+The current implementation does not emit AI presentation artifacts, AI summaries,
 AI provider metadata, prompts, provider configuration, provider credentials, network
 metadata, embeddings, vector indexes, chat transcripts, or AI-generated project facts.
 Normal `project-map.json` files remain on `schema_version: "1.0"` unless a future
@@ -344,8 +344,8 @@ v0.7 contract also emits direct Spring test slice and mock annotation signals an
 conservative tested-subject relation/status rows under the top-level `tests` inventory,
 plus conservative test-gap and change-risk planning hints under the top-level `quality`
 object.
-The current v1.x implementation emits `schema_version: "1.0"` with a top-level `scan`
-owner for redacted config, feature, path-policy, and diagnostic metadata. The v1.0
+The current no-adapter implementation emits `schema_version: "1.0"` with a top-level
+`scan` owner for redacted config, feature, path-policy, and diagnostic metadata. The v1.0
 marker preserves the current v0.9 output field shape and evidence semantics; v1.1 adds
 bounded Gradle and mixed Maven/Gradle fields as an additive compatibility expansion. The
 v1.1 expansion does not remove, rename, or reinterpret existing Maven fields and does

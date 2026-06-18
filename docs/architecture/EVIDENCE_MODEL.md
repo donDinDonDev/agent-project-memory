@@ -46,7 +46,7 @@ Evidence types defined by the model:
   chunk observations, plus bounded document-side mention observations used only by
   uncertain reconciliation signals.
 
-No adapter-specific evidence type is emitted in the current v1.x product line.
+No adapter-specific evidence type is emitted in the current implementation.
 
 ## Evidence Fields
 
@@ -137,8 +137,8 @@ Adapter-backed evidence and provenance must not:
 
 ### v2.0 Evidence And Provenance Compatibility
 
-No-adapter v2 development scans preserve the v1 evidence model: `project-map.json`
-stays on `schema_version: "1.0"`, generated facts continue to reference
+No-adapter v2 scans preserve the v1 evidence model: `project-map.json` stays on
+`schema_version: "1.0"`, generated facts continue to reference
 `evidence_ids`, and no `.project-memory/source-registry.json` artifact is emitted.
 
 Adapter-enabled scans add provenance metadata without extending
