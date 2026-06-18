@@ -790,10 +790,18 @@ public final class SpringMvcEndpointOutputGenerator {
         projectMapJson,
         evidenceIndexJsonl));
 
+    boolean staleSourceRegistryPresent = false;
+    if (!adapterIngestionResult.enabled()) {
+      staleSourceRegistryPresent =
+          validateStaleSourceRegistryCleanupTarget(canonicalRepositoryRoot, outputDirectory);
+    }
     writeGeneratedFiles(
         canonicalRepositoryRoot,
         outputDirectory,
         generatedOutputFiles);
+    if (staleSourceRegistryPresent) {
+      deleteStaleSourceRegistry(canonicalRepositoryRoot, outputDirectory);
+    }
 
     return new Result(
         true,
@@ -7798,6 +7806,30 @@ public final class SpringMvcEndpointOutputGenerator {
           file.fileName(),
           file.content());
     }
+  }
+
+  private boolean validateStaleSourceRegistryCleanupTarget(
+      Path canonicalRepositoryRoot,
+      Path outputDirectory) throws IOException {
+    Path target = outputDirectory.resolve(SOURCE_REGISTRY_FILE_NAME);
+    ensureGeneratedOutputParent(canonicalRepositoryRoot, outputDirectory, target);
+    if (!Files.exists(target, LinkOption.NOFOLLOW_LINKS)) {
+      return false;
+    }
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, target)) {
+      throw new IOException("Stale source-registry.json cleanup target is not a safe file.");
+    }
+    return true;
+  }
+
+  private void deleteStaleSourceRegistry(
+      Path canonicalRepositoryRoot,
+      Path outputDirectory) throws IOException {
+    Path target = outputDirectory.resolve(SOURCE_REGISTRY_FILE_NAME);
+    if (!validateStaleSourceRegistryCleanupTarget(canonicalRepositoryRoot, outputDirectory)) {
+      return;
+    }
+    Files.delete(target);
   }
 
   private void writeGeneratedFile(

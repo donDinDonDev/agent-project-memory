@@ -1673,6 +1673,73 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanNoAdapterRegenerationRemovesStaleSourceRegistryWithoutDeletingUnrelatedFiles()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/issues.json"), """
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-201",
+              "title": "Imported issue",
+              "body": "FAKE_ADAPTER_EXPORT_SECRET raw connector body",
+              "status": "current"
+            }
+          ]
+        }
+        """);
+    Path config = tempDir.resolve("agent-project-memory.yml");
+    Files.writeString(config, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    CliResult adapterResult = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    Path unrelatedFile = outputDirectory.resolve("keep.txt");
+    Files.writeString(unrelatedFile, "unrelated content");
+    Files.delete(config);
+
+    CliResult noAdapterResult = runCli("scan", tempDir.toString());
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String generatedOutput = String.join(
+        "\n",
+        projectMap,
+        Files.readString(outputDirectory.resolve("project-graph.json")),
+        Files.readString(outputDirectory.resolve("evidence-index.jsonl")),
+        Files.readString(outputDirectory.resolve("endpoints.md")),
+        Files.readString(outputDirectory.resolve("agent-guide.md")),
+        noAdapterResult.stdout(),
+        noAdapterResult.stderr());
+
+    assertAll(
+        () -> assertEquals(0, adapterResult.exitCode()),
+        () -> assertTrue(adapterResult.stdout().contains("Generated source-registry.json")),
+        () -> assertEquals(0, noAdapterResult.exitCode()),
+        () -> assertTrue(noAdapterResult.stdout().contains("Generated project-map.json")),
+        () -> assertFalse(noAdapterResult.stdout().contains("source-registry.json")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
+        () -> assertTrue(Files.exists(unrelatedFile)),
+        () -> assertEquals("unrelated content", Files.readString(unrelatedFile)),
+        () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
+        () -> assertFalse(projectMap.contains("\"adapter_context\"")),
+        () -> assertFalse(generatedOutput.contains("exports/issues.json")),
+        () -> assertFalse(generatedOutput.contains("FAKE_ADAPTER_EXPORT_SECRET")),
+        () -> assertFalse(generatedOutput.contains("raw connector body")),
+        () -> assertFalse(generatedOutput.contains(tempDir.toString())));
+  }
+
+  @Test
   void scanRejectsSensitiveLocalStructuredImportSourceIdentitiesWithoutOutputLeakage()
       throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """
