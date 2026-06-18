@@ -376,6 +376,27 @@ final class DocumentDiscoveryAnalyzerTest {
   }
 
   @Test
+  void skipsHardlinkedMarkdownFilesByDefault() throws Exception {
+    Path repositoryRoot = repository("hardlinks");
+    Path outsideMarkdown = tempDir.resolve("outside-hardlinked-doc.md");
+    writeFile(repositoryRoot.resolve("docs/visible.md"), "# Visible\n");
+    writeFile(outsideMarkdown, "# FAKE_HARDLINKED_MARKDOWN_SECRET\n");
+    Files.createDirectories(repositoryRoot.resolve("docs"));
+    createHardLink(repositoryRoot.resolve("docs/linked.md"), outsideMarkdown);
+
+    DocumentDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".", "pom.xml")));
+
+    assertAll(
+        () -> assertEquals(
+            List.of("docs/visible.md"),
+            analysis.documents().stream().map(DocumentFileFact::path).toList()),
+        () -> assertFalse(analysis.toString().contains("FAKE_HARDLINKED_MARKDOWN_SECRET")),
+        () -> assertFalse(analysis.toString().contains(tempDir.toString())));
+  }
+
+  @Test
   void normalizesRepositoryRelativePathsAndPercentEncodesDocumentIds() throws Exception {
     Path repositoryRoot = repository("normalized");
     writeFile(repositoryRoot.resolve("docs/api specs:public/guide.md"), "# Guide\n");
@@ -655,6 +676,14 @@ final class DocumentDiscoveryAnalyzerTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 

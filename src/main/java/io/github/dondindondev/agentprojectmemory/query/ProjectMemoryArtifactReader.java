@@ -143,7 +143,7 @@ public final class ProjectMemoryArtifactReader {
     if (Files.isSymbolicLink(artifact) || hasSymbolicLinkSegment(artifactRoot, artifact)) {
       throw new QueryArtifactException(fileName + " must not be a symbolic link.");
     }
-    if (!Files.isRegularFile(artifact, LinkOption.NOFOLLOW_LINKS)) {
+    if (!ScanPathContainment.isTrustedRegularFileNoFollow(artifact)) {
       throw new QueryArtifactException(fileName + " is not a regular file.");
     }
     return artifact;

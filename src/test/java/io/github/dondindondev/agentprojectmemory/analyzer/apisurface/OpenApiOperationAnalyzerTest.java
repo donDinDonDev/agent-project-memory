@@ -296,6 +296,42 @@ final class OpenApiOperationAnalyzerTest {
   }
 
   @Test
+  void hardlinkedPathEntryAfterDiscoveryDegradesToWarningWithoutReadingLinkedContent()
+      throws Exception {
+    Path repositoryRoot = repository("hardlink-after-discovery");
+    Path specPath = repositoryRoot.resolve("src/main/resources/openapi.yml");
+    writeFile(specPath, """
+        openapi: 3.0.0
+        paths:
+          /before:
+            get: {}
+        """);
+    List<OpenApiSpecFileFact> discoveredSpecs = discovery(
+        repositoryRoot,
+        List.of(supportedModule("module:.", "."))).specFiles();
+    Path linkedSpec = repositoryRoot.resolve("shared/internal-spec.yml");
+    writeFile(linkedSpec, """
+        openapi: 3.0.0
+        paths:
+          /after:
+            get:
+              operationId: FAKE_HARDLINKED_TARGET_OPERATION
+        """);
+    Files.delete(specPath);
+    createHardLink(specPath, linkedSpec);
+
+    OpenApiOperationAnalysis analysis = operationAnalyzer.analyze(repositoryRoot, discoveredSpecs);
+
+    assertAll(
+        () -> assertEquals(List.of(), analysis.operations()),
+        () -> assertEquals(1, analysis.warnings().size()),
+        () -> assertEquals("openapi_spec_unsupported", analysis.warnings().get(0).signal()),
+        () -> assertFalse(analysis.toString().contains("FAKE_HARDLINKED_TARGET_OPERATION")),
+        () -> assertFalse(analysis.toString().contains(tempDir.toString())),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
   void returnsNotDetectedWhenNoSpecFilesAreAvailable() throws Exception {
     OpenApiOperationAnalysis analysis = operationAnalyzer.analyze(tempDir, List.of());
 
@@ -356,6 +392,14 @@ final class OpenApiOperationAnalyzerTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 }

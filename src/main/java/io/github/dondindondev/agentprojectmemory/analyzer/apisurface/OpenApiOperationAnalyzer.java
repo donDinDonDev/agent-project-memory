@@ -9,8 +9,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -127,8 +125,7 @@ public final class OpenApiOperationAnalyzer {
       List<OpenApiSpecWarningFact> warnings) {
     Set<String> emittedWarningSignals = new LinkedHashSet<>();
     Path localSpecPath = repositoryRoot.resolve(specFile.specPath()).normalize();
-    if (!Files.isRegularFile(localSpecPath, LinkOption.NOFOLLOW_LINKS)
-        || !ScanPathContainment.isRegularFileUnderRoot(canonicalRepositoryRoot, localSpecPath)) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, localSpecPath)) {
       addWarning(
           specFile,
           WARNING_SIGNAL_UNSUPPORTED,

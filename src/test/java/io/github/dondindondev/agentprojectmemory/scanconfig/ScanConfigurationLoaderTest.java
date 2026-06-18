@@ -263,6 +263,46 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void rejectsHardlinkedRootConfigAndAdapterImportFileWithoutLeakingTargets() throws Exception {
+    Path repositoryRoot = repository("hardlinks");
+    Path outsideConfig = tempDir.resolve("outside-hardlinked-config.yml");
+    Files.writeString(outsideConfig, "version: 1\nsecret: FAKE_HARDLINKED_CONFIG_SECRET\n");
+    createHardLink(repositoryRoot.resolve("agent-project-memory.yml"), outsideConfig);
+
+    InvalidScanConfigException configException = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    Path adapterRepositoryRoot = repository("adapter-hardlink");
+    Files.createDirectories(adapterRepositoryRoot.resolve("exports"));
+    writeConfig(adapterRepositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+    Path outsideImport = tempDir.resolve("outside-hardlinked-import.json");
+    Files.writeString(outsideImport, "{\"format\":\"FAKE_HARDLINKED_IMPORT_SECRET\"}\n");
+    createHardLink(adapterRepositoryRoot.resolve("exports/issues.json"), outsideImport);
+
+    InvalidScanConfigException adapterException = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(
+            adapterRepositoryRoot,
+            ScanPathContainment.canonicalRoot(adapterRepositoryRoot),
+            null));
+
+    assertAll(
+        () -> assertTrue(configException.getMessage().contains("regular YAML file")),
+        () -> assertFalse(configException.getMessage().contains(outsideConfig.toString())),
+        () -> assertFalse(configException.getMessage().contains("FAKE_HARDLINKED_CONFIG_SECRET")),
+        () -> assertTrue(adapterException.getMessage().contains("trusted regular file")),
+        () -> assertFalse(adapterException.getMessage().contains(outsideImport.toString())),
+        () -> assertFalse(adapterException.getMessage().contains("FAKE_HARDLINKED_IMPORT_SECRET")));
+  }
+
+  @Test
   void rejectsReservedModeEnablementAndUnknownKeysWithoutEchoingValues() throws Exception {
     Path repositoryRoot = repository("reserved");
     writeConfig(repositoryRoot, """
@@ -337,5 +377,13 @@ final class ScanConfigurationLoaderTest {
 
   private void writeConfig(Path repositoryRoot, String content) throws Exception {
     Files.writeString(repositoryRoot.resolve("agent-project-memory.yml"), content);
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
+    }
   }
 }

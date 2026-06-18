@@ -36,6 +36,13 @@ architecture documents.
   `source-registry.json` handling, full artifact-set regeneration, downstream consumer
   behavior, current query limits, and evidence/provenance separation.
 
+### Security
+
+- Hardened trusted local input handling so scan config, Java/source, Maven/Gradle build,
+  resource config, OpenAPI/spec, Markdown/document, adapter import, and query artifact
+  readers reject multi-link regular files before treating repository-relative content as
+  source-owned input.
+
 ## [1.9.0] - 2026-06-17
 
 ### Added

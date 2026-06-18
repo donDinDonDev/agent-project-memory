@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.query;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -227,6 +228,26 @@ final class ProjectMemoryArtifactReaderTest {
         "project-map.json must not be a symbolic link.");
   }
 
+  @Test
+  void rejectsHardlinkedArtifactFilesBeforeParsing() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Path outsideProjectMap = tempDir.resolve("outside-hardlinked-project-map.json");
+    Files.writeString(outsideProjectMap, "{\"schema_version\":\"FAKE_HARDLINKED_QUERY_SECRET\"}\n");
+    Files.delete(artifactRoot.resolve("project-map.json"));
+    assumeTrue(createHardLink(artifactRoot.resolve("project-map.json"), outsideProjectMap));
+
+    QueryArtifactException exception = assertThrows(
+        QueryArtifactException.class,
+        () -> reader.load(repositoryRoot, ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL));
+
+    assertAll(
+        () -> assertEquals("project-map.json is not a regular file.", exception.getMessage()),
+        () -> assertFalse(exception.getMessage().contains(outsideProjectMap.toString())),
+        () -> assertFalse(exception.getMessage().contains("FAKE_HARDLINKED_QUERY_SECRET")));
+  }
+
   private void assertArtifactError(Path path, String message) {
     QueryArtifactException exception = assertThrows(
         QueryArtifactException.class,
@@ -279,6 +300,15 @@ final class ProjectMemoryArtifactReaderTest {
   private boolean createSymbolicLink(Path link, Path target) throws IOException {
     try {
       Files.createSymbolicLink(link, target);
+      return true;
+    } catch (UnsupportedOperationException | SecurityException exception) {
+      return false;
+    }
+  }
+
+  private boolean createHardLink(Path link, Path existing) throws IOException {
+    try {
+      Files.createLink(link, existing);
       return true;
     } catch (UnsupportedOperationException | SecurityException exception) {
       return false;

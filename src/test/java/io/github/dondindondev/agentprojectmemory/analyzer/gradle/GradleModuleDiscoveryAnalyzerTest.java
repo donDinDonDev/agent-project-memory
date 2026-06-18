@@ -259,6 +259,29 @@ final class GradleModuleDiscoveryAnalyzerTest {
             .anyMatch(evidence -> evidence.excerpt().contains("OUTSIDE_GRADLE_SECRET_LINE"))));
   }
 
+  @Test
+  void rootGradleBuildFileHardlinkIsSkippedWithoutLinkedEvidence() throws Exception {
+    Path repositoryRoot = repository("gradle-hardlink");
+    Path outsideBuildFile = tempDir.resolve("outside-hardlinked-build.gradle.kts");
+    Files.writeString(outsideBuildFile, "// HARDLINKED_GRADLE_SECRET_LINE\nplugins { java }\n");
+    createHardLink(repositoryRoot.resolve("build.gradle.kts"), outsideBuildFile);
+
+    GradleModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+
+    assertAll(
+        () -> assertEquals("not_detected", analysis.analysisStatus()),
+        () -> assertEquals(List.of(), analysis.items()),
+        () -> assertEquals(List.of(), analysis.rootBuildFiles()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertEquals(1, analysis.diagnostics().size()),
+        () -> assertEquals(
+            GradleBuildFileInput.DIAGNOSTIC_CODE_GRADLE_BUILD_FILE_READ_SKIPPED,
+            analysis.diagnostics().get(0).code()),
+        () -> assertEquals("build.gradle.kts", analysis.diagnostics().get(0).path()),
+        () -> assertFalse(analysis.toString().contains("HARDLINKED_GRADLE_SECRET_LINE")),
+        () -> assertFalse(analysis.toString().contains(tempDir.toString())));
+  }
+
   private Path repository(String name) throws Exception {
     Path repositoryRoot = tempDir.resolve(name);
     Files.createDirectories(repositoryRoot);
@@ -279,6 +302,14 @@ final class GradleModuleDiscoveryAnalyzerTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 

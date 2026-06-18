@@ -251,6 +251,40 @@ final class JavaSourceParserTest {
   }
 
   @Test
+  void javaFilesSkipsHardlinkedJavaCandidatesWithBoundedDiagnostic() throws Exception {
+    Path sourceRoot = tempDir.resolve("src/main/java");
+    Path outsideTarget = tempDir.resolve("outside-root/OutsideSource.java");
+    writeFile(outsideTarget, """
+        package com.example;
+
+        // FAKE_HARDLINKED_JAVA_SECRET
+        class OutsideSource {}
+        """);
+    Path hardlink = sourceRoot.resolve("com/example/HardlinkedSource.java");
+    Files.createDirectories(hardlink.getParent());
+    createHardLink(hardlink, outsideTarget);
+    JavaSourceParser.ScanContext context = JavaSourceParser.newScanContext(tempDir);
+    Path canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(tempDir);
+
+    List<Path> javaFiles = JavaSourceParser.withScanContext(
+        context,
+        () -> JavaSourceParser.javaFiles(canonicalRepositoryRoot, sourceRoot));
+
+    assertAll(
+        () -> assertTrue(javaFiles.isEmpty()),
+        () -> assertEquals(1, context.diagnostics().size()),
+        () -> assertEquals(
+            JavaSourceParser.DIAGNOSTIC_CODE_JAVA_SOURCE_FILE_READ_SKIPPED,
+            context.diagnostics().get(0).code()),
+        () -> assertEquals("src/main/java/com/example/HardlinkedSource.java",
+            context.diagnostics().get(0).path()),
+        () -> assertFalse(context.diagnostics().toString().contains(tempDir.toString())),
+        () -> assertFalse(context.diagnostics().toString().contains("FAKE_HARDLINKED_JAVA_SECRET")),
+        () -> assertEquals("java_source", context.diagnostics().get(0).category()),
+        () -> assertNull(context.diagnostics().get(0).count()));
+  }
+
+  @Test
   void javaFilesReportsOutsideRootJavaSymlinkCandidateWithBoundedDiagnostic()
       throws Exception {
     Path scanRoot = tempDir.resolve("scan-root");
@@ -316,6 +350,14 @@ final class JavaSourceParserTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 }

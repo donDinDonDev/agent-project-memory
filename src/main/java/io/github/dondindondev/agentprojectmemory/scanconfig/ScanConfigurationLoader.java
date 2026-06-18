@@ -140,7 +140,7 @@ public final class ScanConfigurationLoader {
     if (Files.isSymbolicLink(config) || hasSymbolicLinkSegment(repositoryRoot, config)) {
       throw new InvalidScanConfigException("Invalid config: config file must not be a symbolic link.");
     }
-    if (!Files.isRegularFile(config, LinkOption.NOFOLLOW_LINKS)) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, config)) {
       throw new InvalidScanConfigException("Invalid config: config file must be a regular YAML file.");
     }
     try {
@@ -153,9 +153,6 @@ public final class ScanConfigurationLoader {
       }
     } catch (IOException exception) {
       throw new InvalidScanConfigException("Invalid config: config file metadata could not be read.");
-    }
-    if (ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, config).isEmpty()) {
-      throw new InvalidScanConfigException("Invalid config: config file must stay under scan root.");
     }
     return config;
   }
@@ -374,18 +371,15 @@ public final class ScanConfigurationLoader {
       throw new InvalidScanConfigException(
           "Invalid config: adapter import file must not be a symbolic link.");
     }
-    if (!Files.isRegularFile(importFile, LinkOption.NOFOLLOW_LINKS)) {
-      throw new InvalidScanConfigException("Invalid config: adapter import path must be a regular file.");
-    }
     Path canonicalRepositoryRoot;
     try {
       canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(repositoryRoot);
     } catch (IOException exception) {
       throw new InvalidScanConfigException("Invalid config: scan root could not be resolved.");
     }
-    if (ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, importFile).isEmpty()) {
+    if (!ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, importFile)) {
       throw new InvalidScanConfigException(
-          "Invalid config: adapter import path must stay under scan root.");
+          "Invalid config: adapter import path must be a trusted regular file under scan root.");
     }
     return repositoryRelativePath(repositoryRoot, importFile);
   }

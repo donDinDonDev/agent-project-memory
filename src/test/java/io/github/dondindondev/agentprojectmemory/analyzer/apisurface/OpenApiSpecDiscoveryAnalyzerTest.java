@@ -209,6 +209,28 @@ final class OpenApiSpecDiscoveryAnalyzerTest {
   }
 
   @Test
+  void hardlinkedSpecFileIsIgnoredWithoutLinkedEvidence() throws Exception {
+    Path repositoryRoot = repository("hardlink-spec");
+    Path outsideSpec = tempDir.resolve("outside-hardlinked-openapi.yml");
+    writeFile(outsideSpec, """
+        openapi: 3.0.0
+        x-secret: FAKE_HARDLINKED_OPENAPI_SECRET
+        """);
+    Files.createDirectories(repositoryRoot.resolve("src/main/resources"));
+    createHardLink(repositoryRoot.resolve("src/main/resources/openapi.yml"), outsideSpec);
+
+    OpenApiSpecDiscoveryAnalysis analysis = analyzer.analyze(
+        repositoryRoot,
+        List.of(supportedModule("module:.", ".")));
+
+    assertAll(
+        () -> assertEquals(List.of(), analysis.specFiles()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertFalse(analysis.toString().contains("FAKE_HARDLINKED_OPENAPI_SECRET")),
+        () -> assertFalse(analysis.toString().contains(tempDir.toString())));
+  }
+
+  @Test
   void boundsSpecFileCandidatesBeforeFactMaterialization() throws Exception {
     Path repositoryRoot = repository("spec-candidate-cap");
     writeFile(repositoryRoot.resolve("api/a/openapi.yml"), "openapi: 3.0.0\n");
@@ -274,6 +296,14 @@ final class OpenApiSpecDiscoveryAnalyzerTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 }

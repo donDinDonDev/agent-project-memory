@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
@@ -366,7 +365,7 @@ public final class JavaSourceParser {
           Path normalizedFile = file.toAbsolutePath().normalize();
           javaFileCandidates.add(new JavaFileCandidate(
               normalizedFile,
-              Files.isRegularFile(file, LinkOption.NOFOLLOW_LINKS)));
+              ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, file)));
           return FileVisitResult.CONTINUE;
         }
       });

@@ -89,6 +89,9 @@ The intended security properties are:
 - no local absolute paths in generated artifacts or successful query output;
 - no default symlink following for documents, generated-source metadata, query artifact
   roots, or required query artifact files;
+- trusted local input files are accepted as source-owned only when they are regular
+  files with a verifiable single-link identity; multi-link regular files and files
+  whose link count cannot be verified fail closed before parsing;
 - no generated-source content scanning by default;
 - bounded parsing and bounded evidence excerpts;
 - no config value extraction or environment-variable interpolation;
@@ -105,8 +108,9 @@ v2 adapter security defaults:
 - local export import is the preferred first adapter mode;
 - the initial local import mode accepts only explicitly configured repository-relative
   regular files under the scanned repository root and rejects absolute paths, escaping
-  paths, generated-output paths, directories, symlinked inputs, and missing inputs
-  before adapter-backed output is emitted;
+  paths, generated-output paths, directories, symlinked inputs, multi-link regular
+  files, unverifiable link counts, and missing inputs before adapter-backed output is
+  emitted;
 - the current implementation reads at most 256 KiB from the configured local import
   file, parses only the documented local structured import JSON format, processes at
   most 64 records, accepts only `local_export` records with `status: "current"`, and
@@ -276,14 +280,14 @@ The v1.7 hardening work audits these surfaces against the documented target poli
 | --- | --- |
 | Scan root | Resolve one local repository directory and keep generated output contained under it. |
 | Output directory and generated files | Keep `.project-memory/` under the scan root; reject unsafe symlink or hardlink overwrite paths. |
-| Root-local scan config | Accept only one bounded YAML file under the scan root; reject absolute, escaping, generated-output, or symlinked config paths. |
-| Java, Maven, Gradle, resource, and API-spec inputs | Read only documented local input classes through bounded parser policies and normalized repository-relative paths. |
-| Local Markdown documents | Use default safety exclusions, user rules only for local Markdown, and no symlink following. |
+| Root-local scan config | Accept only one bounded YAML file under the scan root; reject absolute, escaping, generated-output, symlinked, multi-link, or link-count-unverifiable config paths. |
+| Java, Maven, Gradle, resource, and API-spec inputs | Read only documented local input classes through bounded parser policies, normalized repository-relative paths, no symlink following, and verified single-link regular-file checks. |
+| Local Markdown documents | Use default safety exclusions, user rules only for local Markdown, no symlink following, and verified single-link regular-file checks. |
 | Generated-source metadata | Record path-presence metadata only; do not read generated-source contents by default. |
 | Cache metadata | Keep cache files under `.project-memory/cache/v1/`; fail closed on unsafe, stale, corrupt, or inconsistent cache state. |
 | Graph output | Generate navigation metadata only from existing facts, evidence IDs, and derivation metadata. |
 | Agent profile output | Render selected deterministic Markdown from existing facts and evidence references only. |
-| Query artifact root and files | Read only required direct child artifacts; reject symlinked artifact roots or required artifact files; never write during query. |
+| Query artifact root and files | Read only required direct child artifacts; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; never write during query. |
 | CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, or secret-looking values. |
 
 Findings from that audit become bounded fixes. The audit must not expand the

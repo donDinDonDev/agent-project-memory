@@ -37,8 +37,18 @@ public final class ScanPathContainment {
   public static boolean isRegularFileUnderRootNoFollow(Path canonicalRepositoryRoot, Path path) {
     Objects.requireNonNull(canonicalRepositoryRoot, "canonicalRepositoryRoot");
     Objects.requireNonNull(path, "path");
-    return Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS)
+    return isTrustedRegularFileNoFollow(path)
         && isRegularFileUnderRoot(canonicalRepositoryRoot, path);
+  }
+
+  public static boolean isTrustedRegularFileNoFollow(Path path) {
+    Objects.requireNonNull(path, "path");
+    try {
+      regularFileSnapshot(path);
+      return true;
+    } catch (IOException | SecurityException exception) {
+      return false;
+    }
   }
 
   public static byte[] readRegularFileBytesNoFollowStable(Path path, int maxBytes)
@@ -131,7 +141,27 @@ public final class ScanPathContainment {
     return new RegularFileSnapshot(
         attributes.fileKey(),
         attributes.size(),
-        attributes.lastModifiedTime().toMillis());
+        attributes.lastModifiedTime().toMillis(),
+        trustedSingleLinkCount(path));
+  }
+
+  private static long trustedSingleLinkCount(Path path) throws IOException {
+    Object value;
+    try {
+      value = Files.getAttribute(path, "unix:nlink", LinkOption.NOFOLLOW_LINKS);
+    } catch (UnsupportedOperationException | IllegalArgumentException exception) {
+      throw new UnsafeRegularFileException("Regular file link count is not available.");
+    } catch (SecurityException exception) {
+      throw new UnsafeRegularFileException("Regular file link count could not be verified.");
+    }
+    if (!(value instanceof Number number)) {
+      throw new UnsafeRegularFileException("Regular file link count is not available.");
+    }
+    long linkCount = number.longValue();
+    if (linkCount != 1L) {
+      throw new UnsafeRegularFileException("Regular file must not have multiple hard links.");
+    }
+    return linkCount;
   }
 
   public static final class FileSizeLimitExceededException extends IOException {
@@ -140,15 +170,24 @@ public final class ScanPathContainment {
     }
   }
 
+  public static final class UnsafeRegularFileException extends IOException {
+    public UnsafeRegularFileException(String message) {
+      super(message);
+    }
+  }
+
   private record RegularFileSnapshot(
       Object fileKey,
       long size,
-      long lastModifiedMillis) {
+      long lastModifiedMillis,
+      long linkCount) {
     private boolean matches(RegularFileSnapshot other) {
       if (fileKey != null && other.fileKey != null && !Objects.equals(fileKey, other.fileKey)) {
         return false;
       }
-      return size == other.size && lastModifiedMillis == other.lastModifiedMillis;
+      return size == other.size
+          && lastModifiedMillis == other.lastModifiedMillis
+          && linkCount == other.linkCount;
     }
   }
 }

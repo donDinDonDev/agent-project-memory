@@ -279,6 +279,41 @@ final class MavenModuleDiscoveryAnalyzerTest {
   }
 
   @Test
+  void childPomHardlinkIsRejectedWithoutLinkedPomEvidence() throws Exception {
+    Path repositoryRoot = repository("child-pom-hardlink");
+    Path outsidePom = tempDir.resolve("outside-hardlinked-pom.xml");
+    Files.writeString(outsidePom, """
+        <!-- HARDLINKED_POM_SECRET_LINE -->
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writePom(repositoryRoot.resolve("pom.xml"), """
+        <project>
+          <modules>
+            <module>services/orders</module>
+          </modules>
+        </project>
+        """);
+    Files.createDirectories(repositoryRoot.resolve("services/orders"));
+    createHardLink(repositoryRoot.resolve("services/orders/pom.xml"), outsidePom);
+
+    MavenModuleDiscoveryAnalysis analysis = analyzer.analyze(repositoryRoot);
+    MavenModuleItem missing = item(analysis, "module:services/orders");
+    MavenModuleWarning warning = warning(analysis, "missing_child_pom");
+
+    assertAll(
+        () -> assertEquals("missing_child_pom", missing.supportStatus()),
+        () -> assertNull(missing.pomPath()),
+        () -> assertEquals(List.of(), missing.pomEvidenceIds()),
+        () -> assertEquals("module:services/orders", warning.moduleId()),
+        () -> assertFalse(analysis.evidence().stream()
+            .anyMatch(evidence -> "services/orders/pom.xml".equals(evidence.sourcePath()))),
+        () -> assertFalse(analysis.toString().contains("HARDLINKED_POM_SECRET_LINE")),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
   void sourceAndTestRootSymlinksEscapingScanRootAreIgnored() throws Exception {
     Path repositoryRoot = repository("source-test-root-symlink-escape");
     Path outsideMain = tempDir.resolve("outside-main");
@@ -530,6 +565,14 @@ final class MavenModuleDiscoveryAnalyzerTest {
       Files.createSymbolicLink(link, target);
     } catch (UnsupportedOperationException | IOException | SecurityException exception) {
       assumeTrue(false, "symbolic links are unavailable: " + exception.getMessage());
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 

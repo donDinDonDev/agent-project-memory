@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -316,6 +317,37 @@ final class LocalStructuredImportAdapterTest {
         () -> assertFalse(exception.getMessage().contains("FAKE_OUTSIDE_IMPORT_SECRET")));
   }
 
+  @Test
+  void rejectsDirectHardlinkedImportFileWithoutParsingLinkedContent() throws Exception {
+    Path outsideImport = tempDir.resolve("outside-hardlinked-import.json");
+    Files.writeString(outsideImport, """
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-999",
+              "title": "Hardlinked import",
+              "body": "FAKE_HARDLINKED_IMPORT_BODY_SECRET",
+              "status": "current"
+            }
+          ]
+        }
+        """);
+    Path importFile = tempDir.resolve("exports/issues.json");
+    Files.createDirectories(importFile.getParent());
+    createHardLink(importFile, outsideImport);
+
+    IOException exception = assertThrows(
+        IOException.class,
+        () -> adapter.read(tempDir, AdapterLocalImport.localStructuredImport("exports/issues.json")));
+
+    assertAll(
+        () -> assertEquals("Adapter import file could not be read.", exception.getMessage()),
+        () -> assertFalse(exception.getMessage().contains(outsideImport.toString())),
+        () -> assertFalse(exception.getMessage().contains("FAKE_HARDLINKED_IMPORT_BODY_SECRET")));
+  }
+
   private boolean hasDiagnostic(AdapterIngestionResult result, String signal) {
     return result.diagnostics().stream().anyMatch(diagnostic -> signal.equals(diagnostic.signal()));
   }
@@ -344,6 +376,14 @@ final class LocalStructuredImportAdapterTest {
           JSON.writeValueAsString(body));
     } catch (IOException exception) {
       throw new IllegalStateException(exception);
+    }
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
     }
   }
 }

@@ -1534,6 +1534,27 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanRejectsHardlinkedDefaultConfigBeforeCreatingOutputDirectoryWithoutLeakingValues()
+      throws Exception {
+    Path outsideConfig = tempDir.resolve("outside-hardlinked-config.yml");
+    Files.writeString(outsideConfig, """
+        version: 1
+        api_token: FAKE_HARDLINKED_CLI_CONFIG_SECRET
+        """);
+    createHardLink(tempDir.resolve("agent-project-memory.yml"), outsideConfig);
+
+    CliResult result = runCli("scan", tempDir.toString());
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("config file must be a regular YAML file")),
+        () -> assertFalse(result.stderr().contains(outsideConfig.toString())),
+        () -> assertFalse(result.stderr().contains("FAKE_HARDLINKED_CLI_CONFIG_SECRET")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
   void scanRejectsUnsafeAdapterConfigBeforeCreatingOutputDirectoryWithoutLeakingValues()
       throws Exception {
     Path rawAbsoluteImportPath = tempDir.resolve("exports/token=FAKE_ADAPTER_CLI_SECRET.json");

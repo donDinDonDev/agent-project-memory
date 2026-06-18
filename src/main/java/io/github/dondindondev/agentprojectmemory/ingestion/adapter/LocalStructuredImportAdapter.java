@@ -11,7 +11,6 @@ import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -156,8 +155,7 @@ public final class LocalStructuredImportAdapter {
       Path canonicalRoot = ScanPathContainment.canonicalRoot(normalizedRoot);
       if (!importPath.startsWith(normalizedRoot)
           || hasSymbolicLinkSegment(normalizedRoot, importPath)
-          || !Files.isRegularFile(importPath, LinkOption.NOFOLLOW_LINKS)
-          || ScanPathContainment.realPathUnderRoot(canonicalRoot, importPath).isEmpty()) {
+          || !ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRoot, importPath)) {
         throw new IOException("Adapter import file could not be read.");
       }
       return ScanPathContainment.readRegularFileBytesNoFollowStable(importPath, MAX_IMPORT_BYTES);

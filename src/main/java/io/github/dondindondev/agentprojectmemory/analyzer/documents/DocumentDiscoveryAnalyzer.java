@@ -434,13 +434,12 @@ public final class DocumentDiscoveryAnalyzer {
       return Optional.empty();
     }
     if (Files.isSymbolicLink(normalizedFile)
-        || !Files.isRegularFile(normalizedFile, LinkOption.NOFOLLOW_LINKS)) {
+        || !ScanPathContainment.isRegularFileUnderRootNoFollow(
+            canonicalRepositoryRoot,
+            normalizedFile)) {
       return Optional.empty();
     }
     if (hasSymbolicLinkSegment(repositoryRoot, normalizedFile)) {
-      return Optional.empty();
-    }
-    if (ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, normalizedFile).isEmpty()) {
       return Optional.empty();
     }
     if (isExcluded(repositoryRoot, normalizedFile)) {
@@ -482,9 +481,8 @@ public final class DocumentDiscoveryAnalyzer {
       Path normalizedFile) {
     return normalizedFile.startsWith(repositoryRoot)
         && !Files.isSymbolicLink(normalizedFile)
-        && Files.isRegularFile(normalizedFile, LinkOption.NOFOLLOW_LINKS)
+        && ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRepositoryRoot, normalizedFile)
         && !hasSymbolicLinkSegment(repositoryRoot, normalizedFile)
-        && ScanPathContainment.realPathUnderRoot(canonicalRepositoryRoot, normalizedFile).isPresent()
         && !isExcluded(repositoryRoot, normalizedFile);
   }
 

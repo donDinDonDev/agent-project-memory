@@ -4833,17 +4833,19 @@ Current config file rules:
 
 - The default config file is `<scan-root>/agent-project-memory.yml`.
 - The selected config file, whether discovered by default or selected explicitly, must
-  resolve to one regular YAML file under the scan root and must not be a symlink.
+  resolve to one regular YAML file under the scan root with a verifiable single-link
+  identity and must not be a symlink or multi-link file.
 - The current explicit config selection syntax is `scan <path> --config <path>`. The
   explicit config value is interpreted after scan-root validation as a normalized
   repository-relative path under the selected scan root. It must not be absolute, start
   with `./`, contain `.` or `..` path segments after normalization, use backslash
-  separators, resolve outside the scan root, point into `.project-memory/`, or point to a
-  symlink.
+  separators, resolve outside the scan root, point into `.project-memory/`, point to a
+  symlink, point to a multi-link file, or have an unverifiable link count.
 - If the default config file is present and no explicit config is selected, it is the
   selected config. If no config is selected or discovered, built-in defaults apply.
 - If an explicit config path is provided, default discovery is skipped. The explicit
-  path must resolve to one regular YAML file under the scan root.
+  path must resolve to one regular YAML file under the scan root with a verifiable
+  single-link identity.
 - Config files are not merged. Multiple default config locations are intentionally not
   discovered in v0.9 so there is no hidden precedence between root-visible and hidden
   files.
@@ -4877,11 +4879,12 @@ Current config file rules:
   `adapters.local_structured_import.path`.
 - `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
   it is `true`, `path` is required and must identify one existing repository-relative
-  regular file under the scan root. The path must not be absolute, start with `./`, use
-  backslash separators, contain empty, `.` or `..` segments, point into
-  `.project-memory/`, point to a directory, point to a symlink, pass through a symlinked
-  path segment, or resolve outside the scanned repository root. When the adapter is
-  disabled, `path` must be omitted.
+  regular file under the scan root with a verifiable single-link identity. The path must
+  not be absolute, start with `./`, use backslash separators, contain empty, `.` or
+  `..` segments, point into `.project-memory/`, point to a directory, point to a
+  symlink, pass through a symlinked path segment, point to a multi-link regular file,
+  have an unverifiable link count, or resolve outside the scanned repository root. When
+  the adapter is disabled, `path` must be omitted.
 - When enabled, the local structured import adapter reads and parses the configured
   import file after config validation. The import file must be a JSON object with
   `format: "agent-project-memory.local_structured_import.v1"` and a `records` array.
@@ -5147,7 +5150,8 @@ Path and artifact input policy:
   paths in successful stdout.
 - Query input directories and required artifact files must be stable local directories
   or regular files. The initial query design does not follow symlinked artifact roots or
-  symlinked artifact files.
+  symlinked artifact files and rejects multi-link or link-count-unverifiable required
+  artifact files before parsing.
 
 Artifact validation policy:
 
@@ -5322,9 +5326,10 @@ Query exit codes:
   `--format` option should also use exit code `2` for invalid values.
 - `3`: query input or artifact error, such as a missing query path, non-directory query
   path, missing `.project-memory/`, missing required artifact, symlinked artifact root
-  or required artifact file, malformed JSON/JSONL, unsupported artifact schema marker,
-  duplicate required IDs, unresolved required graph node references, or missing/invalid
-  graph artifact for `relations`.
+  or required artifact file, multi-link or link-count-unverifiable required artifact
+  file, malformed JSON/JSONL, unsupported artifact schema marker, duplicate required
+  IDs, unresolved required graph node references, or missing/invalid graph artifact for
+  `relations`.
 - `4`: invalid scan config. This existing scan exit code is unchanged and is not used by
   read-only query commands.
 - `5`: scan output generation or write error. This existing scan exit code is unchanged;
@@ -5445,20 +5450,20 @@ Query render-time handling:
 - Future stable JSON query output, if implemented later, must apply the same redaction
   policy before serializing result strings.
 
-Path and symlink audit matrix for v1.7:
+Path, symlink, and hardlink audit matrix:
 
 | Surface | Target output/path policy |
 | --- | --- |
 | Scan root | Resolve one local directory and keep generated outputs under the canonical scan root. |
 | Output directory and files | Keep `.project-memory/` under the scan root; reject unsafe symlink, hardlink, or escaping output paths. |
-| Root-local scan config | Accept only one bounded YAML file under the scan root; reject absolute, escaping, generated-output, or symlinked config paths. |
-| Java, Maven, Gradle, resource, and API-spec inputs | Read only documented local input classes through bounded parser policies and normalized repository-relative paths. |
-| Local Markdown documents | Keep default safety exclusions, local Markdown-only user rules, aggregate caps, and no symlink following. |
+| Root-local scan config | Accept only one bounded YAML file under the scan root; reject absolute, escaping, generated-output, symlinked, multi-link, or link-count-unverifiable config paths. |
+| Java, Maven, Gradle, resource, and API-spec inputs | Read only documented local input classes through bounded parser policies, normalized repository-relative paths, no symlink following, and verified single-link regular-file checks. |
+| Local Markdown documents | Keep default safety exclusions, local Markdown-only user rules, aggregate caps, no symlink following, and verified single-link regular-file checks. |
 | Generated-source metadata | Keep generated-source roots as path-presence metadata only; do not read generated-source contents by default. |
 | Cache metadata | Keep cache files under `.project-memory/cache/v1/`; fail closed on unsafe, stale, corrupt, mismatched, symlinked, hardlinked, or inconsistent cache state. |
 | Graph output | Generate navigation metadata from existing facts, evidence IDs, relation/status rows, and derivation metadata only. |
 | Agent profile output | Render selected deterministic Markdown from existing structured facts and evidence references only. |
-| Query artifact root and files | Read only direct child artifacts required by the query command; reject symlinked artifact roots or required artifact files; never write during query. |
+| Query artifact root and files | Read only direct child artifacts required by the query command; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; never write during query. |
 | CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, source bodies, document bodies, config contents, generated-source contents, credentials, tokens, or secret-looking values. |
 
 Validation requirements before v1.7 release:
