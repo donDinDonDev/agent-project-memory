@@ -303,6 +303,39 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void rejectsOversizedConfigThroughBoundedStableReadWithoutEchoingContent() throws Exception {
+    Path repositoryRoot = repository("oversized-config");
+    Files.writeString(
+        repositoryRoot.resolve("agent-project-memory.yml"),
+        "version: 1\n"
+            + "#".repeat(65 * 1024)
+            + "\nFAKE_OVERSIZED_CONFIG_SECRET\n");
+
+    InvalidScanConfigException exception = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    assertAll(
+        () -> assertTrue(exception.getMessage().contains("config file is too large")),
+        () -> assertFalse(exception.getMessage().contains("FAKE_OVERSIZED_CONFIG_SECRET")),
+        () -> assertFalse(exception.getMessage().contains(tempDir.toString())));
+  }
+
+  @Test
+  void rejectsMalformedUtf8ConfigThroughStableReadWithoutEchoingPathOrContent() throws Exception {
+    Path repositoryRoot = repository("malformed-utf8-config");
+    Files.write(repositoryRoot.resolve("agent-project-memory.yml"), new byte[] {(byte) 0xC3, 0x28});
+
+    InvalidScanConfigException exception = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    assertAll(
+        () -> assertTrue(exception.getMessage().contains("config file could not be read")),
+        () -> assertFalse(exception.getMessage().contains(tempDir.toString())));
+  }
+
+  @Test
   void rejectsReservedModeEnablementAndUnknownKeysWithoutEchoingValues() throws Exception {
     Path repositoryRoot = repository("reserved");
     writeConfig(repositoryRoot, """

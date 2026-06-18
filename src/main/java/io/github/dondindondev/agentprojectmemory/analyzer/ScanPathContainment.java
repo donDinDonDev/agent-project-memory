@@ -1,8 +1,9 @@
 package io.github.dondindondev.agentprojectmemory.analyzer;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
@@ -114,6 +115,16 @@ public final class ScanPathContainment {
       int maxBytes) throws IOException {
     String content = new String(readRegularFileBytesNoFollowStable(path, maxBytes), charset);
     return content.lines().toList();
+  }
+
+  public static String readRegularFileStringNoFollowStable(
+      Path path,
+      Charset charset,
+      int maxBytes) throws IOException {
+    Objects.requireNonNull(charset, "charset");
+    return charset.newDecoder()
+        .decode(ByteBuffer.wrap(readRegularFileBytesNoFollowStable(path, maxBytes)))
+        .toString();
   }
 
   public static Optional<Path> realPathUnderRoot(Path canonicalRepositoryRoot, Path path) {

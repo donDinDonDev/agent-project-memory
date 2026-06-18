@@ -1,11 +1,9 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
-import java.io.BufferedReader;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -305,19 +303,27 @@ public final class DocumentReconciliationAnalyzer {
       Set<String> sourceModuleNames,
       MentionBudget mentionBudget) {
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
+    Path canonicalRepositoryRoot;
+    try {
+      canonicalRepositoryRoot = ScanPathContainment.canonicalRoot(normalizedRepositoryRoot);
+    } catch (IOException exception) {
+      return List.of();
+    }
     List<DocumentMention> mentions = new ArrayList<>();
     for (DocumentFileFact document : documents) {
       Path documentPath = normalizedRepositoryRoot.resolve(document.path()).normalize();
       if (!documentPath.startsWith(normalizedRepositoryRoot)
-          || !Files.isRegularFile(documentPath, LinkOption.NOFOLLOW_LINKS)) {
+          || !ScanPathContainment.isRegularFileUnderRootNoFollow(
+              canonicalRepositoryRoot,
+              documentPath)) {
         continue;
       }
-      try (BufferedReader reader = Files.newBufferedReader(documentPath, StandardCharsets.UTF_8)) {
+      try {
+        List<String> lines = readStableDocumentLines(documentPath);
         Map<MentionKey, DocumentMention> uniqueDocumentMentions = new LinkedHashMap<>();
-        String line;
         int lineNumber = 0;
         int ordinal = 0;
-        while ((line = reader.readLine()) != null) {
+        for (String line : lines) {
           lineNumber++;
           String boundedLine = boundedLine(line);
           for (String token : endpointTokens(boundedLine)) {
@@ -349,11 +355,24 @@ public final class DocumentReconciliationAnalyzer {
           }
         }
         mentions.addAll(uniqueDocumentMentions.values());
-      } catch (IOException exception) {
+      } catch (IOException | SecurityException exception) {
         // Reconciliation is an optional hint layer; unreadable documents keep inventory output intact.
       }
     }
     return mentions;
+  }
+
+  private List<String> readStableDocumentLines(Path documentPath) throws IOException {
+    return ScanPathContainment.readRegularFileStringNoFollowStable(
+            documentPath,
+            StandardCharsets.UTF_8,
+            boundedReadLimit(limits.maxTotalDocumentBytes()))
+        .lines()
+        .toList();
+  }
+
+  private int boundedReadLimit(long maxBytes) {
+    return (int) Math.min(maxBytes, Integer.MAX_VALUE);
   }
 
   private int addMention(

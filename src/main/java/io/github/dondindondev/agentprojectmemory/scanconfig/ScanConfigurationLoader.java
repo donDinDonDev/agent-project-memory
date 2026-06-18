@@ -175,7 +175,7 @@ public final class ScanConfigurationLoader {
   private ParsedConfig parsedConfig(Path repositoryRoot, Path config) throws InvalidScanConfigException {
     Object root;
     try {
-      String content = Files.readString(config, StandardCharsets.UTF_8);
+      String content = readConfigContent(config);
       LoaderOptions loaderOptions = new LoaderOptions();
       loaderOptions.setAllowDuplicateKeys(false);
       loaderOptions.setMaxAliasesForCollections(0);
@@ -197,8 +197,6 @@ public final class ScanConfigurationLoader {
       root = documents.get(0);
     } catch (YAMLException exception) {
       throw new InvalidScanConfigException("Invalid config: YAML could not be parsed.");
-    } catch (IOException exception) {
-      throw new InvalidScanConfigException("Invalid config: config file could not be read.");
     }
 
     if (!(root instanceof Map<?, ?> rootMap)) {
@@ -218,6 +216,19 @@ public final class ScanConfigurationLoader {
         documentRules.includes(),
         documentRules.excludes(),
         adapterConfiguration);
+  }
+
+  private String readConfigContent(Path config) throws InvalidScanConfigException {
+    try {
+      return ScanPathContainment.readRegularFileStringNoFollowStable(
+          config,
+          StandardCharsets.UTF_8,
+          MAX_CONFIG_BYTES);
+    } catch (ScanPathContainment.FileSizeLimitExceededException exception) {
+      throw new InvalidScanConfigException("Invalid config: config file is too large.");
+    } catch (IOException | SecurityException exception) {
+      throw new InvalidScanConfigException("Invalid config: config file could not be read.");
+    }
   }
 
   private void rejectUnknownKeys(Map<?, ?> map, Set<String> allowedKeys, String location)

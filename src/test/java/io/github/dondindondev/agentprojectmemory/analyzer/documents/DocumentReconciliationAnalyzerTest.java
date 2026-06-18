@@ -3,8 +3,10 @@ package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanDiagnostic;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -169,6 +171,28 @@ final class DocumentReconciliationAnalyzerTest {
   }
 
   @Test
+  void skipsHardlinkedDocumentMentionRereadWithoutLeakingLinkedContent() throws Exception {
+    Path repositoryRoot = repository("hardlinked-reread");
+    Path outsideMarkdown = tempDir.resolve("outside-hardlinked-reconciliation.md");
+    Files.writeString(outsideMarkdown, "Unknown endpoint `/FAKE_HARDLINKED_RECONCILIATION_SECRET`.\n");
+    createHardLink(repositoryRoot.resolve("README.md"), outsideMarkdown);
+
+    DocumentReconciliationAnalysis analysis = reconciliationAnalyzer.analyze(
+        repositoryRoot,
+        manualDiscovery("README.md"),
+        List.of(),
+        List.of());
+
+    assertAll(
+        () -> assertEquals("not_detected", analysis.analysisStatus()),
+        () -> assertEquals(List.of(), analysis.signals()),
+        () -> assertEquals(List.of(), analysis.evidence()),
+        () -> assertFalse(analysis.toString().contains("FAKE_HARDLINKED_RECONCILIATION_SECRET")),
+        () -> assertFalse(analysis.toString().contains(outsideMarkdown.toString())),
+        () -> assertFalse(analysis.toString().contains(tempDir.toString())));
+  }
+
+  @Test
   void capsAggregateMentionsSignalsAndMentionEvidence() throws Exception {
     Path repositoryRoot = repository("capped-reconciliation");
     writeFile(
@@ -222,6 +246,35 @@ final class DocumentReconciliationAnalyzerTest {
   private void writeFile(Path path, String content) throws Exception {
     Files.createDirectories(path.getParent());
     Files.writeString(path, content);
+  }
+
+  private DocumentDiscoveryAnalysis manualDiscovery(String documentPath) {
+    return new DocumentDiscoveryAnalysis(
+        "analyzed",
+        DocumentDiscoveryAnalyzer.DEFAULT_POLICY,
+        List.of(new DocumentFileFact(
+            "document:" + DocumentDiscoveryAnalyzer.idKey(documentPath),
+            "local_markdown",
+            "markdown",
+            null,
+            Integer.MAX_VALUE,
+            documentPath,
+            "README",
+            "filename",
+            "root_readme",
+            List.of(),
+            List.of(),
+            List.of("ev:" + documentPath + ":file"))),
+        List.of(),
+        List.of());
+  }
+
+  private void createHardLink(Path link, Path existing) throws Exception {
+    try {
+      Files.createLink(link, existing);
+    } catch (UnsupportedOperationException | IOException | SecurityException exception) {
+      assumeTrue(false, "hard links are unavailable: " + exception.getMessage());
+    }
   }
 
   private DocumentSourceApiFact sourceApi(

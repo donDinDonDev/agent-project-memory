@@ -250,7 +250,8 @@ public final class DocumentDiscoveryAnalyzer {
       DocumentStructure structure = documentStructure(
           candidate,
           remainingCount(limits.maxHeadings(), acceptedHeadings),
-          remainingCount(limits.maxChunks(), acceptedChunks));
+          remainingCount(limits.maxChunks(), acceptedChunks),
+          boundedReadLimit(documentBytes));
       if (structure.headingCapReached() && !headingCountCapReported) {
         diagnostics.add(headingCountCapDiagnostic());
         headingCountCapReported = true;
@@ -757,16 +758,22 @@ public final class DocumentDiscoveryAnalyzer {
   private DocumentStructure documentStructure(
       CandidateDocument candidate,
       int remainingHeadings,
-      int remainingChunks) {
+      int remainingChunks,
+      int maxBytes) {
     try {
       return structureExtractor.extract(
           candidate.normalizedPath(),
           candidate.sourcePath(),
           remainingHeadings,
-          remainingChunks);
+          remainingChunks,
+          maxBytes);
     } catch (IOException exception) {
       return DocumentStructure.empty();
     }
+  }
+
+  private int boundedReadLimit(long maxBytes) {
+    return (int) Math.min(maxBytes, Integer.MAX_VALUE);
   }
 
   private OptionalLong documentSize(CandidateDocument candidate) {

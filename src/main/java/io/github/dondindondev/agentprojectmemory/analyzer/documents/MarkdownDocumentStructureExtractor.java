@@ -1,10 +1,9 @@
 package io.github.dondindondev.agentprojectmemory.analyzer.documents;
 
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
-import java.io.BufferedReader;
+import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -21,7 +20,12 @@ final class MarkdownDocumentStructureExtractor {
   private static final String CONTENT_STATUS_NOT_SERIALIZED = "not_serialized";
 
   DocumentStructure extract(Path markdownFile, String sourcePath) throws IOException {
-    return extract(markdownFile, sourcePath, Integer.MAX_VALUE, Integer.MAX_VALUE);
+    return extract(
+        markdownFile,
+        sourcePath,
+        Integer.MAX_VALUE,
+        Integer.MAX_VALUE,
+        Integer.MAX_VALUE);
   }
 
   DocumentStructure extract(
@@ -29,6 +33,15 @@ final class MarkdownDocumentStructureExtractor {
       String sourcePath,
       int maxHeadings,
       int maxChunks) throws IOException {
+    return extract(markdownFile, sourcePath, maxHeadings, maxChunks, Integer.MAX_VALUE);
+  }
+
+  DocumentStructure extract(
+      Path markdownFile,
+      String sourcePath,
+      int maxHeadings,
+      int maxChunks,
+      int maxBytes) throws IOException {
     List<DocumentHeadingFact> headings = new ArrayList<>();
     List<DocumentChunkFact> chunks = new ArrayList<>();
     Map<String, Integer> titleOccurrences = new LinkedHashMap<>();
@@ -37,33 +50,31 @@ final class MarkdownDocumentStructureExtractor {
     ChunkState chunk = new ChunkState(sourcePath, budget);
     FenceState fence = FenceState.none();
 
-    try (BufferedReader reader = Files.newBufferedReader(markdownFile, StandardCharsets.UTF_8)) {
-      String line;
-      int lineNumber = 0;
-      while ((line = reader.readLine()) != null) {
-        lineNumber++;
-        HeadingCandidate heading = fence.inFence() ? null : atxHeading(line);
-        if (heading != null) {
-          chunk.closeBefore(lineNumber, chunks);
-          DocumentHeadingFact headingFact = null;
-          if (budget.canAddHeading(headings)) {
-            headingFact = headingFact(
-                sourcePath,
-                heading,
-                lineNumber,
-                titleOccurrences,
-                anchorOccurrences);
-            headings.add(headingFact);
-          } else {
-            budget.markHeadingCapReached();
-          }
-          chunk.start(lineNumber, headingFact == null ? null : headingFact.id());
-        } else if (!chunk.started()) {
-          chunk.start(lineNumber, null);
+    List<String> lines = readStableLines(markdownFile, maxBytes);
+    int lineNumber = 0;
+    for (String line : lines) {
+      lineNumber++;
+      HeadingCandidate heading = fence.inFence() ? null : atxHeading(line);
+      if (heading != null) {
+        chunk.closeBefore(lineNumber, chunks);
+        DocumentHeadingFact headingFact = null;
+        if (budget.canAddHeading(headings)) {
+          headingFact = headingFact(
+              sourcePath,
+              heading,
+              lineNumber,
+              titleOccurrences,
+              anchorOccurrences);
+          headings.add(headingFact);
+        } else {
+          budget.markHeadingCapReached();
         }
-        chunk.addLine(lineNumber, line, chunks);
-        fence = fence.next(line);
+        chunk.start(lineNumber, headingFact == null ? null : headingFact.id());
+      } else if (!chunk.started()) {
+        chunk.start(lineNumber, null);
       }
+      chunk.addLine(lineNumber, line, chunks);
+      fence = fence.next(line);
     }
 
     chunk.close(chunks);
@@ -72,6 +83,15 @@ final class MarkdownDocumentStructureExtractor {
         chunks,
         budget.headingCapReached(),
         budget.chunkCapReached());
+  }
+
+  private List<String> readStableLines(Path markdownFile, int maxBytes) throws IOException {
+    return ScanPathContainment.readRegularFileStringNoFollowStable(
+            markdownFile,
+            StandardCharsets.UTF_8,
+            maxBytes)
+        .lines()
+        .toList();
   }
 
   private DocumentHeadingFact headingFact(
