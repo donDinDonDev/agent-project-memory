@@ -1280,6 +1280,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
               operationId: redaction
               tags:
                 - password=FAKE_V170_OPENAPI_SECRET
+                - 'Authorization: Bearer "FAKE_V200_OPENAPI_QUOTED_SECRET"'
+                - 'Authorization: Basic <FAKE_V200_OPENAPI_ANGLE_SECRET>'
+                - 'Authorization: Bearer `FAKE_V200_OPENAPI_BACKTICK_SECRET`'
               responses:
                 '200':
                   description: ok
@@ -1353,9 +1356,21 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_MAVEN_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JSON_MAVEN_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_OPENAPI_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V200_OPENAPI_QUOTED_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V200_OPENAPI_ANGLE_SECRET"),
+        () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V200_OPENAPI_BACKTICK_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JAVA_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_HEADER_SECRET"),
         () -> assertFakeNeedleAbsent(joinedOutput, "FAKE_V170_JSON_QUOTED_SECRET"),
+        () -> assertTrue(joinedOutput.contains(
+            "Authorization: Bearer \"" + OutputRedactor.REDACTION_MARKER + "\""),
+            "Generated output should preserve quote delimiters around redacted Bearer value"),
+        () -> assertTrue(joinedOutput.contains(
+            "Authorization: Basic <" + OutputRedactor.REDACTION_MARKER + ">"),
+            "Generated output should preserve angle delimiters around redacted Basic value"),
+        () -> assertTrue(joinedOutput.contains(
+            "Authorization: Bearer `" + OutputRedactor.REDACTION_MARKER + "`"),
+            "Generated output should preserve backtick delimiters around redacted Bearer value"),
         () -> assertEquals(
             "src/main/java/com/example/SecretController.java",
             restControllerEvidence.path("path").asText()),

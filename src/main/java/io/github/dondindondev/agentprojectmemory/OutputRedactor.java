@@ -16,9 +16,8 @@ public final class OutputRedactor {
       "(?is)-----BEGIN [A-Z0-9 ]*PRIVATE KEY-----.*?(?:-----END [A-Z0-9 ]*PRIVATE KEY-----|$)");
   private static final Pattern XML_KEY_VALUE = Pattern.compile(
       "(?is)(<\\s*" + CREDENTIAL_KEY_PATTERN + "\\b[^>]*>)(.*?)(</\\s*[^>]+>)");
-  private static final Pattern AUTHORIZATION_CREDENTIAL = Pattern.compile(
-      "(?i)(\\b(?:authorization\\s*[:=]\\s*)?(?:bearer|basic)\\s+)"
-          + "(?!\\[REDACTED_SECRET_LIKE_VALUE\\])([^\\s,;)}\\]<>\"'`]+)");
+  private static final Pattern AUTHORIZATION_CREDENTIAL_PREFIX = Pattern.compile(
+      "(?i)\\b(?:authorization\\s*[:=]\\s*)?(?:bearer|basic)\\s+");
   private static final Pattern QUOTED_KEY_VALUE = Pattern.compile(
       "(?i)(\\b" + CREDENTIAL_KEY_PATTERN + "\\b\\s*[:=]\\s*)([\"'`])([^\"'`\\r\\n]*)(\\2)");
   private static final Pattern BARE_KEY_VALUE = Pattern.compile(
@@ -112,15 +111,128 @@ public final class OutputRedactor {
   }
 
   private static String replaceAuthorizationCredentials(String value) {
-    Matcher matcher = AUTHORIZATION_CREDENTIAL.matcher(value);
-    StringBuffer redacted = new StringBuffer();
-    while (matcher.find()) {
-      matcher.appendReplacement(
-          redacted,
-          Matcher.quoteReplacement(matcher.group(1) + REDACTION_MARKER));
+    Matcher matcher = AUTHORIZATION_CREDENTIAL_PREFIX.matcher(value);
+    StringBuilder redacted = new StringBuilder(value.length());
+    int copiedUntil = 0;
+    int searchFrom = 0;
+    while (matcher.find(searchFrom)) {
+      AuthorizationCredential credential = authorizationCredentialAt(value, matcher.end());
+      if (credential == null) {
+        searchFrom = matcher.end();
+        continue;
+      }
+      redacted.append(value, copiedUntil, matcher.end());
+      redacted.append(credential.opening());
+      redacted.append(REDACTION_MARKER);
+      redacted.append(credential.closing());
+      copiedUntil = credential.end();
+      searchFrom = credential.end();
     }
-    matcher.appendTail(redacted);
+    redacted.append(value, copiedUntil, value.length());
     return redacted.toString();
+  }
+
+  private static AuthorizationCredential authorizationCredentialAt(String value, int start) {
+    if (startsWithRedactionMarker(value, start)) {
+      return null;
+    }
+    AuthorizationWrapper wrapper = authorizationWrapperAt(value, start);
+    if (wrapper != null) {
+      if (startsWithRedactionMarker(value, wrapper.contentStart())) {
+        return null;
+      }
+      int closingStart = findAuthorizationWrapperClosing(value, wrapper);
+      if (closingStart >= wrapper.contentStart()) {
+        String closing = value.substring(closingStart, closingStart + wrapper.closingLength());
+        return new AuthorizationCredential(
+            value.substring(start, wrapper.contentStart()),
+            closing,
+            closingStart + wrapper.closingLength());
+      }
+      int unclosedEnd = authorizationCredentialEnd(value, wrapper.contentStart());
+      if (unclosedEnd > wrapper.contentStart()) {
+        return new AuthorizationCredential(
+            value.substring(start, wrapper.contentStart()),
+            "",
+            unclosedEnd);
+      }
+      return null;
+    }
+
+    int end = authorizationCredentialEnd(value, start);
+    if (end <= start) {
+      return null;
+    }
+    return new AuthorizationCredential("", "", end);
+  }
+
+  private static AuthorizationWrapper authorizationWrapperAt(String value, int start) {
+    if (start >= value.length()) {
+      return null;
+    }
+    char current = value.charAt(start);
+    if (current == '<') {
+      return new AuthorizationWrapper(start + 1, '>', false);
+    }
+    QuoteBoundary quoteBoundary = quoteBoundaryAt(value, start);
+    if (quoteBoundary != null) {
+      return new AuthorizationWrapper(
+          quoteBoundary.end(),
+          quoteBoundary.quote(),
+          quoteBoundary.escaped());
+    }
+    return null;
+  }
+
+  private static int findAuthorizationWrapperClosing(String value, AuthorizationWrapper wrapper) {
+    if (wrapper.closing() == '>') {
+      for (int index = wrapper.contentStart(); index < value.length(); index++) {
+        char current = value.charAt(index);
+        if (current == '\r' || current == '\n') {
+          return -1;
+        }
+        if (current == '>') {
+          return index;
+        }
+      }
+      return -1;
+    }
+    QuoteBoundary openingBoundary = new QuoteBoundary(
+        wrapper.contentStart() - wrapper.openingLength(),
+        wrapper.contentStart(),
+        wrapper.closing(),
+        wrapper.escaped());
+    QuoteBoundary closingBoundary = findClosingQuoteBoundary(
+        value,
+        wrapper.contentStart(),
+        openingBoundary);
+    return closingBoundary == null ? -1 : closingBoundary.start();
+  }
+
+  private static int authorizationCredentialEnd(String value, int start) {
+    int index = start;
+    while (index < value.length() && !isAuthorizationCredentialDelimiter(value.charAt(index))) {
+      index++;
+    }
+    return index;
+  }
+
+  private static boolean isAuthorizationCredentialDelimiter(char value) {
+    return Character.isWhitespace(value)
+        || value == ','
+        || value == ';'
+        || value == ')'
+        || value == '}'
+        || value == ']'
+        || value == '<'
+        || value == '>'
+        || value == '"'
+        || value == '\''
+        || value == '`';
+  }
+
+  private static boolean startsWithRedactionMarker(String value, int start) {
+    return start >= 0 && value.startsWith(REDACTION_MARKER, start);
   }
 
   private static String replaceQuotedKeyValues(String value) {
@@ -285,5 +397,18 @@ public final class OutputRedactor {
   }
 
   private record QuoteBoundary(int start, int end, char quote, boolean escaped) {
+  }
+
+  private record AuthorizationWrapper(int contentStart, char closing, boolean escaped) {
+    int openingLength() {
+      return escaped ? 2 : 1;
+    }
+
+    int closingLength() {
+      return escaped ? 2 : 1;
+    }
+  }
+
+  private record AuthorizationCredential(String opening, String closing, int end) {
   }
 }

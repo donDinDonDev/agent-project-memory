@@ -24,6 +24,38 @@ final class OutputRedactorTest {
   }
 
   @Test
+  void redactsWrappedAuthorizationCredentialsWhilePreservingDelimiters() {
+    String redacted = OutputRedactor.redact(
+        "Authorization: Bearer \"FAKE_V200_QUOTED_BEARER\" "
+            + "authorization=Basic 'FAKE_V200_QUOTED_BASIC' "
+            + "Bearer `FAKE_V200_BACKTICK_BEARER` "
+            + "Basic <FAKE_V200_ANGLE_BASIC> "
+            + "Authorization: Bearer \\\"FAKE_V200_ESCAPED_QUOTED_BEARER\\\" "
+            + "Authorization: Bearer FAKE_V200_BARE_BACKSLASH\\TAIL");
+
+    assertAll(
+        () -> assertTrue(redacted.contains(
+            "Authorization: Bearer \"[REDACTED_SECRET_LIKE_VALUE]\"")),
+        () -> assertTrue(redacted.contains(
+            "authorization=Basic '[REDACTED_SECRET_LIKE_VALUE]'")),
+        () -> assertTrue(redacted.contains(
+            "Bearer `[REDACTED_SECRET_LIKE_VALUE]`")),
+        () -> assertTrue(redacted.contains(
+            "Basic <[REDACTED_SECRET_LIKE_VALUE]>")),
+        () -> assertTrue(redacted.contains(
+            "Authorization: Bearer \\\"[REDACTED_SECRET_LIKE_VALUE]\\\"")),
+        () -> assertTrue(redacted.contains(
+            "Authorization: Bearer [REDACTED_SECRET_LIKE_VALUE]")),
+        () -> assertFalse(redacted.contains("FAKE_V200_QUOTED_BEARER")),
+        () -> assertFalse(redacted.contains("FAKE_V200_QUOTED_BASIC")),
+        () -> assertFalse(redacted.contains("FAKE_V200_BACKTICK_BEARER")),
+        () -> assertFalse(redacted.contains("FAKE_V200_ANGLE_BASIC")),
+        () -> assertFalse(redacted.contains("FAKE_V200_ESCAPED_QUOTED_BEARER")),
+        () -> assertFalse(redacted.contains("FAKE_V200_BARE_BACKSLASH")),
+        () -> assertFalse(redacted.contains("TAIL")));
+  }
+
+  @Test
   void redactsJsonStyleQuotedCredentialKeysWhilePreservingNonCredentialValues() {
     String redacted = OutputRedactor.redact(
         "{\"password\":\"FAKE_V170_JSON_PASSWORD\","

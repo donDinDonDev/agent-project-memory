@@ -724,6 +724,57 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryExplainEvidenceRedactsLegacyWrappedAuthorizationCredentialsWithoutMutatingArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String evidenceIndex = evidenceRecord(
+        "ev:legacy:wrapped-auth-secret",
+        "annotation",
+        "src/main/java/com/example/SecretController.java",
+        "com.example.SecretController",
+        "secret",
+        "@GetMapping",
+        7,
+        7,
+        "headers Authorization: Bearer \"FAKE_V200_QUERY_QUOTED_SECRET\" "
+            + "Authorization: Basic <FAKE_V200_QUERY_ANGLE_SECRET> "
+            + "Authorization: Bearer `FAKE_V200_QUERY_BACKTICK_SECRET`",
+        "high");
+    writeArtifacts(
+        artifactRoot,
+        "{\"schema_version\":\"1.0\",\"project\":{\"modules\":{\"items\":[]}}}\n",
+        evidenceIndex);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        "ev:legacy:wrapped-auth-secret");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("1. ev:legacy:wrapped-auth-secret")),
+        () -> assertTrue(result.stdout().contains(
+            "Authorization: Bearer \"" + OutputRedactor.REDACTION_MARKER + "\"")),
+        () -> assertTrue(result.stdout().contains(
+            "Authorization: Basic <" + OutputRedactor.REDACTION_MARKER + ">")),
+        () -> assertTrue(result.stdout().contains(
+            "Authorization: Bearer `" + OutputRedactor.REDACTION_MARKER + "`")),
+        () -> assertFalse(result.stdout().contains("FAKE_V200_QUERY_QUOTED_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_V200_QUERY_ANGLE_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_V200_QUERY_BACKTICK_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(Files.readString(artifactRoot.resolve("evidence-index.jsonl"))
+            .contains("FAKE_V200_QUERY_QUOTED_SECRET")),
+        () -> assertTrue(Files.readString(artifactRoot.resolve("evidence-index.jsonl"))
+            .contains("FAKE_V200_QUERY_ANGLE_SECRET")),
+        () -> assertTrue(Files.readString(artifactRoot.resolve("evidence-index.jsonl"))
+            .contains("FAKE_V200_QUERY_BACKTICK_SECRET")));
+  }
+
+  @Test
   void queryListTestsRedactsLegacyDisplayNameWhilePreservingNavigationFields()
       throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
