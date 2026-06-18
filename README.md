@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.0.0`. Its release artifact is
-`agent-project-memory-2.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.1.0`. Its release artifact is
+`agent-project-memory-2.1.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.0.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.1.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -386,7 +386,7 @@ Compatibility and migration notes:
   regenerate the base artifacts and source registry together, and do not mix
   `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
   `source-registry.json`, or generated Markdown from different scans.
-- The v2.1 release candidate also supports disabled-by-default GitHub/GitLab local
+- The v2.1 release also supports disabled-by-default GitHub/GitLab local
   export imports through `adapters.git_hosting_import`. Accepted records use
   `.project-memory/source-registry.json` schema `1.1` for Git hosting provenance and
   the existing `project-map.json` `schema_version: "2.0"` adapter context. The import
@@ -533,10 +533,8 @@ modification by default. The current product line includes no AI provider integr
 
 ## Project Status
 
-The latest published release is `v2.0.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current repository state is prepared as a `v2.1.0` release candidate, but
-no `v2.1.0` tag, GitHub Release, or release assets are published until the manual
-release step occurs. Normal no-adapter generated `project-map.json` files use
+The latest published release is `v2.1.0`. It ships an executable jar and `SHA256SUMS`
+asset. Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
 artifact-backed lookup commands without changing generated project-memory schemas or
@@ -549,7 +547,7 @@ connector provenance, optional AI presentation, plugin/API security, and v1-to-v
 migration boundaries without changing analyzer behavior, CLI commands or flags,
 generated artifact schemas, evidence semantics, or packaged runtime behavior. The v2.0
 release includes a disabled-by-default local structured import reference adapter for
-explicitly configured repository-relative export files. The v2.1 release candidate adds
+explicitly configured repository-relative export files. The v2.1 release adds
 disabled-by-default local GitHub/GitLab export import through
 `adapters.git_hosting_import`. Adapter-enabled scans emit `source-registry.json` and
 `project-map.json` `schema_version: "2.0"` adapter context as provenance-backed

@@ -13,8 +13,8 @@ No changes yet.
 
 ## [2.1.0] - 2026-06-18
 
-Release status: release candidate. The `v2.1.0` tag, GitHub Release, and release
-assets are not published until the manual release step occurs.
+Release status: published. The `v2.1.0` tag, GitHub Release, and release assets are
+published.
 
 ### Added
 
@@ -31,6 +31,8 @@ assets are not published until the manual release step occurs.
 - Aligned the Maven project version, README local build examples, roadmap status,
   security-policy wording, v2.1 release notes, and public adapter contract wording for
   release-prep review.
+- Updated post-release documentation status to mark `v2.1.0` as published with release
+  assets.
 
 ### Not Included
 

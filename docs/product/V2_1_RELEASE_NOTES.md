@@ -2,8 +2,8 @@
 
 Release date: 2026-06-18
 
-Release status: release candidate. The `v2.1.0` tag, GitHub Release, and release assets
-are not published until the manual release step occurs.
+Release status: published. The `v2.1.0` tag, GitHub Release, and release assets are
+published.
 
 `agent-project-memory` v2.1.0 adds disabled-by-default local GitHub/GitLab export
 import while preserving no-adapter Java/Spring analysis and query compatibility as the
@@ -75,11 +75,11 @@ The v2.1.0 Git hosting import boundary remains local-first and closed by default
   aligned with repository source.
 
 Release-level security review for the implemented local import boundary completed
-before this release candidate, with no release-blocking findings remaining for v2.1.0.
+before publication, with no release-blocking findings remaining for v2.1.0.
 
 ## Validation
 
-The v2.1.0 local release-prep validation passed:
+The v2.1.0 release validation passed:
 
 - `mvn test`: 503 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 503 tests, 0 failures, 0 errors, 0 skipped, including the packaged
@@ -134,8 +134,7 @@ v2.1.0 does not add:
 
 ## Release Assets
 
-When published, the `v2.1.0` GitHub Release is expected to include the standard release
-assets:
+The `v2.1.0` GitHub Release includes the standard release assets:
 
 - `agent-project-memory-2.1.0.jar`
 - `SHA256SUMS`
