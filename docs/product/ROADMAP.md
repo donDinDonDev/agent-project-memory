@@ -1329,6 +1329,52 @@ Non-goals:
   publication, installed-command distribution, signing, native images, container
   images, release automation, or automatic code modification.
 
+## v2.1.0: GitHub/GitLab Local Export Imports
+
+Expected outcome:
+
+- Add disabled-by-default local JSON export import for GitHub and GitLab issue,
+  pull-request, and merge-request records.
+- Use one normalized local export format for Git hosting records rather than raw
+  GitHub or GitLab API responses.
+- Preserve no-adapter scan and query compatibility with the v1 artifact set.
+- Emit Git hosting records only as provenance-backed external/document context through
+  the existing v2 source registry and `project-map.json` adapter context strategy.
+- Keep Git hosting records out of `evidence-index.jsonl` and out of Java/Spring code
+  facts.
+- Keep network/API mode, credentials, background sync, remote cache, source upload,
+  adapter-aware query support, and AI behavior out of the local import baseline.
+
+Planned contract boundary:
+
+- Supported local source types are `github_issue`, `github_pull_request`,
+  `gitlab_issue`, and `gitlab_merge_request`.
+- Source identity is a stable logical key derived from provider, host, namespace, record
+  type, and issue/PR/MR number or IID. It is not a local path, raw URL, timestamp,
+  title, author, branch name, or content hash.
+- Generated output may serialize bounded redacted display titles, content hashes,
+  provenance join keys, sanitized source URLs when safe, snapshot timestamps, and
+  provider metadata. It must not serialize raw issue/PR/MR bodies, comments, review
+  notes, raw provider export objects, raw request/response logs, configured import
+  paths, local absolute paths, credentials, tokens, cookies, authorization headers, or
+  raw config values by default.
+- GitHub/GitLab text remains stale-prone external context. It is not proof that the
+  remote service is current, complete, authoritative, reachable, or aligned with
+  repository source.
+
+Non-goals:
+
+- No live GitHub/GitLab API fetching in the local import baseline.
+- No connector credentials, credential lookup, OAuth, PAT, GitHub App, GitLab token,
+  credential storage, credential validation, retry/backoff, rate-limit handling,
+  background sync, or remote cache behavior.
+- No adapter-backed query commands unless a later release explicitly documents
+  adapter-aware query behavior.
+- No external issue, pull-request, merge-request, comment, review, label, milestone,
+  branch, pipeline, or discussion text as Java/Spring source truth, evidence, security
+  findings, source/spec agreement claims, documentation freshness claims, or automatic
+  code-modification input.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:

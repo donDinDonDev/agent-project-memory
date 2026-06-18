@@ -9,10 +9,12 @@ bounded chunk references, resolving document evidence, conservative code-doc
 reconciliation signals, and compact local documentation guide rendering from structured
 document facts and evidence only.
 
-The v2 line adds one disabled-by-default local structured import adapter for explicitly
-configured repository-relative export files. Network/API connectors remain future input
-adapters. They should not be part of the MVP core analyzer, and they should not be
-required to generate `.project-memory/` from a Java/Spring repository.
+The v2 line adds disabled-by-default local import adapters for explicitly configured
+repository-relative export files. v2.0 ships a local structured import reference
+adapter; the planned v2.1 Git hosting import boundary remains local JSON export first.
+Network/API connectors remain future input adapters. They should not be part of the MVP
+core analyzer, and they should not be required to generate `.project-memory/` from a
+Java/Spring repository.
 
 ## v2 Adapter Boundary
 
@@ -153,6 +155,94 @@ adapter-backed record and is referenced by `provenanceId`. Missing or ambiguous
 provenance blocks normal record acceptance. API import provenance remains future work;
 the v2.0 reference mode is local structured import with network marked as
 not applicable or disabled.
+
+## Planned v2.1 Git Hosting Local Export Import
+
+The planned v2.1 Git hosting adapter should start with a normalized local JSON export
+format, not raw GitHub or GitLab API responses and not live API fetching. The first
+supported format is:
+
+```text
+agent-project-memory.git_hosting_export.v1
+```
+
+The import file is one explicitly configured repository-relative JSON file under the
+scan root. It is untrusted local input and must pass the same regular-file,
+single-link, no-follow, size, record-count, duplicate, and bounded parsing gates used by
+the v2 adapter boundary before any record is normalized.
+
+The format is provider-normalized rather than API-shape-normalized. Records must carry
+the provider and stable logical identity fields needed to derive a `SourceDocument`
+identity:
+
+- `provider`: `github` or `gitlab`.
+- `host`: normalized host, such as `github.com`, `gitlab.com`, or a bounded safe
+  self-hosted domain. It is provenance metadata, not reachability proof.
+- `namespace`: GitHub repository namespace such as `owner/repo`, or GitLab project path
+  such as `group/subgroup/project`.
+- `record_type`: `issue`, `pull_request`, or `merge_request`.
+- `number` for GitHub issues and pull requests, or `iid` for GitLab issues and merge
+  requests.
+- `status`: `current` for accepted records; stale, partial, unsupported, ambiguous, or
+  missing-status records are rejected or represented only as bounded diagnostics.
+- `exported_at`: import snapshot timestamp when known and safe to parse.
+
+The accepted source types are:
+
+- `github_issue`
+- `github_pull_request`
+- `gitlab_issue`
+- `gitlab_merge_request`
+
+The primary `sourceIdentity` is derived from provider, host, namespace, record type, and
+record number or IID, for example
+`git-hosting/github/github.com/owner/repo/issue/123`. Local file paths, absolute paths,
+raw URLs, local export filenames, timestamps, titles, content hashes, branch names, and
+author names must not be primary identities. Records without a stable safe identity are
+not accepted as normal adapter-backed records.
+
+Titles may be serialized only as bounded redacted display metadata. Bodies, comments,
+review notes, descriptions, labels, author names, branch names, commit metadata,
+pipeline/status payloads, and raw provider export objects are normalized only as
+untrusted adapter input. The first Git hosting import boundary may use them only for
+content hashing, bounded counts, or diagnostics. Any later in-memory analysis over raw
+Git hosting text requires a separate contract before implementation, and raw text must
+not be serialized by default. Comments and reviews are part of the parent
+issue/pull-request/merge-request source document in the first slice; they do not become
+separate source-document types unless a later contract explicitly adds that model.
+
+Generated output placement remains the v2 adapter placement:
+
+- accepted records are emitted through `.project-memory/source-registry.json`;
+- `project-map.json` uses the existing top-level `adapter_context` shape with
+  `schema_version: "2.0"`;
+- `adapter_context.items[]` reference `source_document_ids` and `provenance_ids`;
+- no Git hosting record carries `evidence_ids`;
+- no Git hosting record becomes a Java/Spring endpoint, component, repository, entity,
+  build, config, test, document-evidence, quality, graph, query, or security fact.
+
+Git hosting provenance should add provider-specific metadata inside the source registry,
+such as provider, host, namespace, record type, record number or IID, sanitized source
+URL when safe, exported timestamp, record updated timestamp when known, stale/current
+snapshot status, and trust-boundary labels. These fields are generated provenance and
+review metadata only. They do not prove that GitHub or GitLab is reachable, current,
+complete, authoritative, or aligned with repository source.
+
+The v2.1 config shape should use a new disabled-by-default adapter key:
+
+```yaml
+adapters:
+  git_hosting_import:
+    enabled: true
+    path: exports/git-hosting.json
+```
+
+The `path` value is a repository-relative local JSON export path. The config must not
+accept credentials, environment-variable interpolation, token names, token values,
+remote URLs, global/user-home config, generated-output paths, or API/network options.
+Live API mode, credential lookup, OAuth, PATs, GitHub App auth, GitLab tokens,
+rate-limit state, retries, background sync, remote cache, and out-of-repository export
+paths remain separate later design work.
 
 ## External Data Risk Controls
 

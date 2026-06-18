@@ -261,6 +261,161 @@ generated artifact, evidence type, or schema marker change requires synchronized
 to this contract, `EVIDENCE_MODEL.md`, focused tests or goldens where applicable, the
 changelog, and release notes.
 
+### Planned v2.1 Git Hosting Local Export Output Boundary
+
+The planned v2.1 Git hosting local import boundary reuses the existing v2 adapter
+artifact placement. It does not add a new generated artifact and does not extend
+`evidence-index.jsonl`.
+
+Expected generated-output behavior:
+
+- no-adapter scans stay on `project-map.json` `schema_version: "1.0"` and do not emit
+  `.project-memory/source-registry.json`;
+- explicitly enabled Git hosting import scans emit `.project-memory/source-registry.json`
+  and top-level `project-map.json` `adapter_context` as a v2 adapter artifact set;
+- `project-map.json` keeps the existing adapter-context shape and
+  `schema_version: "2.0"`; no new project-map schema marker is needed unless the
+  adapter-context item shape changes;
+- Git hosting provenance uses a source registry schema update, planned as
+  `source_registry_schema_version: "1.1"`, because provider metadata is added to
+  `provenance[]`;
+- current query commands remain no-adapter focused and do not read
+  `source-registry.json`, source-document IDs, Git hosting provenance, or adapter
+  context rows.
+
+The planned Git hosting source types are:
+
+- `github_issue`
+- `github_pull_request`
+- `gitlab_issue`
+- `gitlab_merge_request`
+
+Git hosting `source_identity` values are normalized logical identities, not local paths
+or raw URLs. The identity is derived from provider, host, namespace, record type, and
+record number or IID, for example:
+
+```text
+git-hosting/github/github.com/owner/repo/issue/123
+git-hosting/github/github.com/owner/repo/pull_request/45
+git-hosting/gitlab/gitlab.com/group/project/issue/77
+git-hosting/gitlab/gitlab.com/group/project/merge_request/88
+```
+
+Accepted Git hosting `source_documents[]` records keep the current source-document
+fields:
+
+```json
+{
+  "id": "source-document:sha256:<stable>",
+  "source_type": "github_issue",
+  "source_identity": "git-hosting/github/github.com/owner/repo/issue/123",
+  "title": "bounded redacted title",
+  "content_hash": "sha256:<normalized-record-content>",
+  "content_status": "not_serialized",
+  "provenance_id": "source-provenance:sha256:<stable>"
+}
+```
+
+Git hosting provenance extends `provenance[]` with provider metadata under
+`git_hosting`. The exact implementation field order may follow the serializer, but the
+contracted metadata is:
+
+```json
+{
+  "id": "source-provenance:sha256:<stable>",
+  "adapter": {
+    "name": "git-hosting-import",
+    "version": "2.1.0"
+  },
+  "import_mode": "local_export",
+  "source_type": "github_issue",
+  "source_identity": "git-hosting/github/github.com/owner/repo/issue/123",
+  "content_hash": "sha256:<normalized-record-content>",
+  "source_location_kind": "repository_relative_file",
+  "network_access": "disabled",
+  "git_hosting": {
+    "provider": "github",
+    "host": "github.com",
+    "namespace": "owner/repo",
+    "record_type": "issue",
+    "record_number": "123",
+    "record_state": "open",
+    "source_url": "https://github.com/owner/repo/issues/123",
+    "exported_at": "2026-06-18T00:00:00Z",
+    "record_updated_at": "2026-06-17T00:00:00Z"
+  },
+  "trust_boundary_labels": [
+    "git_hosting_import",
+    "github",
+    "repository_relative_file",
+    "provenance_backed_external_context",
+    "not_code_evidence",
+    "network_disabled"
+  ]
+}
+```
+
+`git_hosting.source_url` is optional. If emitted, it must be a sanitized provider URL
+without userinfo, credentials, query strings, fragments, authorization material, local
+paths, or unsupported schemes. The URL is provenance metadata only and is not proof that
+the remote service is reachable or current.
+
+`git_hosting.record_state`, `exported_at`, and `record_updated_at` are snapshot metadata
+from the local export. They are not current-state claims. Missing, malformed,
+contradictory, stale, partial, unsupported, oversized, duplicate, ambiguous, or
+provenance-missing records must be rejected, capped, or represented only as bounded
+adapter diagnostics.
+
+`project-map.json` adapter-context items keep the existing shape, with Git hosting
+source types and identities:
+
+```json
+{
+  "id": "adapter_context:source-document-sha256-<stable>",
+  "context_kind": "external_document_context",
+  "source_type": "github_issue",
+  "source_identity": "git-hosting/github/github.com/owner/repo/issue/123",
+  "title": "bounded redacted title",
+  "content_status": "not_serialized",
+  "support_type": "provenance_only",
+  "confidence": "low",
+  "source_document_ids": ["source-document:sha256:<stable>"],
+  "provenance_ids": ["source-provenance:sha256:<stable>"]
+}
+```
+
+Raw issue bodies, pull-request or merge-request descriptions, comments, review notes,
+labels, authors, branch names, commit metadata, pipeline/status payloads, raw export
+objects, raw request/response logs, configured import paths, local absolute paths,
+credentials, tokens, cookies, authorization headers, and raw config values must not be
+serialized by default. The content hash may include normalized text and metadata that
+the adapter accepted, but generated artifacts must serialize only bounded redacted
+display metadata, hashes, snapshot metadata, and provenance join keys.
+
+The planned scan config addition is:
+
+```yaml
+adapters:
+  git_hosting_import:
+    enabled: true
+    path: exports/git-hosting.json
+```
+
+`adapters.git_hosting_import.enabled` is optional and defaults to disabled. When it is
+`true`, `path` is required and must identify one existing repository-relative regular
+JSON file under the scan root with a verifiable single-link identity. The path must
+follow the same safety rules as other adapter import paths: no absolute paths, no `./`,
+no backslash separators, no empty, `.` or `..` segments, no `.project-memory/` target,
+no directories, no symlinked path segments, no multi-link regular files, no
+unverifiable link counts, and no path outside the scanned repository root. When the
+adapter is disabled, `path` must be omitted.
+
+The planned local export file format is
+`format: "agent-project-memory.git_hosting_export.v1"`. It must not be treated as a raw
+GitHub or GitLab API response. It must not accept credentials, credential names,
+environment-variable interpolation, remote URLs as import locations, API enablement
+flags, background sync settings, retry/rate-limit settings, or network/auth options.
+
 ## Planned v2 Optional AI Presentation Output Boundary
 
 The current implementation does not emit AI presentation artifacts, AI summaries,

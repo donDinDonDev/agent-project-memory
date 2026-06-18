@@ -160,6 +160,42 @@ Downstream evidence consumers should treat this as a compatibility boundary:
 - Query output, graph derivation metadata, generated Markdown, profile artifacts, cache
   metadata, adapter diagnostics, and release notes remain non-evidence.
 
+### Planned v2.1 Git Hosting Provenance Decision
+
+Planned GitHub/GitLab local export imports preserve the v2 provenance boundary. Git
+hosting issues, pull requests, merge requests, comments, review notes, labels,
+milestones, branches, commit metadata, pipeline/status payloads, source URLs, and export
+timestamps are external adapter context, not project evidence.
+
+The planned Git hosting source types are provenance-backed adapter source types:
+
+- `github_issue`
+- `github_pull_request`
+- `gitlab_issue`
+- `gitlab_merge_request`
+
+Those source types must not be added to `evidence-index.jsonl`. They must not reuse the
+existing `document` evidence type, because `document` evidence remains reserved for
+accepted local project documents discovered by the local Markdown/document ingestion
+contract.
+
+Accepted Git hosting records may appear in `project-map.json` only as
+`adapter_context` rows with `source_document_ids` and `provenance_ids` that resolve
+through `source-registry.json`. They intentionally do not carry `evidence_ids`.
+
+Git hosting provenance can identify provider, host, namespace, record type, record
+number or IID, sanitized source URL when safe, snapshot/export timestamp, and record
+updated timestamp when known. These values are generated provenance metadata and review
+join keys only. They must not be used as proof that the external service is reachable,
+current, complete, authoritative, or aligned with repository source.
+
+External Git hosting text must not create or update Java/Spring endpoints, components,
+repositories, entities, build metadata, config semantics, tests, quality/change-risk
+facts, graph edges, security findings, source/spec agreement claims, documentation
+freshness claims, query results, or AI facts. If a later release wants adapter-backed
+evidence or adapter-aware query behavior, this document and `OUTPUT_CONTRACT.md` must
+be updated before implementation.
+
 ## Planned Optional AI Presentation Evidence Decision
 
 Future optional AI presentation output is not evidence. It must not add evidence types,

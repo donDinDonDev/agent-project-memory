@@ -118,6 +118,16 @@ reference adapter. Networked connectors, credential handling, plugin loading,
 provider-backed AI, public API/server modes, and broad local document imports require
 separate later design and review.
 
+After the v2 adapter foundation exists, the next GitHub/GitLab import step should stay
+local export first. A normalized local JSON export for Git hosting issue,
+pull-request, and merge-request records can exercise provider-specific provenance
+without making the core analyzer depend on Git hosting services. These records should
+remain source-registry provenance and `adapter_context` rows only; they should not enter
+`evidence-index.jsonl`, become Java/Spring facts, drive normal query behavior, or imply
+that remote issue/PR/MR text is current source truth. Live API mode, credentials,
+background sync, remote cache, and adapter-aware query support remain separate later
+design decisions.
+
 Optional AI in v2.x is a presentation boundary, not an analysis boundary. Its allowed
 inputs are deterministic generated memory, existing evidence references, and bounded
 non-evidence metadata such as graph derivation, query/source-artifact metadata, profile

@@ -116,6 +116,12 @@ v2 adapter security defaults:
   most 64 records, accepts only `local_export` records with `status: "current"`, and
   rejects stale, partial, malformed, duplicate, unsupported, oversized, or
   provenance-missing records as bounded diagnostics;
+- the planned GitHub/GitLab local export importer keeps the same local-file trust
+  boundary: it accepts only an explicitly configured repository-relative JSON export,
+  parses a provider-normalized format rather than raw API responses, supports only
+  bounded issue, pull-request, and merge-request source types, and rejects records whose
+  provider, host, namespace, number/IID, status, source identity, or provenance cannot
+  be validated safely;
 - adapter-enabled incremental scans skip persistent cache metadata refresh in this
   slice so configured import paths and raw adapter config values are not serialized into
   cache manifests;
@@ -134,6 +140,8 @@ v2 external-data risk controls:
 
 - imported records must carry source identity, import mode, content hash, import or
   fetch timestamp when known, and trust-boundary labels;
+- Git hosting source identity must be a logical provider/host/namespace/record key, not
+  a local path, raw URL, title, author, branch name, timestamp, or content hash;
 - accepted adapter-backed records must reference source-document and provenance IDs
   from the source registry; provenance must not be hidden only in free-form document
   text or evidence excerpts;
@@ -148,6 +156,11 @@ v2 external-data risk controls:
   profile Markdown, release notes, and chat output remain non-evidence;
 - adapter-backed observations must be rejected or marked uncertain when provenance is
   missing, ambiguous, contradictory, or outside the configured import boundary.
+- Git hosting titles may be serialized only as bounded redacted display metadata; raw
+  issue bodies, pull-request or merge-request descriptions, comments, review notes,
+  labels, authors, branch names, commit metadata, pipeline/status payloads, raw export
+  objects, configured import paths, and raw request/response logs must not be serialized
+  by default.
 
 Planned v2 credential and network defaults:
 

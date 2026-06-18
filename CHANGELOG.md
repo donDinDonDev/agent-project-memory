@@ -9,7 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- Documented the planned v2.1 GitHub/GitLab local export import boundary, including the
+  normalized local JSON format, Git hosting source types, source identity strategy,
+  source-registry provenance placement, credential/network defaults, raw content
+  serialization limits, and evidence/provenance separation without adding
+  implementation behavior.
 
 ## [2.0.0] - 2026-06-18
 
