@@ -2,8 +2,8 @@
 
 Release date: 2026-06-18
 
-Release status: release candidate. The `v2.0.0` tag, GitHub Release, and release assets
-are not published until the manual release step occurs.
+Release status: published. The `v2.0.0` GitHub Release includes the executable jar and
+`SHA256SUMS` assets listed below.
 
 `agent-project-memory` v2.0.0 introduces the first production adapter boundary while
 preserving the local-first deterministic Java/Spring analyzer as the default path.
@@ -71,12 +71,12 @@ The v2.0.0 adapter boundary remains local-first and closed by default:
 - Trusted local input handling rejects multi-link regular files before treating
   repository-relative content as source-owned input.
 
-Release-level security review and targeted follow-up hardening completed before this
-release candidate, with no release-blocking findings remaining for v2.0.0.
+Release-level security review and targeted follow-up hardening completed before
+publication, with no release-blocking findings remaining for v2.0.0.
 
 ## Validation
 
-The v2.0.0 local release-prep validation passed:
+The v2.0.0 release validation passed:
 
 - `mvn test`: 493 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 493 tests, 0 failures, 0 errors, 0 skipped, including the packaged
@@ -120,8 +120,7 @@ v2.0.0 does not add:
 
 ## Release Assets
 
-When published, the `v2.0.0` GitHub Release is expected to include the standard release
-assets:
+The `v2.0.0` GitHub Release includes the standard release assets:
 
 - `agent-project-memory-2.0.0.jar`
 - `SHA256SUMS`

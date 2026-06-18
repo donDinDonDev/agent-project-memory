@@ -48,18 +48,18 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v1.9.0`. Its release artifact is
-`agent-project-memory-1.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.0.0`. Its release artifact is
+`agent-project-memory-2.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-1.9.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.0.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
 GitHub Releases: download the jar, optionally verify `SHA256SUMS`, and run it with
-`java -jar`. The v1.x stable line keeps this release-jar path as the minimum planned
+`java -jar`. The public release line keeps this release-jar path as the minimum planned
 distribution path. Package-manager installs and a first-party installed
 `agent-project-memory` command are future distribution work and should not be assumed
 available until a release note documents them.
@@ -377,8 +377,7 @@ Compatibility and migration notes:
   read existing `project-map.json`, `project-graph.json` when graph lookup is needed,
   and `evidence-index.jsonl` artifacts without scanning source, writing repository
   files, or treating query output as evidence.
-- The v2.0 local structured import release candidate keeps no-adapter scans
-  v1-compatible:
+- The v2.0 local structured import release keeps no-adapter scans v1-compatible:
   `project-map.json` remains on `schema_version: "1.0"` and
   `.project-memory/source-registry.json` is not emitted. When the local structured
   import adapter is explicitly enabled and an import file is accepted, the scan emits
@@ -450,7 +449,7 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
-- v2.0 release candidate summary:
+- v2.0 release summary:
   [docs/product/V2_0_RELEASE_NOTES.md](docs/product/V2_0_RELEASE_NOTES.md).
 - v1.9 release summary:
   [docs/product/V1_9_RELEASE_NOTES.md](docs/product/V1_9_RELEASE_NOTES.md).
@@ -525,23 +524,22 @@ modification by default. The current product line includes no AI provider integr
 
 ## Project Status
 
-The latest published release is `v1.9.0`. It ships an executable jar and `SHA256SUMS`
-asset. The current repository state is prepared as a `v2.0.0` release candidate, and
-local builds produce `target/agent-project-memory-2.0.0.jar`. Normal no-adapter generated
-`project-map.json` files use `schema_version: "1.0"` as a stable-line marker. The v1.5
-lightweight relation graph expansion is additive, the v1.6 read-only query expansion
-adds deterministic artifact-backed lookup commands without changing generated
-project-memory schemas or evidence semantics, the v1.7 release adds deterministic
-redaction hardening for selected generated and rendered strings without adding evidence
-fields or schema markers, and the v1.8 release adds public examples and contributor
-onboarding polish without changing analyzer behavior, generated artifact schemas, or
-evidence semantics. The v1.9 release adds public v2 architecture preparation for
-planned adapters, connector provenance, optional AI presentation, plugin/API security,
-and v1-to-v2 migration boundaries without changing analyzer behavior, CLI commands or
-flags, generated artifact schemas, evidence semantics, or packaged runtime behavior.
-The v2.0 release candidate includes a disabled-by-default local structured import
-reference adapter for explicitly configured repository-relative export files. Adapter
-enabled scans emit `source-registry.json` and `project-map.json`
+The latest published release is `v2.0.0`. It ships an executable jar and `SHA256SUMS`
+asset. Normal no-adapter generated `project-map.json` files use
+`schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
+expansion is additive, the v1.6 read-only query expansion adds deterministic
+artifact-backed lookup commands without changing generated project-memory schemas or
+evidence semantics, the v1.7 release adds deterministic redaction hardening for
+selected generated and rendered strings without adding evidence fields or schema
+markers, and the v1.8 release adds public examples and contributor onboarding polish
+without changing analyzer behavior, generated artifact schemas, or evidence semantics.
+The v1.9 release adds public v2 architecture preparation for planned adapters,
+connector provenance, optional AI presentation, plugin/API security, and v1-to-v2
+migration boundaries without changing analyzer behavior, CLI commands or flags,
+generated artifact schemas, evidence semantics, or packaged runtime behavior. The v2.0
+release includes a disabled-by-default local structured import reference adapter for
+explicitly configured repository-relative export files. Adapter-enabled scans emit
+`source-registry.json` and `project-map.json`
 `schema_version: "2.0"` adapter context as provenance-backed external/document context
 only. No-adapter scans remain v1-compatible with `schema_version: "1.0"` and no
 `source-registry.json`; current query support remains focused on those no-adapter

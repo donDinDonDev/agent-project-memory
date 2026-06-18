@@ -2,10 +2,8 @@
 
 ## Current Status
 
-The latest published release is `v1.9.0`, with executable jar and `SHA256SUMS` assets.
-The current repository state is prepared as a `v2.0.0` release candidate, but no
-`v2.0.0` tag, GitHub Release, or release assets are published until the manual release
-step occurs. Normal no-adapter generated `project-map.json` files use
+The latest published release is `v2.0.0`, with executable jar and `SHA256SUMS` assets.
+Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated artifacts
@@ -19,8 +17,8 @@ plugin/API security, and v1-to-v2 migration boundaries without implementing adap
 connectors, network/auth behavior, plugin loading, AI providers, new CLI commands or
 flags, generated artifact schema changes, evidence semantic changes, or analyzer
 behavior changes.
-The v2.0 release candidate includes a disabled-by-default local structured import
-reference adapter. No-adapter scans remain on the current base artifact set and
+The v2.0 release includes a disabled-by-default local structured import reference
+adapter. No-adapter scans remain on the current base artifact set and
 `project-map.json` `schema_version: "1.0"`; explicitly adapter-enabled scans emit
 `source-registry.json` and `project-map.json` `schema_version: "2.0"` adapter context
 for provenance-backed external/document context only. Current query support remains
@@ -45,8 +43,8 @@ incremental cache metadata and whole-output-set reuse, a bounded lightweight rel
 graph artifact, read-only text query commands over existing generated artifacts,
 redacted scan metadata, safe root-local YAML config support, stable CLI help/version
 behavior, deterministic output redaction for obvious secret-looking values, and a
-documented release-jar verification path. The v2.0 release candidate also includes a
-bounded local structured import adapter that is disabled by default, local-only, and
+documented release-jar verification path. The v2.0 release also includes a bounded
+local structured import adapter that is disabled by default, local-only, and
 provenance-backed. The current public adoption surface also includes a checked-in
 generated-output example snapshot and contributor/reporting templates that point readers
 back to the output and evidence contracts.
@@ -1293,7 +1291,7 @@ Non-goals:
   release publication, package publication, SaaS, web UI, repository chat as the core
   product, generic RAG, or automatic code modification.
 
-## v2.0.0: Extensible Ingestion And Adapter Platform (Release Candidate)
+## v2.0.0: Extensible Ingestion And Adapter Platform (Published)
 
 Expected outcome:
 
@@ -1310,7 +1308,7 @@ Expected outcome:
   Java/Spring source facts and not evidence records.
 - Keep current query commands focused on no-adapter v1 artifact sets.
 
-Release-candidate scope:
+Shipped scope:
 
 - Adapter contract foundation with deterministic source-document IDs and required
   provenance validation.

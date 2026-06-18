@@ -13,9 +13,6 @@ No changes yet.
 
 ## [2.0.0] - 2026-06-18
 
-Release status: release candidate. The `v2.0.0` tag, GitHub Release, and release
-assets are not published until the manual release step occurs.
-
 ### Added
 
 - Finalized the planned initial v2.0 adapter design boundary in architecture docs,
