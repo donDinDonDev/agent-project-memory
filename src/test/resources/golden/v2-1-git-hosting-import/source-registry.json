@@ -1,0 +1,113 @@
+{
+  "source_registry_schema_version": "1.1",
+  "adapter_runs": [
+    {
+      "id": "adapter-run:sha256:846c7005876a7fa3f8d6d5fe215feb287ef27b6fd605a58470c81a396b910c42",
+      "adapter": {
+        "name": "git-hosting-import",
+        "version": "2.1.0"
+      },
+      "import_mode": "local_export",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "input_content_hash": "sha256:ae6a0e5e7f0e16d7dbf649d3bcf837f43401cfcb3393d81fb08e00bae17d7d01",
+      "content_status": "not_serialized",
+      "accepted_count": 2,
+      "rejected_count": 2,
+      "diagnostic_count": 2
+    }
+  ],
+  "source_documents": [
+    {
+      "id": "source-document:sha256:5dad3efce1f350a4c255e958ef6409b10696c8f8735a9d549640e9b2753629b8",
+      "source_type": "github_issue",
+      "source_identity": "git-hosting/github/github.com/example/orders-service/issue/42",
+      "title": "Fake GitHub issue",
+      "content_hash": "sha256:cf673e35417e3568c18e039c9f04b9a88e064e3322518f6d11dec26c8dbea9ee",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:bebddd04edf78fe5e9e39c186289eea4cb4065ecfaf714a5025ae7420eee58f3"
+    },
+    {
+      "id": "source-document:sha256:55b11a244f451d885b105bbc48026cc26a70a12fd04be28364c42a2ad48e56e0",
+      "source_type": "gitlab_merge_request",
+      "source_identity": "git-hosting/gitlab/gitlab.example.test/platform/orders/merge_request/5",
+      "title": "Fake GitLab merge request",
+      "content_hash": "sha256:66836e3158b9f7ce146543cc0a3b4b1eca959b2461f040b479c3f5e5696c174a",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:2eb298ccb9b01730139818178a9b02ae17902275c3516c70eebe2117a6130ff5"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "source-provenance:sha256:bebddd04edf78fe5e9e39c186289eea4cb4065ecfaf714a5025ae7420eee58f3",
+      "adapter": {
+        "name": "git-hosting-import",
+        "version": "2.1.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "github_issue",
+      "source_identity": "git-hosting/github/github.com/example/orders-service/issue/42",
+      "content_hash": "sha256:cf673e35417e3568c18e039c9f04b9a88e064e3322518f6d11dec26c8dbea9ee",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "git_hosting": {
+        "provider": "github",
+        "host": "github.com",
+        "namespace": "example/orders-service",
+        "record_type": "issue",
+        "record_number": "42",
+        "record_state": "open",
+        "source_url": "https://github.com/example/orders-service/issues/42",
+        "exported_at": "2026-06-18T00:00:00Z",
+        "record_updated_at": "2026-06-17T00:00:00Z"
+      },
+      "trust_boundary_labels": ["git_hosting_import", "github", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    },
+    {
+      "id": "source-provenance:sha256:2eb298ccb9b01730139818178a9b02ae17902275c3516c70eebe2117a6130ff5",
+      "adapter": {
+        "name": "git-hosting-import",
+        "version": "2.1.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "gitlab_merge_request",
+      "source_identity": "git-hosting/gitlab/gitlab.example.test/platform/orders/merge_request/5",
+      "content_hash": "sha256:66836e3158b9f7ce146543cc0a3b4b1eca959b2461f040b479c3f5e5696c174a",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "git_hosting": {
+        "provider": "gitlab",
+        "host": "gitlab.example.test",
+        "namespace": "platform/orders",
+        "record_type": "merge_request",
+        "record_number": "5",
+        "record_state": "merged",
+        "source_url": "https://gitlab.example.test/platform/orders/-/merge_requests/5",
+        "exported_at": "2026-06-18T00:00:00Z",
+        "record_updated_at": "2026-06-17T00:00:00Z"
+      },
+      "trust_boundary_labels": ["git_hosting_import", "gitlab", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    }
+  ],
+  "diagnostics": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "adapter-diagnostic:git-hosting-import:record:000003:stale_record_rejected",
+        "severity": "warning",
+        "category": "git_hosting_import",
+        "signal": "stale_record_rejected",
+        "message": "Git hosting import record rejected because it is marked stale.",
+        "record_ordinal": 3
+      },
+      {
+        "id": "adapter-diagnostic:git-hosting-import:record:000004:provenance_missing_record_rejected",
+        "severity": "warning",
+        "category": "git_hosting_import",
+        "signal": "provenance_missing_record_rejected",
+        "message": "Git hosting import record rejected because stable source identity is missing or unsafe.",
+        "record_ordinal": 4
+      }
+    ]
+  }
+}

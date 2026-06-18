@@ -10,6 +10,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -1670,6 +1671,102 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(generatedSurfaces.contains("raw connector body")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("exports/issues.json")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_EXPORT_SECRET")));
+  }
+
+  @Test
+  void scanReadsGitHostingImportIntoSourceRegistryWithoutPromotingFactsOrRawBodies()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/git-hosting.json"), """
+        {
+          "format": "agent-project-memory.git_hosting_export.v1",
+          "records": [
+            {
+              "provider": "github",
+              "host": "github.com",
+              "namespace": "Owner/Repo",
+              "record_type": "issue",
+              "number": 201,
+              "title": "Imported GitHub issue",
+              "body": "FAKE_GIT_HOSTING_BODY_SECRET raw GitHub issue body",
+              "status": "current",
+              "record_state": "open",
+              "source_url": "https://github.com/owner/repo/issues/201",
+              "exported_at": "2026-06-18T00:00:00Z",
+              "record_updated_at": "2026-06-17T00:00:00Z"
+            }
+          ]
+        }
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          git_hosting_import:
+            enabled: true
+            path: exports/git-hosting.json
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
+    String generatedSurfaces = String.join(
+        "\n",
+        projectMap.toString(),
+        sourceRegistryJson,
+        evidenceIndex,
+        agentGuide,
+        result.stdout(),
+        result.stderr());
+    JsonNode adapterItem = projectMap.path("adapter_context").path("items").get(0);
+    JsonNode gitHosting = sourceRegistry.path("provenance").get(0).path("git_hosting");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated source-registry.json with 1 source document(s)")),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals(
+            "local_import_read",
+            projectMap.path("scan").path("features").path("adapters").path("status").asText()),
+        () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
+        () -> assertEquals("github_issue", adapterItem.path("source_type").asText()),
+        () -> assertEquals(
+            "git-hosting/github/github.com/owner/repo/issue/201",
+            adapterItem.path("source_identity").asText()),
+        () -> assertFalse(adapterItem.has("evidence_ids")),
+        () -> assertEquals(0, projectMap.path("endpoints").size()),
+        () -> assertEquals(0, projectMap.path("components").path("items").size()),
+        () -> assertEquals(0, projectMap.path("entities").path("items").size()),
+        () -> assertEquals(0, projectMap.path("tests").path("items").size()),
+        () -> assertEquals("1.1", sourceRegistry.path("source_registry_schema_version").asText()),
+        () -> assertEquals(
+            AdapterLocalImport.GIT_HOSTING_IMPORT_ADAPTER,
+            sourceRegistry.path("adapter_runs").get(0).path("adapter").path("name").asText()),
+        () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
+        () -> assertEquals(1, sourceRegistry.path("provenance").size()),
+        () -> assertEquals("github", gitHosting.path("provider").asText()),
+        () -> assertEquals("github.com", gitHosting.path("host").asText()),
+        () -> assertEquals("owner/repo", gitHosting.path("namespace").asText()),
+        () -> assertEquals("issue", gitHosting.path("record_type").asText()),
+        () -> assertEquals("201", gitHosting.path("record_number").asText()),
+        () -> assertEquals("open", gitHosting.path("record_state").asText()),
+        () -> assertEquals(
+            "https://github.com/owner/repo/issues/201",
+            gitHosting.path("source_url").asText()),
+        () -> assertFalse(evidenceIndex.contains("github_issue")),
+        () -> assertFalse(evidenceIndex.contains("source-provenance")),
+        () -> assertFalse(generatedSurfaces.contains("exports/git-hosting.json")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_GIT_HOSTING_BODY_SECRET")),
+        () -> assertFalse(generatedSurfaces.contains("raw GitHub issue body")),
+        () -> assertFalse(generatedSurfaces.contains(tempDir.toString())));
   }
 
   @Test

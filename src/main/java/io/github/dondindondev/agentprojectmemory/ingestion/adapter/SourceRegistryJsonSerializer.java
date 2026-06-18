@@ -1,11 +1,13 @@
 package io.github.dondindondev.agentprojectmemory.ingestion.adapter;
 
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 public final class SourceRegistryJsonSerializer {
   public static final String SOURCE_REGISTRY_SCHEMA_VERSION = "1.0";
+  public static final String GIT_HOSTING_SOURCE_REGISTRY_SCHEMA_VERSION = "1.1";
 
   public String serialize(AdapterIngestionResult result) {
     Objects.requireNonNull(result, "result");
@@ -14,7 +16,7 @@ public final class SourceRegistryJsonSerializer {
     }
     StringBuilder json = new StringBuilder();
     json.append("{\n");
-    appendStringField(json, 1, "source_registry_schema_version", SOURCE_REGISTRY_SCHEMA_VERSION, true);
+    appendStringField(json, 1, "source_registry_schema_version", schemaVersion(result), true);
     appendAdapterRuns(json, result.adapterRuns(), true);
     appendSourceDocuments(json, result.sourceDocuments(), true);
     appendProvenance(json, result.provenance(), true);
@@ -111,6 +113,9 @@ public final class SourceRegistryJsonSerializer {
       appendStringField(json, 3, "content_hash", provenance.contentHash(), true);
       appendStringField(json, 3, "source_location_kind", provenance.sourceLocationKind(), true);
       appendStringField(json, 3, "network_access", provenance.networkAccess(), true);
+      if (provenance.gitHosting() != null) {
+        appendGitHostingMetadata(json, provenance.gitHosting(), true);
+      }
       appendStringArrayField(json, 3, "trust_boundary_labels", provenance.trustBoundaryLabels(), false);
       indent(json, 2);
       json.append("}");
@@ -167,6 +172,45 @@ public final class SourceRegistryJsonSerializer {
     json.append("\"adapter\": {\n");
     appendStringField(json, 4, "name", adapterIdentity.name(), true);
     appendStringField(json, 4, "version", adapterIdentity.version(), false);
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private String schemaVersion(AdapterIngestionResult result) {
+    return result.provenance().stream().anyMatch(provenance -> provenance.gitHosting() != null)
+        ? GIT_HOSTING_SOURCE_REGISTRY_SCHEMA_VERSION
+        : SOURCE_REGISTRY_SCHEMA_VERSION;
+  }
+
+  private void appendGitHostingMetadata(
+      StringBuilder json,
+      GitHostingMetadata metadata,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"git_hosting\": {\n");
+    appendStringField(json, 4, "provider", metadata.provider(), true);
+    appendStringField(json, 4, "host", metadata.host(), true);
+    appendStringField(json, 4, "namespace", metadata.namespace(), true);
+    appendStringField(json, 4, "record_type", metadata.recordType(), true);
+    List<MetadataField> optionalFields = new ArrayList<>();
+    if (metadata.recordState() != null) {
+      optionalFields.add(new MetadataField("record_state", metadata.recordState()));
+    }
+    if (metadata.sourceUrl() != null) {
+      optionalFields.add(new MetadataField("source_url", metadata.sourceUrl()));
+    }
+    if (metadata.exportedAt() != null) {
+      optionalFields.add(new MetadataField("exported_at", metadata.exportedAt()));
+    }
+    if (metadata.recordUpdatedAt() != null) {
+      optionalFields.add(new MetadataField("record_updated_at", metadata.recordUpdatedAt()));
+    }
+    appendStringField(json, 4, "record_number", metadata.recordNumber(), !optionalFields.isEmpty());
+    for (int index = 0; index < optionalFields.size(); index++) {
+      MetadataField field = optionalFields.get(index);
+      appendStringField(json, 4, field.name(), field.value(), index < optionalFields.size() - 1);
+    }
     indent(json, 3);
     json.append("}");
     appendLineEnding(json, trailingComma);
@@ -279,5 +323,8 @@ public final class SourceRegistryJsonSerializer {
       }
     }
     return escaped.toString();
+  }
+
+  private record MetadataField(String name, String value) {
   }
 }

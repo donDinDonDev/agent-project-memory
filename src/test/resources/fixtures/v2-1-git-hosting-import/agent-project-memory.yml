@@ -1,0 +1,5 @@
+version: 1
+adapters:
+  git_hosting_import:
+    enabled: true
+    path: exports/git-hosting.json

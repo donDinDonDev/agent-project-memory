@@ -1,0 +1,53 @@
+{
+  "format": "agent-project-memory.git_hosting_export.v1",
+  "records": [
+    {
+      "provider": "github",
+      "host": "github.com",
+      "namespace": "example/orders-service",
+      "record_type": "issue",
+      "number": 42,
+      "title": "Fake GitHub issue",
+      "body": "FAKE_FIXTURE_GITHUB_BODY_SECRET",
+      "status": "current",
+      "record_state": "open",
+      "source_url": "https://github.com/example/orders-service/issues/42",
+      "exported_at": "2026-06-18T00:00:00Z",
+      "record_updated_at": "2026-06-17T00:00:00Z"
+    },
+    {
+      "provider": "gitlab",
+      "host": "gitlab.example.test",
+      "namespace": "platform/orders",
+      "record_type": "merge_request",
+      "iid": 5,
+      "title": "Fake GitLab merge request",
+      "body": "FAKE_FIXTURE_GITLAB_BODY_SECRET",
+      "status": "current",
+      "record_state": "merged",
+      "source_url": "https://gitlab.example.test/platform/orders/-/merge_requests/5",
+      "exported_at": "2026-06-18T00:00:00Z",
+      "record_updated_at": "2026-06-17T00:00:00Z"
+    },
+    {
+      "provider": "github",
+      "host": "github.com",
+      "namespace": "example/orders-service",
+      "record_type": "issue",
+      "number": 43,
+      "title": "Fake stale issue",
+      "body": "FAKE_FIXTURE_STALE_BODY_SECRET",
+      "status": "stale"
+    },
+    {
+      "provider": "github",
+      "host": "github.com",
+      "namespace": "token/FAKE_NAMESPACE_TOKEN",
+      "record_type": "issue",
+      "number": 44,
+      "title": "Fake unsafe namespace",
+      "body": "FAKE_FIXTURE_UNSAFE_NAMESPACE_BODY_SECRET",
+      "status": "current"
+    }
+  ]
+}

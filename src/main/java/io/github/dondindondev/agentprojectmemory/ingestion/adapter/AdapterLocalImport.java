@@ -7,6 +7,7 @@ public record AdapterLocalImport(
     AdapterImportMode importMode,
     String path) {
   public static final String LOCAL_STRUCTURED_IMPORT_ADAPTER = "local-structured-import";
+  public static final String GIT_HOSTING_IMPORT_ADAPTER = "git-hosting-import";
 
   public AdapterLocalImport {
     adapterName = StableAdapterIds.requiredText(adapterName, "adapter name");
@@ -17,6 +18,13 @@ public record AdapterLocalImport(
   public static AdapterLocalImport localStructuredImport(String path) {
     return new AdapterLocalImport(
         LOCAL_STRUCTURED_IMPORT_ADAPTER,
+        AdapterImportMode.LOCAL_EXPORT,
+        path);
+  }
+
+  public static AdapterLocalImport gitHostingImport(String path) {
+    return new AdapterLocalImport(
+        GIT_HOSTING_IMPORT_ADAPTER,
         AdapterImportMode.LOCAL_EXPORT,
         path);
   }

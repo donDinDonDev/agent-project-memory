@@ -386,6 +386,13 @@ Compatibility and migration notes:
   regenerate the base artifacts and source registry together, and do not mix
   `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
   `source-registry.json`, or generated Markdown from different scans.
+- Current unreleased builds also support disabled-by-default GitHub/GitLab local export
+  imports through `adapters.git_hosting_import`. Accepted records use
+  `.project-memory/source-registry.json` schema `1.1` for Git hosting provenance and
+  the existing `project-map.json` `schema_version: "2.0"` adapter context. The import
+  remains local JSON only: no API calls, network access, credentials, adapter-aware
+  query behavior, raw issue/PR/MR bodies, comments, review notes, configured import
+  paths, or local absolute paths are serialized by default.
 - Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
   `schema_version: "1.0"` outputs. Consumers that encounter
   `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
@@ -827,13 +834,14 @@ Current limitations:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional
   `documents.include`/`documents.exclude` path rules, and disabled-by-default adapter
-  config for local structured import. When explicitly enabled, the adapter reads one
-  validated repository-relative regular-file import path under the scan root, parses the
-  bounded local structured import JSON format, emits `source-registry.json`, and adds
-  `project-map.json` adapter context as provenance-backed external/document context. It
-  does not enable network access, accept credentials, serialize raw bodies or configured
-  import paths, create `evidence-index.jsonl` records, or create Java/Spring project
-  facts. User include/exclude rules apply only to local Markdown discovery through
+  config for local structured import or Git hosting import. When explicitly enabled,
+  the selected adapter reads one validated repository-relative regular-file import path
+  under the scan root, parses its bounded documented JSON format, emits
+  `source-registry.json`, and adds `project-map.json` adapter context as
+  provenance-backed external/document context. It does not enable network access,
+  accept credentials, serialize raw bodies or configured import paths, create
+  `evidence-index.jsonl` records, or create Java/Spring project facts. User
+  include/exclude rules apply only to local Markdown discovery through
   normalized repository-relative paths, cannot override built-in safety exclusions, and
   are summarized only through redacted counts and statuses in `scan` metadata.
 - `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`

@@ -116,12 +116,12 @@ v2 adapter security defaults:
   most 64 records, accepts only `local_export` records with `status: "current"`, and
   rejects stale, partial, malformed, duplicate, unsupported, oversized, or
   provenance-missing records as bounded diagnostics;
-- the planned GitHub/GitLab local export importer keeps the same local-file trust
-  boundary: it accepts only an explicitly configured repository-relative JSON export,
-  parses a provider-normalized format rather than raw API responses, supports only
-  bounded issue, pull-request, and merge-request source types, and rejects records whose
-  provider, host, namespace, number/IID, status, source identity, or provenance cannot
-  be validated safely;
+- the GitHub/GitLab local export importer keeps the same local-file trust boundary: it
+  accepts only an explicitly configured repository-relative JSON export, parses a
+  provider-normalized format rather than raw API responses, supports only bounded issue,
+  pull-request, and merge-request source types, emits Git hosting provenance through
+  `source-registry.json`, and rejects records whose provider, host, namespace,
+  number/IID, status, source identity, or provenance cannot be validated safely;
 - adapter-enabled incremental scans skip persistent cache metadata refresh in this
   slice so configured import paths and raw adapter config values are not serialized into
   cache manifests;

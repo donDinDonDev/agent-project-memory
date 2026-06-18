@@ -11,10 +11,10 @@ document facts and evidence only.
 
 The v2 line adds disabled-by-default local import adapters for explicitly configured
 repository-relative export files. v2.0 ships a local structured import reference
-adapter; the planned v2.1 Git hosting import boundary remains local JSON export first.
-Network/API connectors remain future input adapters. They should not be part of the MVP
-core analyzer, and they should not be required to generate `.project-memory/` from a
-Java/Spring repository.
+adapter, and current unreleased v2.1 work adds a Git hosting local JSON export import
+adapter. Git hosting API/network connectors remain future input adapters. They should
+not be part of the MVP core analyzer, and they should not be required to generate
+`.project-memory/` from a Java/Spring repository.
 
 ## v2 Adapter Boundary
 
@@ -156,11 +156,10 @@ provenance blocks normal record acceptance. API import provenance remains future
 the v2.0 reference mode is local structured import with network marked as
 not applicable or disabled.
 
-## Planned v2.1 Git Hosting Local Export Import
+## v2.1 Git Hosting Local Export Import
 
-The planned v2.1 Git hosting adapter should start with a normalized local JSON export
-format, not raw GitHub or GitLab API responses and not live API fetching. The first
-supported format is:
+The v2.1 Git hosting adapter starts with a normalized local JSON export format, not raw
+GitHub or GitLab API responses and not live API fetching. The supported format is:
 
 ```text
 agent-project-memory.git_hosting_export.v1
@@ -221,14 +220,14 @@ Generated output placement remains the v2 adapter placement:
 - no Git hosting record becomes a Java/Spring endpoint, component, repository, entity,
   build, config, test, document-evidence, quality, graph, query, or security fact.
 
-Git hosting provenance should add provider-specific metadata inside the source registry,
+Git hosting provenance adds provider-specific metadata inside the source registry,
 such as provider, host, namespace, record type, record number or IID, sanitized source
 URL when safe, exported timestamp, record updated timestamp when known, stale/current
 snapshot status, and trust-boundary labels. These fields are generated provenance and
 review metadata only. They do not prove that GitHub or GitLab is reachable, current,
 complete, authoritative, or aligned with repository source.
 
-The v2.1 config shape should use a new disabled-by-default adapter key:
+The v2.1 config shape uses a disabled-by-default adapter key:
 
 ```yaml
 adapters:

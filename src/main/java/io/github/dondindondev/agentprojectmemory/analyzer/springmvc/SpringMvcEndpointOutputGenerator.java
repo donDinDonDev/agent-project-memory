@@ -131,6 +131,7 @@ import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphIds;
 import io.github.dondindondev.agentprojectmemory.graph.ProjectGraphJsonSerializer;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterIngestionResult;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.GitHostingImportAdapter;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.LocalStructuredImportAdapter;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceDocument;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceRegistryJsonSerializer;
@@ -483,6 +484,8 @@ public final class SpringMvcEndpointOutputGenerator {
       new ProjectGraphJsonSerializer();
   private final LocalStructuredImportAdapter localStructuredImportAdapter =
       new LocalStructuredImportAdapter();
+  private final GitHostingImportAdapter gitHostingImportAdapter =
+      new GitHostingImportAdapter();
   private final SourceRegistryJsonSerializer sourceRegistryJsonSerializer =
       new SourceRegistryJsonSerializer();
 
@@ -828,7 +831,14 @@ public final class SpringMvcEndpointOutputGenerator {
     if (localImports.isEmpty()) {
       return AdapterIngestionResult.disabled();
     }
-    return localStructuredImportAdapter.read(repositoryRoot, localImports.get(0));
+    AdapterLocalImport localImport = localImports.get(0);
+    if (AdapterLocalImport.LOCAL_STRUCTURED_IMPORT_ADAPTER.equals(localImport.adapterName())) {
+      return localStructuredImportAdapter.read(repositoryRoot, localImport);
+    }
+    if (AdapterLocalImport.GIT_HOSTING_IMPORT_ADAPTER.equals(localImport.adapterName())) {
+      return gitHostingImportAdapter.read(repositoryRoot, localImport);
+    }
+    throw new IOException("Adapter import selection is unsupported.");
   }
 
   private boolean shouldGenerate(

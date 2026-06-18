@@ -11,11 +11,13 @@ architecture documents.
 
 ### Added
 
-- Documented the planned v2.1 GitHub/GitLab local export import boundary, including the
-  normalized local JSON format, Git hosting source types, source identity strategy,
-  source-registry provenance placement, credential/network defaults, raw content
-  serialization limits, and evidence/provenance separation without adding
-  implementation behavior.
+- Implemented disabled-by-default GitHub/GitLab local export import for explicitly
+  configured repository-relative JSON files using
+  `format: "agent-project-memory.git_hosting_export.v1"`, including Git hosting source
+  types, stable provider/host/namespace/record identity normalization,
+  `source-registry.json` schema `1.1` provenance metadata, existing
+  `project-map.json` adapter context output, bounded diagnostics, fake-only fixtures,
+  and regression coverage for no-adapter compatibility and raw text/path redaction.
 
 ## [2.0.0] - 2026-06-18
 

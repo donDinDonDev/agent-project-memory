@@ -39,8 +39,10 @@ public final class ScanConfigurationLoader {
       "generated_sources",
       "follow_symlinks");
   private static final Set<String> DOCUMENT_KEYS = Set.of("include", "exclude");
-  private static final Set<String> ADAPTER_KEYS = Set.of("local_structured_import");
-  private static final Set<String> LOCAL_STRUCTURED_IMPORT_KEYS = Set.of("enabled", "path");
+  private static final Set<String> ADAPTER_KEYS = Set.of(
+      "local_structured_import",
+      "git_hosting_import");
+  private static final Set<String> LOCAL_IMPORT_KEYS = Set.of("enabled", "path");
 
   public ScanConfiguration load(
       Path repositoryRoot,
@@ -295,18 +297,41 @@ public final class ScanConfigurationLoader {
     }
     rejectUnknownKeys(adapters, ADAPTER_KEYS, "adapters");
 
-    Object localImportValue = adapters.get("local_structured_import");
+    AdapterLocalImport localStructuredImport = adapterLocalImport(
+        adapters,
+        "local_structured_import",
+        repositoryRoot);
+    AdapterLocalImport gitHostingImport = adapterLocalImport(
+        adapters,
+        "git_hosting_import",
+        repositoryRoot);
+    if (localStructuredImport != null && gitHostingImport != null) {
+      throw new InvalidScanConfigException(
+          "Invalid config: only one adapter local import can be enabled.");
+    }
+    if (localStructuredImport != null) {
+      return AdapterConfiguration.enabledLocalImport(localStructuredImport);
+    }
+    if (gitHostingImport != null) {
+      return AdapterConfiguration.enabledLocalImport(gitHostingImport);
+    }
+    return AdapterConfiguration.disabled();
+  }
+
+  private AdapterLocalImport adapterLocalImport(Map<?, ?> adapters, String adapterKey, Path repositoryRoot)
+      throws InvalidScanConfigException {
+    Object localImportValue = adapters.get(adapterKey);
     if (localImportValue == null) {
-      return AdapterConfiguration.disabled();
+      return null;
     }
     if (!(localImportValue instanceof Map<?, ?> localImport)) {
       throw new InvalidScanConfigException(
-          "Invalid config: adapters.local_structured_import must be a mapping.");
+          "Invalid config: adapters." + adapterKey + " must be a mapping.");
     }
     rejectUnknownKeys(
         localImport,
-        LOCAL_STRUCTURED_IMPORT_KEYS,
-        "adapters.local_structured_import");
+        LOCAL_IMPORT_KEYS,
+        "adapters." + adapterKey);
 
     Object pathValue = localImport.get("path");
     Object enabledValue = localImport.get("enabled");
@@ -315,11 +340,11 @@ public final class ScanConfigurationLoader {
         throw new InvalidScanConfigException(
             "Invalid config: disabled adapter config must not declare an import path.");
       }
-      return AdapterConfiguration.disabled();
+      return null;
     }
     if (!(enabledValue instanceof Boolean enabled)) {
       throw new InvalidScanConfigException(
-          "Invalid config: adapters.local_structured_import.enabled must be boolean.");
+          "Invalid config: adapters." + adapterKey + ".enabled must be boolean.");
     }
 
     if (!enabled) {
@@ -327,7 +352,7 @@ public final class ScanConfigurationLoader {
         throw new InvalidScanConfigException(
             "Invalid config: disabled adapter config must not declare an import path.");
       }
-      return AdapterConfiguration.disabled();
+      return null;
     }
     if (pathValue == null) {
       throw new InvalidScanConfigException("Invalid config: adapter import path is required.");
@@ -336,8 +361,11 @@ public final class ScanConfigurationLoader {
       throw new InvalidScanConfigException("Invalid config: adapter import path must be a string.");
     }
 
-    return AdapterConfiguration.enabledLocalImport(
-        AdapterLocalImport.localStructuredImport(validAdapterLocalImportPath(repositoryRoot, importPath)));
+    String validImportPath = validAdapterLocalImportPath(repositoryRoot, importPath);
+    if ("git_hosting_import".equals(adapterKey)) {
+      return AdapterLocalImport.gitHostingImport(validImportPath);
+    }
+    return AdapterLocalImport.localStructuredImport(validImportPath);
   }
 
   private String validAdapterLocalImportPath(Path repositoryRoot, String importPath)

@@ -160,14 +160,14 @@ Downstream evidence consumers should treat this as a compatibility boundary:
 - Query output, graph derivation metadata, generated Markdown, profile artifacts, cache
   metadata, adapter diagnostics, and release notes remain non-evidence.
 
-### Planned v2.1 Git Hosting Provenance Decision
+### v2.1 Git Hosting Provenance Decision
 
-Planned GitHub/GitLab local export imports preserve the v2 provenance boundary. Git
+GitHub/GitLab local export imports preserve the v2 provenance boundary. Git
 hosting issues, pull requests, merge requests, comments, review notes, labels,
 milestones, branches, commit metadata, pipeline/status payloads, source URLs, and export
 timestamps are external adapter context, not project evidence.
 
-The planned Git hosting source types are provenance-backed adapter source types:
+The Git hosting source types are provenance-backed adapter source types:
 
 - `github_issue`
 - `github_pull_request`

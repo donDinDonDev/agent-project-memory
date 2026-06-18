@@ -261,10 +261,10 @@ generated artifact, evidence type, or schema marker change requires synchronized
 to this contract, `EVIDENCE_MODEL.md`, focused tests or goldens where applicable, the
 changelog, and release notes.
 
-### Planned v2.1 Git Hosting Local Export Output Boundary
+### v2.1 Git Hosting Local Export Output Boundary
 
-The planned v2.1 Git hosting local import boundary reuses the existing v2 adapter
-artifact placement. It does not add a new generated artifact and does not extend
+The v2.1 Git hosting local import boundary reuses the existing v2 adapter artifact
+placement. It does not add a new generated artifact and does not extend
 `evidence-index.jsonl`.
 
 Expected generated-output behavior:
@@ -276,14 +276,13 @@ Expected generated-output behavior:
 - `project-map.json` keeps the existing adapter-context shape and
   `schema_version: "2.0"`; no new project-map schema marker is needed unless the
   adapter-context item shape changes;
-- Git hosting provenance uses a source registry schema update, planned as
-  `source_registry_schema_version: "1.1"`, because provider metadata is added to
-  `provenance[]`;
+- Git hosting provenance uses `source_registry_schema_version: "1.1"` because provider
+  metadata is added to `provenance[]`;
 - current query commands remain no-adapter focused and do not read
   `source-registry.json`, source-document IDs, Git hosting provenance, or adapter
   context rows.
 
-The planned Git hosting source types are:
+The Git hosting source types are:
 
 - `github_issue`
 - `github_pull_request`
@@ -392,7 +391,7 @@ serialized by default. The content hash may include normalized text and metadata
 the adapter accepted, but generated artifacts must serialize only bounded redacted
 display metadata, hashes, snapshot metadata, and provenance join keys.
 
-The planned scan config addition is:
+The scan config addition is:
 
 ```yaml
 adapters:
@@ -410,7 +409,7 @@ no directories, no symlinked path segments, no multi-link regular files, no
 unverifiable link counts, and no path outside the scanned repository root. When the
 adapter is disabled, `path` must be omitted.
 
-The planned local export file format is
+The local export file format is
 `format: "agent-project-memory.git_hosting_export.v1"`. It must not be treated as a raw
 GitHub or GitLab API response. It must not accept credentials, credential names,
 environment-variable interpolation, remote URLs as import locations, API enablement
@@ -5029,9 +5028,9 @@ Current config file rules:
 - `documents` is optional. `documents.include` and `documents.exclude` are optional
   lists of string path rules. Include rules must target Markdown files ending in `.md`
   or `.markdown`; exclude rules may target files or path trees.
-- `adapters` is optional and disabled by default. The current v2 local structured
-  import layer recognizes only `adapters.local_structured_import.enabled` and
-  `adapters.local_structured_import.path`.
+- `adapters` is optional and disabled by default. The current v2 adapter import layer
+  recognizes disabled-by-default `adapters.local_structured_import` and
+  `adapters.git_hosting_import` blocks with `enabled` and `path`.
 - `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
   it is `true`, `path` is required and must identify one existing repository-relative
   regular file under the scan root with a verifiable single-link identity. The path must
@@ -5045,11 +5044,18 @@ Current config file rules:
   `format: "agent-project-memory.local_structured_import.v1"` and a `records` array.
   Each accepted record must use `source_type: "local_export"`, a stable safe
   `source_identity`, `status: "current"`, and a non-empty bounded `body`.
-- The adapter emits `.project-memory/source-registry.json` and top-level
+- When enabled, the Git hosting import adapter reads and parses the configured import
+  file after config validation. The import file must be a JSON object with
+  `format: "agent-project-memory.git_hosting_export.v1"` and a `records` array.
+  Accepted records must use supported provider-normalized Git hosting fields, a stable
+  safe provider/host/namespace/record identity, and `status: "current"`.
+- The selected adapter emits `.project-memory/source-registry.json` and top-level
   `project-map.json` `adapter_context` as provenance-backed external/document context.
-  It does not serialize the configured import path, raw record bodies, raw connector or
-  export contents, create evidence records, enable network access, accept credentials,
-  load plugins, call AI providers, or upload source.
+  Git hosting imports use `source_registry_schema_version: "1.1"` when provider
+  metadata is emitted under `provenance[].git_hosting`. Adapter output does not
+  serialize the configured import path, raw record bodies, raw connector or export
+  contents, create evidence records, enable network access, accept credentials, load
+  plugins, call AI providers, or upload source.
 - Unknown top-level keys, unknown `features` or `documents` keys, unsupported values,
   unknown `adapters` keys, unsupported values, unsupported future-mode enables, invalid
   YAML, unsafe path values, oversized config files, YAML aliases that exceed parser

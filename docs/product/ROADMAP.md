@@ -1345,7 +1345,7 @@ Expected outcome:
 - Keep network/API mode, credentials, background sync, remote cache, source upload,
   adapter-aware query support, and AI behavior out of the local import baseline.
 
-Planned contract boundary:
+Current local import boundary:
 
 - Supported local source types are `github_issue`, `github_pull_request`,
   `gitlab_issue`, and `gitlab_merge_request`.

@@ -12,7 +12,8 @@ public record SourceProvenance(
     String contentHash,
     String sourceLocationKind,
     String networkAccess,
-    List<String> trustBoundaryLabels) {
+    List<String> trustBoundaryLabels,
+    GitHostingMetadata gitHosting) {
   private static final List<String> SOURCE_LOCATION_KINDS = List.of(
       "repository_relative_file",
       "local_export_bundle",
@@ -51,6 +52,28 @@ public record SourceProvenance(
       String sourceLocationKind,
       String networkAccess,
       List<String> trustBoundaryLabels) {
+    return accepted(
+        adapterIdentity,
+        importMode,
+        sourceType,
+        sourceIdentity,
+        contentHash,
+        sourceLocationKind,
+        networkAccess,
+        trustBoundaryLabels,
+        null);
+  }
+
+  public static SourceProvenance accepted(
+      AdapterIdentity adapterIdentity,
+      AdapterImportMode importMode,
+      String sourceType,
+      String sourceIdentity,
+      String contentHash,
+      String sourceLocationKind,
+      String networkAccess,
+      List<String> trustBoundaryLabels,
+      GitHostingMetadata gitHosting) {
     String id = StableAdapterIds.provenanceId(
         adapterIdentity,
         importMode,
@@ -66,6 +89,7 @@ public record SourceProvenance(
         contentHash,
         sourceLocationKind,
         networkAccess,
-        trustBoundaryLabels);
+        trustBoundaryLabels,
+        gitHosting);
   }
 }

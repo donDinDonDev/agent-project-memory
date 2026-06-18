@@ -7,10 +7,8 @@ import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
-import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -149,35 +147,10 @@ public final class LocalStructuredImportAdapter {
 
   private byte[] readImportBytes(Path repositoryRoot, AdapterLocalImport localImport)
       throws IOException {
-    Path normalizedRoot = repositoryRoot.toAbsolutePath().normalize();
-    Path importPath = normalizedRoot.resolve(localImport.path()).toAbsolutePath().normalize();
-    try {
-      Path canonicalRoot = ScanPathContainment.canonicalRoot(normalizedRoot);
-      if (!importPath.startsWith(normalizedRoot)
-          || hasSymbolicLinkSegment(normalizedRoot, importPath)
-          || !ScanPathContainment.isRegularFileUnderRootNoFollow(canonicalRoot, importPath)) {
-        throw new IOException("Adapter import file could not be read.");
-      }
-      return ScanPathContainment.readRegularFileBytesNoFollowStable(importPath, MAX_IMPORT_BYTES);
-    } catch (ScanPathContainment.FileSizeLimitExceededException exception) {
-      throw new IOException("Adapter import file exceeds maximum supported size.");
-    } catch (IOException | SecurityException exception) {
-      throw new IOException("Adapter import file could not be read.");
-    }
-  }
-
-  private boolean hasSymbolicLinkSegment(Path repositoryRoot, Path path) {
-    if (!path.startsWith(repositoryRoot)) {
-      return true;
-    }
-    Path current = repositoryRoot;
-    for (Path part : repositoryRoot.relativize(path)) {
-      current = current.resolve(part);
-      if (Files.isSymbolicLink(current)) {
-        return true;
-      }
-    }
-    return false;
+    return AdapterImportFileReader.readImportBytes(
+        repositoryRoot,
+        localImport.path(),
+        MAX_IMPORT_BYTES);
   }
 
   private JsonNode parseImportRoot(byte[] bytes) throws IOException {

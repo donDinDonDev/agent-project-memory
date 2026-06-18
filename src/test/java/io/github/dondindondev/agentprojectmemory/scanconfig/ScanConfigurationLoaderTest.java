@@ -108,6 +108,38 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void parsesExplicitOptInGitHostingImportWithoutReadingInput() throws Exception {
+    Path repositoryRoot = repository("git-hosting-adapter-valid");
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Files.writeString(repositoryRoot.resolve("exports/git-hosting.json"), """
+        {"token":"FAKE_GIT_HOSTING_EXPORT_CONTENT"}
+        """);
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          git_hosting_import:
+            enabled: true
+            path: exports/git-hosting.json
+        """);
+
+    ScanConfiguration configuration = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+    AdapterLocalImport localImport = configuration.adapterConfiguration().localImports().get(0);
+
+    assertAll(
+        () -> assertTrue(configuration.adapterConfiguration().enabled()),
+        () -> assertFalse(configuration.adapterConfiguration().networkEnabled()),
+        () -> assertEquals(1, configuration.adapterConfiguration().localImports().size()),
+        () -> assertEquals(
+            AdapterLocalImport.GIT_HOSTING_IMPORT_ADAPTER,
+            localImport.adapterName()),
+        () -> assertEquals(AdapterImportMode.LOCAL_EXPORT, localImport.importMode()),
+        () -> assertEquals("exports/git-hosting.json", localImport.path()));
+  }
+
+  @Test
   void loadsExplicitRepositoryRelativeYamlInsteadOfDefaultDiscovery() throws Exception {
     Path repositoryRoot = repository("explicit");
     writeConfig(repositoryRoot, """
@@ -218,13 +250,44 @@ final class ScanConfigurationLoaderTest {
         InvalidScanConfigException.class,
         () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
 
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          git_hosting_import:
+            enabled: false
+            path: exports/git-hosting.json
+        """);
+    InvalidScanConfigException disabledGitHosting = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Files.writeString(repositoryRoot.resolve("exports/issues.json"), "{}\n");
+    Files.writeString(repositoryRoot.resolve("exports/git-hosting.json"), "{}\n");
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+          git_hosting_import:
+            enabled: true
+            path: exports/git-hosting.json
+        """);
+    InvalidScanConfigException multipleEnabled = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
     assertAll(
         () -> assertTrue(network.getMessage().contains("unsupported key")),
         () -> assertFalse(network.getMessage().contains("network")),
         () -> assertFalse(network.getMessage().contains("true")),
         () -> assertTrue(credential.getMessage().contains("unsupported key")),
         () -> assertFalse(credential.getMessage().contains("api_token")),
-        () -> assertFalse(credential.getMessage().contains("FAKE_ADAPTER_CONFIG_TOKEN")));
+        () -> assertFalse(credential.getMessage().contains("FAKE_ADAPTER_CONFIG_TOKEN")),
+        () -> assertTrue(disabledGitHosting.getMessage().contains("disabled adapter config")),
+        () -> assertFalse(disabledGitHosting.getMessage().contains("exports/git-hosting.json")),
+        () -> assertTrue(multipleEnabled.getMessage().contains("only one adapter local import")));
   }
 
   @Test
@@ -241,6 +304,8 @@ final class ScanConfigurationLoaderTest {
     assertInvalidAdapterImportPath(repositoryRoot, ".project-memory/source.json", "generated output");
     assertInvalidAdapterImportPath(repositoryRoot, "exports/missing.json", "adapter import file was not found");
     assertInvalidAdapterImportPath(repositoryRoot, "exports/directory.json", "regular file");
+    assertInvalidGitHostingImportPath(repositoryRoot, "../outside.json", "unsafe path segment");
+    assertInvalidGitHostingImportPath(repositoryRoot, ".project-memory/source.json", "generated output");
   }
 
   @Test
@@ -396,6 +461,20 @@ final class ScanConfigurationLoaderTest {
         version: 1
         adapters:
           local_structured_import:
+            enabled: true
+            path: %s
+        """.formatted(importPath));
+    assertInvalid(repositoryRoot, null, expectedMessage);
+  }
+
+  private void assertInvalidGitHostingImportPath(
+      Path repositoryRoot,
+      String importPath,
+      String expectedMessage) throws Exception {
+    writeConfig(repositoryRoot, """
+        version: 1
+        adapters:
+          git_hosting_import:
             enabled: true
             path: %s
         """.formatted(importPath));
