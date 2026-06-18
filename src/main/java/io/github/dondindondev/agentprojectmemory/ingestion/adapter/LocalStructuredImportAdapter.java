@@ -18,8 +18,10 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public final class LocalStructuredImportAdapter {
   public static final String FORMAT = "agent-project-memory.local_structured_import.v1";
@@ -31,6 +33,48 @@ public final class LocalStructuredImportAdapter {
   private static final int MAX_TITLE_LENGTH = 200;
   private static final int MAX_BODY_LENGTH = 32 * 1024;
   private static final int MAX_SOURCE_IDENTITY_LENGTH = 200;
+  private static final Pattern DRIVE_LETTER_PATH = Pattern.compile("^[A-Za-z]:.*");
+  private static final Set<String> LOCAL_PATH_ROOT_SEGMENTS = Set.of(
+      "applications",
+      "bin",
+      "dev",
+      "etc",
+      "home",
+      "library",
+      "media",
+      "mnt",
+      "opt",
+      "private",
+      "sbin",
+      "system",
+      "tmp",
+      "users",
+      "usr",
+      "var",
+      "volumes",
+      "windows");
+  private static final Set<String> SENSITIVE_SOURCE_IDENTITY_SEGMENTS = Set.of(
+      "accesskey",
+      "accesstoken",
+      "apikey",
+      "apitoken",
+      "authorization",
+      "bearer",
+      "clientsecret",
+      "cookie",
+      "credential",
+      "credentials",
+      "oauthtoken",
+      "password",
+      "passwd",
+      "privatekey",
+      "refreshtoken",
+      "secret",
+      "secrets",
+      "sessionid",
+      "sshkey",
+      "token",
+      "tokens");
   private static final AdapterIdentity IDENTITY =
       new AdapterIdentity(AdapterLocalImport.LOCAL_STRUCTURED_IMPORT_ADAPTER, "2.0.0");
   private static final Set<String> ROOT_FIELDS = Set.of("format", "records");
@@ -281,22 +325,37 @@ public final class LocalStructuredImportAdapter {
     return node.asText().trim();
   }
 
-  private boolean validSourceIdentity(String value) {
-    if (value == null
-        || value.isBlank()
-        || value.length() > MAX_SOURCE_IDENTITY_LENGTH
-        || value.startsWith("/")
-        || value.startsWith("./")
-        || value.contains("\\")
-        || value.contains("://")) {
+  private static boolean validSourceIdentity(String value) {
+    if (value == null || value.isBlank()) {
       return false;
     }
-    for (String segment : value.split("/", -1)) {
+    String trimmed = value.trim();
+    String lowerCase = trimmed.toLowerCase(Locale.ROOT);
+    if (trimmed.length() > MAX_SOURCE_IDENTITY_LENGTH
+        || trimmed.startsWith("/")
+        || trimmed.startsWith("./")
+        || trimmed.startsWith("~")
+        || trimmed.contains("\\")
+        || trimmed.contains("://")
+        || trimmed.startsWith("//")
+        || lowerCase.startsWith("file:")
+        || DRIVE_LETTER_PATH.matcher(trimmed).matches()) {
+      return false;
+    }
+
+    String[] segments = trimmed.split("/", -1);
+    if (segments.length == 0 || localPathRootSegment(segments[0])) {
+      return false;
+    }
+    for (String segment : segments) {
       if (segment.isBlank() || ".".equals(segment) || "..".equals(segment)) {
         return false;
       }
+      if (sensitiveSourceIdentitySegment(segment)) {
+        return false;
+      }
     }
-    return value.chars().allMatch(character ->
+    return trimmed.chars().allMatch(character ->
         (character >= 'A' && character <= 'Z')
             || (character >= 'a' && character <= 'z')
             || (character >= '0' && character <= '9')
@@ -307,6 +366,30 @@ public final class LocalStructuredImportAdapter {
             || character == '/'
             || character == ':'
             || character == '#');
+  }
+
+  private static boolean localPathRootSegment(String segment) {
+    return LOCAL_PATH_ROOT_SEGMENTS.contains(segment.toLowerCase(Locale.ROOT));
+  }
+
+  private static boolean sensitiveSourceIdentitySegment(String segment) {
+    String lowerCase = segment.toLowerCase(Locale.ROOT);
+    int delimiter = firstSensitiveKeyDelimiter(lowerCase);
+    String keyCandidate = delimiter >= 0 ? lowerCase.substring(0, delimiter) : lowerCase;
+    String normalizedKey = keyCandidate.replace("-", "").replace("_", "");
+    return SENSITIVE_SOURCE_IDENTITY_SEGMENTS.contains(normalizedKey);
+  }
+
+  private static int firstSensitiveKeyDelimiter(String value) {
+    int colon = value.indexOf(':');
+    int equals = value.indexOf('=');
+    if (colon < 0) {
+      return equals;
+    }
+    if (equals < 0) {
+      return colon;
+    }
+    return Math.min(colon, equals);
   }
 
   private String boundedTitle(String value) {

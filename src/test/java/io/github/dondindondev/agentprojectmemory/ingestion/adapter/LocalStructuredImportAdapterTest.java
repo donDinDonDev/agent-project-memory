@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
@@ -157,6 +158,66 @@ final class LocalStructuredImportAdapterTest {
   }
 
   @Test
+  void rejectsSensitiveAndPathLikeSourceIdentitiesBeforeSerialization() throws Exception {
+    List<String> unsafeIdentities = List.of(
+        "C:/Users/alice/.ssh/id_rsa",
+        "D:Users/alice/.ssh/id_rsa",
+        "\\\\fileserver\\share\\token.txt",
+        "//fileserver/share/token.txt",
+        "file:/Users/alice/.ssh/id_rsa",
+        "file:///Users/alice/.ssh/id_rsa",
+        "~/secrets/api_key",
+        "/Users/alice/.ssh/id_rsa",
+        "Users/alice/.ssh/id_rsa",
+        "token/SHOULD_NOT_RENDER_TOKEN",
+        "api_key/SHOULD_NOT_RENDER_API_KEY",
+        "client-secret/SHOULD_NOT_RENDER_CLIENT_SECRET",
+        "authorization/Bearer SHOULD_NOT_RENDER_AUTH",
+        "projects/api_token/SHOULD_NOT_RENDER_NESTED_TOKEN",
+        "api_token:SHOULD_NOT_RENDER_KEY_VALUE");
+    String records = unsafeIdentities.stream()
+        .map(identity -> localExportRecord(
+            identity,
+            "Rejected " + identity,
+            "Rejected body SHOULD_NOT_RENDER_REJECTED_BODY"))
+        .collect(Collectors.joining(",\n"));
+    Path importFile = writeImportFile("""
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+        %s,
+        %s
+          ]
+        }
+        """.formatted(
+            records,
+            localExportRecord(
+                "services/orders/issues/PM-300",
+                "Accepted issue-like identity",
+                "Accepted body")));
+
+    AdapterIngestionResult result = adapter.read(
+        tempDir,
+        AdapterLocalImport.localStructuredImport(tempDir.relativize(importFile).toString()));
+    String registryJson = serializer.serialize(result);
+
+    assertAll(
+        () -> assertEquals(1, result.sourceDocuments().size()),
+        () -> assertEquals("services/orders/issues/PM-300", result.sourceDocuments().get(0).sourceIdentity()),
+        () -> assertEquals(unsafeIdentities.size(), result.diagnostics().size()),
+        () -> assertEquals(unsafeIdentities.size(), result.rejectedCount()),
+        () -> assertTrue(result.diagnostics().stream()
+            .allMatch(diagnostic -> "provenance_missing_record_rejected".equals(diagnostic.signal()))),
+        () -> assertFalse(registryJson.contains("SHOULD_NOT_RENDER")),
+        () -> assertFalse(registryJson.contains("C:/Users/alice")),
+        () -> assertFalse(registryJson.contains("fileserver")),
+        () -> assertFalse(registryJson.contains("file:/Users")),
+        () -> assertFalse(registryJson.contains("~/secrets")),
+        () -> assertFalse(registryJson.contains("/Users/alice")),
+        () -> assertTrue(registryJson.contains("services/orders/issues/PM-300")));
+  }
+
+  @Test
   void capsRecordProcessingAndReportsBoundedDiagnostic() throws Exception {
     String records = IntStream.rangeClosed(1, LocalStructuredImportAdapter.MAX_RECORDS + 1)
         .mapToObj(index -> """
@@ -265,5 +326,24 @@ final class LocalStructuredImportAdapterTest {
     Path importFile = exports.resolve("issues.json");
     Files.writeString(importFile, content);
     return importFile;
+  }
+
+  private String localExportRecord(String sourceIdentity, String title, String body) {
+    try {
+      return """
+            {
+              "source_type": "local_export",
+              "source_identity": %s,
+              "title": %s,
+              "body": %s,
+              "status": "current"
+            }
+            """.formatted(
+          JSON.writeValueAsString(sourceIdentity),
+          JSON.writeValueAsString(title),
+          JSON.writeValueAsString(body));
+    } catch (IOException exception) {
+      throw new IllegalStateException(exception);
+    }
   }
 }

@@ -1571,7 +1571,7 @@ final class AgentProjectMemoryCliTest {
           "records": [
             {
               "source_type": "local_export",
-              "source_identity": "api_token:FAKE_ADAPTER_ID_SECRET",
+              "source_identity": "issues/PM-201",
               "title": "Imported issue",
               "body": "FAKE_ADAPTER_EXPORT_SECRET raw connector body",
               "status": "current"
@@ -1632,12 +1632,9 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
         () -> assertEquals(1, sourceRegistry.path("provenance").size()),
         () -> assertEquals("local_export", sourceRegistry.path("source_documents").get(0).path("source_type").asText()),
-        () -> assertEquals(
-            "api_token:[REDACTED_SECRET_LIKE_VALUE]",
-            sourceRegistry.path("source_documents").get(0).path("source_identity").asText()),
-        () -> assertEquals(
-            "api_token:[REDACTED_SECRET_LIKE_VALUE]",
-            adapterItem.path("source_identity").asText()),
+        () -> assertEquals("issues/PM-201", sourceRegistry.path("source_documents").get(0)
+            .path("source_identity").asText()),
+        () -> assertEquals("issues/PM-201", adapterItem.path("source_identity").asText()),
         () -> assertEquals(
             "not_serialized",
             sourceRegistry.path("source_documents").get(0).path("content_status").asText()),
@@ -1648,12 +1645,114 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(evidenceIndex.contains("local_export")),
         () -> assertFalse(evidenceIndex.contains("source-provenance")),
         () -> assertFalse(generatedSurfaces.contains("exports/issues.json")),
-        () -> assertFalse(generatedSurfaces.contains("FAKE_ADAPTER_ID_SECRET")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_ADAPTER_EXPORT_SECRET")),
         () -> assertFalse(generatedSurfaces.contains("raw connector body")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("exports/issues.json")),
-        () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_ID_SECRET")),
         () -> assertFalse((result.stdout() + result.stderr()).contains("FAKE_ADAPTER_EXPORT_SECRET")));
+  }
+
+  @Test
+  void scanRejectsSensitiveLocalStructuredImportSourceIdentitiesWithoutOutputLeakage()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/issues.json"), """
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+            {
+              "source_type": "local_export",
+              "source_identity": "C:/Users/alice/.ssh/id_rsa",
+              "title": "Rejected drive path",
+              "body": "FAKE_REJECTED_DRIVE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "file:/Users/alice/.ssh/id_rsa",
+              "title": "Rejected file path",
+              "body": "FAKE_REJECTED_FILE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "token/FAKE_REJECTED_TOKEN",
+              "title": "Rejected token path",
+              "body": "FAKE_REJECTED_TOKEN_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "services/orders/issues/PM-401",
+              "title": "Accepted issue",
+              "body": "Accepted imported body",
+              "status": "current"
+            }
+          ]
+        }
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
+    String generatedSurfaces = String.join(
+        "\n",
+        Files.readString(outputDirectory.resolve("project-map.json")),
+        Files.readString(outputDirectory.resolve("source-registry.json")),
+        Files.readString(outputDirectory.resolve("project-graph.json")),
+        Files.readString(outputDirectory.resolve("evidence-index.jsonl")),
+        Files.readString(outputDirectory.resolve("endpoints.md")),
+        Files.readString(outputDirectory.resolve("agent-guide.md")),
+        result.stdout(),
+        result.stderr());
+    JsonNode adapterItem = projectMap.path("adapter_context").path("items").get(0);
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout()
+            .contains("Generated source-registry.json with 1 source document(s) and 3 adapter diagnostic(s).")),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals(
+            "local_import_read_with_partial_rejections",
+            projectMap.path("scan").path("features").path("adapters").path("status").asText()),
+        () -> assertEquals(3, projectMap.path("adapter_context").path("diagnostic_count").asInt()),
+        () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
+        () -> assertEquals("services/orders/issues/PM-401", adapterItem.path("source_identity").asText()),
+        () -> assertFalse(adapterItem.has("evidence_ids")),
+        () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
+        () -> assertEquals(1, sourceRegistry.path("provenance").size()),
+        () -> assertEquals(3, sourceRegistry.path("diagnostics").path("items").size()),
+        () -> assertEquals(
+            1,
+            sourceRegistry.path("adapter_runs").get(0).path("accepted_count").asInt()),
+        () -> assertEquals(
+            3,
+            sourceRegistry.path("adapter_runs").get(0).path("rejected_count").asInt()),
+        () -> assertEquals(
+            3,
+            sourceRegistry.path("adapter_runs").get(0).path("diagnostic_count").asInt()),
+        () -> assertFalse(generatedSurfaces.contains("C:/Users/alice")),
+        () -> assertFalse(generatedSurfaces.contains("file:/Users/alice")),
+        () -> assertFalse(generatedSurfaces.contains("token/FAKE_REJECTED_TOKEN")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_DRIVE_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_FILE_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_TOKEN_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected drive path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected file path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected token path")),
+        () -> assertTrue(generatedSurfaces.contains("services/orders/issues/PM-401")));
   }
 
   @Test
