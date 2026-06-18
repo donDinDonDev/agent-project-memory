@@ -32,20 +32,20 @@ without `--agent-profile` does not create profile artifacts, and unsupported
 directories that only prepare `.project-memory/` do not create orphan profile
 artifacts.
 
-The v2.0 local structured import adapter source registry is a separate optional
-artifact:
+The v2 local import adapter source registry is a separate optional artifact:
 
 ```text
 .project-memory/source-registry.json
 ```
 
-The current implementation emits this artifact only when
-`adapters.local_structured_import.enabled` is explicitly set to `true` and the
-configured import file is accepted for reading. A normal scan with no adapter explicitly
-enabled keeps the current base artifact set and must not create a source registry.
+The current implementation emits this artifact only when an adapter such as
+`adapters.local_structured_import` or `adapters.git_hosting_import` is explicitly
+enabled and the configured import file is accepted for reading. A normal scan with no
+adapter explicitly enabled keeps the current base artifact set and must not create a
+source registry.
 
 The initial adapter-domain contract foundation added source-document/provenance
-identity validation for adapters. The current local structured import layer adds bounded
+identity validation for adapters. The current local import layer adds bounded
 `scan.features.adapters` metadata for disabled-by-default selection, validated local
 import counts, bounded parsing, `source-registry.json` emission, and
 `project-map.json` adapter context for accepted adapter-backed records. Scans without an

@@ -81,7 +81,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-2.0.0.jar
+target/agent-project-memory-2.1.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -92,24 +92,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-2.1.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-2.0.0.jar --help
-java -jar target/agent-project-memory-2.0.0.jar help
-java -jar target/agent-project-memory-2.0.0.jar scan --help
-java -jar target/agent-project-memory-2.0.0.jar --version
-java -jar target/agent-project-memory-2.0.0.jar version
+java -jar target/agent-project-memory-2.1.0.jar --help
+java -jar target/agent-project-memory-2.1.0.jar help
+java -jar target/agent-project-memory-2.1.0.jar scan --help
+java -jar target/agent-project-memory-2.1.0.jar --version
+java -jar target/agent-project-memory-2.1.0.jar version
 ```
 
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-2.1.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-2.1.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -123,7 +123,7 @@ it does not add project facts or evidence records.
 Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-2.0.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-2.1.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -139,16 +139,16 @@ Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-2.0.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-2.1.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -386,8 +386,8 @@ Compatibility and migration notes:
   regenerate the base artifacts and source registry together, and do not mix
   `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
   `source-registry.json`, or generated Markdown from different scans.
-- Current unreleased builds also support disabled-by-default GitHub/GitLab local export
-  imports through `adapters.git_hosting_import`. Accepted records use
+- The v2.1 release candidate also supports disabled-by-default GitHub/GitLab local
+  export imports through `adapters.git_hosting_import`. Accepted records use
   `.project-memory/source-registry.json` schema `1.1` for Git hosting provenance and
   the existing `project-map.json` `schema_version: "2.0"` adapter context. The import
   remains local JSON only: no API calls, network access, credentials, adapter-aware
@@ -456,6 +456,8 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
+- v2.1 release summary:
+  [docs/product/V2_1_RELEASE_NOTES.md](docs/product/V2_1_RELEASE_NOTES.md).
 - v2.0 release summary:
   [docs/product/V2_0_RELEASE_NOTES.md](docs/product/V2_0_RELEASE_NOTES.md).
 - v1.9 release summary:
@@ -532,7 +534,9 @@ modification by default. The current product line includes no AI provider integr
 ## Project Status
 
 The latest published release is `v2.0.0`. It ships an executable jar and `SHA256SUMS`
-asset. Normal no-adapter generated `project-map.json` files use
+asset. The current repository state is prepared as a `v2.1.0` release candidate, but
+no `v2.1.0` tag, GitHub Release, or release assets are published until the manual
+release step occurs. Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
 artifact-backed lookup commands without changing generated project-memory schemas or
@@ -545,12 +549,14 @@ connector provenance, optional AI presentation, plugin/API security, and v1-to-v
 migration boundaries without changing analyzer behavior, CLI commands or flags,
 generated artifact schemas, evidence semantics, or packaged runtime behavior. The v2.0
 release includes a disabled-by-default local structured import reference adapter for
-explicitly configured repository-relative export files. Adapter-enabled scans emit
-`source-registry.json` and `project-map.json`
-`schema_version: "2.0"` adapter context as provenance-backed external/document context
-only. No-adapter scans remain v1-compatible with `schema_version: "1.0"` and no
-`source-registry.json`; current query support remains focused on those no-adapter
-artifact sets.
+explicitly configured repository-relative export files. The v2.1 release candidate adds
+disabled-by-default local GitHub/GitLab export import through
+`adapters.git_hosting_import`. Adapter-enabled scans emit `source-registry.json` and
+`project-map.json` `schema_version: "2.0"` adapter context as provenance-backed
+external/document context only. Git hosting imports use `source-registry.json` schema
+`1.1` for provider provenance. No-adapter scans remain v1-compatible with
+`schema_version: "1.0"` and no `source-registry.json`; current query support remains
+focused on those no-adapter artifact sets.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring

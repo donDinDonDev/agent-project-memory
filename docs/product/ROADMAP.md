@@ -3,7 +3,9 @@
 ## Current Status
 
 The latest published release is `v2.0.0`, with executable jar and `SHA256SUMS` assets.
-Normal no-adapter generated `project-map.json` files use
+The current repository state is prepared as a `v2.1.0` release candidate, but no
+`v2.1.0` tag, GitHub Release, or release assets are published until the manual release
+step occurs. Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated artifacts
@@ -21,8 +23,11 @@ The v2.0 release includes a disabled-by-default local structured import referenc
 adapter. No-adapter scans remain on the current base artifact set and
 `project-map.json` `schema_version: "1.0"`; explicitly adapter-enabled scans emit
 `source-registry.json` and `project-map.json` `schema_version: "2.0"` adapter context
-for provenance-backed external/document context only. Current query support remains
-focused on no-adapter v1 artifact sets unless a later release explicitly documents
+for provenance-backed external/document context only. The v2.1 release candidate adds
+disabled-by-default local GitHub/GitLab export import through
+`adapters.git_hosting_import`, with Git hosting provenance in `source-registry.json`
+schema `1.1` and no adapter-backed query support. Current query support remains focused
+on no-adapter v1 artifact sets unless a later release explicitly documents
 adapter-aware query behavior.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
@@ -45,6 +50,8 @@ redacted scan metadata, safe root-local YAML config support, stable CLI help/ver
 behavior, deterministic output redaction for obvious secret-looking values, and a
 documented release-jar verification path. The v2.0 release also includes a bounded
 local structured import adapter that is disabled by default, local-only, and
+provenance-backed. The v2.1 release candidate also includes a bounded local
+GitHub/GitLab export import adapter that is disabled by default, local-only, and
 provenance-backed. The current public adoption surface also includes a checked-in
 generated-output example snapshot and contributor/reporting templates that point readers
 back to the output and evidence contracts.
@@ -1329,7 +1336,7 @@ Non-goals:
   publication, installed-command distribution, signing, native images, container
   images, release automation, or automatic code modification.
 
-## v2.1.0: GitHub/GitLab Local Export Imports
+## v2.1.0: GitHub/GitLab Local Export Imports (Release Candidate)
 
 Expected outcome:
 
@@ -1345,7 +1352,7 @@ Expected outcome:
 - Keep network/API mode, credentials, background sync, remote cache, source upload,
   adapter-aware query support, and AI behavior out of the local import baseline.
 
-Current local import boundary:
+Release-candidate scope:
 
 - Supported local source types are `github_issue`, `github_pull_request`,
   `gitlab_issue`, and `gitlab_merge_request`.

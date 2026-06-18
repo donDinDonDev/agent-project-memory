@@ -11,7 +11,7 @@ document facts and evidence only.
 
 The v2 line adds disabled-by-default local import adapters for explicitly configured
 repository-relative export files. v2.0 ships a local structured import reference
-adapter, and current unreleased v2.1 work adds a Git hosting local JSON export import
+adapter, and the v2.1 release candidate adds a Git hosting local JSON export import
 adapter. Git hosting API/network connectors remain future input adapters. They should
 not be part of the MVP core analyzer, and they should not be required to generate
 `.project-memory/` from a Java/Spring repository.

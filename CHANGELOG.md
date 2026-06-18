@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+No changes yet.
+
+## [2.1.0] - 2026-06-18
+
+Release status: release candidate. The `v2.1.0` tag, GitHub Release, and release
+assets are not published until the manual release step occurs.
+
 ### Added
 
 - Implemented disabled-by-default GitHub/GitLab local export import for explicitly
@@ -18,6 +25,21 @@ architecture documents.
   `source-registry.json` schema `1.1` provenance metadata, existing
   `project-map.json` adapter context output, bounded diagnostics, fake-only fixtures,
   and regression coverage for no-adapter compatibility and raw text/path redaction.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  security-policy wording, v2.1 release notes, and public adapter contract wording for
+  release-prep review.
+
+### Not Included
+
+- Live GitHub or GitLab API fetching; connector credentials, credential lookup, OAuth,
+  PAT, GitHub App, GitLab token, credential storage, retry/backoff, rate-limit,
+  background sync, remote cache, source upload, adapter-aware query support, AI
+  behavior, plugin loading, SaaS, web UI, repository chat, generic RAG, package-manager
+  publication, installed-command distribution, signing, native images, container
+  images, release automation, or automatic code modification.
 
 ## [2.0.0] - 2026-06-18
 
