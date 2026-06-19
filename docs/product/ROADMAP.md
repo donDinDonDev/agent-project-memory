@@ -34,7 +34,7 @@ The v2.3 release adds explicitly enabled mock/no-network AI presentation artifac
 under `.project-memory/ai-presentations/` through
 `scan --ai-presentation mock_no_network`, while keeping default scans free of AI
 presentation artifacts and keeping real provider integration deferred.
-Unreleased v2.4 work now includes a CLI-only
+The v2.4.0 release candidate adds a CLI-only
 `query <path> agent-context` surface that renders deterministic stdout over existing
 no-adapter generated artifacts and optional valid graph navigation metadata without
 creating generated artifacts, reading source files, adding adapter-aware query,
@@ -67,9 +67,11 @@ provenance-backed. The v2.2 release also includes a bounded local
 Jira/YouTrack/Confluence export import adapter that is disabled by default, local-only,
 and provenance-backed. The v2.3 release also includes explicitly enabled
 mock/no-network AI presentation artifacts that are non-authoritative,
-non-evidence, and separate from the base generated artifact set. The current public
-adoption surface also includes a checked-in generated-output example snapshot and
-contributor/reporting templates that point readers back to the output and evidence
+non-evidence, and separate from the base generated artifact set. The v2.4.0 release
+candidate also includes a CLI-only `agent-context` query view for read-only
+agent/editor consumption over existing no-adapter generated artifacts. The current
+public adoption surface also includes a checked-in generated-output example snapshot
+and contributor/reporting templates that point readers back to the output and evidence
 contracts.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
@@ -1525,7 +1527,7 @@ Non-goals:
   chat, SaaS, web UI, plugin loading, public API/server behavior, editor integration, or
   automatic code modification in the first implementation slice.
 
-## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Unreleased)
+## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Release Candidate)
 
 Planned release outcome:
 
@@ -1582,6 +1584,16 @@ Implementation readiness expectations:
   source files, repository docs, root instruction files, scan config, or external state.
 - Public docs, output contract, evidence model, threat model, changelog, and release
   notes must stay synchronized when the implementation lands.
+
+Release readiness notes:
+
+- Public release notes are available in
+  [V2_4_RELEASE_NOTES.md](V2_4_RELEASE_NOTES.md).
+- Release-prep validation covers focused query tests, full local tests, packaged CLI
+  scan and `agent-context` smoke, jar metadata inspection, checksum dry run, whitespace
+  checks, and public marker audit.
+- Publication remains pending until the maintainer explicitly approves tag, push,
+  GitHub Release, and artifact upload actions.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

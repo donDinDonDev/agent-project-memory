@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.4.0] - 2026-06-19
+
+Release status: release candidate. The `v2.4.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
 ### Added
 
 - Documented the planned v2.4 read-only agent consumption boundary, selecting a
@@ -21,6 +26,25 @@ architecture documents.
   `evidence-index.jsonl` artifacts, with optional valid `project-graph.json` navigation
   metadata, no generated artifacts, no source readback, no adapter-aware query, no
   network or credentials, and focused no-write/content-safety coverage.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, v2.4
+  release notes, and public release wording for release-prep review.
+
+### Security
+
+- Completed release-track security review for the CLI-only `agent-context` boundary
+  with no release-blocking findings remaining.
+
+### Not Included
+
+- MCP/server/API/editor/plugin/runtime behavior; network access; remote service calls;
+  credentials; credential lookup or storage; telemetry; source upload; raw prompt
+  transcript serialization; adapter-aware query; semantic search; embeddings; vector
+  stores; generic RAG; repository chat; real AI provider calls; package-manager
+  publication; installed-command distribution; signing; native images; container
+  images; release automation; or automatic code modification.
 
 ## [2.3.0] - 2026-06-19
 
