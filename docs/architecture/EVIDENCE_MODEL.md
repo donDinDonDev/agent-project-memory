@@ -242,6 +242,12 @@ evidence fields, evidence records, confidence labels, evidence IDs, source refer
 security findings, vulnerability proof, connector truth, runtime claims, source/spec
 agreement claims, or code-modification authority.
 
+The planned v2.3 AI presentation surface is a separate optional generated artifact
+directory under `.project-memory/ai-presentations/`. Its `manifest.json` and Markdown
+files are generated-output metadata and presentation only. They do not extend
+`evidence-index.jsonl`, do not add an AI evidence type, do not add AI fields to
+evidence records, and do not change the meaning of existing evidence IDs.
+
 AI presentation may reference existing evidence IDs, source-artifact names, graph IDs,
 or future adapter provenance IDs to help humans navigate deterministic memory. Those
 references are citations to existing deterministic material, not new evidence created
@@ -266,6 +272,19 @@ AI output must preserve the existing claim categories:
   output remain non-evidence;
 - inferred relations, uncertain signals, warnings, and not-analyzed areas keep their
   confidence, uncertainty, status, and support labels.
+
+The first mock/no-network AI presentation slice, if implemented, remains non-evidence
+even when its output is deterministic for tests. Mock provider output, prompt templates,
+prompt inputs, provider responses, provider-mode metadata, prompt transcript metadata,
+and AI presentation manifests are not evidence. They must not be copied into
+`evidence-index.jsonl` and must not be used to repair missing evidence references.
+
+Prompt and content-injection controls support the evidence boundary. Repository text,
+local document text, adapter-backed records, connector text, evidence excerpts, and
+generated Markdown must be treated as untrusted content for AI presentation. They must
+not be able to instruct the AI layer to create evidence, change confidence labels,
+override provenance, mark output as authoritative, fetch additional sources, reveal
+credentials, or modify repository files.
 
 Any future change that treats AI output, prompts, embeddings, vector-store entries,
 provider responses, chat transcripts, generated Markdown, or AI presentation artifacts

@@ -9,7 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- Finalized the planned v2.3 optional AI presentation boundary, including the separate
+  `.project-memory/ai-presentations/` artifact surface, non-evidence metadata labels,
+  mock/no-network first provider mode, forbidden inputs and authoritative outputs,
+  prompt/content-injection controls, privacy defaults, and release blockers before
+  implementation.
 
 ## [2.2.0] - 2026-06-19
 

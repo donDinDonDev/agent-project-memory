@@ -1434,6 +1434,83 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, runtime claims,
   or automatic code-modification input.
 
+## v2.3.0: Optional AI Presentation Layer (Planned)
+
+Planned outcome:
+
+- Add an explicitly enabled AI-assisted presentation layer over existing deterministic
+  generated memory without allowing AI to create authoritative facts.
+- Keep the deterministic core analyzer, no-adapter scan path, adapter normalization,
+  graph generation, evidence index generation, cache behavior, profile generation, and
+  current query behavior independent from AI.
+- Use a separate optional `.project-memory/ai-presentations/` artifact surface for the
+  first implementation, rather than extending selected agent profiles, deterministic
+  query output, `project-map.json`, `source-registry.json`, or `evidence-index.jsonl`.
+- Label AI output as non-authoritative and non-evidence in both visible wording and
+  machine-readable metadata.
+
+Planned first surface:
+
+- No AI presentation artifacts are emitted by default.
+- The first implementation should use only a mock/no-network provider mode.
+- The planned artifact directory is:
+
+```text
+.project-memory/ai-presentations/
+  manifest.json
+  brief.md
+```
+
+The AI presentation manifest is generated-output metadata only. It may identify source
+artifacts, provider mode, authority, evidence policy, network/source-upload status, and
+generated presentation files. It is not project evidence, not a source registry, not a
+project-map section, and not proof that the AI presentation is correct.
+
+Allowed input boundary:
+
+- Generated structured facts from documented artifacts.
+- Existing evidence IDs and already serialized bounded evidence excerpts.
+- Graph navigation and derivation metadata labeled as non-evidence.
+- Bounded source-artifact, profile, cache, and status metadata labeled as non-evidence.
+- Adapter source-document and provenance IDs only after deterministic adapter contracts
+  have accepted those records.
+
+Forbidden input and output boundary:
+
+- No raw repository source files, generated-source contents, raw local document bodies,
+  generated Markdown bodies, raw connector exports, raw adapter input files, raw
+  connector request/response logs, remote API responses, credentials, tokens, cookies,
+  authorization headers, local absolute paths, or raw prompt transcripts as AI
+  presentation inputs.
+- No AI output in `project-map.json`, `evidence-index.jsonl`,
+  `source-registry.json`, `project-graph.json`, deterministic profile artifacts, cache
+  metadata, source files, repository docs, root instruction files, or scan config.
+- No AI-created project facts, evidence records, connector truth, security findings,
+  vulnerability proof, runtime claims, source/spec agreement claims, coverage/CI/
+  assertion claims, business-priority claims, documentation-freshness claims, release
+  evidence, repository edits, or automatic code-modification input.
+
+Provider and security direction:
+
+- Provider mode is absent unless AI presentation is explicitly enabled.
+- `mock_no_network` is the only planned first implementation mode.
+- Real provider modes remain parked until a separate design defines explicit
+  enablement, contacted service, request minimization, credential policy, network
+  behavior, telemetry defaults, prompt transcript policy, retention/training-use wording
+  limits, diagnostics, and release review requirements.
+- Prompt and content-injection controls must treat repository text, local document text,
+  evidence excerpts, adapter-backed records, connector text, generated Markdown, and
+  user-provided labels as untrusted content rather than executable instructions.
+
+Non-goals:
+
+- No LLM calls in the core analyzer, adapter path, graph builder, evidence index
+  builder, cache layer, profile generator, or current query layer.
+- No real provider integration, provider SDK, network access, credentials, telemetry,
+  source upload, prompt logging, embeddings, vector search, generic RAG, repository
+  chat, SaaS, web UI, plugin loading, public API/server behavior, editor integration, or
+  automatic code modification in the first implementation slice.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:
@@ -1482,11 +1559,15 @@ remain later work requiring separate design, tests, and security review.
 
 Any optional AI layer must be explicitly enabled, must treat deterministic memory and
 adapter provenance as inputs rather than authority it can rewrite, and must label its
-output as non-evidence. It must not create `project-map.json` facts,
-`evidence-index.jsonl` records, connector truth, security findings, vulnerability proof,
-runtime claims, source/spec agreement claims, repository-file edits, or code changes.
-Provider use, credentials, network access, telemetry, and source upload remain off by
-default unless a later release explicitly designs and implements them.
+output as non-evidence. The planned first AI presentation surface is a separate optional
+`.project-memory/ai-presentations/` artifact set so existing project-map, evidence,
+source-registry, profile, cache, and query consumers can ignore it. AI presentation must
+not create `project-map.json` facts, `evidence-index.jsonl` records, connector truth,
+security findings, vulnerability proof, runtime claims, source/spec agreement claims,
+documentation-freshness claims, release evidence, repository-file edits, or code
+changes. Provider use, credentials, network access, telemetry, prompt transcript
+serialization, retention/privacy claims, and source upload remain off by default unless
+a later release explicitly designs and implements them.
 
 ## v3.0.0: Agent-Native Project Memory Platform
 

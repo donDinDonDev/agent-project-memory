@@ -148,13 +148,29 @@ designed. It must preserve labels for code-backed facts, spec-backed declared
 operations, document-backed observations, adapter-backed records, inferred relations,
 uncertain signals, warnings, and not-analyzed areas.
 
-AI output must be labeled as non-evidence whenever it is emitted. It must not write
-`project-map.json`, `evidence-index.jsonl`, source files, repository docs, or
-configuration files; it must not create facts, evidence records, connector truth,
-security findings, vulnerability proof, runtime claims, source/spec agreement claims,
-or automatic code modifications. Provider use, network access, credentials, telemetry,
-and source upload must stay disabled by default and require a later explicit design,
-tests, review, and documentation before implementation.
+The planned first AI presentation surface is a separate optional
+`.project-memory/ai-presentations/` artifact set, not a profile extension, query mode,
+or project-map section. A normal scan must keep working without AI and must not emit AI
+artifacts unless an AI presentation mode is explicitly enabled. Downstream consumers
+that do not understand AI presentation should be able to ignore that optional directory.
+
+AI output must be labeled as non-evidence whenever it is emitted, with both visible
+human-readable wording and machine-readable metadata. It must not write
+`project-map.json`, `evidence-index.jsonl`, `source-registry.json`, source files,
+repository docs, root instruction files, configuration files, cache metadata, profile
+artifacts, or deterministic query outputs; it must not create facts, evidence records,
+connector truth, security findings, vulnerability proof, runtime claims, source/spec
+agreement claims, documentation-freshness claims, release evidence, or automatic code
+modifications. Provider use, network access, credentials, telemetry, retention/privacy
+claims, prompt transcript serialization, and source upload must stay disabled by default
+and require a later explicit design, tests, review, and documentation before
+implementation.
+
+The only acceptable first provider mode is a mock/no-network mode for local contract and
+test coverage. Real provider modes remain parked until a separate design defines
+explicit enablement, contacted service, request minimization, credential policy,
+network behavior, prompt/content-injection controls, diagnostics, retention wording, and
+release review requirements.
 
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI

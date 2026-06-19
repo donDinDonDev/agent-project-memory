@@ -581,11 +581,23 @@ metadata, embeddings, vector indexes, chat transcripts, or AI-generated project 
 Normal `project-map.json` files remain on `schema_version: "1.0"` unless a future
 release explicitly documents a schema marker change.
 
-Future AI presentation output, if introduced, must be optional and absent unless an AI
-presentation mode is explicitly enabled. It must be a presentation surface over
-deterministic generated memory, not a stronger authority than `project-map.json`,
-`project-graph.json`, `evidence-index.jsonl`, adapter provenance, or deterministic query
-results.
+The planned v2.3 AI presentation boundary chooses a separate optional generated
+artifact surface rather than a profile extension or query mode. A future implementation
+must not create these artifacts unless an AI presentation mode is explicitly enabled:
+
+```text
+.project-memory/
+  ai-presentations/
+    manifest.json
+    brief.md
+```
+
+This directory is a presentation surface over deterministic generated memory, not a
+stronger authority than `project-map.json`, `project-graph.json`,
+`evidence-index.jsonl`, adapter provenance, deterministic profile output, cache
+metadata, or deterministic query results. Consumers that do not understand AI
+presentation artifacts should ignore `.project-memory/ai-presentations/` and continue
+using the base artifact set.
 
 Allowed AI presentation inputs are limited to:
 
@@ -597,14 +609,26 @@ Allowed AI presentation inputs are limited to:
 - future adapter-backed documents and provenance only after those surfaces are accepted
   by deterministic adapter contracts.
 
+The first mock/no-network implementation slice should use only the base generated
+artifact set and optional graph artifact. Adapter provenance, profile metadata, cache
+metadata, and query-output metadata are allowed by the boundary but may remain parked
+until a later implementation slice documents and tests those joins.
+
+Forbidden AI presentation inputs include raw repository source files, generated-source
+contents, raw local document bodies, generated Markdown bodies, raw connector exports,
+raw adapter input files, connector credentials, raw connector request/response logs,
+remote API responses, provider credentials, environment values, local absolute paths,
+and raw prompt transcripts.
+
 Future AI presentation output must not:
 
 - add, remove, rename, or reinterpret `project-map.json` facts;
 - create `evidence-index.jsonl` records, evidence fields, evidence types, confidence
-  labels, or evidence IDs;
+  labels, evidence IDs, or source references;
 - create connector truth, source-of-truth claims, security findings, vulnerability
   proof, runtime behavior claims, source/spec agreement claims, coverage/CI/assertion
-  claims, business-priority claims, or code modifications;
+  claims, business-priority claims, documentation-freshness claims, release evidence,
+  or code modifications;
 - rewrite source files, repository docs, root instruction files, configuration files,
   generated artifacts, cache metadata, profile artifacts, adapter exports, or evidence
   records;
@@ -612,11 +636,79 @@ Future AI presentation output must not:
   modification the core product experience.
 
 If a future AI presentation artifact is emitted, it must carry visible non-evidence
-labeling in both human-readable wording and machine-readable metadata. The metadata
-should identify the source artifacts, input scope, generation mode, provider mode when
-applicable, and an evidence policy such as "references_existing_evidence_only" or a
-later documented equivalent. These metadata fields would be output metadata only; they
-must not become project evidence.
+labeling in both human-readable wording and machine-readable metadata. The Markdown
+presentation must include an early visible statement that the file is AI-generated
+presentation only, is not project evidence, and must be checked against the referenced
+deterministic artifacts before use.
+
+Planned `ai-presentations/manifest.json` shape:
+
+```json
+{
+  "ai_presentation_schema_version": "1.0",
+  "presentation_surface": "separate_artifact",
+  "provider_mode": "mock_no_network",
+  "authority": "non_authoritative_presentation",
+  "evidence_policy": "references_existing_evidence_only",
+  "network_access": "disabled",
+  "source_upload": "disabled",
+  "prompt_transcript_status": "not_serialized",
+  "source_artifacts": [
+    {
+      "name": "project-map.json",
+      "schema_version": "1.0"
+    },
+    {
+      "name": "evidence-index.jsonl"
+    },
+    {
+      "name": "project-graph.json",
+      "graph_schema_version": "1.0",
+      "required": false
+    }
+  ],
+  "generated_presentations": [
+    {
+      "name": "brief",
+      "artifact_path": "ai-presentations/brief.md",
+      "content_kind": "ai_markdown_presentation",
+      "authority": "non_authoritative_presentation",
+      "evidence_policy": "references_existing_evidence_only",
+      "provider_mode": "mock_no_network"
+    }
+  ]
+}
+```
+
+Manifest rules:
+
+- `ai_presentation_schema_version` is `"1.0"` for the first planned AI presentation
+  manifest and does not define a new `project-map.json` schema.
+- `presentation_surface` is `"separate_artifact"` for the planned v2.3 surface.
+- `provider_mode` values are limited to documented modes. The first implementation may
+  use `"mock_no_network"` only. Real provider modes are parked until a later design
+  explicitly documents provider, network, credential, telemetry, retention, and prompt
+  input behavior.
+- `authority` must be `"non_authoritative_presentation"`.
+- `evidence_policy` must be `"references_existing_evidence_only"` unless a later
+  contract documents an equivalent or stricter value. AI presentations may cite
+  existing evidence IDs, graph IDs, source-artifact names, and future accepted
+  provenance IDs for navigation only.
+- `network_access` and `source_upload` must be `"disabled"` for the mock/no-network
+  slice.
+- `prompt_transcript_status` must be `"not_serialized"` unless a later provider design
+  explicitly changes prompt transcript policy.
+- `source_artifacts[]` names generated artifact filenames and relevant schema markers
+  or bounded counts only. It must not contain local absolute paths, configured import
+  paths, source bodies, document bodies, prompt text, command text, credentials, tokens,
+  or environment values.
+- `generated_presentations[]` lists only files owned by the AI presentation generator
+  under `.project-memory/ai-presentations/`. Artifact paths must be normalized
+  `.project-memory`-relative slash paths and must not be absolute, start with `./`,
+  contain `.` or `..` path segments, use backslash separators, or escape the
+  `ai-presentations/` directory.
+- The manifest is generated-output metadata only. It is not evidence, not a source
+  registry, not a project map section, and not proof that an AI output is correct.
 
 Provider, privacy, network, credential, telemetry, and source-upload defaults remain
 closed. No provider is configured by default, no network access is enabled by default,
@@ -626,16 +718,48 @@ serialized or uploaded by default. Any future provider-backed output mode requir
 separate output contract update, focused tests or goldens where applicable, threat-model
 review, changelog entry, and release notes before implementation.
 
-Draft v2/v2.3 AI output design questions:
+Prompt and content-injection controls are part of the output boundary. Repository text,
+local document text, evidence excerpts, adapter-backed records, connector text,
+generated Markdown, and user-provided labels are untrusted content for any AI prompt.
+They must be treated as quoted data, not executable instructions. They must not be able
+to make the AI layer fetch network resources, read additional files, reveal credentials,
+rewrite artifacts, alter evidence or provenance, mark AI output as authoritative, or
+create repository changes.
 
-- whether AI presentation belongs in a separate `.project-memory/` artifact, a profile
-  extension, a query output mode, or another explicitly optional surface;
-- whether AI presentation metadata needs its own schema marker or can reuse a generic
-  generated-presentation manifest;
-- how source-artifact IDs, evidence IDs, graph IDs, adapter provenance IDs, and AI
-  presentation sections should stay joinable without making AI output evidence;
-- how downstream consumers should detect and ignore AI presentation artifacts they do
-  not understand.
+Validation requirements before the first mock/no-network implementation release:
+
+- focused enablement tests proving default scans do not create
+  `.project-memory/ai-presentations/`;
+- manifest and Markdown golden tests for non-evidence labels, authority labels,
+  provider mode, source artifact metadata, and owned output paths;
+- regression tests proving `project-map.json`, `project-graph.json`,
+  `evidence-index.jsonl`, `endpoints.md`, `agent-guide.md`, source registry output,
+  cache metadata, and profile artifacts are not mutated by AI presentation generation;
+- content-safety tests proving AI presentation output and metadata do not serialize raw
+  source bodies, local document bodies, generated-source contents, raw connector
+  exports, raw prompt transcripts, local absolute paths, credentials, tokens, or
+  command logs;
+- no-network and no-credential tests for the mock/no-network provider mode;
+- prompt/content-injection fixtures proving source or connector text cannot become
+  AI-layer instructions or change output authority labels;
+- risk-based security review before release for any implementation that changes
+  enablement, artifact reading, output paths, generated output rendering, prompt-input
+  assembly, provider abstraction, filesystem behavior, or evidence/provenance reference
+  rendering.
+
+Stop conditions for implementation:
+
+- default scans create AI presentation artifacts;
+- the core analyzer, adapter normalization path, graph builder, evidence index builder,
+  cache layer, profile generator, or query layer requires AI provider code;
+- AI output enters `project-map.json`, `evidence-index.jsonl`, `source-registry.json`,
+  `project-graph.json`, cache metadata, deterministic profile artifacts, repository
+  files, source files, root instruction files, or scan config;
+- provider mode, prompt-input policy, output authority labels, source-upload defaults,
+  network defaults, credential policy, prompt transcript policy, or content-injection
+  controls are ambiguous;
+- real provider/network/auth/credential/source-upload behavior enters a mock/no-network
+  implementation slice.
 
 The v0.1 interface-mapping endpoint contract keeps endpoint extraction limited to
 source-visible Java inputs under supported production source roots, while adding
