@@ -295,6 +295,46 @@ Such a change would also need focused tests or goldens where applicable, a chang
 entry, release notes, and a separate security review. The preferred boundary is that AI
 output remains permanently non-evidence.
 
+## Read-Only Agent Consumption Evidence Decision
+
+Read-only agent consumption output is not evidence. The planned first v2.4
+`query <path> agent-context` surface consumes existing generated artifacts and renders
+deterministic navigation/presentation output only.
+
+Agent context output must not add evidence types, evidence fields, evidence records,
+confidence labels, evidence IDs, source references, adapter provenance records,
+security findings, vulnerability proof, connector truth, runtime claims,
+source/spec agreement claims, documentation-freshness claims, release evidence, or
+code-modification authority.
+
+The first agent-context slice may reference existing evidence IDs and source artifact
+names so a user or agent can call existing evidence lookup commands. Those references
+remain citations to existing deterministic material. They must not strengthen, weaken,
+replace, suppress, reinterpret, or fabricate the underlying fact, evidence record,
+provenance record, graph relation, uncertainty label, or warning.
+
+Allowed first-slice inputs are limited to existing no-adapter generated artifacts:
+`project-map.json`, `evidence-index.jsonl`, and optional graph navigation metadata from
+`project-graph.json` when present and valid. Adapter provenance, connector records,
+AI presentation Markdown, profile Markdown, generated Markdown bodies, cache metadata,
+downstream agent output, prompts, and LLM output remain non-evidence and are not fact
+inputs for the first agent-context slice.
+
+Agent consumption must not read repository source files, generated-source contents, raw
+local document bodies, raw connector exports, raw adapter input files, raw prompt
+transcripts, raw API requests or responses, environment values, credentials, tokens,
+cookies, authorization headers, command logs, local absolute paths, or downstream agent
+responses as evidence.
+
+Any future change that treats agent-context output, MCP responses, API responses, editor
+state, prompts, profile output, generated Markdown, AI presentation, adapter
+provenance, connector records, graph derivation, cache metadata, downstream agent
+responses, or LLM output as evidence must update this document and
+`OUTPUT_CONTRACT.md` before implementation. Such a change would also need focused tests
+or goldens where applicable, a changelog entry, release notes, and a separate security
+review. The preferred boundary is that agent-facing output remains permanently
+non-evidence.
+
 ## Fact Categories
 
 ### Extracted Facts

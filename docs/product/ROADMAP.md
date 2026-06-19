@@ -1519,6 +1519,64 @@ Non-goals:
   chat, SaaS, web UI, plugin loading, public API/server behavior, editor integration, or
   automatic code modification in the first implementation slice.
 
+## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Design Accepted)
+
+Planned release outcome:
+
+- Expose generated project memory to agents and editor-adjacent workflows through a
+  read-only consumption surface.
+- Preserve the deterministic core analyzer, evidence index, graph, adapter provenance,
+  profile output, AI presentation boundary, and current no-write product model.
+- Keep agent-facing output as navigation and presentation only, not project evidence,
+  connector truth, security findings, runtime claims, release evidence, or code-change
+  authority.
+
+Accepted first slice:
+
+- The first implementation path is a CLI-only `query`-based agent context surface over
+  existing generated artifacts.
+- The planned surface should read the same bounded local artifact root policy as the
+  current query layer: a repository directory with `.project-memory/` or the
+  `.project-memory/` directory itself.
+- The planned surface should use existing no-adapter `project-map.json`
+  `schema_version: "1.0"`, `evidence-index.jsonl`, and graph navigation metadata when
+  available. Adapter-aware query over `source-registry.json` or connector records
+  remains a separate later contract.
+- The planned output should be deterministic stdout intended for agent/editor
+  consumption. It may contain reading order, artifact provenance, supported query
+  commands, bounded fact orientation, and existing evidence IDs, but it must not create
+  evidence records or open referenced source files to expand excerpts.
+
+Security and product boundary:
+
+- No repository source readback in the first slice.
+- No repository writes, generated artifact mutation, scan config edits, root instruction
+  file edits, commits, branches, tags, releases, pull requests, issues, external writes,
+  or automatic code modification.
+- No MCP server, local server, public API service, socket listener, daemon, background
+  process, editor plugin, plugin runtime, network access, remote service call,
+  credential lookup, credential storage, telemetry, source upload, raw prompt transcript
+  serialization, repository chat, generic RAG, embeddings, vector store, semantic
+  search, real AI provider call, or agent-driven provider call in the first slice.
+- AI presentation artifacts, when present, may be mentioned only as
+  non-authoritative, non-evidence presentation. They must not be consumed as facts,
+  evidence, connector truth, security findings, runtime claims, documentation-freshness
+  claims, or code-change authority.
+- MCP, server, public API, editor plugin, network, auth, credential, telemetry,
+  source-upload, and automatic code-modification behavior are deferred until a later
+  explicit design and higher-risk release security review approve their transport,
+  permissions, path scope, logging, and failure behavior.
+
+Implementation readiness expectations:
+
+- Focused tests for query grammar, artifact path handling, schema rejection, no-write
+  behavior, deterministic output, and content-safety boundaries.
+- Regression coverage proving the new surface does not create or mutate
+  `.project-memory/`, cache metadata, profile artifacts, AI presentation artifacts,
+  source files, repository docs, root instruction files, scan config, or external state.
+- Public docs, output contract, evidence model, threat model, changelog, and release
+  notes must stay synchronized when the implementation lands.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:

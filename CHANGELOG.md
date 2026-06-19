@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.4 read-only agent consumption boundary, selecting a
+  CLI-only `query`-based agent context surface as the first implementation slice and
+  deferring MCP, server, public API, editor plugin, network, credential, telemetry,
+  source-upload, and automatic code-modification behavior behind later explicit design
+  and security review.
+
 ## [2.3.0] - 2026-06-19
 
 Release status: published. The `v2.3.0` tag, GitHub Release, executable jar, and

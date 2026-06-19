@@ -173,6 +173,19 @@ explicit enablement, contacted service, request minimization, credential policy,
 network behavior, prompt/content-injection controls, diagnostics, retention wording, and
 release review requirements.
 
+Read-only agent consumption should start from the existing local CLI and deterministic
+generated artifacts rather than from a server. The first v2.4 integration boundary is a
+CLI-only `query` surface that can render a bounded agent-context view from existing
+project-memory artifacts, existing evidence references, and existing graph navigation
+metadata. It must not read repository source files to expand evidence, mutate
+generated artifacts, write repository files, open a socket, call a provider, use
+credentials, upload source, serialize raw prompt transcripts, or treat agent-facing
+output as evidence. MCP, server, public API, editor plugin, network, authentication,
+credential, telemetry, source-upload, and automatic code-modification behavior remain
+parked until a later explicit design defines the transport, permission model,
+filesystem scope, credential stance, logging/telemetry stance, and release review
+requirements.
+
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI
 presentation, and agent-native workflows.

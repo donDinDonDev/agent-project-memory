@@ -272,6 +272,30 @@ Planned plugin and API surface gates:
   vulnerability proof, runtime claims, or repository-file changes unless a later public
   contract explicitly designs that behavior.
 
+Planned read-only agent consumption defaults:
+
+- agent consumption starts from a CLI-only query surface over existing generated
+  project-memory artifacts, not from a server, socket listener, daemon, editor plugin,
+  or plugin runtime;
+- the first agent context surface reads only documented generated artifacts from the
+  approved artifact root and must not read repository source files, generated-source
+  contents, raw local document bodies, raw connector exports, raw adapter input files,
+  raw prompt transcripts, environment values, credentials, or local absolute paths to
+  expand its output;
+- agent-facing output is deterministic navigation and presentation metadata only. It may
+  reference existing evidence IDs and artifact names, but it must not create evidence
+  records, strengthen evidence, alter provenance, create connector truth, create
+  security findings, claim runtime behavior, or provide code-change authority;
+- all agent-facing labels, prompts, editor labels, generated Markdown, AI presentation,
+  adapter records, connector text, and future API or MCP requests are untrusted content
+  and must not become executable instructions that request file writes, network calls,
+  credential lookup, evidence changes, provenance changes, artifact rewrites, or
+  repository edits;
+- MCP, server, public API, editor plugin, network, authentication, credentials,
+  telemetry, source upload, raw prompt transcript serialization, and automatic code
+  modification remain out of the first slice and require a separate design and
+  release-level security review before implementation.
+
 Future v2 security review expectations:
 
 - design-only documentation changes can be reviewed with a lightweight documentation

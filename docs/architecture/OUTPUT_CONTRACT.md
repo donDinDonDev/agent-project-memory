@@ -5838,6 +5838,131 @@ Stop conditions for implementation:
 - Artifact path behavior cannot be kept local, deterministic, read-only, and bounded to
   the approved generated artifacts.
 
+### v2.4 Read-Only Agent Context Query Contract
+
+This section defines the accepted v2.4 design boundary for the next read-only agent
+consumption surface. It is a planned query-layer expansion until an implementation
+release notes the shipped command behavior.
+
+The first v2.4 surface is a CLI-only query command that renders deterministic
+agent-context output over existing generated artifacts. It is the approved equivalent to
+an MCP/server integration for the first slice because it preserves the current local
+process, artifact-root, and no-write query boundary.
+
+Planned command grammar:
+
+```text
+agent-project-memory query <path> agent-context
+```
+
+The packaged-jar invocation uses the same arguments after
+`java -jar agent-project-memory-X.Y.Z.jar`. No installed command, server process,
+socket listener, editor plugin, MCP transport, or public API transport is part of this
+planned first slice.
+
+Path and artifact input policy:
+
+- `<path>` follows the existing query path policy: it must be one local directory
+  argument, either a repository directory containing `.project-memory/` or the
+  `.project-memory/` directory itself.
+- The command reads only documented direct child artifacts from the resolved artifact
+  root. It must not create the artifact root, create missing artifacts, refresh cache
+  metadata, generate profile artifacts, generate AI presentation artifacts, run scans,
+  or write repository files.
+- Required inputs for the first slice are `project-map.json` with
+  `schema_version: "1.0"` and `evidence-index.jsonl`.
+- `project-graph.json` may be used only as optional navigation metadata when present,
+  valid, and supported. Missing or malformed graph output must not make the command
+  read source files or infer relations outside generated artifacts.
+- `source-registry.json`, adapter context rows, connector records, generated Markdown
+  bodies, `agent-profiles/`, `ai-presentations/`, and `cache/v1/` are not fact input
+  sources in the first slice. Adapter-aware agent context requires a later query and
+  output contract update.
+- Required artifact files must follow the existing query safety policy for local
+  directories, regular files, symlink rejection, multi-link rejection, unsupported
+  schema rejection, bounded diagnostics, and no local absolute path serialization in
+  successful output.
+
+Output policy:
+
+- Output is deterministic stdout for agent/editor consumption. It is not a generated
+  project-memory artifact, not evidence, and not a stable parser interface unless a
+  later release explicitly defines a machine-readable output format.
+- Successful output may include a source-artifact summary, reading order, supported
+  query commands, bounded project orientation from generated facts, graph navigation
+  hints when available, and existing evidence IDs.
+- Successful output must not open referenced source files to expand evidence excerpts,
+  fill missing line ranges, infer additional symbols, validate runtime behavior, or
+  reinterpret generated facts.
+- Successful output must not serialize raw repository source bodies, generated-source
+  contents, local document bodies, generated Markdown bodies, raw connector exports,
+  raw adapter input files, raw prompt transcripts, raw API requests or responses,
+  environment values, credentials, tokens, cookies, authorization headers, command logs,
+  stack traces, local absolute paths, downstream agent output, or LLM output.
+- Error output follows the existing bounded query stderr policy and must not produce
+  partial stdout.
+
+Authority and evidence policy:
+
+- Agent context output is navigation and presentation only. It must not create project
+  facts, evidence records, evidence IDs, evidence fields, confidence labels, source
+  references, connector truth, security findings, vulnerability proof, runtime claims,
+  source/spec agreement claims, documentation-freshness claims, release evidence, or
+  code-change authority.
+- Existing evidence IDs remain the only evidence references. The command may point to
+  `query <path> explain evidence <evidence-id>` for exact evidence inspection, but it
+  must not repair, synthesize, or strengthen evidence.
+- Graph derivation metadata, query output, generated Markdown, profile artifacts, cache
+  metadata, adapter diagnostics, AI presentation, agent context output, downstream
+  agent output, and LLM output remain non-evidence.
+- AI presentation artifacts, when present, may be mentioned only as optional
+  non-authoritative/non-evidence presentation. The first slice must not parse
+  `ai-presentations/brief.md` as fact input or treat AI presentation as query truth.
+
+Forbidden first-slice behavior:
+
+- repository source readback;
+- repository writes or generated artifact mutation;
+- scan config edits or root instruction file edits;
+- commits, branches, tags, releases, pull requests, issues, or external writes;
+- automatic code modification;
+- MCP/server/API/listener/daemon/editor/plugin runtime;
+- network access, remote service calls, remote config, update checks, background sync,
+  telemetry, credential lookup, credential storage, source upload, or real provider
+  calls;
+- adapter-aware query, provenance promotion, semantic search, embeddings, vector stores,
+  generic RAG, repository chat, workspace memory, or change-impact claims.
+
+Validation requirements before implementation release:
+
+- focused CLI parser tests for `query <path> agent-context` and invalid argument
+  shapes;
+- artifact path tests matching the existing query artifact-root safety policy;
+- schema and malformed-artifact tests, including rejecting adapter-enabled
+  `schema_version: "2.0"` until adapter-aware query is explicitly designed;
+- deterministic stdout tests for representative generated-memory fixtures;
+- no-write tests proving the command does not create, rewrite, delete, or refresh
+  `.project-memory/`, cache metadata, profile artifacts, AI presentation artifacts,
+  source files, repository docs, root instruction files, scan config, or external
+  state;
+- content-safety tests proving output does not serialize the forbidden raw inputs or
+  sensitive surfaces listed above;
+- focused release review for implementation changes that affect CLI behavior, artifact
+  reads, output rendering, path/filesystem behavior, query behavior, evidence/provenance
+  rendering, or generated-output boundaries.
+
+Stop conditions for implementation:
+
+- agent context requires source scanning, source readback, artifact mutation,
+  repository writes, server/API behavior, editor integration, network/auth, credentials,
+  telemetry, source upload, prompt transcript serialization, AI provider calls,
+  semantic search, generic RAG, or automatic code modification;
+- agent context output starts treating query output, generated Markdown, profile
+  artifacts, AI presentation, graph derivation, cache metadata, adapter diagnostics,
+  downstream agent output, prompts, or LLM output as evidence;
+- path behavior cannot stay local, deterministic, read-only, and bounded to approved
+  generated artifacts.
+
 ### v1.7 Redaction And Security Hardening Contract
 
 This section records the v1.7 output-safety boundary. The v1.7.0 release artifacts
