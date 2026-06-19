@@ -1,0 +1,35 @@
+{
+  "ai_presentation_schema_version": "1.0",
+  "presentation_surface": "separate_artifact",
+  "provider_mode": "mock_no_network",
+  "authority": "non_authoritative_presentation",
+  "evidence_policy": "references_existing_evidence_only",
+  "network_access": "disabled",
+  "source_upload": "disabled",
+  "prompt_transcript_status": "not_serialized",
+  "source_artifacts": [
+    {
+      "name": "project-map.json",
+      "schema_version": "1.0"
+    },
+    {
+      "name": "evidence-index.jsonl",
+      "record_count": 2
+    },
+    {
+      "name": "project-graph.json",
+      "graph_schema_version": "1.0",
+      "required": false
+    }
+  ],
+  "generated_presentations": [
+    {
+      "name": "brief",
+      "artifact_path": "ai-presentations/brief.md",
+      "content_kind": "ai_markdown_presentation",
+      "authority": "non_authoritative_presentation",
+      "evidence_policy": "references_existing_evidence_only",
+      "provider_mode": "mock_no_network"
+    }
+  ]
+}

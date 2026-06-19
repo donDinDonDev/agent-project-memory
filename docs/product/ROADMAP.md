@@ -1452,7 +1452,8 @@ Planned outcome:
 Planned first surface:
 
 - No AI presentation artifacts are emitted by default.
-- The first implementation should use only a mock/no-network provider mode.
+- The first implementation uses only a mock/no-network provider mode through
+  `scan --ai-presentation mock_no_network`.
 - The planned artifact directory is:
 
 ```text
@@ -1559,8 +1560,9 @@ remain later work requiring separate design, tests, and security review.
 
 Any optional AI layer must be explicitly enabled, must treat deterministic memory and
 adapter provenance as inputs rather than authority it can rewrite, and must label its
-output as non-evidence. The planned first AI presentation surface is a separate optional
-`.project-memory/ai-presentations/` artifact set so existing project-map, evidence,
+output as non-evidence. The first AI presentation surface is a separate optional
+`.project-memory/ai-presentations/` artifact set, currently enabled only through
+`scan --ai-presentation mock_no_network`, so existing project-map, evidence,
 source-registry, profile, cache, and query consumers can ignore it. AI presentation must
 not create `project-map.json` facts, `evidence-index.jsonl` records, connector truth,
 security findings, vulnerability proof, runtime claims, source/spec agreement claims,

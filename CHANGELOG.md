@@ -16,6 +16,13 @@ architecture documents.
   mock/no-network first provider mode, forbidden inputs and authoritative outputs,
   prompt/content-injection controls, privacy defaults, and release blockers before
   implementation.
+- Implemented explicitly enabled mock/no-network AI presentation artifacts through
+  `scan --ai-presentation mock_no_network`, writing
+  `.project-memory/ai-presentations/manifest.json` and
+  `.project-memory/ai-presentations/brief.md` from deterministic generated artifacts
+  only, with non-authoritative/non-evidence labels, no default AI artifacts, no real
+  provider, no network access, no credentials, no source upload, no prompt transcript
+  serialization, and focused safety/golden coverage.
 
 ## [2.2.0] - 2026-06-19
 

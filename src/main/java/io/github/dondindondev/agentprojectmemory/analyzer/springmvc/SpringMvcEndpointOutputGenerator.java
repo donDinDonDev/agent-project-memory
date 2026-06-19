@@ -117,6 +117,9 @@ import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarni
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningAnalyzer;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningEvidence;
 import io.github.dondindondev.agentprojectmemory.analyzer.warnings.AnalysisWarningFact;
+import io.github.dondindondev.agentprojectmemory.ai.AiPresentationArtifactGenerator;
+import io.github.dondindondev.agentprojectmemory.ai.AiPresentationArtifacts;
+import io.github.dondindondev.agentprojectmemory.ai.AiPresentationOptions;
 import io.github.dondindondev.agentprojectmemory.generator.AgentGuideGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.AgentProfileMarkdownGenerator;
 import io.github.dondindondev.agentprojectmemory.generator.MarkdownRenderer;
@@ -481,6 +484,8 @@ public final class SpringMvcEndpointOutputGenerator {
   private final AgentGuideGenerator agentGuideGenerator;
   private final AgentProfileMarkdownGenerator agentProfileMarkdownGenerator =
       new AgentProfileMarkdownGenerator();
+  private final AiPresentationArtifactGenerator aiPresentationArtifactGenerator =
+      new AiPresentationArtifactGenerator();
   private final ProjectGraphJsonSerializer projectGraphJsonSerializer =
       new ProjectGraphJsonSerializer();
   private final LocalStructuredImportAdapter localStructuredImportAdapter =
@@ -611,9 +616,24 @@ public final class SpringMvcEndpointOutputGenerator {
       Path outputDirectory,
       ScanConfiguration scanConfiguration,
       List<AgentOutputProfile> agentProfiles) throws IOException {
+    return generate(
+        repositoryRoot,
+        outputDirectory,
+        scanConfiguration,
+        agentProfiles,
+        AiPresentationOptions.disabled());
+  }
+
+  public Result generate(
+      Path repositoryRoot,
+      Path outputDirectory,
+      ScanConfiguration scanConfiguration,
+      List<AgentOutputProfile> agentProfiles,
+      AiPresentationOptions aiPresentationOptions) throws IOException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(outputDirectory, "outputDirectory");
     Objects.requireNonNull(scanConfiguration, "scanConfiguration");
+    Objects.requireNonNull(aiPresentationOptions, "aiPresentationOptions");
     List<AgentOutputProfile> selectedAgentProfiles = canonicalAgentProfiles(agentProfiles);
 
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
@@ -795,6 +815,11 @@ public final class SpringMvcEndpointOutputGenerator {
         projectMapSchemaVersion,
         projectMapJson,
         evidenceIndexJsonl));
+    generatedOutputFiles.addAll(aiPresentationOutputFiles(
+        aiPresentationOptions,
+        projectMapJson,
+        evidenceIndexJsonl,
+        projectGraphJson));
 
     boolean staleSourceRegistryPresent = false;
     if (!adapterIngestionResult.enabled()) {
@@ -819,6 +844,7 @@ public final class SpringMvcEndpointOutputGenerator {
         evidenceRecords.size(),
         scanDiagnostics.size(),
         selectedAgentProfiles.size(),
+        aiPresentationOptions.enabled(),
         adapterIngestionResult.enabled(),
         adapterIngestionResult.acceptedCount(),
         adapterIngestionResult.diagnostics().size());
@@ -7771,6 +7797,28 @@ public final class SpringMvcEndpointOutputGenerator {
     return List.copyOf(files);
   }
 
+  private List<GeneratedOutputFile> aiPresentationOutputFiles(
+      AiPresentationOptions options,
+      String projectMapJson,
+      String evidenceIndexJsonl,
+      String projectGraphJson) throws IOException {
+    if (!options.enabled()) {
+      return List.of();
+    }
+    AiPresentationArtifacts artifacts = aiPresentationArtifactGenerator.generate(
+        options,
+        projectMapJson,
+        evidenceIndexJsonl,
+        projectGraphJson);
+    return List.of(
+        new GeneratedOutputFile(
+            AiPresentationArtifactGenerator.MANIFEST_PATH,
+            artifacts.manifestJson()),
+        new GeneratedOutputFile(
+            AiPresentationArtifactGenerator.BRIEF_PATH,
+            artifacts.briefMarkdown()));
+  }
+
   private String agentProfileManifestJson(
       List<AgentOutputProfile> profiles,
       String projectMapSchemaVersion) {
@@ -7981,6 +8029,7 @@ public final class SpringMvcEndpointOutputGenerator {
       int evidenceCount,
       int diagnosticCount,
       int profileCount,
+      boolean aiPresentationGenerated,
       boolean sourceRegistryGenerated,
       int sourceDocumentCount,
       int adapterDiagnosticCount) {
@@ -8003,6 +8052,7 @@ public final class SpringMvcEndpointOutputGenerator {
           evidenceCount,
           diagnosticCount,
           0,
+          false,
           false,
           0,
           0);
@@ -8028,6 +8078,7 @@ public final class SpringMvcEndpointOutputGenerator {
           evidenceCount,
           diagnosticCount,
           profileCount,
+          false,
           false,
           0,
           0);

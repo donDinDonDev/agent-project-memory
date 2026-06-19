@@ -148,11 +148,12 @@ designed. It must preserve labels for code-backed facts, spec-backed declared
 operations, document-backed observations, adapter-backed records, inferred relations,
 uncertain signals, warnings, and not-analyzed areas.
 
-The planned first AI presentation surface is a separate optional
+The first AI presentation surface is a separate optional
 `.project-memory/ai-presentations/` artifact set, not a profile extension, query mode,
-or project-map section. A normal scan must keep working without AI and must not emit AI
-artifacts unless an AI presentation mode is explicitly enabled. Downstream consumers
-that do not understand AI presentation should be able to ignore that optional directory.
+or project-map section. A normal scan keeps working without AI and does not emit AI
+artifacts unless `scan --ai-presentation mock_no_network` is explicitly selected.
+Downstream consumers that do not understand AI presentation should be able to ignore
+that optional directory.
 
 AI output must be labeled as non-evidence whenever it is emitted, with both visible
 human-readable wording and machine-readable metadata. It must not write
@@ -166,7 +167,7 @@ claims, prompt transcript serialization, and source upload must stay disabled by
 and require a later explicit design, tests, review, and documentation before
 implementation.
 
-The only acceptable first provider mode is a mock/no-network mode for local contract and
+The only accepted first provider mode is a mock/no-network mode for local contract and
 test coverage. Real provider modes remain parked until a separate design defines
 explicit enablement, contacted service, request minimization, credential policy,
 network behavior, prompt/content-injection controls, diagnostics, retention wording, and

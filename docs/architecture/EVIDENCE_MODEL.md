@@ -235,16 +235,18 @@ source/spec agreement scoring, documentation freshness scoring, or connector-dri
 change-impact behavior, this document and `OUTPUT_CONTRACT.md` must be updated before
 implementation.
 
-## Planned Optional AI Presentation Evidence Decision
+## Optional AI Presentation Evidence Decision
 
-Future optional AI presentation output is not evidence. It must not add evidence types,
+Optional AI presentation output is not evidence. It must not add evidence types,
 evidence fields, evidence records, confidence labels, evidence IDs, source references,
 security findings, vulnerability proof, connector truth, runtime claims, source/spec
 agreement claims, or code-modification authority.
 
-The planned v2.3 AI presentation surface is a separate optional generated artifact
-directory under `.project-memory/ai-presentations/`. Its `manifest.json` and Markdown
-files are generated-output metadata and presentation only. They do not extend
+The v2.3 AI presentation surface is a separate optional generated artifact directory
+under `.project-memory/ai-presentations/`. The current first implementation emits
+`manifest.json` and `brief.md` only when `scan --ai-presentation mock_no_network` is
+explicitly selected. Those files are generated-output metadata and presentation only.
+They do not extend
 `evidence-index.jsonl`, do not add an AI evidence type, do not add AI fields to
 evidence records, and do not change the meaning of existing evidence IDs.
 
@@ -273,10 +275,10 @@ AI output must preserve the existing claim categories:
 - inferred relations, uncertain signals, warnings, and not-analyzed areas keep their
   confidence, uncertainty, status, and support labels.
 
-The first mock/no-network AI presentation slice, if implemented, remains non-evidence
-even when its output is deterministic for tests. Mock provider output, prompt templates,
-prompt inputs, provider responses, provider-mode metadata, prompt transcript metadata,
-and AI presentation manifests are not evidence. They must not be copied into
+The first mock/no-network AI presentation slice remains non-evidence even though its
+output is deterministic for tests. Mock provider output, prompt templates, prompt
+inputs, provider responses, provider-mode metadata, prompt transcript metadata, and AI
+presentation manifests are not evidence. They must not be copied into
 `evidence-index.jsonl` and must not be used to repair missing evidence references.
 
 Prompt and content-injection controls support the evidence boundary. Repository text,

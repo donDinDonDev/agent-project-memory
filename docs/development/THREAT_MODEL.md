@@ -196,11 +196,11 @@ Planned v2 credential and network defaults:
   connector exports, raw source/document bodies, prompt transcripts, or local absolute
   paths by default.
 
-Planned optional AI security defaults:
+Optional AI security defaults:
 
 - AI presentation is disabled unless explicitly enabled;
-- no AI provider is configured by default;
-- the planned first AI presentation surface is a separate optional generated artifact
+- no real AI provider is configured by default;
+- the first AI presentation surface is a separate optional generated artifact
   directory under `.project-memory/ai-presentations/`, not a `project-map.json`,
   `evidence-index.jsonl`, source registry, profile, cache, or query mutation;
 - network access, provider credentials, telemetry, and source upload remain off by
@@ -213,19 +213,19 @@ Planned optional AI security defaults:
   absolute paths, and raw prompt transcripts must not be uploaded or serialized by
   default;
 - provider configuration, credential lookup, retention/privacy claims, network behavior,
-  and prompt-input policy must be designed and reviewed before any future provider mode
-  is implemented;
+  and real-provider prompt-input policy must be designed and reviewed before any future
+  provider mode is implemented;
 - AI output must be labeled as non-evidence and must not create project facts, evidence
   records, connector truth, security findings, vulnerability proof, runtime claims, or
   code modifications.
 
-Planned AI provider mode taxonomy:
+AI provider mode taxonomy:
 
 - absent or `none`: no AI presentation mode is enabled, no provider is configured, and
   no AI presentation artifacts are emitted;
-- `mock_no_network`: a test/local presentation provider may exercise prompt and output
-  plumbing without network access, credentials, telemetry, source upload, provider SDKs,
-  or provider privacy claims;
+- `mock_no_network`: the current test/local presentation provider exercises prompt and
+  output plumbing without network access, credentials, telemetry, source upload,
+  provider SDKs, or provider privacy claims;
 - real provider modes: parked until a separate design defines explicit enablement,
   contacted service, request minimization, credential lookup, timeout/retry behavior,
   telemetry defaults, prompt transcript policy, retention/training-use wording limits,
@@ -237,11 +237,11 @@ SDK on the classpath. Any future provider-backed mode must fail closed when prov
 configuration, credential source, network scope, source-upload behavior, prompt
 transcript policy, or retention/privacy wording is undefined.
 
-Future AI surfaces introduce prompt and content-injection risk even when they read only
+AI surfaces introduce prompt and content-injection risk even when they read only
 generated memory. Repository text, local documents, adapter-backed records, evidence
 excerpts, and connector content must be treated as untrusted content, not executable
-instructions. A future AI layer must not obey repository-provided instructions to
-change files, reveal credentials, fetch network resources, alter evidence, override
+instructions. An AI layer must not obey repository-provided instructions to change
+files, reveal credentials, fetch network resources, alter evidence, override
 provenance, or mark AI output as authoritative.
 
 Prompt assembly, if implemented, must keep untrusted content and control instructions

@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory;
 
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
+import io.github.dondindondev.agentprojectmemory.ai.AiPresentationOptions;
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataWriter;
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataValidator;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
@@ -29,18 +30,19 @@ import java.util.Properties;
 
 public final class AgentProjectMemoryCli {
   public static final String USAGE =
-      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]";
+      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] "
+          + "[--ai-presentation mock_no_network] [--incremental]";
   private static final String GENERAL_HELP = """
       agent-project-memory - local evidence-backed project memory for Java/Spring projects
 
       Usage:
-        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
+        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
         agent-project-memory query <path> <query-command>
         agent-project-memory help
         agent-project-memory version
 
       Commands:
-        scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
+        scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
                                        Generate .project-memory output for a local repository.
         query <path> <query-command>   Validate and read existing .project-memory artifacts.
         help                           Show this help.
@@ -51,7 +53,7 @@ public final class AgentProjectMemoryCli {
         --version                      Show the CLI version.
       """;
   private static final String SCAN_HELP = """
-      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--incremental]
+      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
 
       Generate local evidence-backed project memory under <path>/.project-memory/.
 
@@ -59,6 +61,9 @@ public final class AgentProjectMemoryCli {
         --config <path>            Use a repository-relative YAML config file under the scan root.
         --agent-profile <profile>  Generate opt-in profile artifacts for codex, claude, cursor,
                                    generic, or all. May be repeated.
+        --ai-presentation mock_no_network
+                                   Generate opt-in non-authoritative AI presentation artifacts
+                                   with the mock/no-network provider.
         --incremental              Reuse a validated whole-output cache hit when safe; otherwise
                                    run a full scan and refresh .project-memory/cache/v1/.
         --help                     Show this help.
@@ -190,6 +195,7 @@ public final class AgentProjectMemoryCli {
         scanArgs.path(),
         scanArgs.configPath(),
         scanArgs.agentProfiles(),
+        scanArgs.aiPresentationOptions(),
         scanArgs.incremental());
   }
 
@@ -211,12 +217,14 @@ public final class AgentProjectMemoryCli {
     if (scanPath.startsWith("--")) {
       return "--config".equals(scanPath)
               || "--agent-profile".equals(scanPath)
+              || "--ai-presentation".equals(scanPath)
               || "--incremental".equals(scanPath)
           ? ScanArgs.usageError("Missing scan path.")
           : ScanArgs.usageError("Unknown flag.");
     }
     String configPath = null;
     EnumSet<AgentOutputProfile> agentProfiles = EnumSet.noneOf(AgentOutputProfile.class);
+    AiPresentationOptions aiPresentationOptions = AiPresentationOptions.disabled();
     boolean incremental = false;
     int index = 2;
     while (index < args.length) {
@@ -257,9 +265,28 @@ public final class AgentProjectMemoryCli {
         index += 2;
         continue;
       }
+      if ("--ai-presentation".equals(argument)) {
+        if (aiPresentationOptions.enabled()) {
+          return ScanArgs.usageError("Duplicate --ai-presentation flag.");
+        }
+        if (index + 1 >= args.length) {
+          return ScanArgs.usageError("Missing --ai-presentation value.");
+        }
+        aiPresentationOptions = AiPresentationOptions.fromCliValue(args[index + 1]).orElse(null);
+        if (aiPresentationOptions == null) {
+          return ScanArgs.usageError("Unsupported --ai-presentation value.");
+        }
+        index += 2;
+        continue;
+      }
       return ScanArgs.usageError("Unexpected extra arguments.");
     }
-    return ScanArgs.valid(scanPath, configPath, canonicalProfiles(agentProfiles), incremental);
+    return ScanArgs.valid(
+        scanPath,
+        configPath,
+        canonicalProfiles(agentProfiles),
+        aiPresentationOptions,
+        incremental);
   }
 
   private List<AgentOutputProfile> canonicalProfiles(EnumSet<AgentOutputProfile> profiles) {
@@ -484,6 +511,7 @@ public final class AgentProjectMemoryCli {
       String rawPath,
       String explicitConfigPath,
       List<AgentOutputProfile> agentProfiles,
+      AiPresentationOptions aiPresentationOptions,
       boolean incremental) {
     if (rawPath == null) {
       return scanInputError("Missing scan path.");
@@ -551,8 +579,9 @@ public final class AgentProjectMemoryCli {
 
     out.println("Prepared .project-memory.");
     boolean adapterSelected = scanConfiguration.adapterConfiguration().enabled();
+    boolean aiPresentationSelected = aiPresentationOptions.enabled();
 
-    if (incremental && !adapterSelected) {
+    if (incremental && !adapterSelected && !aiPresentationSelected) {
       IncrementalCacheMetadataValidator.CacheValidationResult cacheValidation =
           incrementalCacheMetadataValidator.validateHit(
               normalizedProjectPath,
@@ -573,7 +602,8 @@ public final class AgentProjectMemoryCli {
           normalizedProjectPath,
           containedOutputDirectory,
           scanConfiguration,
-          agentProfiles);
+          agentProfiles,
+          aiPresentationOptions);
       if (result.generated()) {
         out.println(
             "Generated project-map.json with "
@@ -605,8 +635,11 @@ public final class AgentProjectMemoryCli {
         if (result.profileCount() > 0) {
           out.println("Generated agent profile artifacts: " + result.profileCount() + ".");
         }
+        if (result.aiPresentationGenerated()) {
+          out.println("Generated AI presentation artifacts with mock_no_network provider.");
+        }
         if (incremental) {
-          if (adapterSelected) {
+          if (adapterSelected || aiPresentationSelected) {
             out.println("Skipped incremental cache metadata refresh.");
           } else {
             IncrementalCacheMetadataWriter.CacheWriteResult cacheResult =
@@ -771,13 +804,15 @@ public final class AgentProjectMemoryCli {
         Path repositoryRoot,
         Path outputDirectory,
         ScanConfiguration scanConfiguration,
-        List<AgentOutputProfile> agentProfiles) throws IOException;
+        List<AgentOutputProfile> agentProfiles,
+        AiPresentationOptions aiPresentationOptions) throws IOException;
   }
 
   private record ScanArgs(
       String path,
       String configPath,
       List<AgentOutputProfile> agentProfiles,
+      AiPresentationOptions aiPresentationOptions,
       boolean incremental,
       boolean help,
       String errorMessage,
@@ -786,20 +821,53 @@ public final class AgentProjectMemoryCli {
         String path,
         String configPath,
         List<AgentOutputProfile> agentProfiles,
+        AiPresentationOptions aiPresentationOptions,
         boolean incremental) {
-      return new ScanArgs(path, configPath, agentProfiles, incremental, false, null, SUCCESS);
+      return new ScanArgs(
+          path,
+          configPath,
+          agentProfiles,
+          aiPresentationOptions,
+          incremental,
+          false,
+          null,
+          SUCCESS);
     }
 
     static ScanArgs helpRequested() {
-      return new ScanArgs(null, null, List.of(), false, true, null, SUCCESS);
+      return new ScanArgs(
+          null,
+          null,
+          List.of(),
+          AiPresentationOptions.disabled(),
+          false,
+          true,
+          null,
+          SUCCESS);
     }
 
     static ScanArgs usageError(String message) {
-      return new ScanArgs(null, null, List.of(), false, false, message, USAGE_ERROR);
+      return new ScanArgs(
+          null,
+          null,
+          List.of(),
+          AiPresentationOptions.disabled(),
+          false,
+          false,
+          message,
+          USAGE_ERROR);
     }
 
     static ScanArgs scanInputError(String message) {
-      return new ScanArgs(null, null, List.of(), false, false, message, SCAN_INPUT_ERROR);
+      return new ScanArgs(
+          null,
+          null,
+          List.of(),
+          AiPresentationOptions.disabled(),
+          false,
+          false,
+          message,
+          SCAN_INPUT_ERROR);
     }
   }
 

@@ -120,6 +120,25 @@ Markdown files under `.project-memory/agent-profiles/`. Profile Markdown is
 generated only from existing structured project facts and existing evidence references;
 it does not add project facts or evidence records.
 
+Current builds also support explicitly enabled mock/no-network AI presentation
+artifacts:
+
+```sh
+java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
+```
+
+Default scans do not create AI presentation artifacts. When enabled, the mock/no-network
+slice writes `.project-memory/ai-presentations/manifest.json` and
+`.project-memory/ai-presentations/brief.md` from the already generated
+`project-map.json`, `evidence-index.jsonl`, and `project-graph.json` artifacts. These
+files are non-authoritative presentation only: they do not add project facts, evidence
+records, connector truth, security findings, runtime claims, source/spec agreement
+claims, documentation-freshness claims, release evidence, or code-change authority. The
+mock provider performs no network access, credential lookup, telemetry, source upload,
+prompt logging, prompt transcript serialization, embeddings, vector search, repository
+chat, or real provider calls. When combined with `--incremental`, the current AI
+presentation slice runs a full scan and skips incremental cache metadata refresh.
+
 Current builds also support opt-in incremental scan mode:
 
 ```sh
@@ -534,12 +553,13 @@ Public evaluation summaries are linked from the release notes as supporting deta
 - a tool that treats LLM output as the source of truth,
 - an automatic code modification system.
 
-AI may become an optional presentation, grouping, or summarization layer later, but the
-core project memory must come from deterministic analysis, explicit output contracts,
-and evidence references. Any future AI output must be labeled as non-evidence, must not
-create project facts or security findings, and must not require source upload, network
-access, provider credentials, repository chat, generic RAG, or automatic code
-modification by default. The current product line includes no AI provider integration.
+AI is optional presentation, grouping, or summarization only; the core project memory
+must come from deterministic analysis, explicit output contracts, and evidence
+references. Any AI output must be labeled as non-evidence, must not create project facts
+or security findings, and must not require source upload, network access, provider
+credentials, repository chat, generic RAG, or automatic code modification by default.
+The current product line includes only explicitly enabled mock/no-network AI
+presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
@@ -848,6 +868,14 @@ Current limitations:
   create evidence records, do not replace `agent-guide.md`, and do not modify root
   repository instruction/config files such as `AGENTS.md`, `CLAUDE.md`, Cursor rules,
   IDE settings, source files, docs, or config files.
+- AI presentation artifacts are opt-in generated presentations only. With
+  `--ai-presentation mock_no_network`, the tool writes only
+  `.project-memory/ai-presentations/manifest.json` and
+  `.project-memory/ai-presentations/brief.md` from existing generated artifacts, labels
+  them as non-authoritative and non-evidence, and does not add `project-map.json`
+  fields, create `evidence-index.jsonl` records, mutate `source-registry.json`, mutate
+  profile/cache/query artifacts, read raw source or local document bodies as AI input,
+  use credentials, access the network, upload source, or call a real provider.
 - Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional

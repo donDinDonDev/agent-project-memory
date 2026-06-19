@@ -573,17 +573,18 @@ names, environment-variable interpolation, remote URLs as import locations, API
 enablement flags, background sync settings, retry/rate-limit settings, pagination
 settings, remote cache settings, provider discovery options, or network/auth options.
 
-## Planned v2 Optional AI Presentation Output Boundary
+## v2 Optional AI Presentation Output Boundary
 
-The current implementation does not emit AI presentation artifacts, AI summaries,
-AI provider metadata, prompts, provider configuration, provider credentials, network
-metadata, embeddings, vector indexes, chat transcripts, or AI-generated project facts.
-Normal `project-map.json` files remain on `schema_version: "1.0"` unless a future
-release explicitly documents a schema marker change.
+Default scans do not emit AI presentation artifacts, real AI provider metadata,
+prompts, provider configuration, provider credentials, network metadata, embeddings,
+vector indexes, chat transcripts, or AI-generated project facts. Normal
+`project-map.json` files remain on `schema_version: "1.0"` unless a future release
+explicitly documents a schema marker change.
 
-The planned v2.3 AI presentation boundary chooses a separate optional generated
-artifact surface rather than a profile extension or query mode. A future implementation
-must not create these artifacts unless an AI presentation mode is explicitly enabled:
+The v2.3 AI presentation boundary chooses a separate optional generated artifact
+surface rather than a profile extension or query mode. The current first implementation
+creates these artifacts only when a scan is explicitly invoked with
+`--ai-presentation mock_no_network`:
 
 ```text
 .project-memory/
@@ -609,10 +610,11 @@ Allowed AI presentation inputs are limited to:
 - future adapter-backed documents and provenance only after those surfaces are accepted
   by deterministic adapter contracts.
 
-The first mock/no-network implementation slice should use only the base generated
-artifact set and optional graph artifact. Adapter provenance, profile metadata, cache
-metadata, and query-output metadata are allowed by the boundary but may remain parked
-until a later implementation slice documents and tests those joins.
+The first mock/no-network implementation slice uses only the base generated
+`project-map.json`, `evidence-index.jsonl`, and `project-graph.json` artifacts.
+Adapter provenance, profile metadata, cache metadata, and query-output metadata are
+allowed by the boundary but may remain parked until a later implementation slice
+documents and tests those joins.
 
 Forbidden AI presentation inputs include raw repository source files, generated-source
 contents, raw local document bodies, generated Markdown bodies, raw connector exports,
@@ -620,7 +622,7 @@ raw adapter input files, connector credentials, raw connector request/response l
 remote API responses, provider credentials, environment values, local absolute paths,
 and raw prompt transcripts.
 
-Future AI presentation output must not:
+AI presentation output must not:
 
 - add, remove, rename, or reinterpret `project-map.json` facts;
 - create `evidence-index.jsonl` records, evidence fields, evidence types, confidence
@@ -635,13 +637,13 @@ Future AI presentation output must not:
 - make repository chat, generic RAG, embeddings, vector search, or automatic code
   modification the core product experience.
 
-If a future AI presentation artifact is emitted, it must carry visible non-evidence
+When an AI presentation artifact is emitted, it must carry visible non-evidence
 labeling in both human-readable wording and machine-readable metadata. The Markdown
 presentation must include an early visible statement that the file is AI-generated
 presentation only, is not project evidence, and must be checked against the referenced
 deterministic artifacts before use.
 
-Planned `ai-presentations/manifest.json` shape:
+Current `ai-presentations/manifest.json` shape for `mock_no_network`:
 
 ```json
 {
@@ -659,7 +661,8 @@ Planned `ai-presentations/manifest.json` shape:
       "schema_version": "1.0"
     },
     {
-      "name": "evidence-index.jsonl"
+      "name": "evidence-index.jsonl",
+      "record_count": 12
     },
     {
       "name": "project-graph.json",
@@ -682,9 +685,9 @@ Planned `ai-presentations/manifest.json` shape:
 
 Manifest rules:
 
-- `ai_presentation_schema_version` is `"1.0"` for the first planned AI presentation
+- `ai_presentation_schema_version` is `"1.0"` for the first AI presentation
   manifest and does not define a new `project-map.json` schema.
-- `presentation_surface` is `"separate_artifact"` for the planned v2.3 surface.
+- `presentation_surface` is `"separate_artifact"` for the v2.3 surface.
 - `provider_mode` values are limited to documented modes. The first implementation may
   use `"mock_no_network"` only. Real provider modes are parked until a later design
   explicitly documents provider, network, credential, telemetry, retention, and prompt
@@ -709,6 +712,14 @@ Manifest rules:
   `ai-presentations/` directory.
 - The manifest is generated-output metadata only. It is not evidence, not a source
   registry, not a project map section, and not proof that an AI output is correct.
+- The current mock/no-network slice uses `project-map.json`, `evidence-index.jsonl`,
+  and `project-graph.json` as inputs. It does not read raw source files, generated
+  Markdown bodies, raw local document bodies, raw adapter input files, raw connector
+  exports, cache metadata, profile Markdown, query output, credentials, environment
+  values, local absolute paths, or prompt transcripts as AI inputs.
+- When `--ai-presentation mock_no_network` is combined with `--incremental`, the
+  current implementation runs a full scan and skips incremental cache metadata refresh
+  rather than extending the cache contract in this slice.
 
 Provider, privacy, network, credential, telemetry, and source-upload defaults remain
 closed. No provider is configured by default, no network access is enabled by default,
