@@ -34,6 +34,12 @@ The v2.3 release adds explicitly enabled mock/no-network AI presentation artifac
 under `.project-memory/ai-presentations/` through
 `scan --ai-presentation mock_no_network`, while keeping default scans free of AI
 presentation artifacts and keeping real provider integration deferred.
+Unreleased v2.4 work now includes a CLI-only
+`query <path> agent-context` surface that renders deterministic stdout over existing
+no-adapter generated artifacts and optional valid graph navigation metadata without
+creating generated artifacts, reading source files, adding adapter-aware query,
+starting a server/API/editor/plugin runtime, using network or credentials, or creating
+automatic code-modification authority.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1519,7 +1525,7 @@ Non-goals:
   chat, SaaS, web UI, plugin loading, public API/server behavior, editor integration, or
   automatic code modification in the first implementation slice.
 
-## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Design Accepted)
+## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Unreleased)
 
 Planned release outcome:
 
@@ -1531,18 +1537,18 @@ Planned release outcome:
   connector truth, security findings, runtime claims, release evidence, or code-change
   authority.
 
-Accepted first slice:
+Implemented first slice:
 
 - The first implementation path is a CLI-only `query`-based agent context surface over
   existing generated artifacts.
-- The planned surface should read the same bounded local artifact root policy as the
+- The implemented surface reads the same bounded local artifact root policy as the
   current query layer: a repository directory with `.project-memory/` or the
   `.project-memory/` directory itself.
-- The planned surface should use existing no-adapter `project-map.json`
+- The implemented surface uses existing no-adapter `project-map.json`
   `schema_version: "1.0"`, `evidence-index.jsonl`, and graph navigation metadata when
   available. Adapter-aware query over `source-registry.json` or connector records
   remains a separate later contract.
-- The planned output should be deterministic stdout intended for agent/editor
+- The output is deterministic stdout intended for agent/editor
   consumption. It may contain reading order, artifact provenance, supported query
   commands, bounded fact orientation, and existing evidence IDs, but it must not create
   evidence records or open referenced source files to expand excerpts.

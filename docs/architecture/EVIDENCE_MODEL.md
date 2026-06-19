@@ -297,7 +297,7 @@ output remains permanently non-evidence.
 
 ## Read-Only Agent Consumption Evidence Decision
 
-Read-only agent consumption output is not evidence. The planned first v2.4
+Read-only agent consumption output is not evidence. The first v2.4
 `query <path> agent-context` surface consumes existing generated artifacts and renders
 deterministic navigation/presentation output only.
 

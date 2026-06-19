@@ -272,12 +272,12 @@ Planned plugin and API surface gates:
   vulnerability proof, runtime claims, or repository-file changes unless a later public
   contract explicitly designs that behavior.
 
-Planned read-only agent consumption defaults:
+Read-only agent consumption defaults:
 
 - agent consumption starts from a CLI-only query surface over existing generated
   project-memory artifacts, not from a server, socket listener, daemon, editor plugin,
   or plugin runtime;
-- the first agent context surface reads only documented generated artifacts from the
+- the first implemented agent context surface reads only documented generated artifacts from the
   approved artifact root and must not read repository source files, generated-source
   contents, raw local document bodies, raw connector exports, raw adapter input files,
   raw prompt transcripts, environment values, credentials, or local absolute paths to

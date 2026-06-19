@@ -5841,15 +5841,15 @@ Stop conditions for implementation:
 ### v2.4 Read-Only Agent Context Query Contract
 
 This section defines the accepted v2.4 design boundary for the next read-only agent
-consumption surface. It is a planned query-layer expansion until an implementation
-release notes the shipped command behavior.
+consumption surface. The current unreleased implementation provides the CLI-only
+query-layer expansion described here.
 
 The first v2.4 surface is a CLI-only query command that renders deterministic
 agent-context output over existing generated artifacts. It is the approved equivalent to
 an MCP/server integration for the first slice because it preserves the current local
 process, artifact-root, and no-write query boundary.
 
-Planned command grammar:
+Implemented command grammar:
 
 ```text
 agent-project-memory query <path> agent-context
@@ -5858,7 +5858,7 @@ agent-project-memory query <path> agent-context
 The packaged-jar invocation uses the same arguments after
 `java -jar agent-project-memory-X.Y.Z.jar`. No installed command, server process,
 socket listener, editor plugin, MCP transport, or public API transport is part of this
-planned first slice.
+first slice.
 
 Path and artifact input policy:
 
@@ -5933,7 +5933,7 @@ Forbidden first-slice behavior:
 - adapter-aware query, provenance promotion, semantic search, embeddings, vector stores,
   generic RAG, repository chat, workspace memory, or change-impact claims.
 
-Validation requirements before implementation release:
+Validation requirements:
 
 - focused CLI parser tests for `query <path> agent-context` and invalid argument
   shapes;

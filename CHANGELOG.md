@@ -16,6 +16,11 @@ architecture documents.
   deferring MCP, server, public API, editor plugin, network, credential, telemetry,
   source-upload, and automatic code-modification behavior behind later explicit design
   and security review.
+- Implemented `query <path> agent-context` as a deterministic stdout-only read-only
+  agent context view over existing no-adapter `project-map.json` schema `1.0` and
+  `evidence-index.jsonl` artifacts, with optional valid `project-graph.json` navigation
+  metadata, no generated artifacts, no source readback, no adapter-aware query, no
+  network or credentials, and focused no-write/content-safety coverage.
 
 ## [2.3.0] - 2026-06-19
 

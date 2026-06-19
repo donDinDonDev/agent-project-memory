@@ -168,6 +168,7 @@ java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-proje
 java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project find symbol <term>
 java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project relations <id>
 java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project agent-context
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -193,6 +194,17 @@ only one-hop incoming, outgoing, or default `both` graph neighbors while keeping
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
 are navigation metadata, not evidence. Stable JSON query output remains future work and
 is not included in the current published release line.
+
+`agent-context` renders a bounded read-only context view for agent/editor consumption
+over existing no-adapter `project-map.json` schema `1.0` and `evidence-index.jsonl`
+artifacts, with optional valid `project-graph.json` navigation metadata when present.
+The command writes deterministic stdout only; it does not create generated artifacts,
+open referenced source files to expand evidence, parse generated Markdown, profiles,
+AI presentation, cache metadata, adapter context, connector records, or
+`source-registry.json` as fact inputs, and it does not add MCP/server/API/editor/plugin,
+network, credential, telemetry, source-upload, repository-chat, semantic-search, or
+automatic code-modification behavior. Agent-context output is navigation and
+presentation only, not project evidence.
 
 CLI exit codes are stable for automation:
 

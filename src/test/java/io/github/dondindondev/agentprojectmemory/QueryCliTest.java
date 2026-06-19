@@ -36,6 +36,7 @@ final class QueryCliTest {
         () -> assertTrue(queryHelp.stdout().contains("find fact <term>")),
         () -> assertTrue(queryHelp.stdout().contains("find symbol <term>")),
         () -> assertTrue(queryHelp.stdout().contains("relations <id>")),
+        () -> assertTrue(queryHelp.stdout().contains("agent-context")),
         () -> assertTrue(queryHelp.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
@@ -1093,6 +1094,142 @@ final class QueryCliTest {
         () -> assertTrue(result.stderr().contains("Unsupported query list subject.")),
         () -> assertTrue(result.stderr().contains("Usage: agent-project-memory query")),
         () -> assertFalse(Files.exists(repositoryRoot.resolve(".project-memory"))));
+  }
+
+  @Test
+  void queryAgentContextRendersDeterministicStdoutWithOptionalGraph() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
+    writeRelationGraph(artifactRoot);
+
+    CliResult first = runCli("query", repositoryRoot.toString(), "agent-context");
+    CliResult second = runCli("query", repositoryRoot.toString(), "agent-context");
+
+    assertAll(
+        () -> assertEquals(0, first.exitCode()),
+        () -> assertEquals(first.stdout(), second.stdout()),
+        () -> assertTrue(first.stdout().contains("Query: agent-context")),
+        () -> assertTrue(first.stdout().contains(
+            "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=4")),
+        () -> assertTrue(first.stdout().contains(
+            "Optional graph: project-graph.json graph_schema_version=1.0 (navigation metadata, not evidence)")),
+        () -> assertTrue(first.stdout().contains("query <path> list modules")),
+        () -> assertTrue(first.stdout().contains("query <path> explain evidence <evidence-id>")),
+        () -> assertTrue(first.stdout().contains(
+            "- source-visible endpoints: 1 (first: endpoint:com.example.web.OrderController#getOrder; evidence_ids: ev:endpoint:controller, ev:endpoint:mapping)")),
+        () -> assertTrue(first.stdout().contains(
+            "- evidence records: 4 (ids: ev:pom.xml:1-1:build_file:pom.xml, ev:endpoint:mapping, ev:entity:order, ev:order:symbol)")),
+        () -> assertTrue(first.stdout().contains("- nodes: 4")),
+        () -> assertTrue(first.stdout().contains("- edges: 3")),
+        () -> assertTrue(first.stdout().contains(
+            "- source_ref and derivation fields are navigation metadata, not evidence.")),
+        () -> assertTrue(first.stdout().contains(
+            "- existing evidence IDs are preserved; no evidence records or evidence IDs are created.")),
+        () -> assertFalse(first.stdout().contains(repositoryRoot.toString())),
+        () -> assertTrue(first.stderr().isEmpty()),
+        () -> assertTrue(second.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryAgentContextDoesNotReadOrMutateNonInputArtifacts() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("source-registry.json"),
+        "{\"source\":\"password=FAKE_AGENT_CONTEXT_SOURCE_REGISTRY_SECRET\"}");
+    Files.writeString(
+        artifactRoot.resolve("agent-guide.md"),
+        "Authorization: Bearer FAKE_AGENT_CONTEXT_GUIDE_SECRET");
+    Files.createDirectories(artifactRoot.resolve("agent-profiles"));
+    Files.writeString(
+        artifactRoot.resolve("agent-profiles/generic.md"),
+        "token=FAKE_AGENT_CONTEXT_PROFILE_SECRET");
+    Files.createDirectories(artifactRoot.resolve("ai-presentations"));
+    Files.writeString(
+        artifactRoot.resolve("ai-presentations/brief.md"),
+        "client_secret=FAKE_AGENT_CONTEXT_AI_SECRET");
+    Files.createDirectories(artifactRoot.resolve("cache/v1"));
+    Files.writeString(
+        artifactRoot.resolve("cache/v1/manifest.json"),
+        "api_key=FAKE_AGENT_CONTEXT_CACHE_SECRET");
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "agent-context");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Optional graph: not loaded")),
+        () -> assertTrue(result.stdout().contains(
+            "source-registry.json, adapter context rows, connector records")),
+        () -> assertTrue(result.stdout().contains(
+            "AI presentation artifacts, if present, are optional non-authoritative/non-evidence")),
+        () -> assertFalse(result.stdout().contains("FAKE_AGENT_CONTEXT_SOURCE_REGISTRY_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_AGENT_CONTEXT_GUIDE_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_AGENT_CONTEXT_PROFILE_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_AGENT_CONTEXT_AI_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_AGENT_CONTEXT_CACHE_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertEquals(
+            "{\"source\":\"password=FAKE_AGENT_CONTEXT_SOURCE_REGISTRY_SECRET\"}",
+            Files.readString(artifactRoot.resolve("source-registry.json"))),
+        () -> assertEquals(
+            "Authorization: Bearer FAKE_AGENT_CONTEXT_GUIDE_SECRET",
+            Files.readString(artifactRoot.resolve("agent-guide.md"))),
+        () -> assertEquals(
+            "token=FAKE_AGENT_CONTEXT_PROFILE_SECRET",
+            Files.readString(artifactRoot.resolve("agent-profiles/generic.md"))),
+        () -> assertEquals(
+            "client_secret=FAKE_AGENT_CONTEXT_AI_SECRET",
+            Files.readString(artifactRoot.resolve("ai-presentations/brief.md"))),
+        () -> assertEquals(
+            "api_key=FAKE_AGENT_CONTEXT_CACHE_SECRET",
+            Files.readString(artifactRoot.resolve("cache/v1/manifest.json"))),
+        () -> assertFalse(Files.exists(artifactRoot.resolve("project-graph.json"))));
+  }
+
+  @Test
+  void queryAgentContextRejectsExtraArgsAdapterSchemaAndMalformedGraphSafely()
+      throws Exception {
+    Path usageRoot = tempDir.resolve("usage-repo");
+    Files.createDirectories(usageRoot);
+
+    CliResult usage = runCli("query", usageRoot.toString(), "agent-context", "--format", "json");
+
+    Path adapterRoot = tempDir.resolve("adapter-repo/.project-memory");
+    writeArtifacts(adapterRoot, """
+        {
+          "schema_version": "2.0",
+          "adapter_context": [
+            {"title": "password=FAKE_AGENT_CONTEXT_ADAPTER_SECRET"}
+          ]
+        }
+        """);
+    CliResult adapter = runCli(
+        "query",
+        adapterRoot.getParent().toString(),
+        "agent-context");
+
+    Path graphRoot = tempDir.resolve("graph-repo");
+    Path graphArtifactRoot = graphRoot.resolve(".project-memory");
+    writeBaseArtifacts(graphArtifactRoot);
+    writeMalformedGraph(graphArtifactRoot);
+    CliResult graph = runCli("query", graphRoot.toString(), "agent-context");
+
+    assertAll(
+        () -> assertEquals(2, usage.exitCode()),
+        () -> assertTrue(usage.stdout().isEmpty()),
+        () -> assertTrue(usage.stderr().contains("Malformed agent-context query command.")),
+        () -> assertFalse(Files.exists(usageRoot.resolve(".project-memory"))),
+        () -> assertEquals(3, adapter.exitCode()),
+        () -> assertTrue(adapter.stdout().isEmpty()),
+        () -> assertTrue(adapter.stderr().contains("Unsupported project-map.json schema_version.")),
+        () -> assertFalse(adapter.stderr().contains("FAKE_AGENT_CONTEXT_ADAPTER_SECRET")),
+        () -> assertEquals(3, graph.exitCode()),
+        () -> assertTrue(graph.stdout().isEmpty()),
+        () -> assertTrue(graph.stderr().contains("Malformed project-graph.json.")),
+        () -> assertFalse(graph.stderr().contains("SECRET_TOKEN")),
+        () -> assertFalse(graph.stderr().contains(graphRoot.toString())));
   }
 
   private CliResult runCli(String... args) {

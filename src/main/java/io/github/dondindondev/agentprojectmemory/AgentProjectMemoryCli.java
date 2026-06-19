@@ -7,6 +7,7 @@ import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataW
 import io.github.dondindondev.agentprojectmemory.cache.IncrementalCacheMetadataValidator;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactReader;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryAgentContextRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryListRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryLookupRenderer;
@@ -85,6 +86,7 @@ public final class AgentProjectMemoryCli {
         find symbol <term>         Find structured symbol fields.
         relations <id> [--direction incoming|outgoing|both]
                                    Show one-hop graph relations.
+        agent-context              Render bounded read-only agent context over existing artifacts.
 
       Options:
         --help                     Show this help.
@@ -109,6 +111,8 @@ public final class AgentProjectMemoryCli {
   private final ProjectMemoryLookupRenderer queryLookupRenderer = new ProjectMemoryLookupRenderer();
   private final ProjectMemoryRelationRenderer queryRelationRenderer =
       new ProjectMemoryRelationRenderer();
+  private final ProjectMemoryAgentContextRenderer queryAgentContextRenderer =
+      new ProjectMemoryAgentContextRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
@@ -414,6 +418,18 @@ public final class AgentProjectMemoryCli {
           ProjectMemoryArtifactReader.GraphRequirement.REQUIRED,
           direction);
     }
+    if ("agent-context".equals(subcommand)) {
+      if (args.length != 3) {
+        return QueryArgs.usageError("Malformed agent-context query command.");
+      }
+      return QueryArgs.valid(
+          queryPath,
+          "agent-context",
+          "agent-context",
+          null,
+          ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
+          ProjectMemoryRelationRenderer.Direction.BOTH);
+    }
     return QueryArgs.usageError("Unsupported query subcommand.");
   }
 
@@ -481,6 +497,10 @@ public final class AgentProjectMemoryCli {
           queryArgs.lookupTerm(),
           queryArgs.relationDirection());
       return printLookupResult(result);
+    }
+    if ("agent-context".equals(queryArgs.command())) {
+      out.print(queryAgentContextRenderer.render(artifacts));
+      return SUCCESS;
     }
 
     out.println("Query artifact validation succeeded.");
