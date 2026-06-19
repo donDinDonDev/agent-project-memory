@@ -3,9 +3,7 @@
 ## Supported Versions
 
 The latest published release line is the supported public line for vulnerability
-reports. The latest published release is currently `v2.1.0`. The repository is
-prepared as a `v2.2.0` release candidate, but `v2.2.0` is not a supported published
-release until its GitHub Release is published.
+reports. The latest published release is currently `v2.2.0`.
 
 Older release lines are generally unsupported unless a maintainer explicitly states
 otherwise in release notes or a security advisory.

@@ -2,10 +2,8 @@
 
 ## Current Status
 
-The latest published release is `v2.1.0`, with executable jar and `SHA256SUMS` assets.
-The current repository state is prepared as a `v2.2.0` release candidate, but no
-`v2.2.0` tag, GitHub Release, or release assets are published until the manual release
-step occurs. Normal no-adapter generated `project-map.json` files use
+The latest published release is `v2.2.0`, with executable jar and `SHA256SUMS` assets.
+Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
 expansion adds deterministic read-only lookup commands over existing generated artifacts
@@ -29,9 +27,9 @@ disabled-by-default local GitHub/GitLab export import through
 schema `1.1` and no adapter-backed query support. Current query support remains focused
 on no-adapter v1 artifact sets unless a later release explicitly documents
 adapter-aware query behavior.
-The v2.2 release candidate adds disabled-by-default Jira/YouTrack/Confluence local
-export import through `adapters.connector_import`, with connector provenance in
-`source-registry.json` schema `1.2` and the same no-adapter query baseline.
+The v2.2 release adds disabled-by-default Jira/YouTrack/Confluence local export import
+through `adapters.connector_import`, with connector provenance in `source-registry.json`
+schema `1.2` and the same no-adapter query baseline.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -55,7 +53,7 @@ documented release-jar verification path. The v2.0 release also includes a bound
 local structured import adapter that is disabled by default, local-only, and
 provenance-backed. The v2.1 release also includes a bounded local
 GitHub/GitLab export import adapter that is disabled by default, local-only, and
-provenance-backed. The v2.2 release candidate also includes a bounded local
+provenance-backed. The v2.2 release also includes a bounded local
 Jira/YouTrack/Confluence export import adapter that is disabled by default, local-only,
 and provenance-backed. The current public adoption surface also includes a checked-in
 generated-output example snapshot and contributor/reporting templates that point readers
@@ -1387,9 +1385,9 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, or automatic
   code-modification input.
 
-## v2.2.0: Jira/YouTrack/Confluence Local Export Scope (Release Candidate)
+## v2.2.0: Jira/YouTrack/Confluence Local Export Scope (Published)
 
-Release-candidate scope:
+Published scope:
 
 - Add disabled-by-default local JSON export import for selected Jira issue, YouTrack
   issue/article, and Confluence page records.

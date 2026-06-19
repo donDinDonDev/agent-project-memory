@@ -2,8 +2,8 @@
 
 Release date: 2026-06-19
 
-Release status: release candidate. The `v2.2.0` tag, GitHub Release, and release
-assets are not published until the manual release step occurs.
+Release status: published. The `v2.2.0` tag, GitHub Release, and release assets are
+published.
 
 `agent-project-memory` v2.2.0 adds disabled-by-default local Jira/YouTrack/Confluence
 export import while preserving no-adapter Java/Spring analysis and query compatibility
@@ -81,7 +81,7 @@ before release prep, with no release-blocking findings remaining for v2.2.0.
 
 ## Validation
 
-The v2.2.0 release-candidate validation passed:
+The v2.2.0 release validation passed:
 
 - `mvn test`: 508 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 508 tests, 0 failures, 0 errors, 0 skipped, including the packaged
@@ -136,8 +136,7 @@ v2.2.0 does not add:
 
 ## Release Assets
 
-When published, the `v2.2.0` GitHub Release is expected to include the standard release
-assets:
+The `v2.2.0` GitHub Release includes the standard release assets:
 
 - `agent-project-memory-2.2.0.jar`
 - `SHA256SUMS`
