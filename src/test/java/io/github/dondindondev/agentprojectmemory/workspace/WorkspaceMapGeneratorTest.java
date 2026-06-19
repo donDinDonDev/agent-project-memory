@@ -145,6 +145,54 @@ final class WorkspaceMapGeneratorTest {
   }
 
   @Test
+  void keepsCrossRepoRelationsParkedWhenMemberArtifactsExposeRelationLikeSignals()
+      throws Exception {
+    Path workspaceRoot = workspace("parked-relations");
+    Path orders = workspaceRoot.resolve("repos/orders");
+    Path billing = workspaceRoot.resolve("repos/billing");
+    writeMemberArtifacts(
+        orders,
+        "1.0",
+        List.of(
+            "ev:src/main/java/com/example/orders/OrderClient.java:12-12:com.example.orders.OrderClient:OrderClient",
+            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:com.example.shared.CheckoutEvent:CheckoutEvent"),
+        true,
+        null);
+    writeMemberArtifacts(
+        billing,
+        "1.0",
+        List.of(
+            "ev:src/main/java/com/example/billing/OrderController.java:20-20:com.example.billing.OrderController#get:@GetMapping",
+            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:com.example.shared.CheckoutEvent:CheckoutEvent"),
+        true,
+        null);
+    Path config = writeWorkspaceConfig(workspaceRoot, """
+        version: 1
+        members:
+          - repo_id: orders
+            root: repos/orders
+          - repo_id: billing
+            root: repos/billing
+        """);
+
+    generator.generate(loader.load(config.toString()));
+
+    JsonNode workspaceMap = readWorkspaceMap(workspaceRoot);
+    Map<String, Path> memberRoots = Map.of("orders", orders, "billing", billing);
+    String output = workspaceMap.toString();
+
+    assertAll(
+        () -> assertEquals("not_analyzed", workspaceMap.path("relations").path("analysis_status").asText()),
+        () -> assertEquals(0, workspaceMap.path("relations").path("items").size()),
+        () -> assertEquals(0, workspaceMap.path("diagnostics").size()),
+        () -> assertFalse(output.contains("cross_repo")),
+        () -> assertFalse(output.contains("depends_on")),
+        () -> assertFalse(output.contains("calls")),
+        () -> assertFalse(output.contains("data_flow")));
+    assertCompositeReferencesResolve(workspaceMap, memberRoots);
+  }
+
+  @Test
   void recordsMissingAndInvalidMemberArtifactsAsBoundedDiagnostics() throws Exception {
     Path workspaceRoot = workspace("diagnostics");
     Path missing = workspaceRoot.resolve("services/missing-artifacts");
@@ -300,12 +348,23 @@ final class WorkspaceMapGeneratorTest {
         {
           "graph_schema_version":"1.0",
           "project_map_schema_version":"%s",
-          "nodes":[{"id":"node:module:root","evidence_ids":["%s"]}],
-          "edges":[],
+          "nodes":[
+            {"id":"node:module:root","evidence_ids":["%s"]},
+            {"id":"node:relation-like:shared-order-api","evidence_ids":["%s"]}
+          ],
+          "edges":[
+            {
+              "id":"edge:relation-like:shared-order-api",
+              "source":"node:module:root",
+              "target":"node:relation-like:shared-order-api",
+              "relation_type":"declares",
+              "evidence_ids":["%s"]
+            }
+          ],
           "relation_statuses":[],
           "warnings":[]
         }
-        """.formatted(projectMapSchemaVersion, evidenceId);
+        """.formatted(projectMapSchemaVersion, evidenceId, evidenceId, evidenceId);
   }
 
   private String sourceRegistry(String sourceRegistrySchemaVersion) {
