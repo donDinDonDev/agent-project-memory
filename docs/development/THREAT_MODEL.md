@@ -122,6 +122,12 @@ v2 adapter security defaults:
   pull-request, and merge-request source types, emits Git hosting provenance through
   `source-registry.json`, and rejects records whose provider, host, namespace,
   number/IID, status, source identity, or provenance cannot be validated safely;
+- the planned Jira/YouTrack/Confluence local export importer keeps the same local-file
+  trust boundary: it accepts only an explicitly configured repository-relative JSON
+  export, parses a provider-normalized format rather than raw API responses, supports
+  only bounded issue, article, and page source types, emits connector provenance through
+  `source-registry.json`, and rejects records whose provider, host, project or space,
+  record key or ID, status, source identity, or provenance cannot be validated safely;
 - adapter-enabled incremental scans skip persistent cache metadata refresh in this
   slice so configured import paths and raw adapter config values are not serialized into
   cache manifests;
@@ -142,6 +148,9 @@ v2 external-data risk controls:
   fetch timestamp when known, and trust-boundary labels;
 - Git hosting source identity must be a logical provider/host/namespace/record key, not
   a local path, raw URL, title, author, branch name, timestamp, or content hash;
+- Jira, YouTrack, and Confluence source identity must be a logical
+  provider/host/container/record key, not a local path, raw URL, title, author, workflow
+  state, label, page title, timestamp, attachment name, or content hash;
 - accepted adapter-backed records must reference source-document and provenance IDs
   from the source registry; provenance must not be hidden only in free-form document
   text or evidence excerpts;
@@ -161,6 +170,11 @@ v2 external-data risk controls:
   labels, authors, branch names, commit metadata, pipeline/status payloads, raw export
   objects, configured import paths, and raw request/response logs must not be serialized
   by default.
+- Jira, YouTrack, and Confluence titles or summaries may be serialized only as bounded
+  redacted display metadata; raw issue/page/article bodies, descriptions, comments,
+  rendered HTML, rich text, attachment names, attachment bodies, labels, authors,
+  workflow history, raw export objects, configured import paths, and raw request/response
+  logs must not be serialized by default.
 
 Planned v2 credential and network defaults:
 

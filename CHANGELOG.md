@@ -9,7 +9,12 @@ architecture documents.
 
 ## [Unreleased]
 
-No changes yet.
+### Added
+
+- Documented the planned v2.2 Jira/YouTrack/Confluence local export connector boundary,
+  including supported source types, source identity rules, source-registry provenance,
+  adapter-context placement, credential/network defaults, and evidence/provenance
+  separation without adding implementation behavior.
 
 ## [2.1.0] - 2026-06-18
 

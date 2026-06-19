@@ -1380,6 +1380,55 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, or automatic
   code-modification input.
 
+## v2.2.0: Jira/YouTrack/Confluence Local Export Scope (Planned)
+
+Expected outcome:
+
+- Add disabled-by-default local JSON export import for selected Jira issue, YouTrack
+  issue/article, and Confluence page records.
+- Use one normalized local export format for connector records rather than raw Jira,
+  YouTrack, or Confluence API responses.
+- Preserve no-adapter scan and query compatibility with the v1 artifact set.
+- Emit connector records only as provenance-backed external/document context through
+  the existing v2 source registry and `project-map.json` adapter context strategy.
+- Keep connector records out of `evidence-index.jsonl` and out of Java/Spring code
+  facts.
+- Keep live API mode, credentials, provider discovery, background sync, remote cache,
+  source upload, adapter-aware query support, and AI behavior out of the local import
+  baseline.
+
+Planned local-export scope:
+
+- Supported local source types are `jira_issue`, `youtrack_issue`,
+  `youtrack_article`, and `confluence_page`.
+- Source identity is a stable logical key derived from provider, host, source type,
+  project or space container, and stable issue/article/page key or ID. It is not a
+  local path, raw URL, timestamp, title, author, workflow state, label, attachment name,
+  page title, or content hash.
+- Generated output may serialize bounded redacted display titles, content hashes,
+  provenance join keys, sanitized source URLs when safe, snapshot timestamps, and
+  provider metadata. It must not serialize raw issue/page/article bodies, descriptions,
+  comments, rendered HTML, rich text, attachment names, attachment bodies, raw provider
+  export objects, raw request/response logs, configured import paths, local absolute
+  paths, credentials, tokens, cookies, authorization headers, or raw config values by
+  default.
+- Jira/YouTrack/Confluence text remains stale-prone external context. It is not proof
+  that the remote service is current, complete, authoritative, reachable, or aligned
+  with repository source.
+
+Non-goals:
+
+- No live Jira, YouTrack, or Confluence API fetching in the local import baseline.
+- No connector credentials, credential lookup, OAuth, PAT, app password, API key,
+  cookie, credential storage, credential validation, retry/backoff, rate-limit handling,
+  pagination, background sync, remote cache, or provider discovery behavior.
+- No adapter-backed query commands unless a later release explicitly documents
+  adapter-aware query behavior.
+- No external issue, article, page, comment, attachment, label, workflow, author, space,
+  project, sprint, version, or link data as Java/Spring source truth, evidence, security
+  findings, source/spec agreement claims, documentation freshness claims, runtime claims,
+  or automatic code-modification input.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:

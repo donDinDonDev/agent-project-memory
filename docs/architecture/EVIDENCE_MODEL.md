@@ -196,6 +196,45 @@ freshness claims, query results, or AI facts. If a later release wants adapter-b
 evidence or adapter-aware query behavior, this document and `OUTPUT_CONTRACT.md` must
 be updated before implementation.
 
+### Planned v2.2 Connector Provenance Decision
+
+Planned Jira, YouTrack, and Confluence local export imports preserve the v2 provenance
+boundary. Jira issues, YouTrack issues, YouTrack articles, Confluence pages, comments,
+attachments, labels, workflow states, authors, spaces, projects, source URLs, and export
+timestamps are external adapter context, not project evidence.
+
+The planned connector source types are provenance-backed adapter source types:
+
+- `jira_issue`
+- `youtrack_issue`
+- `youtrack_article`
+- `confluence_page`
+
+Those source types must not be added to `evidence-index.jsonl`. They must not reuse the
+existing `document` evidence type, because `document` evidence remains reserved for
+accepted local project documents discovered by the local Markdown/document ingestion
+contract.
+
+Accepted connector records may appear in `project-map.json` only as `adapter_context`
+rows with `source_document_ids` and `provenance_ids` that resolve through
+`source-registry.json`. They intentionally do not carry `evidence_ids`.
+
+Connector provenance can identify provider, host, source family, project key, space key,
+record type, record key or stable record ID, sanitized source URL when safe,
+snapshot/export timestamp, and record updated timestamp when known. These values are
+generated provenance metadata and review join keys only. They must not be used as proof
+that the external service is reachable, current, complete, authoritative, or aligned
+with repository source.
+
+External connector text must not create or update Java/Spring endpoints, components,
+repositories, entities, build metadata, config semantics, tests, quality/change-risk
+facts, graph edges, security findings, source/spec agreement claims, documentation
+freshness claims, query results, AI facts, runtime claims, or automatic code-modification
+input. If a later release wants adapter-backed evidence, adapter-aware query behavior,
+source/spec agreement scoring, documentation freshness scoring, or connector-driven
+change-impact behavior, this document and `OUTPUT_CONTRACT.md` must be updated before
+implementation.
+
 ## Planned Optional AI Presentation Evidence Decision
 
 Future optional AI presentation output is not evidence. It must not add evidence types,

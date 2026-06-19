@@ -128,6 +128,18 @@ that remote issue/PR/MR text is current source truth. Live API mode, credentials
 background sync, remote cache, and adapter-aware query support remain separate later
 design decisions.
 
+After the Git hosting local export boundary, Jira, YouTrack, and Confluence connectors
+should follow the same local export first pattern. A normalized local JSON export can
+carry issue, article, and page records as provenance-backed external/document context
+without making the core analyzer depend on project-management or wiki services. These
+records should reuse the source-registry and `adapter_context` placement, remain out of
+`evidence-index.jsonl`, and avoid raw body, comment, attachment, credential, configured
+path, and local absolute path serialization by default. Live API mode, credentials,
+provider discovery, pagination, retry/rate-limit behavior, background sync, remote
+cache, adapter-aware query support, source/spec agreement scoring, documentation
+freshness scoring, and connector-driven change-impact behavior remain separate later
+design decisions.
+
 Optional AI in v2.x is a presentation boundary, not an analysis boundary. Its allowed
 inputs are deterministic generated memory, existing evidence references, and bounded
 non-evidence metadata such as graph derivation, query/source-artifact metadata, profile

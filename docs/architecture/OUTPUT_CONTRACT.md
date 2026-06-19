@@ -415,6 +415,164 @@ GitHub or GitLab API response. It must not accept credentials, credential names,
 environment-variable interpolation, remote URLs as import locations, API enablement
 flags, background sync settings, retry/rate-limit settings, or network/auth options.
 
+### Planned v2.2 Connector Local Export Output Boundary
+
+The planned Jira, YouTrack, and Confluence local import boundary reuses the existing v2
+adapter artifact placement. It does not add a new generated artifact and does not extend
+`evidence-index.jsonl`.
+
+Expected generated-output behavior:
+
+- no-adapter scans stay on `project-map.json` `schema_version: "1.0"` and do not emit
+  `.project-memory/source-registry.json`;
+- explicitly enabled connector import scans emit `.project-memory/source-registry.json`
+  and top-level `project-map.json` `adapter_context` as a v2 adapter artifact set;
+- `project-map.json` keeps the existing adapter-context shape and
+  `schema_version: "2.0"`; no new project-map schema marker is needed unless the
+  adapter-context item shape changes;
+- connector provenance should use `source_registry_schema_version: "1.2"` because
+  provider metadata for Jira, YouTrack, and Confluence is added to `provenance[]`;
+- current query commands remain no-adapter focused and do not read
+  `source-registry.json`, source-document IDs, connector provenance, or adapter context
+  rows.
+
+The planned connector source types are:
+
+- `jira_issue`
+- `youtrack_issue`
+- `youtrack_article`
+- `confluence_page`
+
+Connector `source_identity` values are normalized logical identities, not local paths or
+raw URLs. The identity is derived from provider, host, source type, container key, and a
+stable provider record key or ID, for example:
+
+```text
+connector/jira/jira.example.com/project/PROJ/issue/PROJ-123
+connector/youtrack/youtrack.example.com/project/PROJ/issue/PROJ-123
+connector/youtrack/youtrack.example.com/project/PROJ/article/ABC123
+connector/confluence/confluence.example.com/space/ENG/page/123456
+```
+
+Accepted connector `source_documents[]` records keep the current source-document
+fields:
+
+```json
+{
+  "id": "source-document:sha256:<stable>",
+  "source_type": "jira_issue",
+  "source_identity": "connector/jira/jira.example.com/project/PROJ/issue/PROJ-123",
+  "title": "bounded redacted title",
+  "content_hash": "sha256:<normalized-record-content>",
+  "content_status": "not_serialized",
+  "provenance_id": "source-provenance:sha256:<stable>"
+}
+```
+
+Connector provenance extends `provenance[]` with provider metadata under `connector`.
+The exact implementation field order may follow the serializer, but the contracted
+metadata is:
+
+```json
+{
+  "id": "source-provenance:sha256:<stable>",
+  "adapter": {
+    "name": "connector-import",
+    "version": "2.2.0"
+  },
+  "import_mode": "local_export",
+  "source_type": "jira_issue",
+  "source_identity": "connector/jira/jira.example.com/project/PROJ/issue/PROJ-123",
+  "content_hash": "sha256:<normalized-record-content>",
+  "source_location_kind": "repository_relative_file",
+  "network_access": "disabled",
+  "connector": {
+    "provider": "jira",
+    "host": "jira.example.com",
+    "source_family": "issue_tracker",
+    "container_type": "project",
+    "container_key": "PROJ",
+    "record_type": "issue",
+    "record_key": "PROJ-123",
+    "record_id": "10001",
+    "record_state": "open",
+    "source_url": "https://jira.example.com/browse/PROJ-123",
+    "exported_at": "2026-06-19T00:00:00Z",
+    "record_updated_at": "2026-06-18T00:00:00Z"
+  },
+  "trust_boundary_labels": [
+    "connector_import",
+    "jira",
+    "repository_relative_file",
+    "provenance_backed_external_context",
+    "not_code_evidence",
+    "network_disabled"
+  ]
+}
+```
+
+`connector.source_url` is optional. If emitted, it must be a sanitized provider URL
+without userinfo, credentials, query strings, fragments, authorization material, local
+paths, or unsupported schemes. The URL is provenance metadata only and is not proof that
+the remote service is reachable or current.
+
+`connector.record_state`, `exported_at`, and `record_updated_at` are snapshot metadata
+from the local export. They are not current-state claims. Missing, malformed,
+contradictory, stale, partial, unsupported, oversized, duplicate, ambiguous,
+authority-confusing, or provenance-missing records must be rejected, capped, or
+represented only as bounded adapter diagnostics.
+
+`project-map.json` adapter-context items keep the existing shape, with connector source
+types and identities:
+
+```json
+{
+  "id": "adapter_context:source-document-sha256-<stable>",
+  "context_kind": "external_document_context",
+  "source_type": "jira_issue",
+  "source_identity": "connector/jira/jira.example.com/project/PROJ/issue/PROJ-123",
+  "title": "bounded redacted title",
+  "content_status": "not_serialized",
+  "support_type": "provenance_only",
+  "confidence": "low",
+  "source_document_ids": ["source-document:sha256:<stable>"],
+  "provenance_ids": ["source-provenance:sha256:<stable>"]
+}
+```
+
+Raw issue/page/article bodies, descriptions, comments, rendered HTML, rich text,
+attachment names, attachment bodies, labels, authors, workflow history, raw provider
+export objects, raw request/response logs, configured import paths, local absolute
+paths, credentials, tokens, cookies, authorization headers, and raw config values must
+not be serialized by default. The content hash may include normalized text and metadata
+that the adapter accepted, but generated artifacts must serialize only bounded redacted
+display metadata, hashes, snapshot metadata, and provenance join keys.
+
+The planned scan config addition is:
+
+```yaml
+adapters:
+  connector_import:
+    enabled: true
+    path: exports/connectors.json
+```
+
+`adapters.connector_import.enabled` is optional and defaults to disabled. When it is
+`true`, `path` is required and must identify one existing repository-relative regular
+JSON file under the scan root with a verifiable single-link identity. The path must
+follow the same safety rules as other adapter import paths: no absolute paths, no `./`,
+no backslash separators, no empty, `.` or `..` segments, no `.project-memory/` target,
+no directories, no symlinked path segments, no multi-link regular files, no
+unverifiable link counts, and no path outside the scanned repository root. When the
+adapter is disabled, `path` must be omitted.
+
+The planned local export file format is
+`format: "agent-project-memory.connector_export.v1"`. It must not be treated as a raw
+Jira, YouTrack, or Confluence API response. It must not accept credentials, credential
+names, environment-variable interpolation, remote URLs as import locations, API
+enablement flags, background sync settings, retry/rate-limit settings, pagination
+settings, remote cache settings, provider discovery options, or network/auth options.
+
 ## Planned v2 Optional AI Presentation Output Boundary
 
 The current implementation does not emit AI presentation artifacts, AI summaries,
@@ -5031,6 +5189,8 @@ Current config file rules:
 - `adapters` is optional and disabled by default. The current v2 adapter import layer
   recognizes disabled-by-default `adapters.local_structured_import` and
   `adapters.git_hosting_import` blocks with `enabled` and `path`.
+  The planned v2.2 connector import adds a disabled-by-default
+  `adapters.connector_import` block only when that implementation lands.
 - `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
   it is `true`, `path` is required and must identify one existing repository-relative
   regular file under the scan root with a verifiable single-link identity. The path must
@@ -5049,13 +5209,21 @@ Current config file rules:
   `format: "agent-project-memory.git_hosting_export.v1"` and a `records` array.
   Accepted records must use supported provider-normalized Git hosting fields, a stable
   safe provider/host/namespace/record identity, and `status: "current"`.
+- When implemented and enabled, the planned connector import adapter reads and parses
+  the configured import file after config validation. The import file must be a JSON
+  object with `format: "agent-project-memory.connector_export.v1"` and a `records`
+  array. Accepted records must use supported provider-normalized Jira, YouTrack, or
+  Confluence fields, a stable safe provider/host/container/record identity, and
+  `status: "current"`.
 - The selected adapter emits `.project-memory/source-registry.json` and top-level
   `project-map.json` `adapter_context` as provenance-backed external/document context.
   Git hosting imports use `source_registry_schema_version: "1.1"` when provider
-  metadata is emitted under `provenance[].git_hosting`. Adapter output does not
-  serialize the configured import path, raw record bodies, raw connector or export
-  contents, create evidence records, enable network access, accept credentials, load
-  plugins, call AI providers, or upload source.
+  metadata is emitted under `provenance[].git_hosting`. The planned connector import
+  uses `source_registry_schema_version: "1.2"` when provider metadata is emitted under
+  `provenance[].connector`. Adapter output does not serialize the configured import
+  path, raw record bodies, raw connector or export contents, create evidence records,
+  enable network access, accept credentials, load plugins, call AI providers, or upload
+  source.
 - Unknown top-level keys, unknown `features` or `documents` keys, unsupported values,
   unknown `adapters` keys, unsupported values, unsupported future-mode enables, invalid
   YAML, unsafe path values, oversized config files, YAML aliases that exceed parser
