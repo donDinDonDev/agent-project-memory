@@ -11,8 +11,8 @@ architecture documents.
 
 ## [2.3.0] - 2026-06-19
 
-Release status: release candidate. The `v2.3.0` tag, GitHub Release, and release assets
-are not published yet.
+Release status: published. The `v2.3.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 

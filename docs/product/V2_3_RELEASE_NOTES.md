@@ -2,8 +2,8 @@
 
 Release date: 2026-06-19
 
-Release status: release candidate. The `v2.3.0` tag, GitHub Release, and release assets
-are not published yet.
+Release status: published. The `v2.3.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.3.0 adds explicitly enabled mock/no-network AI presentation
 artifacts while preserving deterministic project memory, evidence, query, adapter,
@@ -80,7 +80,7 @@ before release prep, with no release-blocking findings remaining for v2.3.0.
 
 ## Validation
 
-The v2.3.0 local release-prep validation passed:
+The v2.3.0 release validation passed:
 
 - `mvn test`: 518 tests, 0 failures, 0 errors, 0 skipped.
 - `mvn package`: 518 tests, 0 failures, 0 errors, 0 skipped, including the packaged

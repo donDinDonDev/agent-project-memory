@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.2.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.3.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -30,10 +30,10 @@ adapter-aware query behavior.
 The v2.2 release adds disabled-by-default Jira/YouTrack/Confluence local export import
 through `adapters.connector_import`, with connector provenance in `source-registry.json`
 schema `1.2` and the same no-adapter query baseline.
-The current local release candidate is `v2.3.0`. It adds explicitly enabled
-mock/no-network AI presentation artifacts under `.project-memory/ai-presentations/`
-through `scan --ai-presentation mock_no_network`, while keeping default scans free of
-AI presentation artifacts and keeping real provider integration deferred.
+The v2.3 release adds explicitly enabled mock/no-network AI presentation artifacts
+under `.project-memory/ai-presentations/` through
+`scan --ai-presentation mock_no_network`, while keeping default scans free of AI
+presentation artifacts and keeping real provider integration deferred.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -59,8 +59,8 @@ provenance-backed. The v2.1 release also includes a bounded local
 GitHub/GitLab export import adapter that is disabled by default, local-only, and
 provenance-backed. The v2.2 release also includes a bounded local
 Jira/YouTrack/Confluence export import adapter that is disabled by default, local-only,
-and provenance-backed. The current v2.3 release candidate also includes explicitly
-enabled mock/no-network AI presentation artifacts that are non-authoritative,
+and provenance-backed. The v2.3 release also includes explicitly enabled
+mock/no-network AI presentation artifacts that are non-authoritative,
 non-evidence, and separate from the base generated artifact set. The current public
 adoption surface also includes a checked-in generated-output example snapshot and
 contributor/reporting templates that point readers back to the output and evidence
@@ -1441,9 +1441,9 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, runtime claims,
   or automatic code-modification input.
 
-## v2.3.0: Optional AI Presentation Layer (Release Candidate)
+## v2.3.0: Optional AI Presentation Layer (Published)
 
-Release-candidate outcome:
+Release outcome:
 
 - Add an explicitly enabled AI-assisted presentation layer over existing deterministic
   generated memory without allowing AI to create authoritative facts.
