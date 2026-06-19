@@ -9,6 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.5 workspace design boundary, selecting an explicit
+  `workspace scan <config>` shape, required logical repo identity, separate
+  `workspace-map.json` placement, composite `repo_id` plus `evidence_id` workspace
+  evidence references, and parking cross-repo relation emission and workspace query
+  behavior behind later explicit implementation gates.
+
 ## [2.4.0] - 2026-06-19
 
 Release status: published. The `v2.4.0` tag, GitHub Release, executable jar, and

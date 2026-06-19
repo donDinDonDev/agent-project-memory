@@ -52,6 +52,12 @@ contract. The read-only query layer still treats artifact files as untrusted inp
 must validate schema markers, required fields, IDs, graph references, evidence
 references, and path safety before rendering results.
 
+Planned workspace config and workspace artifacts add a multiple-root local trust
+boundary. The workspace config, configured member roots, per-repo generated artifacts,
+member `repo_id` values, and workspace diagnostics must be treated as untrusted input
+until path containment, link safety, duplicate identity, nested-root, schema, and
+evidence-reference checks pass.
+
 The current core product has no network trust boundary because it does not fetch remote
 resources, call external APIs, upload source, load remote config, or invoke LLMs.
 
@@ -101,6 +107,32 @@ The intended security properties are:
 - evidence-backed facts remain distinct from inferred relations, uncertain signals,
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
+
+Planned workspace security defaults:
+
+- workspace behavior is explicitly configured and local-only;
+- the first workspace config is an explicit local YAML file argument, with its parent
+  directory treated as the workspace root;
+- member roots are configured through normalized workspace-relative paths and required
+  logical `repo_id` values;
+- absolute member paths, escaping paths, symlinked roots, ambiguous nested roots,
+  duplicate roots, duplicate `repo_id` values, generated-output roots, missing roots,
+  and trusted multi-link or link-count-unverifiable workspace input fail closed before
+  workspace output is trusted;
+- workspace output is written only under the workspace root
+  `.project-memory/workspace-map.json` unless a later public contract changes the
+  placement;
+- normal single-repo artifacts remain unchanged, and child repository scans or child
+  `.project-memory/` mutation require a separate explicit write-scope decision;
+- workspace evidence references use configured `repo_id` plus existing per-repo
+  evidence IDs instead of serializing local absolute paths or copying per-repo evidence
+  records into the workspace artifact;
+- cross-repo relation emission is parked for the first implementation slice and later
+  relation families must require evidence from every participating repo or stay
+  absent/uncertain;
+- workspace output, diagnostics, query output, graph derivation, adapter provenance, AI
+  presentation, generated Markdown, prompts, downstream agent output, and maintainer
+  notes remain non-evidence.
 
 v2 adapter security defaults:
 
@@ -295,6 +327,22 @@ Read-only agent consumption defaults:
   telemetry, source upload, raw prompt transcript serialization, and automatic code
   modification remain out of the first slice and require a separate design and
   release-level security review before implementation.
+
+Workspace memory defaults:
+
+- workspace memory starts from explicit local config and generated artifacts, not remote
+  repository discovery, organization crawling, network shares, provider APIs, SaaS
+  indexing, repository chat, generic RAG, semantic search, embeddings, or vector stores;
+- workspace output must not serialize local absolute paths, raw config contents, raw
+  source bodies, raw local document bodies, raw connector exports, raw adapter input
+  files, command logs, credentials, tokens, cookies, authorization headers, prompts, or
+  maintainer notes;
+- workspace query, workspace agent context, workspace graph output, adapter-aware
+  workspace context, child-repo scan refresh, and cross-repo relation emission remain
+  separate later design decisions unless a bounded public contract accepts them;
+- workspace relations must not be inferred from name similarity, package similarity,
+  generated Markdown, query output, graph derivation, adapter records, AI output,
+  prompts, connector text, issue text, release notes, chat output, or maintainer notes.
 
 Future v2 security review expectations:
 

@@ -52,6 +52,18 @@ import counts, bounded parsing, `source-registry.json` emission, and
 explicitly enabled adapter still do not emit `source-registry.json` or adapter-backed
 `project-map.json` sections.
 
+The planned v2.5 workspace artifact is a separate optional workspace-root artifact:
+
+```text
+.project-memory/workspace-map.json
+```
+
+This artifact is not emitted by normal single-repo scans. It belongs to an explicit
+future workspace workflow, is written under the workspace root, and references per-repo
+generated artifacts through configured logical repo identity rather than local absolute
+paths. Existing per-repo `.project-memory/` artifact names and schema markers remain
+unchanged by the workspace design.
+
 ## v2 Adapter Output Boundary
 
 The current implementation does not emit adapter packages, network connector output,
@@ -5840,8 +5852,8 @@ Stop conditions for implementation:
 
 ### v2.4 Read-Only Agent Context Query Contract
 
-This section defines the accepted v2.4 design boundary for the next read-only agent
-consumption surface. The current unreleased implementation provides the CLI-only
+This section defines the accepted v2.4 design boundary for the read-only agent
+consumption surface. The published v2.4 implementation provides the CLI-only
 query-layer expansion described here.
 
 The first v2.4 surface is a CLI-only query command that renders deterministic
@@ -5962,6 +5974,194 @@ Stop conditions for implementation:
   downstream agent output, prompts, or LLM output as evidence;
 - path behavior cannot stay local, deterministic, read-only, and bounded to approved
   generated artifacts.
+
+### v2.5 Workspace Output Design Contract
+
+This section defines the accepted planned v2.5 workspace output boundary. It documents
+future behavior for implementation goals after the design gate; normal released
+single-repo scans do not emit workspace artifacts until a later implementation lands.
+
+Planned command shape:
+
+```text
+agent-project-memory workspace scan <config>
+```
+
+The packaged-jar invocation uses the same arguments after
+`java -jar agent-project-memory-X.Y.Z.jar`. The installed `agent-project-memory`
+command remains tied to the documented distribution channel for the release that ships
+the workspace feature.
+
+Workspace config and root policy:
+
+- `<config>` is an explicit local YAML file argument. The first workspace boundary does
+  not include default workspace config discovery, user-home config, environment-variable
+  config, remote config, parent-directory crawling, organization discovery, provider
+  discovery, or network-loaded config.
+- The workspace root is the directory containing the config file. Member paths are
+  normalized workspace-relative paths under that root. Absolute member paths, `./`
+  prefixes, `..` escapes, path traversal, generated-output paths, hidden tool output
+  roots, and local absolute path serialization are outside the first boundary.
+- The config file and configured member roots must be local stable files or
+  directories with conservative link handling. Symlinked config files, symlinked member
+  roots, multi-link or link-count-unverifiable files that would be parsed as trusted
+  workspace input, missing roots, duplicate roots, duplicate `repo_id` values, and
+  ambiguous nested roots fail closed with bounded diagnostics before workspace output is
+  trusted.
+- Each member requires a configured logical `repo_id`. The first boundary has no
+  path-derived fallback ID. `repo_id` is a stable workspace-local join key, not a local
+  path, remote URL, branch name, package name, build coordinate, service discovery name,
+  adapter source identity, or content hash. A display name may be added later as
+  presentation metadata, but stable joins must use `repo_id`.
+- Monorepo service roots and separate repository roots use the same member model:
+  each configured member has one unique `repo_id`, one workspace-relative root path,
+  and one resolved per-repo artifact root when artifacts are available.
+
+Workspace artifact placement:
+
+- The planned workspace artifact is written under the workspace root:
+  `.project-memory/workspace-map.json`.
+- Per-repo generated artifacts remain under each member's own `.project-memory/`
+  directory. The workspace artifact must not rename, move, merge, or rewrite
+  per-repo `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+  `source-registry.json`, generated Markdown, cache metadata, agent profiles, or AI
+  presentation artifacts.
+- The first implementation slice should start with config/root validation. Workspace
+  map aggregation may be added after that review. Running or refreshing child repo scans
+  is a separate explicit write-scope decision; it is not implied by the design gate.
+
+Planned `workspace-map.json` shape:
+
+```json
+{
+  "workspace_schema_version": "1.0",
+  "workspace": {
+    "root_kind": "config_directory",
+    "config_source": {
+      "path": "agent-project-memory-workspace.yml",
+      "path_kind": "workspace_relative_file",
+      "content_status": "not_serialized"
+    },
+    "member_count": 2
+  },
+  "members": [
+    {
+      "repo_id": "orders",
+      "root_path": "services/orders",
+      "root_path_kind": "workspace_relative_directory",
+      "artifact_root": "services/orders/.project-memory",
+      "artifact_status": "present",
+      "project_map_schema_version": "1.0",
+      "graph_schema_version": "1.0",
+      "source_registry_schema_version": null,
+      "evidence_record_count": 12
+    }
+  ],
+  "relations": {
+    "analysis_status": "not_analyzed",
+    "items": []
+  },
+  "diagnostics": []
+}
+```
+
+Shape rules:
+
+- `workspace_schema_version` is the machine-readable contract marker for
+  `workspace-map.json`. The first planned marker is `"1.0"`.
+- `workspace.config_source.path`, member `root_path`, and member `artifact_root` are
+  workspace-relative paths. They must not be local absolute paths and must not escape
+  the workspace root.
+- `config_source.content_status: "not_serialized"` records that raw config contents are
+  not copied into generated workspace output.
+- `members[].repo_id` is required, unique, deterministic for the configured workspace,
+  and safe to serialize.
+- Member artifact schema fields summarize accepted per-repo artifacts only. They are
+  compatibility metadata, not evidence and not proof that a child repo scan is current.
+- `evidence_record_count` is bounded artifact metadata. Workspace output must not copy
+  full per-repo `evidence-index.jsonl` records into `workspace-map.json`.
+- `relations.analysis_status: "not_analyzed"` and empty `items[]` are the first
+  planned relation boundary. Cross-repo relation emission is parked until a later
+  bounded goal accepts deterministic relation families and updates this contract.
+- `diagnostics[]` contains bounded workspace diagnostics only. Diagnostics are not
+  project evidence, security findings, runtime claims, relation claims, or release
+  evidence.
+
+Workspace evidence-reference policy:
+
+- Normal per-repo `evidence-index.jsonl` records keep their existing field set and
+  repository-relative `path` values. The first workspace boundary does not add `repo_id`
+  to per-repo evidence records and does not change single-repo evidence IDs.
+- Workspace-level references to evidence must use a composite reference containing
+  `repo_id` and the existing per-repo `evidence_id`, for example:
+
+```json
+{
+  "repo_id": "orders",
+  "evidence_id": "ev:src/main/java/com/example/OrderController.java:20-20:com.example.OrderController#get:@GetMapping",
+  "artifact": "evidence-index.jsonl"
+}
+```
+
+- Composite workspace evidence references are navigation keys into member artifacts.
+  They are not new evidence records, do not strengthen evidence, and must not be
+  resolved by copying evidence records into the workspace artifact.
+- A future relation item, if accepted later, must carry evidence from every
+  participating repo through composite evidence references or remain absent/uncertain.
+
+Compatibility and non-input rules:
+
+- Existing `scan <path>` behavior, no-adapter `project-map.json`
+  `schema_version: "1.0"`, adapter-enabled `schema_version: "2.0"`, graph output,
+  source registry output, cache metadata, agent profiles, AI presentation, generated
+  Markdown, and current query commands remain unchanged unless a later implementation
+  goal explicitly updates those contracts.
+- `workspace-map.json` is not a query input source for the current v1.6/v2.4 query
+  commands. Workspace query and workspace `agent-context` require a later query contract.
+- Adapter provenance may be summarized as member artifact metadata only when present.
+  Adapter records must not become workspace evidence, Java/Spring facts, cross-repo
+  relation evidence, connector truth, runtime claims, documentation-freshness claims,
+  source/spec agreement claims, or automatic code-modification input.
+- AI presentation, query output, generated Markdown, graph derivation, cache metadata,
+  profile output, adapter diagnostics, prompts, downstream agent output, LLM output,
+  release notes, and maintainer notes must not create workspace facts or relations.
+
+Forbidden first-slice behavior:
+
+- remote clone, fetch, pull, provider API scan, organization crawler, background sync,
+  remote cache, SaaS index, source upload, network access, credentials, telemetry,
+  MCP/server/API/editor/plugin runtime, repository chat, generic RAG, semantic search,
+  embeddings, vector stores, automatic code modification, speculative service
+  dependency graphs, runtime dependency graphs, call graphs, source/spec agreement
+  scoring, documentation-freshness scoring, vulnerability findings, correctness claims,
+  release automation, or package publication behavior.
+
+Validation requirements before workspace release:
+
+- focused config grammar tests for accepted and rejected workspace YAML shapes;
+- root containment tests for missing, escaping, duplicate, nested, symlinked,
+  multi-link, link-count-unverifiable, and generated-output roots;
+- tests proving required `repo_id` values, duplicate handling, and no path-derived
+  fallback IDs;
+- no-unintended-scan and no-unintended-write tests for the first root-safety slice;
+- workspace aggregation tests over multi-repo and monorepo fixtures once aggregation is
+  implemented;
+- composite workspace evidence-reference resolution tests when workspace output
+  references per-repo evidence;
+- compatibility tests proving normal single-repo scan and query outputs remain stable.
+
+Stop conditions for implementation:
+
+- workspace root identity, member root identity, repo identity, artifact placement,
+  path containment, link handling, or evidence-reference semantics are unclear;
+- generated workspace output would need local absolute paths, configured raw path
+  patterns, raw config contents, source bodies, document bodies, credentials, command
+  logs, raw adapter input files, raw connector exports, prompts, or maintainer notes;
+- workspace behavior requires remote scanning, network/auth, credentials, source upload,
+  SaaS indexing, repository chat, generic RAG, semantic search, automatic code
+  modification, or a server/API/plugin/editor runtime;
+- cross-repo relations would be speculative or lack evidence from every participating
+  repo.
 
 ### v1.7 Redaction And Security Hardening Contract
 

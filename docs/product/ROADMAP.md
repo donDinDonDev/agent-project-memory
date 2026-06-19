@@ -1592,8 +1592,95 @@ Release readiness notes:
 - Release-prep validation covers focused query tests, full local tests, packaged CLI
   scan and `agent-context` smoke, jar metadata inspection, checksum dry run, whitespace
   checks, and public marker audit.
-- Publication remains pending until the maintainer explicitly approves tag, push,
-  GitHub Release, and artifact upload actions.
+- The `v2.4.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
+
+## v2.5.0: Workspace, Monorepo, And Cross-Repo Memory (Planned)
+
+Product outcome: add local workspace-level project memory across multiple explicitly
+configured local repository or service roots while preserving deterministic single-repo
+analysis, explicit output contracts, evidence-backed facts, and no-default-network or
+no-write authority.
+
+Accepted design boundary:
+
+- The first workspace invocation shape is an explicit CLI workflow:
+  `agent-project-memory workspace scan <config>`. The packaged-jar invocation uses the
+  same arguments after `java -jar agent-project-memory-X.Y.Z.jar`.
+- The workspace config is an explicit local YAML file argument. The config file
+  directory is the workspace root for the first implementation boundary. No default
+  workspace config discovery, user-home config, environment-variable config, remote
+  config, or parent-directory crawler is included.
+- Workspace members are configured with workspace-relative root paths and unique logical
+  `repo_id` values. The first boundary does not accept absolute member paths, `..`
+  escapes, symlinked roots, multi-link or link-count-unverifiable roots, generated-output
+  paths, duplicate `repo_id` values, or ambiguous nested roots.
+- Workspace output is a separate workspace-root artifact:
+  `.project-memory/workspace-map.json`. Existing single-repo `.project-memory/`
+  artifacts remain the compatibility baseline and are not renamed or migrated by the
+  workspace design.
+- `workspace-map.json` uses a new workspace schema marker and may summarize member
+  identity, member path, accepted per-repo artifact schema versions, diagnostics, and
+  optional aggregation status. It must not serialize local absolute paths, raw source
+  bodies, raw document bodies, command logs, credentials, tokens, local maintainer
+  notes, or remote provider data.
+- Single-repo `scan <path>`, query commands, no-adapter `project-map.json`
+  `schema_version: "1.0"`, adapter-enabled `schema_version: "2.0"` sets, graph output,
+  evidence index output, cache metadata, agent profiles, and AI presentation artifacts
+  remain unchanged unless a later implementation goal explicitly documents otherwise.
+- Workspace evidence references are composite references from workspace output to
+  per-repo artifacts: `repo_id` plus an existing per-repo `evidence_id`. Normal
+  `evidence-index.jsonl` records stay repository-relative and do not gain a `repo_id`
+  field in the first workspace boundary.
+- Cross-repo relation emission is parked for the first implementation slice. Any later
+  cross-repo relation must be deterministic, conservative, and supported by evidence
+  from every participating repo or remain absent/uncertain. Name similarity, package
+  similarity, generated Markdown, query output, graph derivation, adapter records, AI
+  output, prompts, issue text, maintainer notes, or chat output must not create
+  workspace relation evidence.
+- Workspace query, workspace `agent-context`, adapter-aware workspace context,
+  workspace graph output, change-impact workflows, and child-repo scan refresh/mutation
+  are not part of the first workspace slice unless a later bounded goal updates the
+  public contracts, tests, and security review scope.
+
+First implementation direction:
+
+- Start with a workspace config and root-safety foundation: parse only the accepted
+  config shape, validate root identity and path policy, emit bounded diagnostics, and
+  prove no unintended scans or writes occur.
+- Add workspace map aggregation only after root safety is reviewed. The first
+  aggregation slice should prefer existing per-repo artifacts and write only the
+  workspace-root `workspace-map.json`; running or refreshing child repo scans remains a
+  separate explicit write-scope decision.
+- Ship v2.5 as workspace aggregation only if no safe cross-repo relation family is
+  accepted before release prep.
+
+Non-goals:
+
+- No remote clone, fetch, pull, provider API scan, organization crawler, background
+  sync, remote cache, SaaS index, source upload, network access, credentials,
+  telemetry, MCP/server/API/editor/plugin runtime, repository chat, generic RAG,
+  semantic search, embeddings, vector store, automatic code modification, speculative
+  service dependency graph, runtime dependency graph, call graph, source/spec agreement
+  scoring, documentation-freshness scoring, vulnerability finding, correctness claim,
+  release automation, package-manager publication, signing, native images, or container
+  images.
+
+Validation expectations before release:
+
+- Focused tests for workspace config grammar, root containment, missing roots, duplicate
+  roots, duplicate `repo_id` values, nested roots, symlinked roots, multi-link roots,
+  generated-output paths, diagnostics, and no-unintended-scan/no-unintended-write
+  behavior.
+- Workspace aggregation tests over multi-repo and monorepo fixtures, including
+  workspace evidence-reference resolution through `repo_id` plus per-repo evidence IDs.
+- Compatibility tests proving existing single-repo scan and query behavior remains
+  unchanged unless explicitly documented.
+- Public docs, output contract, evidence model, threat model, changelog, and release
+  notes must agree before release.
+- Risk-based security review is required for implementation changes that touch
+  config parsing, multiple-root path handling, generated output, evidence reference
+  rendering, workspace diagnostics, query behavior, or child-repo write behavior.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

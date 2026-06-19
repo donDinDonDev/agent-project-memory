@@ -335,6 +335,54 @@ or goldens where applicable, a changelog entry, release notes, and a separate se
 review. The preferred boundary is that agent-facing output remains permanently
 non-evidence.
 
+## Workspace Evidence And Repo Identity Decision
+
+Workspace output needs repo identity for navigation, but the first v2.5 workspace
+boundary does not add a new evidence type and does not change normal per-repo
+`evidence-index.jsonl` records. Per-repo evidence records remain repository-relative
+within their own member repository or service root.
+
+The planned `workspace-map.json` artifact must reference per-repo evidence through
+composite workspace evidence references:
+
+- `repo_id`: the configured logical workspace member ID;
+- `evidence_id`: an existing evidence ID from that member's `evidence-index.jsonl`;
+- `artifact`: the member artifact name, normally `evidence-index.jsonl`.
+
+Composite workspace evidence references are navigation keys, not evidence records. They
+must not be copied into `evidence-index.jsonl`, must not add `repo_id` fields to normal
+single-repo evidence records in the first boundary, and must not strengthen, weaken,
+replace, suppress, reinterpret, or fabricate the underlying per-repo evidence record.
+
+Workspace member identity must be explicit and safe to serialize. `repo_id` is a
+workspace-local logical join key, not a local absolute path, remote URL, branch name,
+package name, build coordinate, adapter source identity, service-discovery record, or
+content hash. Missing or duplicate `repo_id` values make workspace evidence references
+ambiguous and must fail closed before workspace output is trusted.
+
+Cross-repo relation emission is not part of the first workspace implementation slice. If
+a later release accepts cross-repo relation rows, each emitted relation must carry
+composite evidence references from every participating repo or remain absent/uncertain.
+Name similarity, package similarity, shared words in documents, generated Markdown,
+query output, graph derivation metadata, cache metadata, profile output, adapter
+diagnostics, connector text, AI output, prompts, downstream agent output, release notes,
+chat output, and maintainer notes must not become workspace relation evidence.
+
+Adapter provenance may remain useful workspace context, but it is still provenance
+metadata rather than evidence. Workspace output must not promote source-document IDs,
+provenance IDs, connector records, adapter diagnostics, AI presentation, query output,
+generated Markdown, graph derivation, or cache metadata into Java/Spring evidence,
+workspace relation evidence, security findings, runtime claims, source/spec agreement
+claims, documentation-freshness claims, release evidence, or automatic code-modification
+input.
+
+Any future change that adds `repo_id` to `evidence-index.jsonl`, introduces a workspace
+evidence index, creates adapter-backed evidence, emits cross-repo relation evidence, or
+treats workspace query/agent output as evidence must update this document and
+`OUTPUT_CONTRACT.md` before implementation. Such a change would also need focused tests
+or goldens where applicable, a changelog entry, release notes, and a separate security
+review.
+
 ## Fact Categories
 
 ### Extracted Facts
