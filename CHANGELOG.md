@@ -20,6 +20,12 @@ architecture documents.
   workspace YAML configs, required unique `repo_id` values, workspace-relative member
   roots, bounded invalid-config diagnostics, unsafe root rejection, and no child scans
   or generated-output writes.
+- Implemented workspace map aggregation for `workspace scan <config>`, writing
+  workspace-root `.project-memory/workspace-map.json` from existing member
+  `.project-memory/` artifacts with explicit `repo_id`, member artifact schema
+  summaries, bounded diagnostics for missing or invalid member artifacts, empty
+  cross-repo relations, and composite `repo_id` plus existing per-repo `evidence_id`
+  sample references without mutating child repositories or single-repo artifacts.
 
 ## [2.4.0] - 2026-06-19
 

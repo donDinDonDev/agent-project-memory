@@ -206,7 +206,8 @@ network, credential, telemetry, source-upload, repository-chat, semantic-search,
 automatic code-modification behavior. Agent-context output is navigation and
 presentation only, not project evidence.
 
-Current builds also include a validation-only workspace config foundation:
+Current builds also include workspace map aggregation over explicitly configured local
+member roots:
 
 ```sh
 java -jar target/agent-project-memory-2.4.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
@@ -223,12 +224,15 @@ members:
 
 `workspace scan <config>` treats the config file directory as the workspace root,
 requires each member to declare one unique logical `repo_id`, and accepts only
-workspace-relative member roots such as `services/orders`. The current foundation
-validates config grammar and root safety only. It does not create
-`.project-memory/`, does not write `workspace-map.json`, does not run child repository
-scans, does not refresh or mutate member `.project-memory/` directories, and does not
-add workspace query or workspace `agent-context` behavior. Workspace map aggregation is
-future work after the root-safety foundation is reviewed.
+workspace-relative member roots such as `services/orders`. The command validates
+config grammar and root safety, then writes the workspace-root
+`.project-memory/workspace-map.json` from existing per-repo `.project-memory/`
+artifacts. It does not run child repository scans, does not refresh or mutate member
+`.project-memory/` directories, does not copy full member evidence records, does not
+emit cross-repo relations, and does not add workspace query or workspace
+`agent-context` behavior. Members with missing or invalid per-repo artifacts remain
+listed with bounded workspace diagnostics. Member evidence navigation uses composite
+`repo_id` plus existing per-repo `evidence_id` sample references.
 
 CLI exit codes are stable for automation:
 
@@ -637,6 +641,10 @@ The v2.4.0 release adds a CLI-only
 generated artifacts and optional graph navigation metadata. It keeps agent-facing
 output as deterministic navigation and presentation only, not project evidence or
 code-change authority.
+Current development builds add explicit local workspace map aggregation through
+`workspace scan <config>`, writing a separate workspace-root
+`.project-memory/workspace-map.json` from existing member artifacts while preserving
+single-repo scan/query artifacts unchanged.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring

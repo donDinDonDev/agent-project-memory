@@ -93,14 +93,14 @@ final class AgentProjectMemoryCliTest {
           () -> assertEquals(0, result.exitCode()),
           () -> assertTrue(result.stdout().contains(
               "Usage: agent-project-memory workspace scan <config>")),
-          () -> assertTrue(result.stdout().contains("Validate an explicit local workspace YAML config")),
+          () -> assertTrue(result.stdout().contains("write a workspace-root")),
           () -> assertTrue(result.stderr().isEmpty()),
           () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
     }
   }
 
   @Test
-  void workspaceScanValidatesConfigWithoutRunningSingleRepoScanOrWritingOutputs()
+  void workspaceScanWritesWorkspaceMapWithoutRunningSingleRepoScanOrChildWrites()
       throws Exception {
     Path workspaceRoot = tempDir.resolve("workspace");
     Path orders = workspaceRoot.resolve("services/orders");
@@ -132,13 +132,28 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, generatorCalls.get()),
         () -> assertTrue(result.stdout().contains("Workspace config validated.")),
         () -> assertTrue(result.stdout().contains("Workspace members: 2.")),
-        () -> assertTrue(result.stdout().contains("Workspace output generation: not implemented")),
-        () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
+        () -> assertTrue(result.stdout().contains("Generated workspace-map.json.")),
+        () -> assertTrue(result.stdout().contains("Diagnostics: 2 item(s).")),
         () -> assertTrue(result.stderr().isEmpty()),
         () -> assertFalse(result.stdout().contains(workspaceRoot.toString())),
-        () -> assertFalse(Files.exists(workspaceRoot.resolve(".project-memory"))),
+        () -> assertTrue(Files.exists(workspaceRoot.resolve(".project-memory/workspace-map.json"))),
         () -> assertFalse(Files.exists(orders.resolve(".project-memory"))),
         () -> assertFalse(Files.exists(billing.resolve(".project-memory"))));
+
+    JsonNode workspaceMap = JSON.readTree(
+        Files.readString(workspaceRoot.resolve(".project-memory/workspace-map.json")));
+    assertAll(
+        () -> assertEquals("1.0", workspaceMap.path("workspace_schema_version").asText()),
+        () -> assertEquals(2, workspaceMap.path("workspace").path("member_count").asInt()),
+        () -> assertEquals(2, workspaceMap.path("members").size()),
+        () -> assertEquals("orders", workspaceMap.path("members").get(0).path("repo_id").asText()),
+        () -> assertEquals("missing", workspaceMap.path("members").get(0).path("artifact_status").asText()),
+        () -> assertEquals("billing", workspaceMap.path("members").get(1).path("repo_id").asText()),
+        () -> assertEquals("missing", workspaceMap.path("members").get(1).path("artifact_status").asText()),
+        () -> assertEquals("not_analyzed", workspaceMap.path("relations").path("analysis_status").asText()),
+        () -> assertEquals(0, workspaceMap.path("relations").path("items").size()),
+        () -> assertEquals(2, workspaceMap.path("diagnostics").size()),
+        () -> assertFalse(workspaceMap.toString().contains(workspaceRoot.toString())));
   }
 
   @Test

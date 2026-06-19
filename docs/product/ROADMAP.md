@@ -40,12 +40,13 @@ no-adapter generated artifacts and optional valid graph navigation metadata with
 creating generated artifacts, reading source files, adding adapter-aware query,
 starting a server/API/editor/plugin runtime, using network or credentials, or creating
 automatic code-modification authority.
-The unreleased v2.5 development line adds the first validation-only
-`workspace scan <config>` foundation for explicit local workspace YAML configs,
-workspace-relative member roots, required unique logical `repo_id` values, and unsafe
-root rejection. This foundation does not emit `workspace-map.json`, run child
-repository scans, mutate member `.project-memory/` directories, add cross-repo
-relations, or add workspace query behavior.
+The unreleased v2.5 development line adds explicit
+`workspace scan <config>` support for local workspace YAML configs,
+workspace-relative member roots, required unique logical `repo_id` values, unsafe
+root rejection, and workspace-root `.project-memory/workspace-map.json` aggregation
+from existing member artifacts. It does not run child repository scans, mutate member
+`.project-memory/` directories, add cross-repo relations, or add workspace query
+behavior.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -75,7 +76,9 @@ and provenance-backed. The v2.3 release also includes explicitly enabled
 mock/no-network AI presentation artifacts that are non-authoritative,
 non-evidence, and separate from the base generated artifact set. The v2.4.0 release
 also includes a CLI-only `agent-context` query view for read-only
-agent/editor consumption over existing no-adapter generated artifacts. The current
+agent/editor consumption over existing no-adapter generated artifacts. The unreleased
+v2.5 development line also includes explicit workspace map aggregation over configured
+local member roots from existing per-repo artifacts. The current
 public adoption surface also includes a checked-in generated-output example snapshot
 and contributor/reporting templates that point readers back to the output and evidence
 contracts.
@@ -1627,9 +1630,9 @@ Accepted design boundary:
   workspace design.
 - `workspace-map.json` uses a new workspace schema marker and may summarize member
   identity, member path, accepted per-repo artifact schema versions, diagnostics, and
-  optional aggregation status. It must not serialize local absolute paths, raw source
-  bodies, raw document bodies, command logs, credentials, tokens, local maintainer
-  notes, or remote provider data.
+  bounded sample composite evidence references. It must not serialize local absolute
+  paths, raw source bodies, raw document bodies, command logs, credentials, tokens,
+  local maintainer notes, or remote provider data.
 - Single-repo `scan <path>`, query commands, no-adapter `project-map.json`
   `schema_version: "1.0"`, adapter-enabled `schema_version: "2.0"` sets, graph output,
   evidence index output, cache metadata, agent profiles, and AI presentation artifacts
@@ -1649,13 +1652,12 @@ Accepted design boundary:
   are not part of the first workspace slice unless a later bounded goal updates the
   public contracts, tests, and security review scope.
 
-First implementation direction:
+Current implementation direction:
 
-- Start with a workspace config and root-safety foundation: parse only the accepted
-  config shape, validate root identity and path policy, emit bounded diagnostics, and
-  prove no unintended scans or writes occur.
-- Add workspace map aggregation only after root safety is reviewed. The first
-  aggregation slice should prefer existing per-repo artifacts and write only the
+- The workspace config and root-safety foundation parses only the accepted config
+  shape, validates root identity and path policy, emits bounded diagnostics, and proves
+  no unintended child scans or child repository writes occur.
+- Workspace map aggregation prefers existing per-repo artifacts and writes only the
   workspace-root `workspace-map.json`; running or refreshing child repo scans remains a
   separate explicit write-scope decision.
 - Ship v2.5 as workspace aggregation only if no safe cross-repo relation family is

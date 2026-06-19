@@ -19,6 +19,7 @@ import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoa
 import io.github.dondindondev.agentprojectmemory.workspace.InvalidWorkspaceConfigException;
 import io.github.dondindondev.agentprojectmemory.workspace.WorkspaceConfiguration;
 import io.github.dondindondev.agentprojectmemory.workspace.WorkspaceConfigurationLoader;
+import io.github.dondindondev.agentprojectmemory.workspace.WorkspaceMapGenerator;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -50,7 +51,7 @@ public final class AgentProjectMemoryCli {
       Commands:
         scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
                                        Generate .project-memory output for a local repository.
-        workspace scan <config>        Validate an explicit local workspace config.
+        workspace scan <config>        Generate a workspace map from existing member artifacts.
         query <path> <query-command>   Validate and read existing .project-memory artifacts.
         help                           Show this help.
         version                        Show the CLI version.
@@ -80,8 +81,9 @@ public final class AgentProjectMemoryCli {
   private static final String WORKSPACE_HELP = """
       Usage: agent-project-memory workspace scan <config>
 
-      Validate an explicit local workspace YAML config without scanning member roots or
-      writing workspace output. The config directory is the workspace root.
+      Validate an explicit local workspace YAML config and write a workspace-root
+      .project-memory/workspace-map.json from existing member artifacts. The command
+      does not run or refresh child repository scans.
 
       Options:
         --help                     Show this help.
@@ -133,6 +135,7 @@ public final class AgentProjectMemoryCli {
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
   private final WorkspaceConfigurationLoader workspaceConfigurationLoader =
       new WorkspaceConfigurationLoader();
+  private final WorkspaceMapGenerator workspaceMapGenerator = new WorkspaceMapGenerator();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
     this(out, err, new SpringMvcEndpointOutputGenerator()::generate);
@@ -602,10 +605,24 @@ public final class AgentProjectMemoryCli {
       return invalidConfigError(ex.getMessage());
     }
 
+    WorkspaceMapGenerator.Result result;
+    try {
+      result = workspaceMapGenerator.generate(configuration);
+    } catch (IOException ex) {
+      String message = boundedExceptionMessage(
+          ex,
+          configuration.workspaceRoot(),
+          configuration.canonicalWorkspaceRoot());
+      if (isOutputPathValidationError(message)) {
+        return scanInputError(message);
+      }
+      return outputError("Could not generate workspace map: " + message);
+    }
+
     out.println("Workspace config validated.");
-    out.println("Workspace members: " + configuration.members().size() + ".");
-    out.println("Workspace output generation: not implemented in this foundation.");
-    out.println("Diagnostics: none.");
+    out.println("Workspace members: " + result.memberCount() + ".");
+    out.println("Generated workspace-map.json.");
+    printDiagnosticsSummary(result.diagnosticCount());
     return SUCCESS;
   }
 

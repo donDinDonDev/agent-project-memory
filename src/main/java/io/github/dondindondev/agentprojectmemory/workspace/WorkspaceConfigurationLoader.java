@@ -76,7 +76,11 @@ public final class WorkspaceConfigurationLoader {
         rootMap.get("members"),
         workspaceRoot,
         canonicalWorkspaceRoot);
-    return new WorkspaceConfiguration(workspaceRelativePath(workspaceRoot, config), members);
+    return new WorkspaceConfiguration(
+        workspaceRoot,
+        canonicalWorkspaceRoot,
+        workspaceRelativePath(workspaceRoot, config),
+        members);
   }
 
   private Path configPath(String rawConfigPath) throws InvalidWorkspaceConfigException {
@@ -250,7 +254,7 @@ public final class WorkspaceConfigurationLoader {
     }
     rejectNestedRoots(validatedMembers);
     return validatedMembers.stream()
-        .map(member -> new WorkspaceMember(member.repoId(), member.rootPath()))
+        .map(member -> new WorkspaceMember(member.repoId(), member.rootPath(), member.canonicalRoot()))
         .toList();
   }
 

@@ -342,7 +342,7 @@ boundary does not add a new evidence type and does not change normal per-repo
 `evidence-index.jsonl` records. Per-repo evidence records remain repository-relative
 within their own member repository or service root.
 
-The planned `workspace-map.json` artifact must reference per-repo evidence through
+The `workspace-map.json` artifact references per-repo evidence through bounded sample
 composite workspace evidence references:
 
 - `repo_id`: the configured logical workspace member ID;
@@ -353,6 +353,9 @@ Composite workspace evidence references are navigation keys, not evidence record
 must not be copied into `evidence-index.jsonl`, must not add `repo_id` fields to normal
 single-repo evidence records in the first boundary, and must not strengthen, weaken,
 replace, suppress, reinterpret, or fabricate the underlying per-repo evidence record.
+The current workspace map may include bounded `sample_evidence_references[]` under
+member summaries; those samples exist only to prove and expose the composite navigation
+shape, not to create workspace-level facts or relations.
 
 Workspace member identity must be explicit and safe to serialize. `repo_id` is a
 workspace-local logical join key, not a local absolute path, remote URL, branch name,

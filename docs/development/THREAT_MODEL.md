@@ -119,11 +119,9 @@ Workspace security defaults:
   duplicate roots, duplicate `repo_id` values, generated-output roots, missing roots,
   and trusted multi-link or link-count-unverifiable workspace input fail closed before
   workspace output is trusted;
-- the current workspace foundation validates config and member roots only and does not
-  write workspace output;
-- planned workspace output is written only under the workspace root
-  `.project-memory/workspace-map.json` once aggregation is implemented, unless a later
-  public contract changes the placement;
+- the current workspace implementation validates config and member roots, then writes
+  workspace output only under the workspace root `.project-memory/workspace-map.json`
+  from existing member artifacts, unless a later public contract changes the placement;
 - normal single-repo artifacts remain unchanged, and child repository scans or child
   `.project-memory/` mutation require a separate explicit write-scope decision;
 - workspace evidence references use configured `repo_id` plus existing per-repo

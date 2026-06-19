@@ -52,24 +52,19 @@ import counts, bounded parsing, `source-registry.json` emission, and
 explicitly enabled adapter still do not emit `source-registry.json` or adapter-backed
 `project-map.json` sections.
 
-The current v2.5 workspace foundation accepts `workspace scan <config>` and validates
-the explicit local workspace config without writing generated artifacts. It does not
-create a workspace `.project-memory/` directory, does not run child repository scans,
-and does not mutate member `.project-memory/` directories.
-
-The planned v2.5 workspace map remains a separate optional workspace-root artifact for
-a later aggregation implementation:
+The current v2.5 workspace implementation accepts `workspace scan <config>`, validates
+the explicit local workspace config, and writes a separate workspace-root artifact:
 
 ```text
 .project-memory/workspace-map.json
 ```
 
-This artifact is not emitted by normal single-repo scans and is not emitted by the
-current validation-only workspace foundation. It belongs to the explicit workspace
-workflow, is written under the workspace root once aggregation is implemented, and
-references per-repo generated artifacts through configured logical repo identity rather
-than local absolute paths. Existing per-repo `.project-memory/` artifact names and
-schema markers remain unchanged by the workspace design.
+This artifact is not emitted by normal single-repo scans. It belongs to the explicit
+workspace workflow, is written under the workspace root, and references existing
+per-repo generated artifacts through configured logical repo identity rather than local
+absolute paths. Workspace map aggregation does not run child repository scans and does
+not mutate member `.project-memory/` directories. Existing per-repo `.project-memory/`
+artifact names and schema markers remain unchanged by the workspace design.
 
 ## v2 Adapter Output Boundary
 
@@ -5985,9 +5980,8 @@ Stop conditions for implementation:
 ### v2.5 Workspace Output Design Contract
 
 This section defines the accepted v2.5 workspace output boundary. The current
-implementation includes the validation-only `workspace scan <config>` foundation.
-Workspace map aggregation and `workspace-map.json` writing remain future behavior after
-that root-safety foundation.
+implementation includes the `workspace scan <config>` config/root-safety foundation and
+workspace map aggregation from existing member artifacts.
 
 Command shape:
 
@@ -6012,7 +6006,7 @@ Workspace config and root policy:
   roots, and local absolute path serialization are outside the first boundary. A member
   root must be a non-empty relative path made of safe path segments; `.` is not accepted
   as a member root in the current foundation.
-- The accepted validation-only YAML shape is:
+- The accepted YAML shape is:
 
 ```yaml
 version: 1
@@ -6041,20 +6035,19 @@ members:
 
 Workspace artifact placement:
 
-- The planned workspace artifact is written under the workspace root:
+- The workspace artifact is written under the workspace root:
   `.project-memory/workspace-map.json`.
-- The current validation-only foundation does not create `.project-memory/` under the
-  workspace root and does not write `workspace-map.json`.
+- `workspace scan <config>` may create the workspace-root `.project-memory/` directory
+  and rewrites only the workspace-root `workspace-map.json` artifact.
 - Per-repo generated artifacts remain under each member's own `.project-memory/`
   directory. The workspace artifact must not rename, move, merge, or rewrite
   per-repo `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
   `source-registry.json`, generated Markdown, cache metadata, agent profiles, or AI
   presentation artifacts.
-- The first implementation slice should start with config/root validation. Workspace
-  map aggregation may be added after that review. Running or refreshing child repo scans
-  is a separate explicit write-scope decision; it is not implied by the design gate.
+- Running or refreshing child repo scans is a separate explicit write-scope decision;
+  it is not implied by workspace map aggregation.
 
-Planned `workspace-map.json` shape:
+Current `workspace-map.json` shape:
 
 ```json
 {
@@ -6078,7 +6071,14 @@ Planned `workspace-map.json` shape:
       "project_map_schema_version": "1.0",
       "graph_schema_version": "1.0",
       "source_registry_schema_version": null,
-      "evidence_record_count": 12
+      "evidence_record_count": 12,
+      "sample_evidence_references": [
+        {
+          "repo_id": "orders",
+          "evidence_id": "ev:src/main/java/com/example/OrderController.java:20-20:com.example.OrderController#get:@GetMapping",
+          "artifact": "evidence-index.jsonl"
+        }
+      ]
     }
   ],
   "relations": {
@@ -6092,7 +6092,7 @@ Planned `workspace-map.json` shape:
 Shape rules:
 
 - `workspace_schema_version` is the machine-readable contract marker for
-  `workspace-map.json`. The first planned marker is `"1.0"`.
+  `workspace-map.json`. The current marker is `"1.0"`.
 - `workspace.config_source.path`, member `root_path`, and member `artifact_root` are
   workspace-relative paths. They must not be local absolute paths and must not escape
   the workspace root.
@@ -6100,16 +6100,27 @@ Shape rules:
   not copied into generated workspace output.
 - `members[].repo_id` is required, unique, deterministic for the configured workspace,
   and safe to serialize.
+- `members[].artifact_status` is `"present"` when required member artifacts are
+  accepted, `"missing"` when the member artifact root is absent, and `"invalid"` when a
+  required member artifact is missing, unsafe, malformed, or unsupported.
 - Member artifact schema fields summarize accepted per-repo artifacts only. They are
   compatibility metadata, not evidence and not proof that a child repo scan is current.
 - `evidence_record_count` is bounded artifact metadata. Workspace output must not copy
   full per-repo `evidence-index.jsonl` records into `workspace-map.json`.
+- `sample_evidence_references[]` is a bounded navigation sample from the member's
+  existing `evidence-index.jsonl`. Each item must use the composite workspace reference
+  shape with `repo_id`, `evidence_id`, and `artifact: "evidence-index.jsonl"`. These
+  references are not new evidence records and do not imply relation support.
 - `relations.analysis_status: "not_analyzed"` and empty `items[]` are the first
   planned relation boundary. Cross-repo relation emission is parked until a later
   bounded goal accepts deterministic relation families and updates this contract.
 - `diagnostics[]` contains bounded workspace diagnostics only. Diagnostics are not
   project evidence, security findings, runtime claims, relation claims, or release
   evidence.
+- Workspace diagnostic items use bounded fields: `id`, `severity`, `category`,
+  `repo_id`, `artifact`, and `message`. These fields must not contain local absolute
+  paths, raw config contents, raw artifact contents, source bodies, credentials, tokens,
+  command logs, or stack traces.
 
 Workspace evidence-reference policy:
 
