@@ -30,6 +30,10 @@ adapter-aware query behavior.
 The v2.2 release adds disabled-by-default Jira/YouTrack/Confluence local export import
 through `adapters.connector_import`, with connector provenance in `source-registry.json`
 schema `1.2` and the same no-adapter query baseline.
+The current local release candidate is `v2.3.0`. It adds explicitly enabled
+mock/no-network AI presentation artifacts under `.project-memory/ai-presentations/`
+through `scan --ai-presentation mock_no_network`, while keeping default scans free of
+AI presentation artifacts and keeping real provider integration deferred.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -55,9 +59,12 @@ provenance-backed. The v2.1 release also includes a bounded local
 GitHub/GitLab export import adapter that is disabled by default, local-only, and
 provenance-backed. The v2.2 release also includes a bounded local
 Jira/YouTrack/Confluence export import adapter that is disabled by default, local-only,
-and provenance-backed. The current public adoption surface also includes a checked-in
-generated-output example snapshot and contributor/reporting templates that point readers
-back to the output and evidence contracts.
+and provenance-backed. The current v2.3 release candidate also includes explicitly
+enabled mock/no-network AI presentation artifacts that are non-authoritative,
+non-evidence, and separate from the base generated artifact set. The current public
+adoption surface also includes a checked-in generated-output example snapshot and
+contributor/reporting templates that point readers back to the output and evidence
+contracts.
 
 Earlier v0.x release notes remain available for historical scope, compatibility, and
 validation details. Future work is organized by release tracks instead of extending the
@@ -1434,9 +1441,9 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, runtime claims,
   or automatic code-modification input.
 
-## v2.3.0: Optional AI Presentation Layer (Planned)
+## v2.3.0: Optional AI Presentation Layer (Release Candidate)
 
-Planned outcome:
+Release-candidate outcome:
 
 - Add an explicitly enabled AI-assisted presentation layer over existing deterministic
   generated memory without allowing AI to create authoritative facts.
@@ -1449,12 +1456,12 @@ Planned outcome:
 - Label AI output as non-authoritative and non-evidence in both visible wording and
   machine-readable metadata.
 
-Planned first surface:
+First surface:
 
 - No AI presentation artifacts are emitted by default.
 - The first implementation uses only a mock/no-network provider mode through
   `scan --ai-presentation mock_no_network`.
-- The planned artifact directory is:
+- The artifact directory is:
 
 ```text
 .project-memory/ai-presentations/
@@ -1494,7 +1501,7 @@ Forbidden input and output boundary:
 Provider and security direction:
 
 - Provider mode is absent unless AI presentation is explicitly enabled.
-- `mock_no_network` is the only planned first implementation mode.
+- `mock_no_network` is the only first implementation mode.
 - Real provider modes remain parked until a separate design defines explicit
   enablement, contacted service, request minimization, credential policy, network
   behavior, telemetry defaults, prompt transcript policy, retention/training-use wording

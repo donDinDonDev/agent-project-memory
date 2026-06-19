@@ -81,7 +81,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-2.2.0.jar
+target/agent-project-memory-2.3.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -92,24 +92,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-2.3.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar --help
-java -jar target/agent-project-memory-2.2.0.jar help
-java -jar target/agent-project-memory-2.2.0.jar scan --help
-java -jar target/agent-project-memory-2.2.0.jar --version
-java -jar target/agent-project-memory-2.2.0.jar version
+java -jar target/agent-project-memory-2.3.0.jar --help
+java -jar target/agent-project-memory-2.3.0.jar help
+java -jar target/agent-project-memory-2.3.0.jar scan --help
+java -jar target/agent-project-memory-2.3.0.jar --version
+java -jar target/agent-project-memory-2.3.0.jar version
 ```
 
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-2.3.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-2.3.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -124,7 +124,7 @@ Current builds also support explicitly enabled mock/no-network AI presentation
 artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
+java -jar target/agent-project-memory-2.3.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
 ```
 
 Default scans do not create AI presentation artifacts. When enabled, the mock/no-network
@@ -142,7 +142,7 @@ presentation slice runs a full scan and skips incremental cache metadata refresh
 Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-2.3.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -158,16 +158,16 @@ Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-2.2.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-2.3.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -564,7 +564,9 @@ presentation plumbing and no real AI provider integration.
 ## Project Status
 
 The latest published release is `v2.2.0`. It ships an executable jar and `SHA256SUMS`
-asset. Normal no-adapter generated `project-map.json` files use
+asset. The current local release candidate is `v2.3.0`, which adds explicitly enabled
+mock/no-network AI presentation artifacts while keeping real provider integration
+deferred. Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
 artifact-backed lookup commands without changing generated project-memory schemas or

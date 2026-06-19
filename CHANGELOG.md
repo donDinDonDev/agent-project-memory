@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-06-19
+
+Release status: release candidate. The `v2.3.0` tag, GitHub Release, and release assets
+are not published yet.
+
 ### Added
 
 - Finalized the planned v2.3 optional AI presentation boundary, including the separate
@@ -23,6 +28,20 @@ architecture documents.
   only, with non-authoritative/non-evidence labels, no default AI artifacts, no real
   provider, no network access, no credentials, no source upload, no prompt transcript
   serialization, and focused safety/golden coverage.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, v2.3
+  release notes, and public release wording for release-prep review.
+
+### Not Included
+
+- Real AI provider integration; provider SDKs; network access; provider credentials,
+  credential lookup, credential storage, telemetry, source upload, prompt logging, raw
+  prompt transcript serialization, embeddings, vector search, repository chat, generic
+  RAG, plugin loading, API/server behavior, SaaS, web UI, package-manager publication,
+  installed-command distribution, signing, native images, container images, release
+  automation, or automatic code modification.
 
 ## [2.2.0] - 2026-06-19
 
