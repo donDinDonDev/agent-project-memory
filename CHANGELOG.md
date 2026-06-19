@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+No changes yet.
+
+## [2.2.0] - 2026-06-19
+
+Release status: release candidate. The `v2.2.0` tag, GitHub Release, and release
+assets are not published until the manual release step occurs.
+
 ### Added
 
 - Implemented disabled-by-default Jira/YouTrack/Confluence local export import for
@@ -23,6 +30,22 @@ architecture documents.
   including supported source types, source identity rules, source-registry provenance,
   adapter-context placement, credential/network defaults, and evidence/provenance
   separation for the local import implementation boundary.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  security-policy wording, v2.2 release notes, and public release-candidate wording for
+  release-prep review.
+
+### Not Included
+
+- Live Jira, YouTrack, or Confluence API fetching; connector credentials, credential
+  lookup, OAuth, PAT, app password, API key, cookie, credential storage, retry/backoff,
+  rate-limit handling, pagination, background sync, remote cache, source upload,
+  adapter-aware query support, AI behavior, plugin loading, SaaS, web UI, repository
+  chat, generic RAG, package-manager publication, installed-command distribution,
+  signing, native images, container images, release automation, or automatic code
+  modification.
 
 ## [2.1.0] - 2026-06-18
 
