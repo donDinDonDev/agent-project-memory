@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.3.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.4.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -34,7 +34,7 @@ The v2.3 release adds explicitly enabled mock/no-network AI presentation artifac
 under `.project-memory/ai-presentations/` through
 `scan --ai-presentation mock_no_network`, while keeping default scans free of AI
 presentation artifacts and keeping real provider integration deferred.
-The v2.4.0 release candidate adds a CLI-only
+The v2.4.0 release adds a CLI-only
 `query <path> agent-context` surface that renders deterministic stdout over existing
 no-adapter generated artifacts and optional valid graph navigation metadata without
 creating generated artifacts, reading source files, adding adapter-aware query,
@@ -68,7 +68,7 @@ Jira/YouTrack/Confluence export import adapter that is disabled by default, loca
 and provenance-backed. The v2.3 release also includes explicitly enabled
 mock/no-network AI presentation artifacts that are non-authoritative,
 non-evidence, and separate from the base generated artifact set. The v2.4.0 release
-candidate also includes a CLI-only `agent-context` query view for read-only
+also includes a CLI-only `agent-context` query view for read-only
 agent/editor consumption over existing no-adapter generated artifacts. The current
 public adoption surface also includes a checked-in generated-output example snapshot
 and contributor/reporting templates that point readers back to the output and evidence
@@ -1527,9 +1527,9 @@ Non-goals:
   chat, SaaS, web UI, plugin loading, public API/server behavior, editor integration, or
   automatic code modification in the first implementation slice.
 
-## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Release Candidate)
+## v2.4.0: Agent Integrations, MCP, And Editor Consumption (Published)
 
-Planned release outcome:
+Release outcome:
 
 - Expose generated project memory to agents and editor-adjacent workflows through a
   read-only consumption surface.

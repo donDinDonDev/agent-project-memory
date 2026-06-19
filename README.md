@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.3.0`. Its release artifact is
-`agent-project-memory-2.3.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.4.0`. Its release artifact is
+`agent-project-memory-2.4.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.3.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.4.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -495,7 +495,7 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
-- v2.4 release candidate summary:
+- v2.4 release summary:
   [docs/product/V2_4_RELEASE_NOTES.md](docs/product/V2_4_RELEASE_NOTES.md).
 - v2.3 release summary:
   [docs/product/V2_3_RELEASE_NOTES.md](docs/product/V2_3_RELEASE_NOTES.md).
@@ -579,9 +579,9 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v2.3.0`. It ships an executable jar and `SHA256SUMS`
-asset and adds explicitly enabled mock/no-network AI presentation artifacts while
-keeping real provider integration deferred. Normal no-adapter generated
+The latest published release is `v2.4.0`. It ships an executable jar and `SHA256SUMS`
+asset and adds a CLI-only `agent-context` query view for read-only agent/editor
+consumption over existing no-adapter generated artifacts. Normal no-adapter generated
 `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
@@ -606,8 +606,9 @@ focused on those no-adapter artifact sets. The v2.2 release adds
 disabled-by-default Jira/YouTrack/Confluence local export import through
 `adapters.connector_import`, using `source-registry.json` schema `1.2` connector
 provenance while preserving the same no-adapter compatibility and no adapter-aware query
-baseline.
-The v2.4.0 release candidate adds a CLI-only
+baseline. The v2.3 release adds explicitly enabled mock/no-network AI presentation
+artifacts while keeping real provider integration deferred.
+The v2.4.0 release adds a CLI-only
 `query <path> agent-context` read-only consumption surface over existing no-adapter
 generated artifacts and optional graph navigation metadata. It keeps agent-facing
 output as deterministic navigation and presentation only, not project evidence or

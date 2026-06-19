@@ -2,8 +2,8 @@
 
 Release date: 2026-06-19
 
-Release status: release candidate. The `v2.4.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.4.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.4.0 adds a CLI-only `agent-context` query view for
 read-only agent and editor-adjacent consumption while preserving deterministic project
@@ -78,7 +78,7 @@ release prep, with no release-blocking findings remaining for v2.4.0.
 
 ## Validation
 
-The v2.4.0 release-prep validation passed:
+The v2.4.0 release validation passed:
 
 - Focused query and artifact-reader tests for the implemented `agent-context` surface.
 - `mvn test`: 521 tests, 0 failures, 0 errors, 0 skipped.
@@ -123,7 +123,7 @@ v2.4.0 does not add:
 
 ## Release Assets
 
-The expected `v2.4.0` GitHub Release assets are:
+The `v2.4.0` GitHub Release assets are:
 
 - `agent-project-memory-2.4.0.jar`
 - `SHA256SUMS`
