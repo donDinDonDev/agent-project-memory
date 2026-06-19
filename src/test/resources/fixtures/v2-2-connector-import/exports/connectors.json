@@ -1,0 +1,132 @@
+{
+  "format": "agent-project-memory.connector_export.v1",
+  "records": [
+    {
+      "provider": "jira",
+      "host": "jira.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "issue_key": "PROJ-42",
+      "issue_id": "10042",
+      "title": "Fake Jira issue",
+      "body": "FAKE_FIXTURE_JIRA_BODY_SECRET",
+      "status": "current",
+      "record_state": "open",
+      "source_url": "https://jira.example.com/browse/PROJ-42",
+      "exported_at": "2026-06-19T00:00:00Z",
+      "record_updated_at": "2026-06-18T00:00:00Z"
+    },
+    {
+      "provider": "youtrack",
+      "host": "youtrack.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "issue_key": "PROJ-77",
+      "title": "Fake YouTrack issue",
+      "body": "FAKE_FIXTURE_YOUTRACK_ISSUE_BODY_SECRET",
+      "status": "current",
+      "record_state": "open",
+      "source_url": "https://youtrack.example.com/issue/PROJ-77",
+      "exported_at": "2026-06-19T00:00:00Z",
+      "record_updated_at": "2026-06-18T00:00:00Z"
+    },
+    {
+      "provider": "youtrack",
+      "host": "youtrack.example.com",
+      "record_type": "article",
+      "project_key": "PROJ",
+      "article_id": "ABC123",
+      "title": "Fake YouTrack article",
+      "body": "FAKE_FIXTURE_YOUTRACK_ARTICLE_BODY_SECRET",
+      "status": "current",
+      "record_state": "published",
+      "source_url": "https://youtrack.example.com/articles/ABC123",
+      "exported_at": "2026-06-19T00:00:00Z",
+      "record_updated_at": "2026-06-18T00:00:00Z"
+    },
+    {
+      "provider": "confluence",
+      "host": "confluence.example.com",
+      "record_type": "page",
+      "space_key": "ENG",
+      "page_id": "123456",
+      "title": "Fake Confluence page",
+      "body": "FAKE_FIXTURE_CONFLUENCE_BODY_SECRET",
+      "status": "current",
+      "record_state": "current",
+      "source_url": "https://confluence.example.com/spaces/ENG/pages/123456",
+      "exported_at": "2026-06-19T00:00:00Z",
+      "record_updated_at": "2026-06-18T00:00:00Z"
+    },
+    {
+      "provider": "jira",
+      "host": "jira.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "issue_key": "PROJ-43",
+      "title": "Fake stale issue",
+      "body": "FAKE_FIXTURE_STALE_BODY_SECRET",
+      "status": "stale"
+    },
+    {
+      "provider": "jira",
+      "host": "jira.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "issue_key": "PROJ-44",
+      "title": "Fake partial issue",
+      "body": "FAKE_FIXTURE_PARTIAL_BODY_SECRET",
+      "status": "partial"
+    },
+    {
+      "provider": "trello",
+      "host": "trello.example.com",
+      "record_type": "card",
+      "title": "Fake unsupported card",
+      "body": "FAKE_FIXTURE_UNSUPPORTED_BODY_SECRET",
+      "status": "current"
+    },
+    {
+      "provider": "jira",
+      "host": "jira.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "issue_key": "PROJ-42",
+      "title": "Fake duplicate issue",
+      "body": "FAKE_FIXTURE_DUPLICATE_BODY_SECRET",
+      "status": "current"
+    },
+    {
+      "provider": "jira",
+      "host": "jira.example.com",
+      "record_type": "issue",
+      "project_key": "PROJ",
+      "title": "Fake missing identity",
+      "body": "FAKE_FIXTURE_MISSING_IDENTITY_BODY_SECRET",
+      "status": "current"
+    },
+    {
+      "provider": "youtrack",
+      "host": "youtrack.example.com",
+      "record_type": "article",
+      "project_key": "PROJ",
+      "collection_key": "KB",
+      "article_id": "ABC124",
+      "title": "Fake ambiguous article",
+      "body": "FAKE_FIXTURE_AMBIGUOUS_BODY_SECRET",
+      "status": "current"
+    },
+    {
+      "provider": "confluence",
+      "host": "confluence.example.com",
+      "record_type": "page",
+      "project_key": "PROJ",
+      "space_key": "ENG",
+      "page_id": "123457",
+      "title": "Fake authority-confusing page",
+      "body": "FAKE_FIXTURE_AUTHORITY_BODY_SECRET",
+      "status": "current"
+    },
+    "not an object"
+  ]
+}

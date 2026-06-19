@@ -1770,6 +1770,105 @@ final class AgentProjectMemoryCliTest {
   }
 
   @Test
+  void scanReadsConnectorImportIntoSourceRegistryWithoutPromotingFactsOrRawBodies()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/connectors.json"), """
+        {
+          "format": "agent-project-memory.connector_export.v1",
+          "records": [
+            {
+              "provider": "jira",
+              "host": "jira.example.com",
+              "record_type": "issue",
+              "project_key": "PROJ",
+              "issue_key": "PROJ-201",
+              "issue_id": "10001",
+              "title": "Imported Jira issue",
+              "body": "FAKE_CONNECTOR_BODY_SECRET raw Jira issue body",
+              "status": "current",
+              "record_state": "open",
+              "source_url": "https://jira.example.com/browse/PROJ-201",
+              "exported_at": "2026-06-19T00:00:00Z",
+              "record_updated_at": "2026-06-18T00:00:00Z"
+            }
+          ]
+        }
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        adapters:
+          connector_import:
+            enabled: true
+            path: exports/connectors.json
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
+    String generatedSurfaces = String.join(
+        "\n",
+        projectMap.toString(),
+        sourceRegistryJson,
+        evidenceIndex,
+        Files.readString(outputDirectory.resolve("agent-guide.md")),
+        result.stdout(),
+        result.stderr());
+    JsonNode adapterItem = projectMap.path("adapter_context").path("items").get(0);
+    JsonNode connector = sourceRegistry.path("provenance").get(0).path("connector");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Generated source-registry.json with 1 source document(s)")),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals(
+            "local_import_read",
+            projectMap.path("scan").path("features").path("adapters").path("status").asText()),
+        () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
+        () -> assertEquals("jira_issue", adapterItem.path("source_type").asText()),
+        () -> assertEquals(
+            "connector/jira/jira.example.com/project/PROJ/issue/PROJ-201",
+            adapterItem.path("source_identity").asText()),
+        () -> assertFalse(adapterItem.has("evidence_ids")),
+        () -> assertEquals(0, projectMap.path("endpoints").size()),
+        () -> assertEquals(0, projectMap.path("components").path("items").size()),
+        () -> assertEquals(0, projectMap.path("entities").path("items").size()),
+        () -> assertEquals(0, projectMap.path("tests").path("items").size()),
+        () -> assertEquals("1.2", sourceRegistry.path("source_registry_schema_version").asText()),
+        () -> assertEquals(
+            AdapterLocalImport.CONNECTOR_IMPORT_ADAPTER,
+            sourceRegistry.path("adapter_runs").get(0).path("adapter").path("name").asText()),
+        () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
+        () -> assertEquals(1, sourceRegistry.path("provenance").size()),
+        () -> assertEquals("jira", connector.path("provider").asText()),
+        () -> assertEquals("jira.example.com", connector.path("host").asText()),
+        () -> assertEquals("issue_tracker", connector.path("source_family").asText()),
+        () -> assertEquals("project", connector.path("container_type").asText()),
+        () -> assertEquals("PROJ", connector.path("container_key").asText()),
+        () -> assertEquals("issue", connector.path("record_type").asText()),
+        () -> assertEquals("PROJ-201", connector.path("record_key").asText()),
+        () -> assertEquals("10001", connector.path("record_id").asText()),
+        () -> assertEquals("open", connector.path("record_state").asText()),
+        () -> assertEquals(
+            "https://jira.example.com/browse/PROJ-201",
+            connector.path("source_url").asText()),
+        () -> assertFalse(evidenceIndex.contains("jira_issue")),
+        () -> assertFalse(evidenceIndex.contains("source-provenance")),
+        () -> assertFalse(generatedSurfaces.contains("exports/connectors.json")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_CONNECTOR_BODY_SECRET")),
+        () -> assertFalse(generatedSurfaces.contains("raw Jira issue body")),
+        () -> assertFalse(generatedSurfaces.contains(tempDir.toString())));
+  }
+
+  @Test
   void scanNoAdapterRegenerationRemovesStaleSourceRegistryWithoutDeletingUnrelatedFiles()
       throws Exception {
     Files.writeString(tempDir.resolve("pom.xml"), """

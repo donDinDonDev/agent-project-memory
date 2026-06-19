@@ -393,6 +393,14 @@ Compatibility and migration notes:
   remains local JSON only: no API calls, network access, credentials, adapter-aware
   query behavior, raw issue/PR/MR bodies, comments, review notes, configured import
   paths, or local absolute paths are serialized by default.
+- The current unreleased development build also supports disabled-by-default
+  Jira/YouTrack/Confluence local export imports through `adapters.connector_import`.
+  Accepted records use `.project-memory/source-registry.json` schema `1.2` for
+  connector provenance and the existing `project-map.json` `schema_version: "2.0"`
+  adapter context. The import remains local JSON only: no API calls, network access,
+  credentials, adapter-aware query behavior, raw issue/page/article bodies, comments,
+  rendered HTML, attachment details, configured import paths, or local absolute paths
+  are serialized by default.
 - Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
   `schema_version: "1.0"` outputs. Consumers that encounter
   `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
@@ -555,6 +563,10 @@ external/document context only. Git hosting imports use `source-registry.json` s
 `1.1` for provider provenance. No-adapter scans remain v1-compatible with
 `schema_version: "1.0"` and no `source-registry.json`; current query support remains
 focused on those no-adapter artifact sets.
+The current unreleased development line adds disabled-by-default
+Jira/YouTrack/Confluence local export import through `adapters.connector_import`, using
+`source-registry.json` schema `1.2` connector provenance while preserving the same
+no-adapter compatibility and no adapter-aware query baseline.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
@@ -838,10 +850,10 @@ Current limitations:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional
   `documents.include`/`documents.exclude` path rules, and disabled-by-default adapter
-  config for local structured import or Git hosting import. When explicitly enabled,
-  the selected adapter reads one validated repository-relative regular-file import path
-  under the scan root, parses its bounded documented JSON format, emits
-  `source-registry.json`, and adds `project-map.json` adapter context as
+  config for local structured import, Git hosting import, or connector import. When
+  explicitly enabled, the selected adapter reads one validated repository-relative
+  regular-file import path under the scan root, parses its bounded documented JSON
+  format, emits `source-registry.json`, and adds `project-map.json` adapter context as
   provenance-backed external/document context. It does not enable network access,
   accept credentials, serialize raw bodies or configured import paths, create
   `evidence-index.jsonl` records, or create Java/Spring project facts. User

@@ -122,7 +122,7 @@ v2 adapter security defaults:
   pull-request, and merge-request source types, emits Git hosting provenance through
   `source-registry.json`, and rejects records whose provider, host, namespace,
   number/IID, status, source identity, or provenance cannot be validated safely;
-- the planned Jira/YouTrack/Confluence local export importer keeps the same local-file
+- the Jira/YouTrack/Confluence local export importer keeps the same local-file
   trust boundary: it accepts only an explicitly configured repository-relative JSON
   export, parses a provider-normalized format rather than raw API responses, supports
   only bounded issue, article, and page source types, emits connector provenance through

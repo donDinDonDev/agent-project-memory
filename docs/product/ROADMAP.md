@@ -27,6 +27,10 @@ disabled-by-default local GitHub/GitLab export import through
 schema `1.1` and no adapter-backed query support. Current query support remains focused
 on no-adapter v1 artifact sets unless a later release explicitly documents
 adapter-aware query behavior.
+The current unreleased development line adds disabled-by-default Jira/YouTrack/
+Confluence local export import through `adapters.connector_import`, with connector
+provenance in `source-registry.json` schema `1.2` and the same no-adapter query
+baseline.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1380,9 +1384,9 @@ Non-goals:
   findings, source/spec agreement claims, documentation freshness claims, or automatic
   code-modification input.
 
-## v2.2.0: Jira/YouTrack/Confluence Local Export Scope (Planned)
+## v2.2.0: Jira/YouTrack/Confluence Local Export Scope (In Development)
 
-Expected outcome:
+Current implementation scope:
 
 - Add disabled-by-default local JSON export import for selected Jira issue, YouTrack
   issue/article, and Confluence page records.
@@ -1397,7 +1401,7 @@ Expected outcome:
   source upload, adapter-aware query support, and AI behavior out of the local import
   baseline.
 
-Planned local-export scope:
+Implemented local-export scope:
 
 - Supported local source types are `jira_issue`, `youtrack_issue`,
   `youtrack_article`, and `confluence_page`.

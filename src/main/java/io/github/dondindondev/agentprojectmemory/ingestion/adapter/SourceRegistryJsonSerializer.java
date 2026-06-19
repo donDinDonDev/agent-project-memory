@@ -8,6 +8,7 @@ import java.util.Objects;
 public final class SourceRegistryJsonSerializer {
   public static final String SOURCE_REGISTRY_SCHEMA_VERSION = "1.0";
   public static final String GIT_HOSTING_SOURCE_REGISTRY_SCHEMA_VERSION = "1.1";
+  public static final String CONNECTOR_SOURCE_REGISTRY_SCHEMA_VERSION = "1.2";
 
   public String serialize(AdapterIngestionResult result) {
     Objects.requireNonNull(result, "result");
@@ -116,6 +117,9 @@ public final class SourceRegistryJsonSerializer {
       if (provenance.gitHosting() != null) {
         appendGitHostingMetadata(json, provenance.gitHosting(), true);
       }
+      if (provenance.connector() != null) {
+        appendConnectorMetadata(json, provenance.connector(), true);
+      }
       appendStringArrayField(json, 3, "trust_boundary_labels", provenance.trustBoundaryLabels(), false);
       indent(json, 2);
       json.append("}");
@@ -178,9 +182,17 @@ public final class SourceRegistryJsonSerializer {
   }
 
   private String schemaVersion(AdapterIngestionResult result) {
-    return result.provenance().stream().anyMatch(provenance -> provenance.gitHosting() != null)
-        ? GIT_HOSTING_SOURCE_REGISTRY_SCHEMA_VERSION
-        : SOURCE_REGISTRY_SCHEMA_VERSION;
+    if (result.provenance().stream().anyMatch(provenance -> provenance.connector() != null)
+        || result.adapterRuns().stream().anyMatch(run ->
+            AdapterLocalImport.CONNECTOR_IMPORT_ADAPTER.equals(run.adapterIdentity().name()))) {
+      return CONNECTOR_SOURCE_REGISTRY_SCHEMA_VERSION;
+    }
+    if (result.provenance().stream().anyMatch(provenance -> provenance.gitHosting() != null)
+        || result.adapterRuns().stream().anyMatch(run ->
+            AdapterLocalImport.GIT_HOSTING_IMPORT_ADAPTER.equals(run.adapterIdentity().name()))) {
+      return GIT_HOSTING_SOURCE_REGISTRY_SCHEMA_VERSION;
+    }
+    return SOURCE_REGISTRY_SCHEMA_VERSION;
   }
 
   private void appendGitHostingMetadata(
@@ -207,6 +219,44 @@ public final class SourceRegistryJsonSerializer {
       optionalFields.add(new MetadataField("record_updated_at", metadata.recordUpdatedAt()));
     }
     appendStringField(json, 4, "record_number", metadata.recordNumber(), !optionalFields.isEmpty());
+    for (int index = 0; index < optionalFields.size(); index++) {
+      MetadataField field = optionalFields.get(index);
+      appendStringField(json, 4, field.name(), field.value(), index < optionalFields.size() - 1);
+    }
+    indent(json, 3);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendConnectorMetadata(
+      StringBuilder json,
+      ConnectorMetadata metadata,
+      boolean trailingComma) {
+    indent(json, 3);
+    json.append("\"connector\": {\n");
+    appendStringField(json, 4, "provider", metadata.provider(), true);
+    appendStringField(json, 4, "host", metadata.host(), true);
+    appendStringField(json, 4, "source_family", metadata.sourceFamily(), true);
+    appendStringField(json, 4, "container_type", metadata.containerType(), true);
+    appendStringField(json, 4, "container_key", metadata.containerKey(), true);
+    appendStringField(json, 4, "record_type", metadata.recordType(), true);
+    List<MetadataField> optionalFields = new ArrayList<>();
+    if (metadata.recordId() != null) {
+      optionalFields.add(new MetadataField("record_id", metadata.recordId()));
+    }
+    if (metadata.recordState() != null) {
+      optionalFields.add(new MetadataField("record_state", metadata.recordState()));
+    }
+    if (metadata.sourceUrl() != null) {
+      optionalFields.add(new MetadataField("source_url", metadata.sourceUrl()));
+    }
+    if (metadata.exportedAt() != null) {
+      optionalFields.add(new MetadataField("exported_at", metadata.exportedAt()));
+    }
+    if (metadata.recordUpdatedAt() != null) {
+      optionalFields.add(new MetadataField("record_updated_at", metadata.recordUpdatedAt()));
+    }
+    appendStringField(json, 4, "record_key", metadata.recordKey(), !optionalFields.isEmpty());
     for (int index = 0; index < optionalFields.size(); index++) {
       MetadataField field = optionalFields.get(index);
       appendStringField(json, 4, field.name(), field.value(), index < optionalFields.size() - 1);

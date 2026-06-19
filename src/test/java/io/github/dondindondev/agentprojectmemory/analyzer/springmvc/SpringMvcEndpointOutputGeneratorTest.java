@@ -146,6 +146,42 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void connectorImportSourceRegistryMatchesGoldenFile() throws Exception {
+    Path projectPath = tempDir.resolve("v2-2-connector-import");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(connectorImportFixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    ScanConfiguration scanConfiguration = new ScanConfiguration(
+        "config_file",
+        "agent-project-memory.yml",
+        "applied",
+        false,
+        false,
+        true,
+        "default",
+        List.of(),
+        List.of(),
+        AdapterConfiguration.enabledLocalImport(
+            AdapterLocalImport.connectorImport("exports/connectors.json")));
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory,
+        scanConfiguration,
+        List.of());
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertTrue(result.sourceRegistryGenerated()),
+        () -> assertEquals(4, result.sourceDocumentCount()),
+        () -> assertEquals(8, result.adapterDiagnosticCount()),
+        () -> assertEquals(
+            expected("v2-2-connector-import", "source-registry.json"),
+            Files.readString(outputDirectory.resolve("source-registry.json"))));
+  }
+
+
+  @Test
   void projectMapEvidenceIdsResolveToEvidenceIndexRecords() throws Exception {
     Path projectPath = tempDir.resolve("stage3-project-map");
     Path outputDirectory = projectPath.resolve(".project-memory");
@@ -3206,6 +3242,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
   private Path gitHostingImportFixtureRoot() throws Exception {
     return Path.of(Objects.requireNonNull(
         getClass().getResource("/fixtures/v2-1-git-hosting-import")).toURI());
+  }
+
+  private Path connectorImportFixtureRoot() throws Exception {
+    return Path.of(Objects.requireNonNull(
+        getClass().getResource("/fixtures/v2-2-connector-import")).toURI());
   }
 
   private Path goldenRoot() throws Exception {

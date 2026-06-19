@@ -11,7 +11,7 @@ document facts and evidence only.
 
 The v2 line adds disabled-by-default local import adapters for explicitly configured
 repository-relative export files. v2.0 ships a local structured import reference
-adapter, and v2.1 adds a Git hosting local JSON export import adapter. The planned v2.2
+adapter, and v2.1 adds a Git hosting local JSON export import adapter. The v2.2
 connector boundary keeps Jira, YouTrack, and Confluence local export import ahead of any
 networked API mode. Git hosting, issue-tracker, and wiki API/network connectors remain
 future input adapters. They should not be part of the MVP core analyzer, and they should
@@ -244,11 +244,11 @@ Live API mode, credential lookup, OAuth, PATs, GitHub App auth, GitLab tokens,
 rate-limit state, retries, background sync, remote cache, and out-of-repository export
 paths remain separate later design work.
 
-## Planned v2.2 Jira, YouTrack, And Confluence Local Export Import
+## v2.2 Jira, YouTrack, And Confluence Local Export Import
 
-The planned v2.2 connector boundary starts with one normalized local JSON export format,
+The v2.2 connector boundary starts with one normalized local JSON export format,
 not raw Jira, YouTrack, or Confluence API responses and not live API fetching. The
-planned format name is:
+format name is:
 
 ```text
 agent-project-memory.connector_export.v1
@@ -259,7 +259,7 @@ the scan root. It is untrusted local input and must pass the same regular-file,
 single-link, no-follow, size, record-count, duplicate, and bounded parsing gates used by
 the existing v2 adapter boundary before any record is normalized.
 
-The first local export slice should support these adapter source types:
+The first local export slice supports these adapter source types:
 
 - `jira_issue`
 - `youtrack_issue`
@@ -333,7 +333,7 @@ snapshot status, and trust-boundary labels. These fields are generated provenanc
 review metadata only. They do not prove that Jira, YouTrack, or Confluence is reachable,
 current, complete, authoritative, or aligned with repository source.
 
-The planned v2.2 config shape uses a disabled-by-default adapter key:
+The v2.2 config shape uses a disabled-by-default adapter key:
 
 ```yaml
 adapters:

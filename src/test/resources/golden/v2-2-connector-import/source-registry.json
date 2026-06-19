@@ -1,0 +1,238 @@
+{
+  "source_registry_schema_version": "1.2",
+  "adapter_runs": [
+    {
+      "id": "adapter-run:sha256:5c6f61b6d61f1f4b4af74189c88743bf996acba89fe5d5829bd7e8b86063f0b2",
+      "adapter": {
+        "name": "connector-import",
+        "version": "2.2.0"
+      },
+      "import_mode": "local_export",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "input_content_hash": "sha256:1ff05c65948acfce8897c3f3b9959ecffaa8ab395a72cd531613f43e728efb5b",
+      "content_status": "not_serialized",
+      "accepted_count": 4,
+      "rejected_count": 8,
+      "diagnostic_count": 8
+    }
+  ],
+  "source_documents": [
+    {
+      "id": "source-document:sha256:e8254c3639700d569df50e5d0ee3ba8248d90b3e42976d2a5d06c68a426d182e",
+      "source_type": "confluence_page",
+      "source_identity": "connector/confluence/confluence.example.com/space/ENG/page/123456",
+      "title": "Fake Confluence page",
+      "content_hash": "sha256:b380d00b14e15032df9d98acbf7d4716abe2d82909067cc8ae014349b8f0b78e",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:a9b9f77e7be9420df91c522be5262553bae1eba23f3db0edf8f3491bc36526a1"
+    },
+    {
+      "id": "source-document:sha256:7d0ccbc80b81d64240a736fd5ce038001c6dc6cbc56bd8417931d37544b37226",
+      "source_type": "jira_issue",
+      "source_identity": "connector/jira/jira.example.com/project/PROJ/issue/PROJ-42",
+      "title": "Fake Jira issue",
+      "content_hash": "sha256:d8ee46740a7dcc84f65a66db0044ce21d19dbc801fe066aea5a19364dd1e4824",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:8508cfaa358ce178f4d2ccd0dd9bbbcadb67c463a0d4fa4b3320418a929dada6"
+    },
+    {
+      "id": "source-document:sha256:8cc1d3cb73557db18c64eaacc63ddebb28c3f88bcf10b5857703aa7a97c1e136",
+      "source_type": "youtrack_article",
+      "source_identity": "connector/youtrack/youtrack.example.com/project/PROJ/article/ABC123",
+      "title": "Fake YouTrack article",
+      "content_hash": "sha256:54e9a27f32b044246a2aefdce3bf6edebf6646f40fe3d43577cc4f93a264faf3",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:840e4360daebba11d8847a88705fae89fa0d36256ac632bcc22ab02cdcad6b2d"
+    },
+    {
+      "id": "source-document:sha256:660272ce924c4ab97a52a095c653010989be00b130aab3401d29c907a6d19009",
+      "source_type": "youtrack_issue",
+      "source_identity": "connector/youtrack/youtrack.example.com/project/PROJ/issue/PROJ-77",
+      "title": "Fake YouTrack issue",
+      "content_hash": "sha256:f7df2d686297815ba987d13597a30eb0496916ac94b14db5f11f5ee2eccdd7c1",
+      "content_status": "not_serialized",
+      "provenance_id": "source-provenance:sha256:dca69bdb15ab56f320802769b1afb291b17180372fbb2971c773ac1bca1dc1fc"
+    }
+  ],
+  "provenance": [
+    {
+      "id": "source-provenance:sha256:a9b9f77e7be9420df91c522be5262553bae1eba23f3db0edf8f3491bc36526a1",
+      "adapter": {
+        "name": "connector-import",
+        "version": "2.2.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "confluence_page",
+      "source_identity": "connector/confluence/confluence.example.com/space/ENG/page/123456",
+      "content_hash": "sha256:b380d00b14e15032df9d98acbf7d4716abe2d82909067cc8ae014349b8f0b78e",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "connector": {
+        "provider": "confluence",
+        "host": "confluence.example.com",
+        "source_family": "wiki",
+        "container_type": "space",
+        "container_key": "ENG",
+        "record_type": "page",
+        "record_key": "123456",
+        "record_state": "current",
+        "source_url": "https://confluence.example.com/spaces/ENG/pages/123456",
+        "exported_at": "2026-06-19T00:00:00Z",
+        "record_updated_at": "2026-06-18T00:00:00Z"
+      },
+      "trust_boundary_labels": ["connector_import", "confluence", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    },
+    {
+      "id": "source-provenance:sha256:8508cfaa358ce178f4d2ccd0dd9bbbcadb67c463a0d4fa4b3320418a929dada6",
+      "adapter": {
+        "name": "connector-import",
+        "version": "2.2.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "jira_issue",
+      "source_identity": "connector/jira/jira.example.com/project/PROJ/issue/PROJ-42",
+      "content_hash": "sha256:d8ee46740a7dcc84f65a66db0044ce21d19dbc801fe066aea5a19364dd1e4824",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "connector": {
+        "provider": "jira",
+        "host": "jira.example.com",
+        "source_family": "issue_tracker",
+        "container_type": "project",
+        "container_key": "PROJ",
+        "record_type": "issue",
+        "record_key": "PROJ-42",
+        "record_id": "10042",
+        "record_state": "open",
+        "source_url": "https://jira.example.com/browse/PROJ-42",
+        "exported_at": "2026-06-19T00:00:00Z",
+        "record_updated_at": "2026-06-18T00:00:00Z"
+      },
+      "trust_boundary_labels": ["connector_import", "jira", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    },
+    {
+      "id": "source-provenance:sha256:840e4360daebba11d8847a88705fae89fa0d36256ac632bcc22ab02cdcad6b2d",
+      "adapter": {
+        "name": "connector-import",
+        "version": "2.2.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "youtrack_article",
+      "source_identity": "connector/youtrack/youtrack.example.com/project/PROJ/article/ABC123",
+      "content_hash": "sha256:54e9a27f32b044246a2aefdce3bf6edebf6646f40fe3d43577cc4f93a264faf3",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "connector": {
+        "provider": "youtrack",
+        "host": "youtrack.example.com",
+        "source_family": "wiki",
+        "container_type": "project",
+        "container_key": "PROJ",
+        "record_type": "article",
+        "record_key": "ABC123",
+        "record_state": "published",
+        "source_url": "https://youtrack.example.com/articles/ABC123",
+        "exported_at": "2026-06-19T00:00:00Z",
+        "record_updated_at": "2026-06-18T00:00:00Z"
+      },
+      "trust_boundary_labels": ["connector_import", "youtrack", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    },
+    {
+      "id": "source-provenance:sha256:dca69bdb15ab56f320802769b1afb291b17180372fbb2971c773ac1bca1dc1fc",
+      "adapter": {
+        "name": "connector-import",
+        "version": "2.2.0"
+      },
+      "import_mode": "local_export",
+      "source_type": "youtrack_issue",
+      "source_identity": "connector/youtrack/youtrack.example.com/project/PROJ/issue/PROJ-77",
+      "content_hash": "sha256:f7df2d686297815ba987d13597a30eb0496916ac94b14db5f11f5ee2eccdd7c1",
+      "source_location_kind": "repository_relative_file",
+      "network_access": "disabled",
+      "connector": {
+        "provider": "youtrack",
+        "host": "youtrack.example.com",
+        "source_family": "issue_tracker",
+        "container_type": "project",
+        "container_key": "PROJ",
+        "record_type": "issue",
+        "record_key": "PROJ-77",
+        "record_state": "open",
+        "source_url": "https://youtrack.example.com/issue/PROJ-77",
+        "exported_at": "2026-06-19T00:00:00Z",
+        "record_updated_at": "2026-06-18T00:00:00Z"
+      },
+      "trust_boundary_labels": ["connector_import", "youtrack", "repository_relative_file", "provenance_backed_external_context", "not_code_evidence", "network_disabled"]
+    }
+  ],
+  "diagnostics": {
+    "analysis_status": "analyzed",
+    "items": [
+      {
+        "id": "adapter-diagnostic:connector-import:record:000005:stale_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "stale_record_rejected",
+        "message": "Connector import record rejected because it is marked stale.",
+        "record_ordinal": 5
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000006:partial_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "partial_record_rejected",
+        "message": "Connector import record rejected because it is marked partial.",
+        "record_ordinal": 6
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000007:unsupported_source_type_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "unsupported_source_type_rejected",
+        "message": "Connector import record rejected because its source type is unsupported.",
+        "record_ordinal": 7
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000008:duplicate_source_identity_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "duplicate_source_identity_rejected",
+        "message": "Connector import record rejected because source identity is duplicated.",
+        "record_ordinal": 8
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000009:provenance_missing_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "provenance_missing_record_rejected",
+        "message": "Connector import record rejected because stable source identity is missing or unsafe.",
+        "record_ordinal": 9
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000010:ambiguous_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "ambiguous_record_rejected",
+        "message": "Connector import record rejected because its identity fields are ambiguous.",
+        "record_ordinal": 10
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000011:authority_confusing_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "authority_confusing_record_rejected",
+        "message": "Connector import record rejected because provider and identity fields conflict.",
+        "record_ordinal": 11
+      },
+      {
+        "id": "adapter-diagnostic:connector-import:record:000012:malformed_record_rejected",
+        "severity": "warning",
+        "category": "connector_import",
+        "signal": "malformed_record_rejected",
+        "message": "Connector import record rejected because it is not an object.",
+        "record_ordinal": 12
+      }
+    ]
+  }
+}

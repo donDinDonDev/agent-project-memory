@@ -196,14 +196,14 @@ freshness claims, query results, or AI facts. If a later release wants adapter-b
 evidence or adapter-aware query behavior, this document and `OUTPUT_CONTRACT.md` must
 be updated before implementation.
 
-### Planned v2.2 Connector Provenance Decision
+### v2.2 Connector Provenance Decision
 
-Planned Jira, YouTrack, and Confluence local export imports preserve the v2 provenance
+Jira, YouTrack, and Confluence local export imports preserve the v2 provenance
 boundary. Jira issues, YouTrack issues, YouTrack articles, Confluence pages, comments,
 attachments, labels, workflow states, authors, spaces, projects, source URLs, and export
 timestamps are external adapter context, not project evidence.
 
-The planned connector source types are provenance-backed adapter source types:
+The connector source types are provenance-backed adapter source types:
 
 - `jira_issue`
 - `youtrack_issue`

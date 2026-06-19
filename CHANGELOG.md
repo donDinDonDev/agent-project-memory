@@ -11,10 +11,18 @@ architecture documents.
 
 ### Added
 
-- Documented the planned v2.2 Jira/YouTrack/Confluence local export connector boundary,
+- Implemented disabled-by-default Jira/YouTrack/Confluence local export import for
+  explicitly configured repository-relative JSON files using
+  `format: "agent-project-memory.connector_export.v1"`, including source types
+  `jira_issue`, `youtrack_issue`, `youtrack_article`, and `confluence_page`,
+  `source-registry.json` schema `1.2` connector provenance metadata, existing
+  `project-map.json` adapter context output, bounded diagnostics, fake-only fixtures,
+  and regression coverage for no-adapter compatibility and raw body/path/credential
+  non-serialization.
+- Documented the v2.2 Jira/YouTrack/Confluence local export connector boundary,
   including supported source types, source identity rules, source-registry provenance,
   adapter-context placement, credential/network defaults, and evidence/provenance
-  separation without adding implementation behavior.
+  separation for the local import implementation boundary.
 
 ## [2.1.0] - 2026-06-18
 

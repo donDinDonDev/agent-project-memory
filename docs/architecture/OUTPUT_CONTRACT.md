@@ -39,10 +39,10 @@ The v2 local import adapter source registry is a separate optional artifact:
 ```
 
 The current implementation emits this artifact only when an adapter such as
-`adapters.local_structured_import` or `adapters.git_hosting_import` is explicitly
-enabled and the configured import file is accepted for reading. A normal scan with no
-adapter explicitly enabled keeps the current base artifact set and must not create a
-source registry.
+`adapters.local_structured_import`, `adapters.git_hosting_import`, or
+`adapters.connector_import` is explicitly enabled and the configured import file is
+accepted for reading. A normal scan with no adapter explicitly enabled keeps the
+current base artifact set and must not create a source registry.
 
 The initial adapter-domain contract foundation added source-document/provenance
 identity validation for adapters. The current local import layer adds bounded
@@ -415,9 +415,9 @@ GitHub or GitLab API response. It must not accept credentials, credential names,
 environment-variable interpolation, remote URLs as import locations, API enablement
 flags, background sync settings, retry/rate-limit settings, or network/auth options.
 
-### Planned v2.2 Connector Local Export Output Boundary
+### v2.2 Connector Local Export Output Boundary
 
-The planned Jira, YouTrack, and Confluence local import boundary reuses the existing v2
+The Jira, YouTrack, and Confluence local import boundary reuses the existing v2
 adapter artifact placement. It does not add a new generated artifact and does not extend
 `evidence-index.jsonl`.
 
@@ -430,13 +430,13 @@ Expected generated-output behavior:
 - `project-map.json` keeps the existing adapter-context shape and
   `schema_version: "2.0"`; no new project-map schema marker is needed unless the
   adapter-context item shape changes;
-- connector provenance should use `source_registry_schema_version: "1.2"` because
+- connector provenance uses `source_registry_schema_version: "1.2"` because
   provider metadata for Jira, YouTrack, and Confluence is added to `provenance[]`;
 - current query commands remain no-adapter focused and do not read
   `source-registry.json`, source-document IDs, connector provenance, or adapter context
   rows.
 
-The planned connector source types are:
+The connector source types are:
 
 - `jira_issue`
 - `youtrack_issue`
@@ -548,7 +548,7 @@ not be serialized by default. The content hash may include normalized text and m
 that the adapter accepted, but generated artifacts must serialize only bounded redacted
 display metadata, hashes, snapshot metadata, and provenance join keys.
 
-The planned scan config addition is:
+The scan config addition is:
 
 ```yaml
 adapters:
@@ -566,7 +566,7 @@ no directories, no symlinked path segments, no multi-link regular files, no
 unverifiable link counts, and no path outside the scanned repository root. When the
 adapter is disabled, `path` must be omitted.
 
-The planned local export file format is
+The local export file format is
 `format: "agent-project-memory.connector_export.v1"`. It must not be treated as a raw
 Jira, YouTrack, or Confluence API response. It must not accept credentials, credential
 names, environment-variable interpolation, remote URLs as import locations, API
@@ -5188,9 +5188,9 @@ Current config file rules:
   or `.markdown`; exclude rules may target files or path trees.
 - `adapters` is optional and disabled by default. The current v2 adapter import layer
   recognizes disabled-by-default `adapters.local_structured_import` and
-  `adapters.git_hosting_import` blocks with `enabled` and `path`.
-  The planned v2.2 connector import adds a disabled-by-default
-  `adapters.connector_import` block only when that implementation lands.
+  `adapters.git_hosting_import` blocks with `enabled` and `path`. The v2.2 connector
+  import adds a disabled-by-default `adapters.connector_import` block with `enabled`
+  and `path`.
 - `adapters.local_structured_import.enabled` is optional and defaults to disabled. When
   it is `true`, `path` is required and must identify one existing repository-relative
   regular file under the scan root with a verifiable single-link identity. The path must
@@ -5209,17 +5209,16 @@ Current config file rules:
   `format: "agent-project-memory.git_hosting_export.v1"` and a `records` array.
   Accepted records must use supported provider-normalized Git hosting fields, a stable
   safe provider/host/namespace/record identity, and `status: "current"`.
-- When implemented and enabled, the planned connector import adapter reads and parses
-  the configured import file after config validation. The import file must be a JSON
-  object with `format: "agent-project-memory.connector_export.v1"` and a `records`
-  array. Accepted records must use supported provider-normalized Jira, YouTrack, or
-  Confluence fields, a stable safe provider/host/container/record identity, and
-  `status: "current"`.
+- When enabled, the connector import adapter reads and parses the configured import
+  file after config validation. The import file must be a JSON object with
+  `format: "agent-project-memory.connector_export.v1"` and a `records` array. Accepted
+  records must use supported provider-normalized Jira, YouTrack, or Confluence fields,
+  a stable safe provider/host/container/record identity, and `status: "current"`.
 - The selected adapter emits `.project-memory/source-registry.json` and top-level
   `project-map.json` `adapter_context` as provenance-backed external/document context.
   Git hosting imports use `source_registry_schema_version: "1.1"` when provider
-  metadata is emitted under `provenance[].git_hosting`. The planned connector import
-  uses `source_registry_schema_version: "1.2"` when provider metadata is emitted under
+  metadata is emitted under `provenance[].git_hosting`. The connector import uses
+  `source_registry_schema_version: "1.2"` when provider metadata is emitted under
   `provenance[].connector`. Adapter output does not serialize the configured import
   path, raw record bodies, raw connector or export contents, create evidence records,
   enable network access, accept credentials, load plugins, call AI providers, or upload

@@ -41,7 +41,8 @@ public final class ScanConfigurationLoader {
   private static final Set<String> DOCUMENT_KEYS = Set.of("include", "exclude");
   private static final Set<String> ADAPTER_KEYS = Set.of(
       "local_structured_import",
-      "git_hosting_import");
+      "git_hosting_import",
+      "connector_import");
   private static final Set<String> LOCAL_IMPORT_KEYS = Set.of("enabled", "path");
 
   public ScanConfiguration load(
@@ -305,15 +306,26 @@ public final class ScanConfigurationLoader {
         adapters,
         "git_hosting_import",
         repositoryRoot);
-    if (localStructuredImport != null && gitHostingImport != null) {
+    AdapterLocalImport connectorImport = adapterLocalImport(
+        adapters,
+        "connector_import",
+        repositoryRoot);
+    List<AdapterLocalImport> enabledImports = new ArrayList<>();
+    if (localStructuredImport != null) {
+      enabledImports.add(localStructuredImport);
+    }
+    if (gitHostingImport != null) {
+      enabledImports.add(gitHostingImport);
+    }
+    if (connectorImport != null) {
+      enabledImports.add(connectorImport);
+    }
+    if (enabledImports.size() > 1) {
       throw new InvalidScanConfigException(
           "Invalid config: only one adapter local import can be enabled.");
     }
-    if (localStructuredImport != null) {
-      return AdapterConfiguration.enabledLocalImport(localStructuredImport);
-    }
-    if (gitHostingImport != null) {
-      return AdapterConfiguration.enabledLocalImport(gitHostingImport);
+    if (!enabledImports.isEmpty()) {
+      return AdapterConfiguration.enabledLocalImport(enabledImports.get(0));
     }
     return AdapterConfiguration.disabled();
   }
@@ -364,6 +376,9 @@ public final class ScanConfigurationLoader {
     String validImportPath = validAdapterLocalImportPath(repositoryRoot, importPath);
     if ("git_hosting_import".equals(adapterKey)) {
       return AdapterLocalImport.gitHostingImport(validImportPath);
+    }
+    if ("connector_import".equals(adapterKey)) {
+      return AdapterLocalImport.connectorImport(validImportPath);
     }
     return AdapterLocalImport.localStructuredImport(validImportPath);
   }

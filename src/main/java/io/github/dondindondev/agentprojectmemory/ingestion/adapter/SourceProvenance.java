@@ -13,7 +13,8 @@ public record SourceProvenance(
     String sourceLocationKind,
     String networkAccess,
     List<String> trustBoundaryLabels,
-    GitHostingMetadata gitHosting) {
+    GitHostingMetadata gitHosting,
+    ConnectorMetadata connector) {
   private static final List<String> SOURCE_LOCATION_KINDS = List.of(
       "repository_relative_file",
       "local_export_bundle",
@@ -61,6 +62,7 @@ public record SourceProvenance(
         sourceLocationKind,
         networkAccess,
         trustBoundaryLabels,
+        null,
         null);
   }
 
@@ -74,6 +76,53 @@ public record SourceProvenance(
       String networkAccess,
       List<String> trustBoundaryLabels,
       GitHostingMetadata gitHosting) {
+    return accepted(
+        adapterIdentity,
+        importMode,
+        sourceType,
+        sourceIdentity,
+        contentHash,
+        sourceLocationKind,
+        networkAccess,
+        trustBoundaryLabels,
+        gitHosting,
+        null);
+  }
+
+  public static SourceProvenance accepted(
+      AdapterIdentity adapterIdentity,
+      AdapterImportMode importMode,
+      String sourceType,
+      String sourceIdentity,
+      String contentHash,
+      String sourceLocationKind,
+      String networkAccess,
+      List<String> trustBoundaryLabels,
+      ConnectorMetadata connector) {
+    return accepted(
+        adapterIdentity,
+        importMode,
+        sourceType,
+        sourceIdentity,
+        contentHash,
+        sourceLocationKind,
+        networkAccess,
+        trustBoundaryLabels,
+        null,
+        connector);
+  }
+
+  public static SourceProvenance accepted(
+      AdapterIdentity adapterIdentity,
+      AdapterImportMode importMode,
+      String sourceType,
+      String sourceIdentity,
+      String contentHash,
+      String sourceLocationKind,
+      String networkAccess,
+      List<String> trustBoundaryLabels,
+      GitHostingMetadata gitHosting,
+      ConnectorMetadata connector) {
     String id = StableAdapterIds.provenanceId(
         adapterIdentity,
         importMode,
@@ -90,6 +139,7 @@ public record SourceProvenance(
         sourceLocationKind,
         networkAccess,
         trustBoundaryLabels,
-        gitHosting);
+        gitHosting,
+        connector);
   }
 }
