@@ -188,15 +188,17 @@ requirements.
 
 Workspace memory should start as an explicit local workspace artifact over configured
 local repository or service roots, not as remote discovery, organization crawling,
-repository chat, semantic search, or change-impact analysis. The planned first v2.5
-boundary is an explicit `workspace scan <config>` workflow that treats the config file
-directory as the workspace root, requires unique logical `repo_id` values for each
-member, writes a separate workspace-root `.project-memory/workspace-map.json`, and
-references per-repo evidence through composite `repo_id` plus existing `evidence_id`
-keys without changing normal single-repo artifacts. Cross-repo relation emission,
-workspace query, adapter-aware workspace context, and child-repo scan mutation remain
-separate later implementation decisions unless a bounded v2.5 goal explicitly accepts
-and documents them.
+repository chat, semantic search, or change-impact analysis. The v2.5 boundary uses an
+explicit `workspace scan <config>` workflow that treats the config file directory as the
+workspace root and requires unique logical `repo_id` values for each member. The first
+implementation foundation validates the explicit local config and member roots without
+writing workspace output or mutating child repositories. The later workspace aggregation
+slice is expected to write a separate workspace-root
+`.project-memory/workspace-map.json` and reference per-repo evidence through composite
+`repo_id` plus existing `evidence_id` keys without changing normal single-repo
+artifacts. Cross-repo relation emission, workspace query, adapter-aware workspace
+context, and child-repo scan mutation remain separate later implementation decisions
+unless a bounded v2.5 goal explicitly accepts and documents them.
 
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI

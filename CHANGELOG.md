@@ -16,6 +16,10 @@ architecture documents.
   `workspace-map.json` placement, composite `repo_id` plus `evidence_id` workspace
   evidence references, and parking cross-repo relation emission and workspace query
   behavior behind later explicit implementation gates.
+- Implemented the first validation-only `workspace scan <config>` foundation for local
+  workspace YAML configs, required unique `repo_id` values, workspace-relative member
+  roots, bounded invalid-config diagnostics, unsafe root rejection, and no child scans
+  or generated-output writes.
 
 ## [2.4.0] - 2026-06-19
 

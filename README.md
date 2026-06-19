@@ -206,6 +206,30 @@ network, credential, telemetry, source-upload, repository-chat, semantic-search,
 automatic code-modification behavior. Agent-context output is navigation and
 presentation only, not project evidence.
 
+Current builds also include a validation-only workspace config foundation:
+
+```sh
+java -jar target/agent-project-memory-2.4.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
+```
+
+The accepted workspace config shape is an explicit local YAML file:
+
+```yaml
+version: 1
+members:
+  - repo_id: orders
+    root: services/orders
+```
+
+`workspace scan <config>` treats the config file directory as the workspace root,
+requires each member to declare one unique logical `repo_id`, and accepts only
+workspace-relative member roots such as `services/orders`. The current foundation
+validates config grammar and root safety only. It does not create
+`.project-memory/`, does not write `workspace-map.json`, does not run child repository
+scans, does not refresh or mutate member `.project-memory/` directories, and does not
+add workspace query or workspace `agent-context` behavior. Workspace map aggregation is
+future work after the root-safety foundation is reviewed.
+
 CLI exit codes are stable for automation:
 
 - `0`: success, help, or version.
@@ -214,7 +238,7 @@ CLI exit codes are stable for automation:
 - `3`: scan/query input or artifact error, such as a missing scan path, missing query
   path, missing directory, unsafe output path, missing query artifact, malformed
   query artifact, or invalid graph artifact for relation lookup.
-- `4`: invalid scan config.
+- `4`: invalid scan or workspace config.
 - `5`: output generation or write error.
 - `6`: query no-result, such as an absent evidence ID, absent exact fact/symbol match,
   or absent relation subject ID.

@@ -108,7 +108,7 @@ The intended security properties are:
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
 
-Planned workspace security defaults:
+Workspace security defaults:
 
 - workspace behavior is explicitly configured and local-only;
 - the first workspace config is an explicit local YAML file argument, with its parent
@@ -119,9 +119,11 @@ Planned workspace security defaults:
   duplicate roots, duplicate `repo_id` values, generated-output roots, missing roots,
   and trusted multi-link or link-count-unverifiable workspace input fail closed before
   workspace output is trusted;
-- workspace output is written only under the workspace root
-  `.project-memory/workspace-map.json` unless a later public contract changes the
-  placement;
+- the current workspace foundation validates config and member roots only and does not
+  write workspace output;
+- planned workspace output is written only under the workspace root
+  `.project-memory/workspace-map.json` once aggregation is implemented, unless a later
+  public contract changes the placement;
 - normal single-repo artifacts remain unchanged, and child repository scans or child
   `.project-memory/` mutation require a separate explicit write-scope decision;
 - workspace evidence references use configured `repo_id` plus existing per-repo

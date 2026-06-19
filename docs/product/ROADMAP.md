@@ -40,6 +40,12 @@ no-adapter generated artifacts and optional valid graph navigation metadata with
 creating generated artifacts, reading source files, adding adapter-aware query,
 starting a server/API/editor/plugin runtime, using network or credentials, or creating
 automatic code-modification authority.
+The unreleased v2.5 development line adds the first validation-only
+`workspace scan <config>` foundation for explicit local workspace YAML configs,
+workspace-relative member roots, required unique logical `repo_id` values, and unsafe
+root rejection. This foundation does not emit `workspace-map.json`, run child
+repository scans, mutate member `.project-memory/` directories, add cross-repo
+relations, or add workspace query behavior.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and

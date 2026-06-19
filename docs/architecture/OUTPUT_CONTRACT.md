@@ -52,17 +52,24 @@ import counts, bounded parsing, `source-registry.json` emission, and
 explicitly enabled adapter still do not emit `source-registry.json` or adapter-backed
 `project-map.json` sections.
 
-The planned v2.5 workspace artifact is a separate optional workspace-root artifact:
+The current v2.5 workspace foundation accepts `workspace scan <config>` and validates
+the explicit local workspace config without writing generated artifacts. It does not
+create a workspace `.project-memory/` directory, does not run child repository scans,
+and does not mutate member `.project-memory/` directories.
+
+The planned v2.5 workspace map remains a separate optional workspace-root artifact for
+a later aggregation implementation:
 
 ```text
 .project-memory/workspace-map.json
 ```
 
-This artifact is not emitted by normal single-repo scans. It belongs to an explicit
-future workspace workflow, is written under the workspace root, and references per-repo
-generated artifacts through configured logical repo identity rather than local absolute
-paths. Existing per-repo `.project-memory/` artifact names and schema markers remain
-unchanged by the workspace design.
+This artifact is not emitted by normal single-repo scans and is not emitted by the
+current validation-only workspace foundation. It belongs to the explicit workspace
+workflow, is written under the workspace root once aggregation is implemented, and
+references per-repo generated artifacts through configured logical repo identity rather
+than local absolute paths. Existing per-repo `.project-memory/` artifact names and
+schema markers remain unchanged by the workspace design.
 
 ## v2 Adapter Output Boundary
 
@@ -5805,8 +5812,8 @@ Query exit codes:
   file, malformed JSON/JSONL, unsupported artifact schema marker, duplicate required
   IDs, unresolved required graph node references, or missing/invalid graph artifact for
   `relations`.
-- `4`: invalid scan config. This existing scan exit code is unchanged and is not used by
-  read-only query commands.
+- `4`: invalid scan or workspace config. This existing config exit code is unchanged
+  and is not used by read-only query commands.
 - `5`: scan output generation or write error. This existing scan exit code is unchanged;
   read-only query commands should not write outputs.
 - `6`: query no-result, such as an absent evidence ID, absent exact fact/symbol match,
@@ -5977,11 +5984,12 @@ Stop conditions for implementation:
 
 ### v2.5 Workspace Output Design Contract
 
-This section defines the accepted planned v2.5 workspace output boundary. It documents
-future behavior for implementation goals after the design gate; normal released
-single-repo scans do not emit workspace artifacts until a later implementation lands.
+This section defines the accepted v2.5 workspace output boundary. The current
+implementation includes the validation-only `workspace scan <config>` foundation.
+Workspace map aggregation and `workspace-map.json` writing remain future behavior after
+that root-safety foundation.
 
-Planned command shape:
+Command shape:
 
 ```text
 agent-project-memory workspace scan <config>
@@ -6001,7 +6009,21 @@ Workspace config and root policy:
 - The workspace root is the directory containing the config file. Member paths are
   normalized workspace-relative paths under that root. Absolute member paths, `./`
   prefixes, `..` escapes, path traversal, generated-output paths, hidden tool output
-  roots, and local absolute path serialization are outside the first boundary.
+  roots, and local absolute path serialization are outside the first boundary. A member
+  root must be a non-empty relative path made of safe path segments; `.` is not accepted
+  as a member root in the current foundation.
+- The accepted validation-only YAML shape is:
+
+```yaml
+version: 1
+members:
+  - repo_id: orders
+    root: services/orders
+```
+
+- The top-level keys are `version` and `members`. Each member entry uses `repo_id` and
+  `root`. Unknown keys, duplicate YAML keys, missing members, missing `repo_id`, and
+  missing member roots fail closed.
 - The config file and configured member roots must be local stable files or
   directories with conservative link handling. Symlinked config files, symlinked member
   roots, multi-link or link-count-unverifiable files that would be parsed as trusted
@@ -6021,6 +6043,8 @@ Workspace artifact placement:
 
 - The planned workspace artifact is written under the workspace root:
   `.project-memory/workspace-map.json`.
+- The current validation-only foundation does not create `.project-memory/` under the
+  workspace root and does not write `workspace-map.json`.
 - Per-repo generated artifacts remain under each member's own `.project-memory/`
   directory. The workspace artifact must not rename, move, merge, or rewrite
   per-repo `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,

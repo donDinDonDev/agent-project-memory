@@ -20,6 +20,7 @@ import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -72,13 +73,104 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
-        () -> assertTrue(result.stdout().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertTrue(result.stdout().contains("Usage: agent-project-memory scan <path>")),
         () -> assertTrue(result.stdout().contains("--config <path>")),
         () -> assertTrue(result.stdout().contains("--agent-profile <profile>")),
         () -> assertTrue(result.stdout().contains("--ai-presentation mock_no_network")),
         () -> assertTrue(result.stdout().contains("--incremental")),
         () -> assertTrue(result.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void workspaceHelpPrintsWorkspaceHelpWithoutScanningOrWriting() {
+    for (String[] args : List.of(
+        new String[] {"workspace", "--help"},
+        new String[] {"workspace", "scan", "--help"})) {
+      CliResult result = runCli(args);
+
+      assertAll(
+          () -> assertEquals(0, result.exitCode()),
+          () -> assertTrue(result.stdout().contains(
+              "Usage: agent-project-memory workspace scan <config>")),
+          () -> assertTrue(result.stdout().contains("Validate an explicit local workspace YAML config")),
+          () -> assertTrue(result.stderr().isEmpty()),
+          () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+    }
+  }
+
+  @Test
+  void workspaceScanValidatesConfigWithoutRunningSingleRepoScanOrWritingOutputs()
+      throws Exception {
+    Path workspaceRoot = tempDir.resolve("workspace");
+    Path orders = workspaceRoot.resolve("services/orders");
+    Path billing = workspaceRoot.resolve("services/billing");
+    Files.createDirectories(orders);
+    Files.createDirectories(billing);
+    Path config = workspaceRoot.resolve("agent-project-memory-workspace.yml");
+    Files.writeString(config, """
+        version: 1
+        members:
+          - repo_id: orders
+            root: services/orders
+          - repo_id: billing
+            root: services/billing
+        """);
+    AtomicInteger generatorCalls = new AtomicInteger();
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles, aiPresentationOptions) -> {
+          generatorCalls.incrementAndGet();
+          throw new AssertionError("workspace scan must not run the single-repo generator");
+        },
+        "workspace",
+        "scan",
+        config.toString());
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals(0, generatorCalls.get()),
+        () -> assertTrue(result.stdout().contains("Workspace config validated.")),
+        () -> assertTrue(result.stdout().contains("Workspace members: 2.")),
+        () -> assertTrue(result.stdout().contains("Workspace output generation: not implemented")),
+        () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertFalse(result.stdout().contains(workspaceRoot.toString())),
+        () -> assertFalse(Files.exists(workspaceRoot.resolve(".project-memory"))),
+        () -> assertFalse(Files.exists(orders.resolve(".project-memory"))),
+        () -> assertFalse(Files.exists(billing.resolve(".project-memory"))));
+  }
+
+  @Test
+  void workspaceScanRejectsUnsafeConfigWithoutScanningOrWriting() throws Exception {
+    Path workspaceRoot = tempDir.resolve("workspace-invalid");
+    Files.createDirectories(workspaceRoot);
+    Path config = workspaceRoot.resolve("agent-project-memory-workspace.yml");
+    Files.writeString(config, """
+        version: 1
+        members:
+          - repo_id: missing
+            root: missing-repo
+        """);
+    AtomicInteger generatorCalls = new AtomicInteger();
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles, aiPresentationOptions) -> {
+          generatorCalls.incrementAndGet();
+          throw new AssertionError("workspace scan must not run the single-repo generator");
+        },
+        "workspace",
+        "scan",
+        config.toString());
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertEquals(0, generatorCalls.get()),
+        () -> assertTrue(result.stderr().contains("Invalid workspace config")),
+        () -> assertTrue(result.stderr().contains("member root was not found")),
+        () -> assertFalse(result.stderr().contains(workspaceRoot.toString())),
+        () -> assertTrue(result.stdout().isEmpty()),
+        () -> assertFalse(Files.exists(workspaceRoot.resolve(".project-memory"))));
   }
 
   @Test

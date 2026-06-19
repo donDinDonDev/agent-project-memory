@@ -16,6 +16,9 @@ import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoader;
+import io.github.dondindondev.agentprojectmemory.workspace.InvalidWorkspaceConfigException;
+import io.github.dondindondev.agentprojectmemory.workspace.WorkspaceConfiguration;
+import io.github.dondindondev.agentprojectmemory.workspace.WorkspaceConfigurationLoader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
@@ -32,12 +35,14 @@ import java.util.Properties;
 public final class AgentProjectMemoryCli {
   public static final String USAGE =
       "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] "
-          + "[--ai-presentation mock_no_network] [--incremental]";
+          + "[--ai-presentation mock_no_network] [--incremental]\n"
+          + "       agent-project-memory workspace scan <config>";
   private static final String GENERAL_HELP = """
       agent-project-memory - local evidence-backed project memory for Java/Spring projects
 
       Usage:
         agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
+        agent-project-memory workspace scan <config>
         agent-project-memory query <path> <query-command>
         agent-project-memory help
         agent-project-memory version
@@ -45,6 +50,7 @@ public final class AgentProjectMemoryCli {
       Commands:
         scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
                                        Generate .project-memory output for a local repository.
+        workspace scan <config>        Validate an explicit local workspace config.
         query <path> <query-command>   Validate and read existing .project-memory artifacts.
         help                           Show this help.
         version                        Show the CLI version.
@@ -67,6 +73,17 @@ public final class AgentProjectMemoryCli {
                                    with the mock/no-network provider.
         --incremental              Reuse a validated whole-output cache hit when safe; otherwise
                                    run a full scan and refresh .project-memory/cache/v1/.
+        --help                     Show this help.
+      """;
+  private static final String WORKSPACE_USAGE =
+      "Usage: agent-project-memory workspace scan <config>";
+  private static final String WORKSPACE_HELP = """
+      Usage: agent-project-memory workspace scan <config>
+
+      Validate an explicit local workspace YAML config without scanning member roots or
+      writing workspace output. The config directory is the workspace root.
+
+      Options:
         --help                     Show this help.
       """;
   private static final String QUERY_USAGE = "Usage: agent-project-memory query <path> <query-command>";
@@ -114,6 +131,8 @@ public final class AgentProjectMemoryCli {
   private final ProjectMemoryAgentContextRenderer queryAgentContextRenderer =
       new ProjectMemoryAgentContextRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
+  private final WorkspaceConfigurationLoader workspaceConfigurationLoader =
+      new WorkspaceConfigurationLoader();
 
   public AgentProjectMemoryCli(PrintWriter out, PrintWriter err) {
     this(out, err, new SpringMvcEndpointOutputGenerator()::generate);
@@ -179,6 +198,20 @@ public final class AgentProjectMemoryCli {
         return SUCCESS;
       }
       return query(queryArgs);
+    }
+
+    if ("workspace".equals(command)) {
+      WorkspaceArgs workspaceArgs = workspaceArgs(args);
+      if (workspaceArgs.errorMessage() != null) {
+        return workspaceArgs.errorExitCode() == INVALID_CONFIG
+            ? invalidConfigError(workspaceArgs.errorMessage())
+            : workspaceUsageError(workspaceArgs.errorMessage());
+      }
+      if (workspaceArgs.help()) {
+        out.print(WORKSPACE_HELP);
+        return SUCCESS;
+      }
+      return workspaceScan(workspaceArgs.configPath());
     }
 
     if (!"scan".equals(command)) {
@@ -291,6 +324,40 @@ public final class AgentProjectMemoryCli {
         canonicalProfiles(agentProfiles),
         aiPresentationOptions,
         incremental);
+  }
+
+  private WorkspaceArgs workspaceArgs(String[] args) {
+    if (args.length < 2) {
+      return WorkspaceArgs.usageError("Missing workspace subcommand.");
+    }
+    if ("--help".equals(args[1])) {
+      if (args.length != 2) {
+        return WorkspaceArgs.usageError("Unexpected extra arguments.");
+      }
+      return WorkspaceArgs.helpRequested();
+    }
+    if (!"scan".equals(args[1])) {
+      return WorkspaceArgs.usageError("Unsupported workspace subcommand.");
+    }
+    if (args.length < 3) {
+      return WorkspaceArgs.usageError("Missing workspace config path.");
+    }
+    if ("--help".equals(args[2])) {
+      if (args.length != 3) {
+        return WorkspaceArgs.usageError("Unexpected extra arguments.");
+      }
+      return WorkspaceArgs.helpRequested();
+    }
+    if (args[2] == null || args[2].isBlank()) {
+      return WorkspaceArgs.invalidConfig("Invalid workspace config: config path must not be blank.");
+    }
+    if (args[2].startsWith("--")) {
+      return WorkspaceArgs.usageError("Missing workspace config path.");
+    }
+    if (args.length != 3) {
+      return WorkspaceArgs.usageError("Unexpected extra arguments.");
+    }
+    return WorkspaceArgs.valid(args[2]);
   }
 
   private List<AgentOutputProfile> canonicalProfiles(EnumSet<AgentOutputProfile> profiles) {
@@ -527,6 +594,21 @@ public final class AgentProjectMemoryCli {
     return SUCCESS;
   }
 
+  private int workspaceScan(String rawConfigPath) {
+    WorkspaceConfiguration configuration;
+    try {
+      configuration = workspaceConfigurationLoader.load(rawConfigPath);
+    } catch (InvalidWorkspaceConfigException ex) {
+      return invalidConfigError(ex.getMessage());
+    }
+
+    out.println("Workspace config validated.");
+    out.println("Workspace members: " + configuration.members().size() + ".");
+    out.println("Workspace output generation: not implemented in this foundation.");
+    out.println("Diagnostics: none.");
+    return SUCCESS;
+  }
+
   private int scan(
       String rawPath,
       String explicitConfigPath,
@@ -732,6 +814,12 @@ public final class AgentProjectMemoryCli {
   private int queryUsageError(String message) {
     err.println("Usage error: " + message);
     err.println(QUERY_USAGE);
+    return USAGE_ERROR;
+  }
+
+  private int workspaceUsageError(String message) {
+    err.println("Usage error: " + message);
+    err.println(WORKSPACE_USAGE);
     return USAGE_ERROR;
   }
 
@@ -957,6 +1045,28 @@ public final class AgentProjectMemoryCli {
           false,
           message,
           SCAN_INPUT_ERROR);
+    }
+  }
+
+  private record WorkspaceArgs(
+      String configPath,
+      boolean help,
+      String errorMessage,
+      int errorExitCode) {
+    static WorkspaceArgs valid(String configPath) {
+      return new WorkspaceArgs(configPath, false, null, SUCCESS);
+    }
+
+    static WorkspaceArgs helpRequested() {
+      return new WorkspaceArgs(null, true, null, SUCCESS);
+    }
+
+    static WorkspaceArgs usageError(String message) {
+      return new WorkspaceArgs(null, false, message, USAGE_ERROR);
+    }
+
+    static WorkspaceArgs invalidConfig(String message) {
+      return new WorkspaceArgs(null, false, message, INVALID_CONFIG);
     }
   }
 }
