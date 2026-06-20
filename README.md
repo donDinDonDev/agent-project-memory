@@ -169,6 +169,7 @@ java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-proje
 java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project relations <id>
 java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project relations <id> --direction incoming
 java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project agent-context
+java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -194,6 +195,18 @@ only one-hop incoming, outgoing, or default `both` graph neighbors while keeping
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
 are navigation metadata, not evidence. Stable JSON query output remains future work and
 is not included in the current published release line.
+
+`impact --files <changed-file> [...]` renders a direct mapping foundation for explicit
+repository-relative changed-file paths over existing no-adapter `project-map.json`,
+`evidence-index.jsonl`, and `project-graph.json` artifacts. It reports direct matches
+to existing evidence paths, generated fact source references, generated fact IDs, or
+graph nodes, plus explicit `not_represented` rows for valid files with no accepted
+artifact reference and bounded diagnostics such as duplicate or capped inputs. It does
+not parse raw diffs, inspect Git state, require changed files to exist, read source
+files, refresh scans, create or mutate generated artifacts, write an impact report,
+traverse graph neighbors beyond direct mapping, use adapter/source-registry context, or
+claim complete runtime, call-graph, vulnerability, business-priority, or production
+impact.
 
 `agent-context` renders a bounded read-only context view for agent/editor consumption
 over existing no-adapter `project-map.json` schema `1.0` and `evidence-index.jsonl`

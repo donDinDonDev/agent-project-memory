@@ -9,6 +9,7 @@ import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifactReader;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryAgentContextRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryArtifacts;
+import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryImpactRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryListRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryLookupRenderer;
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryRelationRenderer;
@@ -106,6 +107,8 @@ public final class AgentProjectMemoryCli {
         relations <id> [--direction incoming|outgoing|both]
                                    Show one-hop graph relations.
         agent-context              Render bounded read-only agent context over existing artifacts.
+        impact --files <changed-file> [...]
+                                   Show direct changed-file matches in existing artifacts.
 
       Options:
         --help                     Show this help.
@@ -132,6 +135,7 @@ public final class AgentProjectMemoryCli {
       new ProjectMemoryRelationRenderer();
   private final ProjectMemoryAgentContextRenderer queryAgentContextRenderer =
       new ProjectMemoryAgentContextRenderer();
+  private final ProjectMemoryImpactRenderer queryImpactRenderer = new ProjectMemoryImpactRenderer();
   private final ScanConfigurationLoader scanConfigurationLoader = new ScanConfigurationLoader();
   private final WorkspaceConfigurationLoader workspaceConfigurationLoader =
       new WorkspaceConfigurationLoader();
@@ -488,6 +492,34 @@ public final class AgentProjectMemoryCli {
           ProjectMemoryArtifactReader.GraphRequirement.REQUIRED,
           direction);
     }
+    if ("impact".equals(subcommand)) {
+      if (args.length < 4) {
+        return QueryArgs.usageError("Malformed impact query command.");
+      }
+      if (!"--files".equals(args[3])) {
+        return QueryArgs.usageError("Malformed impact query command.");
+      }
+      if (args.length == 4) {
+        return QueryArgs.usageError("Missing changed-file value.");
+      }
+      List<String> changedFiles = new ArrayList<>();
+      for (int index = 4; index < args.length; index++) {
+        if ("--files".equals(args[index])) {
+          return QueryArgs.usageError("Duplicate --files flag.");
+        }
+        changedFiles.add(args[index]);
+      }
+      ProjectMemoryImpactRenderer.ImpactInput impactInput;
+      try {
+        impactInput = queryImpactRenderer.normalizeChangedFiles(changedFiles);
+      } catch (ProjectMemoryImpactRenderer.ImpactInputException ex) {
+        return QueryArgs.usageError(ex.getMessage());
+      }
+      return QueryArgs.validImpact(
+          queryPath,
+          impactInput,
+          ProjectMemoryArtifactReader.GraphRequirement.REQUIRED);
+    }
     if ("agent-context".equals(subcommand)) {
       if (args.length != 3) {
         return QueryArgs.usageError("Malformed agent-context query command.");
@@ -570,6 +602,14 @@ public final class AgentProjectMemoryCli {
     }
     if ("agent-context".equals(queryArgs.command())) {
       out.print(queryAgentContextRenderer.render(artifacts));
+      return SUCCESS;
+    }
+    if ("impact".equals(queryArgs.command())) {
+      try {
+        out.print(queryImpactRenderer.render(artifacts, queryArgs.impactInput()));
+      } catch (QueryArtifactException ex) {
+        return queryInputError(ex.getMessage());
+      }
       return SUCCESS;
     }
 
@@ -1003,6 +1043,7 @@ public final class AgentProjectMemoryCli {
       String lookupTerm,
       ProjectMemoryArtifactReader.GraphRequirement graphRequirement,
       ProjectMemoryRelationRenderer.Direction relationDirection,
+      ProjectMemoryImpactRenderer.ImpactInput impactInput,
       boolean help,
       String errorMessage,
       int errorExitCode) {
@@ -1020,6 +1061,24 @@ public final class AgentProjectMemoryCli {
           lookupTerm,
           graphRequirement,
           relationDirection,
+          null,
+          false,
+          null,
+          SUCCESS);
+    }
+
+    static QueryArgs validImpact(
+        String path,
+        ProjectMemoryImpactRenderer.ImpactInput impactInput,
+        ProjectMemoryArtifactReader.GraphRequirement graphRequirement) {
+      return new QueryArgs(
+          path,
+          "impact",
+          "impact",
+          null,
+          graphRequirement,
+          ProjectMemoryRelationRenderer.Direction.BOTH,
+          impactInput,
           false,
           null,
           SUCCESS);
@@ -1033,6 +1092,7 @@ public final class AgentProjectMemoryCli {
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
           ProjectMemoryRelationRenderer.Direction.BOTH,
+          null,
           true,
           null,
           SUCCESS);
@@ -1046,6 +1106,7 @@ public final class AgentProjectMemoryCli {
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
           ProjectMemoryRelationRenderer.Direction.BOTH,
+          null,
           false,
           message,
           USAGE_ERROR);
@@ -1059,6 +1120,7 @@ public final class AgentProjectMemoryCli {
           null,
           ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL,
           ProjectMemoryRelationRenderer.Direction.BOTH,
+          null,
           false,
           message,
           SCAN_INPUT_ERROR);

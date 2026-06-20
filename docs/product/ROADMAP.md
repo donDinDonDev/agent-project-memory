@@ -47,14 +47,17 @@ root rejection, and workspace-root `.project-memory/workspace-map.json` aggregat
 from existing member artifacts. It does not run child repository scans, mutate member
 `.project-memory/` directories, add cross-repo relations, or add workspace query
 behavior.
-The v2.6 design track now accepts a planned first change-impact workflow boundary as a
-read-only single-repo query over existing no-adapter generated artifacts. The planned
-first command shape is `query <path> impact --files ...`, with explicit
-repository-relative changed-file input, one-hop graph navigation, confidence-labeled
-text output, and no generated impact report, raw diff ingestion, workspace impact,
-adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
-freshness scoring, vulnerability claim, business-priority claim, or automatic code
-modification in the first slice.
+The v2.6 design track accepts a first change-impact workflow boundary as a read-only
+single-repo query over existing no-adapter generated artifacts. Current development
+includes the `query <path> impact --files ...` direct mapping foundation for explicit
+repository-relative changed-file input, required `project-map.json`,
+`evidence-index.jsonl`, and `project-graph.json` artifacts, deterministic text output,
+direct matches, explicit `not_represented` rows, and bounded diagnostics. One-hop graph
+projection remains a later v2.6 implementation slice. Generated impact reports, raw
+diff ingestion, workspace impact, adapter-aware impact, runtime tracing, call graph,
+source/spec scoring, documentation freshness scoring, vulnerability claim,
+business-priority claim, and automatic code modification remain out of scope for the
+first foundation.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and

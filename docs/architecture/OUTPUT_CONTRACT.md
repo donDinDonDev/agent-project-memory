@@ -6206,9 +6206,11 @@ Stop conditions for implementation:
 ### v2.6 Change-Impact Query Design Contract
 
 This section defines the accepted v2.6 design boundary for the first change-impact
-workflow. The current implementation has not shipped this command yet. The planned
-first implementation is read-only, single-repo, stdout-only, and based on existing
-generated artifacts.
+workflow. The current implementation includes the direct mapping foundation for this
+command: parser support, required no-adapter artifact loading, changed-file path
+validation, direct matches, explicit `not_represented` rows, and bounded diagnostics.
+One-hop graph projection remains a later v2.6 implementation slice. The command is
+read-only, single-repo, stdout-only, and based on existing generated artifacts.
 
 Command shape:
 
@@ -6257,7 +6259,9 @@ Required source artifacts for the first slice:
 The command fails closed with the query artifact error exit code when a required source
 artifact is missing, malformed, unsafe, unsupported, has duplicate required IDs, has
 unresolved graph node references, or has graph `evidence_ids` that do not resolve to
-`evidence-index.jsonl`.
+`evidence-index.jsonl`. The direct mapping foundation also fails closed when
+`project-map.json` contains duplicate generated fact IDs or evidence references that do
+not resolve to `evidence-index.jsonl`.
 
 Out-of-scope source inputs for the first slice:
 
@@ -6273,6 +6277,9 @@ Impact matching and projection behavior:
 - Direct changed-file matches are created only when an input path equals an existing
   evidence `path`, a generated fact source reference path, or a graph node source path
   already present in accepted source artifacts.
+- The direct mapping foundation may render only `direct_match`, `not_represented`, and
+  `diagnostic` rows. Graph neighbors, relation-status rows, and planning hints require
+  the later projection slice described below.
 - If no accepted artifact references a changed-file path, the output must report the
   file as not represented in generated memory. It must not infer hidden impact from
   package names, filenames, directory names, generated Markdown, adapter records, AI
@@ -6298,17 +6305,19 @@ Impact matching and projection behavior:
 
 Text output categories:
 
-- `direct_match`: a changed file directly matches an existing evidence path, source
-  reference, generated fact, or graph node.
-- `graph_neighbor`: a one-hop graph edge from or to a direct-match graph node.
-- `relation_status`: an existing graph relation-status row tied to a direct-match graph
-  node.
-- `planning_hint`: an existing quality/change-risk planning hint tied to a direct
-  match or graph node.
-- `not_represented`: a valid changed-file path has no representation in accepted
-  generated memory.
-- `diagnostic`: a bounded command, artifact, cap, duplicate, or unsupported-input
-  diagnostic.
+- Implemented by the direct mapping foundation:
+  - `direct_match`: a changed file directly matches an existing evidence path, source
+    reference, generated fact, or graph node.
+  - `not_represented`: a valid changed-file path has no representation in accepted
+    generated memory.
+  - `diagnostic`: a bounded command, artifact, cap, duplicate, or unsupported-input
+    diagnostic.
+- Planned for the later projection slice:
+  - `graph_neighbor`: a one-hop graph edge from or to a direct-match graph node.
+  - `relation_status`: an existing graph relation-status row tied to a direct-match
+    graph node.
+  - `planning_hint`: an existing quality/change-risk planning hint tied to a direct
+    match or graph node.
 
 The first slice supports deterministic text stdout only. Exact text layout is not a
 stable parser interface unless a later contract documents a specific structure. Stable

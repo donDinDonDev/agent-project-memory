@@ -17,6 +17,13 @@ architecture documents.
   explicit parking for generated impact reports, raw diff input, workspace impact,
   adapter-aware impact, source/spec scoring, documentation freshness scoring,
   vulnerability claims, business-priority claims, and automatic code modification.
+- Implemented the first `query <path> impact --files ...` direct mapping foundation
+  over existing no-adapter `project-map.json`, `evidence-index.jsonl`, and
+  `project-graph.json` artifacts, with explicit repository-relative changed-file input
+  validation, direct matches to existing evidence/source/fact/graph references,
+  `not_represented` rows, bounded diagnostics, no source readback, no scan refresh, no
+  generated artifact mutation, no impact report, no Git inspection, and no graph
+  projection beyond direct mapping.
 
 ## [2.5.0] - 2026-06-20
 

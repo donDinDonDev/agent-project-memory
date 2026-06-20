@@ -10,6 +10,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -37,6 +39,7 @@ final class QueryCliTest {
         () -> assertTrue(queryHelp.stdout().contains("find symbol <term>")),
         () -> assertTrue(queryHelp.stdout().contains("relations <id>")),
         () -> assertTrue(queryHelp.stdout().contains("agent-context")),
+        () -> assertTrue(queryHelp.stdout().contains("impact --files <changed-file>")),
         () -> assertTrue(queryHelp.stderr().isEmpty()),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
@@ -1232,6 +1235,248 @@ final class QueryCliTest {
         () -> assertFalse(graph.stderr().contains(graphRoot.toString())));
   }
 
+  @Test
+  void queryImpactRendersDirectMatchesNotRepresentedDiagnosticsAndDoesNotWrite()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeImpactArtifacts(artifactRoot);
+    Path sourceFile = repositoryRoot.resolve("src/main/java/com/example/web/OrderController.java");
+    Files.createDirectories(sourceFile.getParent());
+    Files.writeString(sourceFile, "password=FAKE_IMPACT_SOURCE_READBACK_SECRET");
+    Files.createDirectories(artifactRoot.resolve("cache/v1"));
+    Files.writeString(artifactRoot.resolve("cache/v1/manifest.json"), "cache metadata");
+    String projectMapBefore = Files.readString(artifactRoot.resolve("project-map.json"));
+    String evidenceBefore = Files.readString(artifactRoot.resolve("evidence-index.jsonl"));
+    String graphBefore = Files.readString(artifactRoot.resolve("project-graph.json"));
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/java/com/example/web/OrderController.java",
+        "src/main/java/com/example/web/OrderController.java",
+        "src/main/resources/openapi.yml",
+        "src/main/java/com/example/Missing.java");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains("Query: impact")),
+        () -> assertTrue(result.stdout().contains(
+            "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=4, project-graph.json graph_schema_version=1.0")),
+        () -> assertTrue(result.stdout().contains(
+            "Results: direct_match=8, not_represented=1, diagnostic=1")),
+        () -> assertTrue(result.stdout().contains("1. direct_match")),
+        () -> assertTrue(result.stdout().contains("match_type: evidence_path")),
+        () -> assertTrue(result.stdout().contains("match_type: fact_evidence_path")),
+        () -> assertTrue(result.stdout().contains("match_type: source_reference_path")),
+        () -> assertTrue(result.stdout().contains("match_type: graph_node")),
+        () -> assertTrue(result.stdout().contains(
+            "fact_id: endpoint:com.example.web.OrderController#getOrder")),
+        () -> assertTrue(result.stdout().contains(
+            "node_id: node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder")),
+        () -> assertTrue(result.stdout().contains("evidence_id: ev:endpoint:mapping")),
+        () -> assertTrue(result.stdout().contains("matched_field: spec_path")),
+        () -> assertTrue(result.stdout().contains("1. not_represented")),
+        () -> assertTrue(result.stdout().contains(
+            "changed_file: src/main/java/com/example/Missing.java")),
+        () -> assertTrue(result.stdout().contains("code: duplicate_changed_file")),
+        () -> assertTrue(result.stdout().contains(
+            "no graph projection, raw diff parsing, Git inspection, source readback")),
+        () -> assertFalse(result.stdout().contains("graph_neighbor")),
+        () -> assertFalse(result.stdout().contains("planning_hint")),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_SOURCE_READBACK_SECRET")),
+        () -> assertFalse(result.stdout().contains(repositoryRoot.toString())),
+        () -> assertEquals(projectMapBefore, Files.readString(artifactRoot.resolve("project-map.json"))),
+        () -> assertEquals(evidenceBefore, Files.readString(artifactRoot.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(graphBefore, Files.readString(artifactRoot.resolve("project-graph.json"))),
+        () -> assertEquals("cache metadata", Files.readString(artifactRoot.resolve("cache/v1/manifest.json"))),
+        () -> assertFalse(Files.exists(artifactRoot.resolve("impact-report.json"))),
+        () -> assertEquals(
+            "password=FAKE_IMPACT_SOURCE_READBACK_SECRET",
+            Files.readString(sourceFile)));
+  }
+
+  @Test
+  void queryImpactRejectsUnsafeChangedFileInputsBeforeArtifactLoading() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Files.createDirectories(repositoryRoot);
+    List<String> invalidInputs = List.of(
+        tempDir.resolve("repo/src/main/java/Foo.java").toString(),
+        "./src/main/java/Foo.java",
+        "../src/main/java/Foo.java",
+        "src/../Foo.java",
+        "src\\main\\java\\Foo.java",
+        "https://example.com/Foo.java",
+        "",
+        ".project-memory/project-map.json",
+        "*.java",
+        "src/main/java/[A-Z]+.java",
+        "^src/main/java/Foo.java$",
+        "diff --git a/src/Foo.java b/src/Foo.java\nindex 123..456");
+
+    for (String invalidInput : invalidInputs) {
+      CliResult result = runCli(
+          "query",
+          repositoryRoot.toString(),
+          "impact",
+          "--files",
+          invalidInput);
+      assertAll(
+          () -> assertEquals(2, result.exitCode(), "input=" + invalidInput),
+          () -> assertTrue(result.stdout().isEmpty(), "input=" + invalidInput),
+          () -> assertTrue(result.stderr().contains("Invalid changed-file path."), "input=" + invalidInput),
+          () -> assertTrue(result.stderr().contains("Usage: agent-project-memory query"), "input=" + invalidInput),
+          () -> assertFalse(Files.exists(repositoryRoot.resolve(".project-memory")), "input=" + invalidInput));
+    }
+  }
+
+  @Test
+  void queryImpactRejectsForbiddenAndUnsupportedArgumentShapesBeforeArtifactLoading()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Files.createDirectories(repositoryRoot);
+
+    CliResult topLevel = runCli("impact", "--files", "src/main/java/Foo.java");
+    CliResult fromGitDiff = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--from-git-diff");
+    CliResult missingFiles = runCli("query", repositoryRoot.toString(), "impact");
+    CliResult emptyFiles = runCli("query", repositoryRoot.toString(), "impact", "--files");
+    CliResult duplicateFilesFlag = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/java/Foo.java",
+        "--files",
+        "src/main/java/Bar.java");
+
+    assertAll(
+        () -> assertEquals(2, topLevel.exitCode()),
+        () -> assertTrue(topLevel.stderr().contains("Unknown command.")),
+        () -> assertEquals(2, fromGitDiff.exitCode()),
+        () -> assertTrue(fromGitDiff.stderr().contains("Malformed impact query command.")),
+        () -> assertEquals(2, missingFiles.exitCode()),
+        () -> assertTrue(missingFiles.stderr().contains("Malformed impact query command.")),
+        () -> assertEquals(2, emptyFiles.exitCode()),
+        () -> assertTrue(emptyFiles.stderr().contains("Missing changed-file value.")),
+        () -> assertEquals(2, duplicateFilesFlag.exitCode()),
+        () -> assertTrue(duplicateFilesFlag.stderr().contains("Duplicate --files flag.")),
+        () -> assertFalse(Files.exists(repositoryRoot.resolve(".project-memory"))));
+  }
+
+  @Test
+  void queryImpactFailsClosedForMissingUnsupportedAndInvalidArtifacts() throws Exception {
+    Path missingGraphRoot = tempDir.resolve("missing-graph/.project-memory");
+    writeBaseArtifacts(missingGraphRoot);
+
+    Path adapterRoot = tempDir.resolve("adapter/.project-memory");
+    writeArtifacts(adapterRoot, "{\"schema_version\":\"2.0\",\"adapter_context\":[]}\n");
+    writeValidGraph(adapterRoot);
+
+    Path danglingRoot = tempDir.resolve("dangling/.project-memory");
+    writeArtifacts(danglingRoot, """
+        {
+          "schema_version": "1.0",
+          "endpoints": [
+            {
+              "id": "endpoint:missing",
+              "evidence_ids": ["ev:missing"]
+            }
+          ]
+        }
+        """);
+    writeValidGraph(danglingRoot);
+
+    Path duplicateRoot = tempDir.resolve("duplicate/.project-memory");
+    writeArtifacts(duplicateRoot, """
+        {
+          "schema_version": "1.0",
+          "endpoints": [
+            {
+              "id": "endpoint:duplicate",
+              "evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+            },
+            {
+              "id": "endpoint:duplicate",
+              "evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+            }
+          ]
+        }
+        """);
+    writeValidGraph(duplicateRoot);
+
+    CliResult missingGraph = runCli(
+        "query",
+        missingGraphRoot.getParent().toString(),
+        "impact",
+        "--files",
+        "pom.xml");
+    CliResult adapter = runCli(
+        "query",
+        adapterRoot.getParent().toString(),
+        "impact",
+        "--files",
+        "pom.xml");
+    CliResult dangling = runCli(
+        "query",
+        danglingRoot.getParent().toString(),
+        "impact",
+        "--files",
+        "pom.xml");
+    CliResult duplicate = runCli(
+        "query",
+        duplicateRoot.getParent().toString(),
+        "impact",
+        "--files",
+        "pom.xml");
+
+    assertAll(
+        () -> assertEquals(3, missingGraph.exitCode()),
+        () -> assertTrue(missingGraph.stderr().contains("Missing project-graph.json.")),
+        () -> assertEquals(3, adapter.exitCode()),
+        () -> assertTrue(adapter.stderr().contains("Unsupported project-map.json schema_version.")),
+        () -> assertEquals(3, dangling.exitCode()),
+        () -> assertTrue(dangling.stderr().contains("Invalid project-map.json evidence reference.")),
+        () -> assertEquals(3, duplicate.exitCode()),
+        () -> assertTrue(duplicate.stderr().contains("Duplicate generated fact id in project-map.json.")),
+        () -> assertTrue(missingGraph.stdout().isEmpty()),
+        () -> assertTrue(adapter.stdout().isEmpty()),
+        () -> assertTrue(dangling.stdout().isEmpty()),
+        () -> assertTrue(duplicate.stdout().isEmpty()));
+  }
+
+  @Test
+  void queryImpactCapsChangedFileInputsWithBoundedDiagnostic() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeImpactArtifacts(artifactRoot);
+    List<String> args = new ArrayList<>(List.of(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files"));
+    for (int index = 0; index < 257; index++) {
+      args.add("src/main/java/com/example/generated/File" + index + ".java");
+    }
+
+    CliResult result = runCli(args.toArray(String[]::new));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains("Changed files: 256")),
+        () -> assertTrue(result.stdout().contains(
+            "Results: direct_match=0, not_represented=256, diagnostic=1")),
+        () -> assertTrue(result.stdout().contains("code: input_cap_reached")),
+        () -> assertFalse(result.stdout().contains(repositoryRoot.toString())));
+  }
+
   private CliResult runCli(String... args) {
     StringWriter stdout = new StringWriter();
     StringWriter stderr = new StringWriter();
@@ -1354,6 +1599,161 @@ final class QueryCliTest {
           "warnings": []
         }
         """);
+  }
+
+  private void writeImpactArtifacts(Path artifactRoot) throws IOException {
+    writeArtifacts(artifactRoot, impactProjectMap(), impactEvidenceRecords());
+    Files.writeString(artifactRoot.resolve("project-graph.json"), impactGraph());
+  }
+
+  private String impactProjectMap() {
+    return """
+        {
+          "schema_version": "1.0",
+          "project": {
+            "modules": {
+              "items": [
+                {
+                  "module_id": "module:.",
+                  "module_path": ".",
+                  "pom_path": "pom.xml",
+                  "source_roots": ["src/main/java"],
+                  "test_roots": ["src/test/java"],
+                  "support_status": "supported",
+                  "declaration_kind": "scan_root",
+                  "declared_path": ".",
+                  "declaration_evidence_ids": [],
+                  "pom_evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+                }
+              ]
+            }
+          },
+          "endpoints": [
+            {
+              "id": "endpoint:com.example.web.OrderController#getOrder",
+              "module_id": "module:.",
+              "api_surface_category": "source_visible_spring_mvc_endpoint",
+              "controller_class": "com.example.web.OrderController",
+              "handler_method": "getOrder",
+              "http_methods": ["GET"],
+              "paths": ["/orders/{id}"],
+              "mapping_source": {
+                "kind": "direct_handler_method",
+                "binding": "direct",
+                "uncertainty": null,
+                "evidence_ids": ["ev:endpoint:mapping"]
+              },
+              "evidence_ids": ["ev:endpoint:controller", "ev:endpoint:mapping"]
+            }
+          ],
+          "api_surface": {
+            "openapi": {
+              "operations": {
+                "items": [
+                  {
+                    "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:post:/orders",
+                    "module_id": "module:.",
+                    "api_surface_category": "openapi_declared_operation",
+                    "spec_path": "src/main/resources/openapi.yml",
+                    "http_method": "POST",
+                    "path": "/orders",
+                    "operation_id": "createOrder",
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:operation"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """;
+  }
+
+  private String impactEvidenceRecords() {
+    return evidenceRecord(
+            "ev:pom.xml:1-1:build_file:pom.xml",
+            "build_file",
+            "pom.xml",
+            null,
+            null,
+            "pom.xml",
+            1,
+            1,
+            "<project>",
+            "high")
+        + evidenceRecord(
+            "ev:endpoint:controller",
+            "code_symbol",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            null,
+            "com.example.web.OrderController",
+            10,
+            10,
+            "class OrderController",
+            "high")
+        + evidenceRecord(
+            "ev:endpoint:mapping",
+            "annotation",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            "getOrder",
+            "@GetMapping",
+            12,
+            12,
+            "@GetMapping(\"/orders/{id}\")",
+            "high")
+        + evidenceRecord(
+            "ev:api:operation",
+            "api_spec",
+            "src/main/resources/openapi.yml",
+            null,
+            null,
+            "operation:post:/orders",
+            6,
+            12,
+            "post /orders",
+            "high");
+  }
+
+  private String impactGraph() {
+    return """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "kind": "endpoint",
+              "label": "GET /orders/{id}",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "id": "endpoint:com.example.web.OrderController#getOrder"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            },
+            {
+              "id": "node:api-operation:openapi_operation%3Amodule%3A.%3Aspec%3Asrc%2Fmain%2Fresources%2Fopenapi.yml%3Aoperation%3Apost%3A%2Forders",
+              "kind": "api_operation",
+              "label": "POST /orders",
+              "claim_category": "spec_backed",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "api_surface.openapi.operations.items",
+                "id": "openapi_operation:module:.:spec:src/main/resources/openapi.yml:operation:post:/orders"
+              },
+              "evidence_ids": ["ev:api:operation"]
+            }
+          ],
+          "edges": [],
+          "relation_statuses": [],
+          "warnings": []
+        }
+        """;
   }
 
   private void writeRelationGraph(Path artifactRoot) throws IOException {
