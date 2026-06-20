@@ -49,15 +49,15 @@ from existing member artifacts. It does not run child repository scans, mutate m
 behavior.
 The v2.6 design track accepts a first change-impact workflow boundary as a read-only
 single-repo query over existing no-adapter generated artifacts. Current development
-includes the `query <path> impact --files ...` direct mapping foundation for explicit
-repository-relative changed-file input, required `project-map.json`,
-`evidence-index.jsonl`, and `project-graph.json` artifacts, deterministic text output,
-direct matches, explicit `not_represented` rows, and bounded diagnostics. One-hop graph
-projection remains a later v2.6 implementation slice. Generated impact reports, raw
-diff ingestion, workspace impact, adapter-aware impact, runtime tracing, call graph,
-source/spec scoring, documentation freshness scoring, vulnerability claim,
-business-priority claim, and automatic code modification remain out of scope for the
-first foundation.
+includes the `query <path> impact --files ...` direct mapping and conservative one-hop
+projection implementation for explicit repository-relative changed-file input, required
+`project-map.json`, `evidence-index.jsonl`, and `project-graph.json` artifacts,
+deterministic text output, direct matches, graph neighbors, relation-status rows,
+low-confidence planning hints, explicit `not_represented` rows, and bounded
+diagnostics. Generated impact reports, raw diff ingestion, workspace impact,
+adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
+freshness scoring, vulnerability claim, business-priority claim, and automatic code
+modification remain out of scope for the first boundary.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and

@@ -20,6 +20,8 @@ import java.util.TreeSet;
 public final class ProjectMemoryImpactRenderer {
   private static final int MAX_CHANGED_FILES = 256;
   private static final int MAX_DIRECT_MATCHES = 500;
+  private static final int MAX_GRAPH_PROJECTION_ROWS = 1000;
+  private static final int MAX_PLANNING_HINTS = 256;
   private static final int MAX_DIAGNOSTICS = 256;
   private static final int MAX_TEXT_CHARS = 4096;
   private static final Set<String> RAW_DIFF_PREFIXES = Set.of(
@@ -96,12 +98,19 @@ public final class ProjectMemoryImpactRenderer {
           "Only the first " + MAX_DIRECT_MATCHES + " direct matches were rendered."));
       directMatches = directMatches.subList(0, MAX_DIRECT_MATCHES);
     }
+
+    ImpactProjection projection = projectImpact(index, directMatches);
+    diagnostics.addAll(projection.diagnostics());
     diagnostics = boundedDiagnostics(diagnostics);
 
     List<String> lines = new ArrayList<>();
     appendHeader(lines, artifacts, input.changedFiles().size(), directMatches.size(),
-        notRepresented.size(), diagnostics.size());
+        projection.graphNeighbors().size(), projection.relationStatuses().size(),
+        projection.planningHints().size(), notRepresented.size(), diagnostics.size());
     appendDirectMatches(lines, directMatches);
+    appendGraphNeighbors(lines, projection.graphNeighbors());
+    appendRelationStatuses(lines, projection.relationStatuses());
+    appendPlanningHints(lines, projection.planningHints());
     appendNotRepresented(lines, notRepresented);
     appendDiagnostics(lines, diagnostics);
     appendBoundaries(lines);
@@ -134,8 +143,10 @@ public final class ProjectMemoryImpactRenderer {
         addMatch(matches, entry.getKey(), DirectMatchRow.fact(entry.getKey(), fact));
       }
     }
-    collectGraphNodeMatches(artifacts, projectMapIndex, matches);
-    return new ImpactIndex(freeze(matches));
+    GraphIndex graphIndex = collectGraphIndex(artifacts, projectMapIndex, matches);
+    Map<String, List<PlanningHintMatch>> planningHintsBySubjectId =
+        collectPlanningHints(artifacts.projectMap());
+    return new ImpactIndex(freeze(matches), graphIndex, planningHintsBySubjectId);
   }
 
   private ProjectMapIndex collectProjectMapIndex(
@@ -238,10 +249,11 @@ public final class ProjectMemoryImpactRenderer {
     }
   }
 
-  private void collectGraphNodeMatches(
+  private GraphIndex collectGraphIndex(
       ProjectMemoryArtifacts artifacts,
       ProjectMapIndex projectMapIndex,
       Map<String, LinkedHashSet<DirectMatchRow>> matches) throws QueryArtifactException {
+    Map<String, JsonNode> nodesById = new HashMap<>();
     JsonNode nodes = artifacts.projectGraph().path("nodes");
     if (!nodes.isArray()) {
       throw new QueryArtifactException("Malformed project-graph.json.");
@@ -249,6 +261,9 @@ public final class ProjectMemoryImpactRenderer {
     for (int index = 0; index < nodes.size(); index++) {
       JsonNode node = nodes.get(index);
       String nodeId = requiredText(node, "id", "Malformed project-graph.json.");
+      if (nodesById.putIfAbsent(nodeId, node) != null) {
+        throw new QueryArtifactException("Duplicate graph id in project-graph.json.");
+      }
       List<String> evidenceIds = collectGraphEvidenceIds(node, artifacts);
       Set<String> sourcePaths = new TreeSet<>();
       for (String evidenceId : evidenceIds) {
@@ -272,6 +287,263 @@ public final class ProjectMemoryImpactRenderer {
                 evidenceIds));
       }
     }
+
+    Map<String, List<JsonNode>> edgesByNodeId = new HashMap<>();
+    JsonNode edges = artifacts.projectGraph().path("edges");
+    if (!edges.isArray()) {
+      throw new QueryArtifactException("Malformed project-graph.json.");
+    }
+    for (JsonNode edge : edges) {
+      String sourceId = requiredText(edge, "source_id", "Malformed project-graph.json.");
+      String targetId = requiredText(edge, "target_id", "Malformed project-graph.json.");
+      edgesByNodeId.computeIfAbsent(sourceId, ignored -> new ArrayList<>()).add(edge);
+      edgesByNodeId.computeIfAbsent(targetId, ignored -> new ArrayList<>()).add(edge);
+    }
+
+    Map<String, List<JsonNode>> relationStatusesByNodeId = new HashMap<>();
+    JsonNode statuses = artifacts.projectGraph().path("relation_statuses");
+    if (!statuses.isArray()) {
+      throw new QueryArtifactException("Malformed project-graph.json.");
+    }
+    for (JsonNode status : statuses) {
+      String sourceId = textOrNull(status.path("source_id"));
+      String targetId = textOrNull(status.path("target_id"));
+      if (sourceId != null) {
+        relationStatusesByNodeId.computeIfAbsent(sourceId, ignored -> new ArrayList<>()).add(status);
+      }
+      if (targetId != null) {
+        relationStatusesByNodeId.computeIfAbsent(targetId, ignored -> new ArrayList<>()).add(status);
+      }
+    }
+    return new GraphIndex(
+        Map.copyOf(nodesById),
+        freezeJsonRows(edgesByNodeId),
+        freezeJsonRows(relationStatusesByNodeId));
+  }
+
+  private Map<String, List<PlanningHintMatch>> collectPlanningHints(JsonNode projectMap) {
+    JsonNode items = projectMap.at("/quality/change_risk_signals/items");
+    if (!items.isArray()) {
+      return Map.of();
+    }
+    Map<String, List<PlanningHintMatch>> bySubjectId = new HashMap<>();
+    for (int index = 0; index < items.size(); index++) {
+      JsonNode item = items.get(index);
+      String id = textOrNull(item.path("id"));
+      String subjectId = textOrNull(item.path("subject_id"));
+      if (id == null || subjectId == null) {
+        continue;
+      }
+      PlanningHintMatch hint = new PlanningHintMatch(
+          id,
+          subjectId,
+          textOrNull(item.path("subject_kind")),
+          textOrNull(item.path("subject_name")),
+          textOrNull(item.path("signal")),
+          textOrNull(item.path("status")),
+          textOrNull(item.path("risk_basis")),
+          textOrNull(item.path("confidence")),
+          textOrNull(item.path("uncertainty")),
+          "project-map.json#/quality/change_risk_signals/items/" + index,
+          jsonStringArray(item.path("evidence_ids")));
+      bySubjectId.computeIfAbsent(subjectId, ignored -> new ArrayList<>()).add(hint);
+    }
+    return freezePlanningHints(bySubjectId);
+  }
+
+  private ImpactProjection projectImpact(ImpactIndex index, List<DirectMatchRow> directMatches) {
+    TreeSet<String> startNodeIds = new TreeSet<>();
+    TreeSet<String> directSubjectIds = new TreeSet<>();
+    for (DirectMatchRow directMatch : directMatches) {
+      if (directMatch.nodeId() != null) {
+        startNodeIds.add(directMatch.nodeId());
+      }
+      if (directMatch.factId() != null) {
+        directSubjectIds.add(directMatch.factId());
+      }
+      if (directMatch.sourceRefId() != null) {
+        directSubjectIds.add(directMatch.sourceRefId());
+      }
+    }
+
+    List<GraphNeighborRow> graphNeighbors = new ArrayList<>();
+    List<RelationStatusRow> relationStatuses = new ArrayList<>();
+    for (String startNodeId : startNodeIds) {
+      for (JsonNode edge : index.graphIndex().edgesByNodeId()
+          .getOrDefault(startNodeId, List.of())) {
+        graphNeighbors.add(graphNeighborRow(index.graphIndex(), startNodeId, edge));
+      }
+      for (JsonNode status : index.graphIndex().relationStatusesByNodeId()
+          .getOrDefault(startNodeId, List.of())) {
+        relationStatuses.add(relationStatusRow(startNodeId, status));
+      }
+    }
+
+    graphNeighbors = graphNeighbors.stream()
+        .distinct()
+        .sorted(GraphNeighborRow.ORDERING)
+        .toList();
+    relationStatuses = relationStatuses.stream()
+        .distinct()
+        .sorted(RelationStatusRow.ORDERING)
+        .toList();
+
+    List<DiagnosticRow> diagnostics = new ArrayList<>();
+    ProjectionCapResult projectionCap = capProjectionRows(graphNeighbors, relationStatuses);
+    graphNeighbors = projectionCap.graphNeighbors();
+    relationStatuses = projectionCap.relationStatuses();
+    diagnostics.addAll(projectionCap.diagnostics());
+
+    List<PlanningHintRow> planningHints = planningHints(
+        index,
+        directSubjectIds,
+        startNodeIds,
+        graphNeighbors);
+    if (planningHints.size() > MAX_PLANNING_HINTS) {
+      diagnostics.add(new DiagnosticRow(
+          "planning_hint_cap_reached",
+          null,
+          "Only the first " + MAX_PLANNING_HINTS + " planning hints were rendered."));
+      planningHints = planningHints.subList(0, MAX_PLANNING_HINTS);
+    }
+
+    return new ImpactProjection(
+        List.copyOf(graphNeighbors),
+        List.copyOf(relationStatuses),
+        List.copyOf(planningHints),
+        List.copyOf(diagnostics));
+  }
+
+  private ProjectionCapResult capProjectionRows(
+      List<GraphNeighborRow> graphNeighbors,
+      List<RelationStatusRow> relationStatuses) {
+    List<ProjectionCandidate> candidates = new ArrayList<>();
+    for (GraphNeighborRow row : graphNeighbors) {
+      candidates.add(ProjectionCandidate.graphNeighbor(row));
+    }
+    for (RelationStatusRow row : relationStatuses) {
+      candidates.add(ProjectionCandidate.relationStatus(row));
+    }
+    candidates = candidates.stream()
+        .sorted(ProjectionCandidate.ORDERING)
+        .toList();
+    if (candidates.size() <= MAX_GRAPH_PROJECTION_ROWS) {
+      return new ProjectionCapResult(graphNeighbors, relationStatuses, List.of());
+    }
+
+    List<GraphNeighborRow> cappedNeighbors = new ArrayList<>();
+    List<RelationStatusRow> cappedStatuses = new ArrayList<>();
+    for (ProjectionCandidate candidate : candidates.subList(0, MAX_GRAPH_PROJECTION_ROWS)) {
+      if (candidate.graphNeighbor() != null) {
+        cappedNeighbors.add(candidate.graphNeighbor());
+      } else {
+        cappedStatuses.add(candidate.relationStatus());
+      }
+    }
+    return new ProjectionCapResult(
+        cappedNeighbors.stream().sorted(GraphNeighborRow.ORDERING).toList(),
+        cappedStatuses.stream().sorted(RelationStatusRow.ORDERING).toList(),
+        List.of(new DiagnosticRow(
+            "graph_projection_cap_reached",
+            null,
+            "Only the first " + MAX_GRAPH_PROJECTION_ROWS + " graph projection rows were rendered.")));
+  }
+
+  private List<PlanningHintRow> planningHints(
+      ImpactIndex index,
+      Set<String> directSubjectIds,
+      Set<String> startNodeIds,
+      List<GraphNeighborRow> graphNeighbors) {
+    TreeSet<String> subjectIds = new TreeSet<>(directSubjectIds);
+    Map<String, TreeSet<String>> tiedNodeIdsBySubjectId = new HashMap<>();
+    for (String startNodeId : startNodeIds) {
+      addNodeSubject(index.graphIndex(), subjectIds, tiedNodeIdsBySubjectId, startNodeId);
+    }
+    for (GraphNeighborRow graphNeighbor : graphNeighbors) {
+      addNodeSubject(index.graphIndex(), subjectIds, tiedNodeIdsBySubjectId,
+          graphNeighbor.neighborNodeId());
+    }
+
+    Map<String, PlanningHintRow> hintsById = new HashMap<>();
+    for (String subjectId : subjectIds) {
+      for (PlanningHintMatch hint : index.planningHintsBySubjectId()
+          .getOrDefault(subjectId, List.of())) {
+        hintsById.putIfAbsent(hint.id(), PlanningHintRow.from(
+            hint,
+            tiedNodeIdsBySubjectId.getOrDefault(subjectId, new TreeSet<>())));
+      }
+    }
+    return hintsById.values().stream()
+        .sorted(PlanningHintRow.ORDERING)
+        .toList();
+  }
+
+  private void addNodeSubject(
+      GraphIndex graphIndex,
+      Set<String> subjectIds,
+      Map<String, TreeSet<String>> tiedNodeIdsBySubjectId,
+      String nodeId) {
+    if (nodeId == null) {
+      return;
+    }
+    subjectIds.add(nodeId);
+    tiedNodeIdsBySubjectId.computeIfAbsent(nodeId, ignored -> new TreeSet<>()).add(nodeId);
+    String sourceRefId = nodeSourceRefId(graphIndex, nodeId);
+    if (sourceRefId != null) {
+      subjectIds.add(sourceRefId);
+      tiedNodeIdsBySubjectId.computeIfAbsent(sourceRefId, ignored -> new TreeSet<>()).add(nodeId);
+    }
+  }
+
+  private GraphNeighborRow graphNeighborRow(
+      GraphIndex graphIndex,
+      String startNodeId,
+      JsonNode edge) {
+    String sourceId = textOrNull(edge.path("source_id"));
+    String targetId = textOrNull(edge.path("target_id"));
+    String neighborNodeId = startNodeId.equals(sourceId) ? targetId : sourceId;
+    JsonNode neighborNode = graphIndex.nodesById().get(neighborNodeId);
+    return new GraphNeighborRow(
+        startNodeId,
+        relationDirection(sourceId, targetId, startNodeId),
+        textOrNull(edge.path("id")),
+        textOrNull(edge.path("type")),
+        sourceId,
+        targetId,
+        neighborNodeId,
+        textOrNull(neighborNode == null ? null : neighborNode.path("kind")),
+        textOrNull(neighborNode == null ? null : neighborNode.path("label")),
+        textOrNull(neighborNode == null ? null : neighborNode.at("/source_ref/id")),
+        textOrNull(edge.path("claim_category")),
+        textOrNull(edge.path("relation_status")),
+        textOrNull(edge.path("support_type")),
+        graphNeighborConfidence(edge),
+        textOrNull(edge.path("confidence")),
+        textOrNull(edge.path("uncertainty")),
+        attributes(edge.path("relation_attributes")),
+        derivation(edge.path("derivation")),
+        jsonStringArray(edge.path("evidence_ids")));
+  }
+
+  private RelationStatusRow relationStatusRow(String startNodeId, JsonNode status) {
+    String sourceId = textOrNull(status.path("source_id"));
+    String targetId = textOrNull(status.path("target_id"));
+    return new RelationStatusRow(
+        startNodeId,
+        relationDirection(sourceId, targetId, startNodeId),
+        textOrNull(status.path("id")),
+        textOrNull(status.path("relation_family")),
+        sourceId,
+        targetId,
+        textOrNull(status.path("claim_category")),
+        textOrNull(status.path("relation_status")),
+        textOrNull(status.path("support_type")),
+        "low",
+        textOrNull(status.path("confidence")),
+        textOrNull(status.path("uncertainty")),
+        attributes(status.path("relation_attributes")),
+        derivation(status.path("derivation")),
+        jsonStringArray(status.path("evidence_ids")));
   }
 
   private Optional<String> factId(String pointer, JsonNode node) {
@@ -423,11 +695,149 @@ public final class ProjectMemoryImpactRenderer {
         || value.endsWith("$");
   }
 
+  private Map<String, List<JsonNode>> freezeJsonRows(Map<String, List<JsonNode>> rowsByNodeId) {
+    Map<String, List<JsonNode>> result = new HashMap<>();
+    for (Map.Entry<String, List<JsonNode>> entry : rowsByNodeId.entrySet()) {
+      result.put(entry.getKey(), entry.getValue().stream()
+          .sorted(Comparator.comparing(row -> textOrEmpty(row.path("id"))))
+          .toList());
+    }
+    return Map.copyOf(result);
+  }
+
+  private Map<String, List<PlanningHintMatch>> freezePlanningHints(
+      Map<String, List<PlanningHintMatch>> hintsBySubjectId) {
+    Map<String, List<PlanningHintMatch>> result = new HashMap<>();
+    for (Map.Entry<String, List<PlanningHintMatch>> entry : hintsBySubjectId.entrySet()) {
+      result.put(entry.getKey(), entry.getValue().stream()
+          .sorted(PlanningHintMatch.ORDERING)
+          .toList());
+    }
+    return Map.copyOf(result);
+  }
+
+  private List<String> jsonStringArray(JsonNode values) {
+    if (!values.isArray()) {
+      return List.of();
+    }
+    LinkedHashSet<String> result = new LinkedHashSet<>();
+    for (JsonNode value : values) {
+      if (value.isTextual() && !value.asText().isBlank()) {
+        result.add(value.asText());
+      }
+    }
+    return List.copyOf(result);
+  }
+
+  private String nodeSourceRefId(GraphIndex graphIndex, String nodeId) {
+    JsonNode node = graphIndex.nodesById().get(nodeId);
+    return textOrNull(node == null ? null : node.at("/source_ref/id"));
+  }
+
+  private String relationDirection(String sourceId, String targetId, String selectedNodeId) {
+    boolean outgoing = selectedNodeId.equals(sourceId);
+    boolean incoming = selectedNodeId.equals(targetId);
+    if (incoming && outgoing) {
+      return "self";
+    }
+    if (incoming) {
+      return "incoming";
+    }
+    if (outgoing) {
+      return "outgoing";
+    }
+    return "unknown";
+  }
+
+  private String graphNeighborConfidence(JsonNode edge) {
+    String type = textOrNull(edge.path("type"));
+    String claimCategory = textOrNull(edge.path("claim_category"));
+    String supportType = textOrNull(edge.path("support_type"));
+    String uncertainty = textOrNull(edge.path("uncertainty"));
+    if ("owns".equals(type)
+        || "declares".equals(type)
+        || "structural".equals(claimCategory)
+        || "project_map_derivation".equals(supportType)
+        || "uncertain".equals(claimCategory)
+        || "document_reference".equals(type)
+        || uncertainty != null) {
+      return "low";
+    }
+    return "medium";
+  }
+
+  private String attributes(JsonNode attributes) {
+    if (!attributes.isObject()) {
+      return "{}";
+    }
+    TreeSet<String> values = new TreeSet<>();
+    Iterator<Map.Entry<String, JsonNode>> fields = attributes.fields();
+    while (fields.hasNext()) {
+      Map.Entry<String, JsonNode> field = fields.next();
+      values.add(safe(field.getKey()) + "=" + mapValueText(field.getKey(), field.getValue()));
+    }
+    return values.isEmpty() ? "{}" : String.join(", ", values);
+  }
+
+  private String derivation(JsonNode derivation) {
+    if (!derivation.isObject()) {
+      return "null";
+    }
+    return "kind="
+        + valueText(derivation.path("kind"), false)
+        + " artifact="
+        + valueText(derivation.path("artifact"), false)
+        + " section="
+        + valueText(derivation.path("section"), false)
+        + " fields="
+        + arrayText(derivation.path("fields"))
+        + " (not evidence)";
+  }
+
+  private String arrayText(JsonNode node) {
+    if (!node.isArray()) {
+      return "null";
+    }
+    List<String> values = new ArrayList<>();
+    for (JsonNode value : node) {
+      values.add(valueText(value, false));
+    }
+    return values.isEmpty() ? "none" : String.join(", ", values);
+  }
+
+  private String mapValueText(String key, JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    String raw = node.isTextual() || node.isNumber() || node.isBoolean()
+        ? node.asText()
+        : node.toString();
+    return safe(OutputRedactor.redactMapValue(key, raw));
+  }
+
+  private String valueText(JsonNode node, boolean redact) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+      return safe(node.asText(), redact);
+    }
+    return safe(node.toString(), redact);
+  }
+
+  private String textOrEmpty(JsonNode node) {
+    String value = textOrNull(node);
+    return value == null ? "" : value;
+  }
+
   private void appendHeader(
       List<String> lines,
       ProjectMemoryArtifacts artifacts,
       int changedFileCount,
       int directMatchCount,
+      int graphNeighborCount,
+      int relationStatusCount,
+      int planningHintCount,
       int notRepresentedCount,
       int diagnosticCount) {
     lines.add("Query: impact");
@@ -442,6 +852,12 @@ public final class ProjectMemoryImpactRenderer {
     lines.add(
         "Results: direct_match="
             + directMatchCount
+            + ", graph_neighbor="
+            + graphNeighborCount
+            + ", relation_status="
+            + relationStatusCount
+            + ", planning_hint="
+            + planningHintCount
             + ", not_represented="
             + notRepresentedCount
             + ", diagnostic="
@@ -492,6 +908,97 @@ public final class ProjectMemoryImpactRenderer {
     lines.add("");
   }
 
+  private void appendGraphNeighbors(List<String> lines, List<GraphNeighborRow> rows) {
+    lines.add("Graph neighbors");
+    if (rows.isEmpty()) {
+      lines.add("No graph_neighbor rows.");
+      lines.add("");
+      return;
+    }
+    for (int index = 0; index < rows.size(); index++) {
+      GraphNeighborRow row = rows.get(index);
+      lines.add((index + 1) + ". graph_neighbor");
+      field(lines, "   ", "start_node_id", row.startNodeId(), true);
+      field(lines, "   ", "direction", row.direction(), false);
+      field(lines, "   ", "edge_id", row.edgeId(), true);
+      field(lines, "   ", "edge_type", row.edgeType(), false);
+      field(lines, "   ", "source_id", row.sourceId(), true);
+      field(lines, "   ", "target_id", row.targetId(), true);
+      field(lines, "   ", "neighbor_node_id", row.neighborNodeId(), true);
+      field(lines, "   ", "neighbor_kind", row.neighborKind(), false);
+      field(lines, "   ", "neighbor_label", row.neighborLabel(), true);
+      if (row.neighborSourceRefId() != null) {
+        field(lines, "   ", "neighbor_source_ref.id", row.neighborSourceRefId(), true);
+      }
+      field(lines, "   ", "claim_category", row.claimCategory(), false);
+      field(lines, "   ", "relation_status", row.relationStatus(), false);
+      field(lines, "   ", "support_type", row.supportType(), false);
+      field(lines, "   ", "confidence", row.confidence(), false);
+      field(lines, "   ", "graph_confidence", row.graphConfidence(), false);
+      field(lines, "   ", "uncertainty", row.uncertainty(), false);
+      field(lines, "   ", "relation_attributes", row.relationAttributes(), true);
+      field(lines, "   ", "derivation", row.derivation(), true);
+      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+    }
+    lines.add("");
+  }
+
+  private void appendRelationStatuses(List<String> lines, List<RelationStatusRow> rows) {
+    lines.add("Relation statuses");
+    if (rows.isEmpty()) {
+      lines.add("No relation_status rows.");
+      lines.add("");
+      return;
+    }
+    for (int index = 0; index < rows.size(); index++) {
+      RelationStatusRow row = rows.get(index);
+      lines.add((index + 1) + ". relation_status");
+      field(lines, "   ", "start_node_id", row.startNodeId(), true);
+      field(lines, "   ", "direction", row.direction(), false);
+      field(lines, "   ", "status_id", row.statusId(), true);
+      field(lines, "   ", "relation_family", row.relationFamily(), false);
+      field(lines, "   ", "source_id", row.sourceId(), true);
+      field(lines, "   ", "target_id", row.targetId(), true);
+      field(lines, "   ", "claim_category", row.claimCategory(), false);
+      field(lines, "   ", "relation_status", row.relationStatus(), false);
+      field(lines, "   ", "support_type", row.supportType(), false);
+      field(lines, "   ", "confidence", row.confidence(), false);
+      field(lines, "   ", "status_confidence", row.statusConfidence(), false);
+      field(lines, "   ", "uncertainty", row.uncertainty(), false);
+      field(lines, "   ", "relation_attributes", row.relationAttributes(), true);
+      field(lines, "   ", "derivation", row.derivation(), true);
+      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+    }
+    lines.add("");
+  }
+
+  private void appendPlanningHints(List<String> lines, List<PlanningHintRow> rows) {
+    lines.add("Planning hints");
+    if (rows.isEmpty()) {
+      lines.add("No planning_hint rows.");
+      lines.add("");
+      return;
+    }
+    for (int index = 0; index < rows.size(); index++) {
+      PlanningHintRow row = rows.get(index);
+      lines.add((index + 1) + ". planning_hint");
+      field(lines, "   ", "hint_id", row.id(), true);
+      field(lines, "   ", "subject_id", row.subjectId(), true);
+      field(lines, "   ", "subject_kind", row.subjectKind(), false);
+      field(lines, "   ", "subject_name", row.subjectName(), true);
+      field(lines, "   ", "signal", row.signal(), false);
+      field(lines, "   ", "status", row.status(), false);
+      field(lines, "   ", "risk_basis", row.riskBasis(), false);
+      field(lines, "   ", "confidence", row.confidence(), false);
+      field(lines, "   ", "source_confidence", row.sourceConfidence(), false);
+      field(lines, "   ", "uncertainty", row.uncertainty(), false);
+      field(lines, "   ", "tied_node_ids", joinIds(row.tiedNodeIds()), true);
+      field(lines, "   ", "navigation", row.navigation() + " (not evidence)", true);
+      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+    }
+    lines.add("");
+  }
+
   private void appendNotRepresented(List<String> lines, List<NotRepresentedRow> rows) {
     lines.add("Not represented");
     if (rows.isEmpty()) {
@@ -531,10 +1038,13 @@ public final class ProjectMemoryImpactRenderer {
     lines.add("Authority and boundaries");
     lines.add("- impact output is navigation and presentation only; it is not evidence.");
     lines.add("- direct_match rows are direct artifact references, not complete impact analysis.");
+    lines.add("- graph_neighbor and relation_status rows are one-hop graph orientation only.");
+    lines.add("- planning_hint rows are existing low-confidence quality/change-risk hints only.");
     lines.add("- not_represented means no accepted artifact directly referenced the changed file.");
-    lines.add("- no graph projection, raw diff parsing, Git inspection, source readback, scan refresh, "
-        + "generated artifact mutation, impact report write, repository write, network access, "
-        + "credential lookup, runtime tracing, call graph, vulnerability claim, "
+    lines.add("- no transitive graph traversal, raw diff parsing, Git inspection, source readback, "
+        + "scan refresh, generated artifact mutation, impact report write, repository write, "
+        + "network access, credential lookup, runtime tracing, call graph, coverage claim, "
+        + "correctness claim, vulnerability claim, production-impact claim, "
         + "business-priority claim, or automatic code modification.");
   }
 
@@ -663,7 +1173,53 @@ public final class ProjectMemoryImpactRenderer {
     }
   }
 
-  private record ImpactIndex(Map<String, List<DirectMatchRow>> matchesByPath) {
+  private record ImpactIndex(
+      Map<String, List<DirectMatchRow>> matchesByPath,
+      GraphIndex graphIndex,
+      Map<String, List<PlanningHintMatch>> planningHintsBySubjectId) {
+  }
+
+  private record GraphIndex(
+      Map<String, JsonNode> nodesById,
+      Map<String, List<JsonNode>> edgesByNodeId,
+      Map<String, List<JsonNode>> relationStatusesByNodeId) {
+  }
+
+  private record ImpactProjection(
+      List<GraphNeighborRow> graphNeighbors,
+      List<RelationStatusRow> relationStatuses,
+      List<PlanningHintRow> planningHints,
+      List<DiagnosticRow> diagnostics) {
+  }
+
+  private record ProjectionCapResult(
+      List<GraphNeighborRow> graphNeighbors,
+      List<RelationStatusRow> relationStatuses,
+      List<DiagnosticRow> diagnostics) {
+  }
+
+  private record ProjectionCandidate(
+      String category,
+      GraphNeighborRow graphNeighbor,
+      RelationStatusRow relationStatus) {
+    private static final Comparator<ProjectionCandidate> ORDERING = Comparator
+        .comparing(ProjectionCandidate::category)
+        .thenComparing(ProjectionCandidate::sortKey);
+
+    static ProjectionCandidate graphNeighbor(GraphNeighborRow row) {
+      return new ProjectionCandidate("graph_neighbor", row, null);
+    }
+
+    static ProjectionCandidate relationStatus(RelationStatusRow row) {
+      return new ProjectionCandidate("relation_status", null, row);
+    }
+
+    private String sortKey() {
+      if (graphNeighbor != null) {
+        return graphNeighbor.sortKey();
+      }
+      return relationStatus.sortKey();
+    }
   }
 
   private record ProjectMapIndex(
@@ -684,6 +1240,145 @@ public final class ProjectMemoryImpactRenderer {
   }
 
   private record NotRepresentedRow(String changedFile) {
+  }
+
+  private record GraphNeighborRow(
+      String startNodeId,
+      String direction,
+      String edgeId,
+      String edgeType,
+      String sourceId,
+      String targetId,
+      String neighborNodeId,
+      String neighborKind,
+      String neighborLabel,
+      String neighborSourceRefId,
+      String claimCategory,
+      String relationStatus,
+      String supportType,
+      String confidence,
+      String graphConfidence,
+      String uncertainty,
+      String relationAttributes,
+      String derivation,
+      List<String> evidenceIds) {
+    private static final Comparator<GraphNeighborRow> ORDERING = Comparator
+        .comparing(GraphNeighborRow::startNodeId)
+        .thenComparing(GraphNeighborRow::direction)
+        .thenComparing(row -> row.edgeId() == null ? "" : row.edgeId())
+        .thenComparing(row -> row.neighborNodeId() == null ? "" : row.neighborNodeId());
+
+    private GraphNeighborRow {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+
+    private String sortKey() {
+      return startNodeId
+          + "\u0000"
+          + direction
+          + "\u0000"
+          + (edgeId == null ? "" : edgeId)
+          + "\u0000"
+          + (neighborNodeId == null ? "" : neighborNodeId);
+    }
+  }
+
+  private record RelationStatusRow(
+      String startNodeId,
+      String direction,
+      String statusId,
+      String relationFamily,
+      String sourceId,
+      String targetId,
+      String claimCategory,
+      String relationStatus,
+      String supportType,
+      String confidence,
+      String statusConfidence,
+      String uncertainty,
+      String relationAttributes,
+      String derivation,
+      List<String> evidenceIds) {
+    private static final Comparator<RelationStatusRow> ORDERING = Comparator
+        .comparing(RelationStatusRow::startNodeId)
+        .thenComparing(RelationStatusRow::direction)
+        .thenComparing(row -> row.statusId() == null ? "" : row.statusId());
+
+    private RelationStatusRow {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+
+    private String sortKey() {
+      return startNodeId
+          + "\u0000"
+          + direction
+          + "\u0000"
+          + (statusId == null ? "" : statusId);
+    }
+  }
+
+  private record PlanningHintMatch(
+      String id,
+      String subjectId,
+      String subjectKind,
+      String subjectName,
+      String signal,
+      String status,
+      String riskBasis,
+      String sourceConfidence,
+      String uncertainty,
+      String navigation,
+      List<String> evidenceIds) {
+    private static final Comparator<PlanningHintMatch> ORDERING = Comparator
+        .comparing(PlanningHintMatch::subjectId)
+        .thenComparing(row -> row.signal() == null ? "" : row.signal())
+        .thenComparing(PlanningHintMatch::id);
+
+    private PlanningHintMatch {
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+  }
+
+  private record PlanningHintRow(
+      String id,
+      String subjectId,
+      String subjectKind,
+      String subjectName,
+      String signal,
+      String status,
+      String riskBasis,
+      String confidence,
+      String sourceConfidence,
+      String uncertainty,
+      String navigation,
+      List<String> tiedNodeIds,
+      List<String> evidenceIds) {
+    private static final Comparator<PlanningHintRow> ORDERING = Comparator
+        .comparing(PlanningHintRow::subjectId)
+        .thenComparing(row -> row.signal() == null ? "" : row.signal())
+        .thenComparing(PlanningHintRow::id);
+
+    private PlanningHintRow {
+      tiedNodeIds = List.copyOf(tiedNodeIds);
+      evidenceIds = List.copyOf(evidenceIds);
+    }
+
+    static PlanningHintRow from(PlanningHintMatch hint, Set<String> tiedNodeIds) {
+      return new PlanningHintRow(
+          hint.id(),
+          hint.subjectId(),
+          hint.subjectKind(),
+          hint.subjectName(),
+          hint.signal(),
+          hint.status(),
+          hint.riskBasis(),
+          "low",
+          hint.sourceConfidence(),
+          hint.uncertainty(),
+          hint.navigation(),
+          new ArrayList<>(new TreeSet<>(tiedNodeIds)),
+          hint.evidenceIds());
+    }
   }
 
   private record DirectMatchRow(

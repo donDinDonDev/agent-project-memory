@@ -22,8 +22,14 @@ architecture documents.
   `project-graph.json` artifacts, with explicit repository-relative changed-file input
   validation, direct matches to existing evidence/source/fact/graph references,
   `not_represented` rows, bounded diagnostics, no source readback, no scan refresh, no
-  generated artifact mutation, no impact report, no Git inspection, and no graph
-  projection beyond direct mapping.
+  generated artifact mutation, no impact report, and no Git inspection.
+- Implemented conservative one-hop impact projection for `query <path> impact --files
+  ...`, rendering graph neighbors, relation-status rows, and low-confidence
+  quality/change-risk planning hints from existing `project-map.json` and
+  `project-graph.json` records without adding stable JSON output, generated impact
+  reports, raw diff handling, workspace impact, adapter-aware impact, source readback,
+  scoring claims, vulnerability claims, business-priority claims, or code-change
+  authority.
 
 ## [2.5.0] - 2026-06-20
 

@@ -1267,7 +1267,7 @@ final class QueryCliTest {
         () -> assertTrue(result.stdout().contains(
             "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=4, project-graph.json graph_schema_version=1.0")),
         () -> assertTrue(result.stdout().contains(
-            "Results: direct_match=8, not_represented=1, diagnostic=1")),
+            "Results: direct_match=8, graph_neighbor=0, relation_status=0, planning_hint=0, not_represented=1, diagnostic=1")),
         () -> assertTrue(result.stdout().contains("1. direct_match")),
         () -> assertTrue(result.stdout().contains("match_type: evidence_path")),
         () -> assertTrue(result.stdout().contains("match_type: fact_evidence_path")),
@@ -1284,9 +1284,11 @@ final class QueryCliTest {
             "changed_file: src/main/java/com/example/Missing.java")),
         () -> assertTrue(result.stdout().contains("code: duplicate_changed_file")),
         () -> assertTrue(result.stdout().contains(
-            "no graph projection, raw diff parsing, Git inspection, source readback")),
-        () -> assertFalse(result.stdout().contains("graph_neighbor")),
-        () -> assertFalse(result.stdout().contains("planning_hint")),
+            "No graph_neighbor rows.")),
+        () -> assertTrue(result.stdout().contains("No relation_status rows.")),
+        () -> assertTrue(result.stdout().contains("No planning_hint rows.")),
+        () -> assertTrue(result.stdout().contains(
+            "no transitive graph traversal, raw diff parsing, Git inspection, source readback")),
         () -> assertFalse(result.stdout().contains("FAKE_IMPACT_SOURCE_READBACK_SECRET")),
         () -> assertFalse(result.stdout().contains(repositoryRoot.toString())),
         () -> assertEquals(projectMapBefore, Files.readString(artifactRoot.resolve("project-map.json"))),
@@ -1297,6 +1299,62 @@ final class QueryCliTest {
         () -> assertEquals(
             "password=FAKE_IMPACT_SOURCE_READBACK_SECRET",
             Files.readString(sourceFile)));
+  }
+
+  @Test
+  void queryImpactProjectsOneHopGraphNeighborsRelationStatusesAndPlanningHints()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeImpactProjectionArtifacts(artifactRoot);
+    Path sourceFile = repositoryRoot.resolve("src/main/java/com/example/web/OrderController.java");
+    Files.createDirectories(sourceFile.getParent());
+    Files.writeString(sourceFile, "secret=FAKE_IMPACT_PROJECTION_SOURCE_READBACK_SECRET");
+    String projectMapBefore = Files.readString(artifactRoot.resolve("project-map.json"));
+    String evidenceBefore = Files.readString(artifactRoot.resolve("evidence-index.jsonl"));
+    String graphBefore = Files.readString(artifactRoot.resolve("project-graph.json"));
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/java/com/example/web/OrderController.java");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains(
+            "Results: direct_match=5, graph_neighbor=2, relation_status=1, planning_hint=1, not_represented=0, diagnostic=0")),
+        () -> assertTrue(result.stdout().contains("1. graph_neighbor")),
+        () -> assertTrue(result.stdout().contains("edge_type: declares")),
+        () -> assertTrue(result.stdout().contains("neighbor_node_id: node:type:com.example.web.OrderController")),
+        () -> assertTrue(result.stdout().contains("confidence: low")),
+        () -> assertTrue(result.stdout().contains("graph_confidence: high")),
+        () -> assertTrue(result.stdout().contains("edge_type: tested_subject")),
+        () -> assertTrue(result.stdout().contains("neighbor_node_id: node:test:com.example.web.OrderControllerTest")),
+        () -> assertTrue(result.stdout().contains("confidence: medium")),
+        () -> assertTrue(result.stdout().contains("1. relation_status")),
+        () -> assertTrue(result.stdout().contains("relation_family: tested_subject")),
+        () -> assertTrue(result.stdout().contains("uncertainty: no_supported_subject_signal")),
+        () -> assertTrue(result.stdout().contains("1. planning_hint")),
+        () -> assertTrue(result.stdout().contains("signal: spring_service_change_surface")),
+        () -> assertTrue(result.stdout().contains("risk_basis: source_visible_service_stereotype")),
+        () -> assertTrue(result.stdout().contains(
+            "tied_node_ids: node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder")),
+        () -> assertTrue(result.stdout().contains("No not_represented files.")),
+        () -> assertTrue(result.stdout().contains("No diagnostics.")),
+        () -> assertTrue(result.stdout().contains(
+            "graph_neighbor and relation_status rows are one-hop graph orientation only")),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_PROJECTION_SOURCE_READBACK_SECRET")),
+        () -> assertFalse(result.stdout().contains(repositoryRoot.toString())),
+        () -> assertEquals(projectMapBefore, Files.readString(artifactRoot.resolve("project-map.json"))),
+        () -> assertEquals(evidenceBefore, Files.readString(artifactRoot.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(graphBefore, Files.readString(artifactRoot.resolve("project-graph.json"))),
+        () -> assertEquals(
+            "secret=FAKE_IMPACT_PROJECTION_SOURCE_READBACK_SECRET",
+            Files.readString(sourceFile)),
+        () -> assertFalse(Files.exists(artifactRoot.resolve("impact-report.json"))));
   }
 
   @Test
@@ -1472,9 +1530,34 @@ final class QueryCliTest {
         () -> assertTrue(result.stderr().isEmpty()),
         () -> assertTrue(result.stdout().contains("Changed files: 256")),
         () -> assertTrue(result.stdout().contains(
-            "Results: direct_match=0, not_represented=256, diagnostic=1")),
+            "Results: direct_match=0, graph_neighbor=0, relation_status=0, planning_hint=0, not_represented=256, diagnostic=1")),
         () -> assertTrue(result.stdout().contains("code: input_cap_reached")),
         () -> assertFalse(result.stdout().contains(repositoryRoot.toString())));
+  }
+
+  @Test
+  void queryImpactCapsGraphProjectionRowsWithBoundedDiagnostic() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeImpactProjectionCapArtifacts(artifactRoot, 1001);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/java/com/example/web/OrderController.java");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains(
+            "Results: direct_match=3, graph_neighbor=1000, relation_status=0, planning_hint=0, not_represented=0, diagnostic=1")),
+        () -> assertTrue(result.stdout().contains("code: graph_projection_cap_reached")),
+        () -> assertTrue(result.stdout().contains(
+            "Only the first 1000 graph projection rows were rendered.")),
+        () -> assertFalse(result.stdout().contains(repositoryRoot.toString())),
+        () -> assertFalse(Files.exists(artifactRoot.resolve("impact-report.json"))));
   }
 
   private CliResult runCli(String... args) {
@@ -1754,6 +1837,259 @@ final class QueryCliTest {
           "warnings": []
         }
         """;
+  }
+
+  private void writeImpactProjectionArtifacts(Path artifactRoot) throws IOException {
+    writeArtifacts(artifactRoot, impactProjectionProjectMap(), impactEvidenceRecords());
+    Files.writeString(artifactRoot.resolve("project-graph.json"), impactProjectionGraph());
+  }
+
+  private String impactProjectionProjectMap() {
+    return """
+        {
+          "schema_version": "1.0",
+          "endpoints": [
+            {
+              "id": "endpoint:com.example.web.OrderController#getOrder",
+              "module_id": "module:.",
+              "api_surface_category": "source_visible_spring_mvc_endpoint",
+              "controller_class": "com.example.web.OrderController",
+              "handler_method": "getOrder",
+              "http_methods": ["GET"],
+              "paths": ["/orders/{id}"],
+              "mapping_source": {
+                "kind": "direct_handler_method",
+                "binding": "direct",
+                "uncertainty": null,
+                "evidence_ids": ["ev:endpoint:mapping"]
+              },
+              "evidence_ids": ["ev:endpoint:controller", "ev:endpoint:mapping"]
+            }
+          ],
+          "quality": {
+            "change_risk_signals": {
+              "analysis_status": "analyzed",
+              "items": [
+                {
+                  "id": "quality:change-risk:endpoint:com.example.web.OrderController#getOrder",
+                  "module_id": "module:.",
+                  "signal": "spring_service_change_surface",
+                  "status": "planning_hint",
+                  "subject_kind": "endpoint",
+                  "subject_id": "endpoint:com.example.web.OrderController#getOrder",
+                  "subject_name": "GET /orders/{id}",
+                  "subject_class_name": "com.example.web.OrderController",
+                  "subject_member_name": "getOrder",
+                  "confidence": "low",
+                  "uncertainty": "source_visible_change_surface_only",
+                  "risk_basis": "source_visible_service_stereotype",
+                  "evidence_ids": ["ev:endpoint:mapping"]
+                }
+              ]
+            }
+          }
+        }
+        """;
+  }
+
+  private String impactProjectionGraph() {
+    return """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "kind": "endpoint",
+              "label": "GET /orders/{id}",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "id": "endpoint:com.example.web.OrderController#getOrder"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            },
+            {
+              "id": "node:type:com.example.web.OrderController",
+              "kind": "type",
+              "label": "OrderController",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": null,
+              "evidence_ids": []
+            },
+            {
+              "id": "node:test:com.example.web.OrderControllerTest",
+              "kind": "test",
+              "label": "OrderControllerTest",
+              "claim_category": "inferred",
+              "module_id": "module:.",
+              "source_ref": null,
+              "evidence_ids": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge:declares:node:type:com.example.web.OrderController:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "type": "declares",
+              "source_id": "node:type:com.example.web.OrderController",
+              "target_id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "fields": ["controller_class", "id"]
+              },
+              "evidence_ids": []
+            },
+            {
+              "id": "edge:tested_subject:node:test:com.example.web.OrderControllerTest:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "type": "tested_subject",
+              "source_id": "node:test:com.example.web.OrderControllerTest",
+              "target_id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "claim_category": "inferred",
+              "relation_status": "inferred",
+              "support_type": "inferred",
+              "confidence": "medium",
+              "uncertainty": null,
+              "relation_attributes": {
+                "relation_type": "test_import",
+                "subject_kind": "endpoint"
+              },
+              "derivation": null,
+              "evidence_ids": []
+            }
+          ],
+          "relation_statuses": [
+            {
+              "id": "relation-status:tested_subject:node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder:no_supported_subject_signal",
+              "relation_family": "tested_subject",
+              "source_id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "target_id": null,
+              "relation_status": "not_detected",
+              "support_type": "status_only",
+              "confidence": "low",
+              "uncertainty": "no_supported_subject_signal",
+              "relation_attributes": {
+                "relation_type": "not_detected"
+              },
+              "derivation": {
+                "kind": "project_map_relation_status",
+                "artifact": "project-map.json",
+                "section": "tests.items[].tested_subjects",
+                "fields": []
+              },
+              "evidence_ids": []
+            }
+          ],
+          "warnings": []
+        }
+        """;
+  }
+
+  private void writeImpactProjectionCapArtifacts(Path artifactRoot, int edgeCount)
+      throws IOException {
+    writeArtifacts(artifactRoot, """
+        {
+          "schema_version": "1.0",
+          "endpoints": [
+            {
+              "id": "endpoint:com.example.web.OrderController#getOrder",
+              "module_id": "module:.",
+              "evidence_ids": ["ev:endpoint:mapping"]
+            }
+          ]
+        }
+        """, evidenceRecord(
+            "ev:endpoint:mapping",
+            "annotation",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            "getOrder",
+            "@GetMapping",
+            12,
+            12,
+            "@GetMapping(\"/orders/{id}\")",
+            "high"));
+    Files.writeString(artifactRoot.resolve("project-graph.json"), impactProjectionCapGraph(edgeCount));
+  }
+
+  private String impactProjectionCapGraph(int edgeCount) {
+    StringBuilder nodes = new StringBuilder();
+    nodes.append("""
+            {
+              "id": "node:endpoint:endpoint%3Acom.example.web.OrderController%23getOrder",
+              "kind": "endpoint",
+              "label": "GET /orders/{id}",
+              "claim_category": "extracted",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "id": "endpoint:com.example.web.OrderController#getOrder"
+              },
+              "evidence_ids": ["ev:endpoint:mapping"]
+            }""");
+    StringBuilder edges = new StringBuilder();
+    for (int index = 0; index < edgeCount; index++) {
+      String nodeId = "node:projection:neighbor-" + String.format("%04d", index);
+      nodes.append(",\n");
+      nodes.append("""
+            {
+              "id": "%s",
+              "kind": "type",
+              "label": "Neighbor%s",
+              "claim_category": "structural",
+              "module_id": "module:.",
+              "source_ref": null,
+              "evidence_ids": []
+            }""".formatted(nodeId, String.format("%04d", index)));
+      if (index > 0) {
+        edges.append(",\n");
+      }
+      edges.append("""
+            {
+              "id": "edge:declares:%s:node:endpoint:endpoint%%3Acom.example.web.OrderController%%23getOrder",
+              "type": "declares",
+              "source_id": "%s",
+              "target_id": "node:endpoint:endpoint%%3Acom.example.web.OrderController%%23getOrder",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "endpoints",
+                "fields": ["id"]
+              },
+              "evidence_ids": []
+            }""".formatted(nodeId, nodeId));
+    }
+    return """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+        %s
+          ],
+          "edges": [
+        %s
+          ],
+          "relation_statuses": [],
+          "warnings": []
+        }
+        """.formatted(nodes, edges);
   }
 
   private void writeRelationGraph(Path artifactRoot) throws IOException {

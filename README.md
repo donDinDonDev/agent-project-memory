@@ -196,16 +196,18 @@ edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` f
 are navigation metadata, not evidence. Stable JSON query output remains future work and
 is not included in the current published release line.
 
-`impact --files <changed-file> [...]` renders a direct mapping foundation for explicit
-repository-relative changed-file paths over existing no-adapter `project-map.json`,
-`evidence-index.jsonl`, and `project-graph.json` artifacts. It reports direct matches
-to existing evidence paths, generated fact source references, generated fact IDs, or
-graph nodes, plus explicit `not_represented` rows for valid files with no accepted
-artifact reference and bounded diagnostics such as duplicate or capped inputs. It does
-not parse raw diffs, inspect Git state, require changed files to exist, read source
-files, refresh scans, create or mutate generated artifacts, write an impact report,
-traverse graph neighbors beyond direct mapping, use adapter/source-registry context, or
-claim complete runtime, call-graph, vulnerability, business-priority, or production
+`impact --files <changed-file> [...]` renders conservative direct mapping and one-hop
+projection for explicit repository-relative changed-file paths over existing no-adapter
+`project-map.json`, `evidence-index.jsonl`, and `project-graph.json` artifacts. It
+reports direct matches to existing evidence paths, generated fact source references,
+generated fact IDs, or graph nodes; one-hop `graph_neighbor` rows; tied
+`relation_status` rows; low-confidence `planning_hint` rows from existing
+`quality.change_risk_signals`; explicit `not_represented` rows for valid files with no
+accepted artifact reference; and bounded diagnostics such as duplicate or capped
+inputs. It does not parse raw diffs, inspect Git state, require changed files to exist,
+read source files, refresh scans, create or mutate generated artifacts, write an impact
+report, traverse graph neighbors beyond one hop, use adapter/source-registry context,
+or claim complete runtime, call-graph, vulnerability, business-priority, or production
 impact.
 
 `agent-context` renders a bounded read-only context view for agent/editor consumption
