@@ -386,6 +386,57 @@ treats workspace query/agent output as evidence must update this document and
 or goldens where applicable, a changelog entry, release notes, and a separate security
 review.
 
+## Change-Impact Evidence Decision
+
+Change-impact output is not evidence. The first accepted v2.6 boundary is a read-only
+single-repo query shape, `query <path> impact --files ...`, that references existing
+generated artifacts and renders conservative inspection hints. It does not add evidence
+types, evidence fields, evidence records, evidence IDs, new source references, adapter
+provenance records, graph relations, or evidence-level confidence fields. It must not
+create source/spec agreement claims, documentation-freshness claims, security findings,
+vulnerability proof, runtime claims, release evidence, or code-modification authority.
+
+The first impact slice may reference existing evidence IDs, existing graph IDs,
+existing relation/status rows, existing generated fact IDs, and source-artifact names so
+a user can navigate deterministic memory. Those references remain citations to existing
+deterministic material. They must not strengthen, weaken, replace, suppress,
+reinterpret, or fabricate the underlying fact, evidence record, graph relation,
+relation status, quality planning hint, uncertainty label, warning, or not-analyzed
+status.
+
+Changed-file inputs are matching hints only. A repository-relative changed-file path may
+match an existing evidence `path`, generated fact source reference, or graph node source
+reference, but the changed path itself is not a new evidence source. If a file is not
+represented in generated memory, impact output must report that absence instead of
+creating a fact or evidence record from the path string.
+
+Impact confidence labels describe support for the rendered hint, not certainty of
+complete downstream impact:
+
+- `high` may be used for direct matches backed by existing evidence paths, fact source
+  references, or graph nodes derived from extracted, spec-backed, or document-backed
+  source facts.
+- `medium` may be used for one-hop graph neighbors when the supporting graph edge or
+  inferred relation already exists in `project-graph.json`.
+- `low` is required for status-only rows, uncertain document reconciliation rows,
+  existing `quality.change_risk_signals`, and structural orientation that should be read
+  only as a planning hint.
+
+Impact output must preserve existing claim categories, relation statuses, support types,
+confidence labels, uncertainty labels, derivation labels, and evidence IDs from source
+artifacts. Graph derivation remains navigation metadata, not evidence. Query output,
+generated Markdown, cache metadata, profile output, AI presentation, adapter
+provenance, connector records, workspace diagnostics, prompts, downstream agent output,
+chat output, release notes, and LLM output remain non-evidence for impact.
+
+Workspace impact is parked for the first v2.6 boundary. `workspace-map.json` composite
+sample references remain navigation keys into member artifacts, not impact evidence.
+Any future workspace, cross-repo, adapter-aware, generated-report, JSON-output,
+source/spec scoring, documentation-freshness, vulnerability, runtime, or
+code-modification impact behavior must update this document and `OUTPUT_CONTRACT.md`
+before implementation. Such a change would also need focused tests or goldens where
+applicable, a changelog entry, release notes, and a separate security review.
+
 ## Fact Categories
 
 ### Extracted Facts

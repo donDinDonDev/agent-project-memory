@@ -200,6 +200,18 @@ relation emission, workspace query, adapter-aware workspace context, and child-r
 mutation remain separate later implementation decisions unless a bounded v2.5 goal
 explicitly accepts and documents them.
 
+Change-impact workflows should start as conservative local inspection aids over existing
+deterministic artifacts, not as repository chat, semantic search, connector-driven
+planning, or automatic code modification. The first accepted v2.6 boundary is a
+read-only single-repo query shape, `query <path> impact --files ...`, using explicit
+repository-relative changed-file inputs, existing no-adapter `project-map.json`,
+`evidence-index.jsonl`, and `project-graph.json` artifacts, one-hop graph navigation,
+and confidence-labeled text output. Generated impact reports, raw diff ingestion,
+`--from-git-diff`, fact/evidence/graph-node subject input, workspace impact,
+cross-repo impact, adapter-aware impact, source/spec agreement scoring, documentation
+freshness scoring, runtime reachability, vulnerability claims, business-priority
+claims, and code-change authority remain separate later design decisions.
+
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI
 presentation, and agent-native workflows.

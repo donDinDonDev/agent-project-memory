@@ -344,6 +344,41 @@ Workspace memory defaults:
   generated Markdown, query output, graph derivation, adapter records, AI output,
   prompts, connector text, issue text, release notes, chat output, or maintainer notes.
 
+Change-impact query defaults:
+
+- change-impact behavior starts as a read-only single-repo query over existing
+  generated artifacts, not as a scanner, report writer, Git integration, workspace
+  query, repository chat, semantic search, or automatic code-modification workflow;
+- the first accepted command shape is `query <path> impact --files ...`, where `<path>`
+  follows the existing query artifact-root policy and changed files are explicit
+  repository-relative path strings;
+- changed-file inputs are untrusted command arguments and must reject local absolute
+  paths, escaping paths, `./` prefixes, backslash paths, URL-like values, generated
+  output paths, empty values, glob expansion, regex expansion, raw diff text, and
+  standard-input diff parsing before they affect output;
+- `--from-git-diff`, branch/commit comparison, rename detection, raw diff-file input,
+  and Git working-tree inspection remain parked until a later explicit path and
+  command-behavior review accepts them;
+- the first impact source artifact set is limited to no-adapter single-repo
+  `project-map.json`, `evidence-index.jsonl`, and `project-graph.json`; adapter
+  provenance, `source-registry.json`, `workspace-map.json`, generated Markdown, cache
+  metadata, profile output, AI presentation, query output, and downstream agent output
+  are not impact fact inputs;
+- impact queries must not read repository source files to expand evidence, read raw
+  local document bodies, read generated-source contents, run scans, execute build tools,
+  refresh cache metadata, create `.project-memory/`, write generated impact reports,
+  mutate artifacts, edit repository files, or write any other files inside or outside
+  the selected artifact root;
+- impact output is navigation and planning metadata only. It may reference existing
+  evidence IDs, graph IDs, relation/status labels, confidence, and uncertainty, but it
+  must not create evidence, strengthen evidence, claim complete reachability, claim
+  source/spec agreement, claim documentation freshness, claim coverage or CI state,
+  claim correctness, produce vulnerability findings, assert production impact or
+  business priority, or provide code-change authority;
+- diagnostics, cap warnings, unrepresented changed-file rows, graph derivation, quality
+  planning hints, adapter diagnostics, workspace diagnostics, AI output, prompts,
+  downstream agent output, release notes, and chat output remain non-evidence.
+
 Future v2 security review expectations:
 
 - design-only documentation changes can be reviewed with a lightweight documentation
@@ -419,6 +454,7 @@ The v1.7 hardening work audits these surfaces against the documented target poli
 | Graph output | Generate navigation metadata only from existing facts, evidence IDs, and derivation metadata. |
 | Agent profile output | Render selected deterministic Markdown from existing facts and evidence references only. |
 | Query artifact root and files | Read only required direct child artifacts; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; never write during query. |
+| Impact query | Read only existing accepted single-repo artifacts, validate explicit repository-relative changed-file strings, perform one-hop graph navigation only, never parse raw diffs, never read changed source files, and never write impact reports in the first boundary. |
 | CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, or secret-looking values. |
 
 Findings from that audit become bounded fixes. The audit must not expand the

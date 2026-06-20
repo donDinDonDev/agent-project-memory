@@ -66,6 +66,11 @@ absolute paths. Workspace map aggregation does not run child repository scans an
 not mutate member `.project-memory/` directories. Existing per-repo `.project-memory/`
 artifact names and schema markers remain unchanged by the workspace design.
 
+The planned v2.6 change-impact boundary is a read-only query workflow over existing
+single-repo generated artifacts. It does not add a generated artifact in the first
+slice. A future generated impact report, if accepted, must update this file before
+implementation.
+
 ## v2 Adapter Output Boundary
 
 The current implementation does not emit adapter packages, network connector output,
@@ -6197,6 +6202,215 @@ Stop conditions for implementation:
   modification, or a server/API/plugin/editor runtime;
 - cross-repo relations would be speculative or lack evidence from every participating
   repo.
+
+### v2.6 Change-Impact Query Design Contract
+
+This section defines the accepted v2.6 design boundary for the first change-impact
+workflow. The current implementation has not shipped this command yet. The planned
+first implementation is read-only, single-repo, stdout-only, and based on existing
+generated artifacts.
+
+Command shape:
+
+```text
+agent-project-memory query <path> impact --files <changed-file> [<changed-file> ...]
+```
+
+The packaged-jar invocation uses the same arguments after
+`java -jar agent-project-memory-X.Y.Z.jar`. A top-level `impact` command remains
+parked for a later CLI design unless this contract is updated.
+
+Path and artifact input policy:
+
+- `<path>` follows the existing query artifact-root policy. If it names a
+  `.project-memory` directory, that directory is the artifact root. Otherwise it is
+  treated as a repository root and the artifact root is `<path>/.project-memory`.
+- The command reads only direct child artifact files from the selected artifact root.
+  It must not create the artifact root, create missing artifacts, refresh cache
+  metadata, run scans, generate profile or AI presentation artifacts, write an impact
+  report, or write repository files.
+- `--files` is required and must contain at least one explicit changed-file path. Each
+  changed-file value is a repository-relative file path string using slash separators.
+- Changed-file values must not be local absolute paths, start with `./`, contain `..`
+  segments, contain backslash separators, be URL-like values, be empty values, name
+  `.project-memory/` generated-output paths, or require glob, shell, or regex
+  expansion.
+- Changed-file values are normalized and de-duplicated deterministically for matching
+  and rendering. Duplicate inputs may produce a bounded diagnostic, but duplicates must
+  not duplicate impact rows.
+- The command does not open changed source files and does not require the changed file
+  to exist. Changed-file inputs are matched only against repository-relative paths and
+  source references already serialized in generated artifacts.
+- Successful stdout must not serialize local absolute paths, raw command text, raw diff
+  text, source bodies, document bodies, config values, generated-source contents,
+  command logs, stack traces, credentials, tokens, or secret-looking values.
+- `--from-git-diff`, standard-input diff parsing, raw diff-file input, Git working-tree
+  inspection, branch comparison, commit comparison, and rename detection are parked
+  until a later explicit path and command-behavior contract accepts them.
+
+Required source artifacts for the first slice:
+
+- `project-map.json` with no-adapter `schema_version: "1.0"`;
+- `evidence-index.jsonl` with the documented evidence field set;
+- `project-graph.json` with `graph_schema_version: "1.0"`.
+
+The command fails closed with the query artifact error exit code when a required source
+artifact is missing, malformed, unsafe, unsupported, has duplicate required IDs, has
+unresolved graph node references, or has graph `evidence_ids` that do not resolve to
+`evidence-index.jsonl`.
+
+Out-of-scope source inputs for the first slice:
+
+- adapter-enabled `project-map.json` `schema_version: "2.0"` sets;
+- `source-registry.json` and adapter provenance;
+- `workspace-map.json`;
+- `endpoints.md`, `agent-guide.md`, generated profile Markdown, AI presentation
+  artifacts, cache metadata, generated Markdown bodies, release notes, query output,
+  downstream agent output, prompts, chat output, or LLM output.
+
+Impact matching and projection behavior:
+
+- Direct changed-file matches are created only when an input path equals an existing
+  evidence `path`, a generated fact source reference path, or a graph node source path
+  already present in accepted source artifacts.
+- If no accepted artifact references a changed-file path, the output must report the
+  file as not represented in generated memory. It must not infer hidden impact from
+  package names, filenames, directory names, generated Markdown, adapter records, AI
+  output, or query text.
+- The start set for graph projection is the deterministic set of graph nodes that
+  correspond to direct changed-file matches.
+- Graph projection is one hop only from the start set. It may render incoming and
+  outgoing graph edges, plus `relation_statuses[]` tied to start-set nodes. It has no
+  depth flag in the first boundary.
+- Graph projection must preserve graph edge `type`, `claim_category`,
+  `relation_status`, `support_type`, `confidence`, `uncertainty`,
+  `relation_attributes`, `derivation`, and `evidence_ids` as navigation metadata.
+  `derivation` remains non-evidence.
+- Structural `owns` and `declares` edges may orient the user to nearby emitted facts,
+  but they are not proof of runtime reachability, dependency reachability, production
+  impact, or complete ownership.
+- Existing `quality.change_risk_signals` may be rendered only as planning hints tied
+  to matched facts or graph nodes. They must not become coverage, CI, runtime,
+  correctness, vulnerability, production-impact, or business-priority claims.
+- The first boundary must apply deterministic caps. Initial caps are 256 changed-file
+  inputs, 500 direct match rows, 1,000 graph projection rows, 256 planning-hint rows,
+  and 256 diagnostics. Cap hits are diagnostics, not evidence.
+
+Text output categories:
+
+- `direct_match`: a changed file directly matches an existing evidence path, source
+  reference, generated fact, or graph node.
+- `graph_neighbor`: a one-hop graph edge from or to a direct-match graph node.
+- `relation_status`: an existing graph relation-status row tied to a direct-match graph
+  node.
+- `planning_hint`: an existing quality/change-risk planning hint tied to a direct
+  match or graph node.
+- `not_represented`: a valid changed-file path has no representation in accepted
+  generated memory.
+- `diagnostic`: a bounded command, artifact, cap, duplicate, or unsupported-input
+  diagnostic.
+
+The first slice supports deterministic text stdout only. Exact text layout is not a
+stable parser interface unless a later contract documents a specific structure. Stable
+JSON stdout, generated Markdown, and `.project-memory/impact-report.json` remain
+parked.
+
+Confidence and uncertainty rules:
+
+- Confidence labels describe support for the impact hint, not certainty of complete
+  downstream impact.
+- `high` is allowed for direct matches backed by an existing evidence path, existing
+  fact source reference, or graph node derived from an extracted, spec-backed, or
+  document-backed source fact.
+- `medium` is allowed for one-hop graph neighbors when the graph edge or inferred
+  relation support is already present in `project-graph.json`.
+- `low` is required for status-only rows, uncertain document reconciliation rows,
+  current `quality.change_risk_signals`, and structural orientation that should be read
+  only as a planning hint.
+- Missing uncertainty is represented as `null` where the underlying artifact uses JSON
+  fields. Text output may render no uncertainty label for `null`, but must render
+  explicit uncertainty/status labels when present.
+- `not_represented`, unsupported input, unsupported schema, capped output, missing graph
+  node, and not-analyzed relation/status cases must be explicit rather than silently
+  omitted.
+
+Exit-code rules:
+
+- `0`: successful impact query, including valid inputs where every file is rendered as
+  `not_represented`.
+- `1`: unexpected internal error.
+- `2`: usage error, including missing `--files`, empty file list, invalid changed-file
+  path syntax, unknown flag, or unexpected argument shape.
+- `3`: query input or artifact error, using the existing query artifact-error meaning
+  for missing artifact roots, missing required artifacts, unsafe required artifact
+  files, malformed JSON/JSONL, unsupported schema markers, duplicate required IDs,
+  unresolved graph node references, or unresolved required evidence IDs.
+- `4` and `5`: unchanged scan/workspace config and scan output generation meanings; the
+  read-only impact query must not use them for successful read-only behavior.
+- `6`: reserved for exact lookup no-result behavior in other query commands. A valid
+  impact query with no represented changed files should render `not_represented` rows
+  and exit `0`.
+
+Workspace stance:
+
+- Workspace impact is parked for the first v2.6 boundary.
+- `workspace-map.json` remains workspace aggregation metadata and is not an impact
+  input source.
+- Per-member fan-out, workspace `query ... impact`, workspace graph output,
+  cross-repo impact, and composite workspace impact references require a later explicit
+  workspace query/impact contract before implementation.
+
+Validation requirements before impact release:
+
+- Focused CLI parser tests for accepted and rejected `query <path> impact --files`
+  grammar.
+- Changed-file path tests for relative, duplicate, unmatched, empty, absolute,
+  `./`-prefixed, escaping, backslash, URL-like, generated-output, glob-like, and
+  over-cap inputs.
+- Artifact-loading tests for missing, malformed, unsafe, unsupported, duplicate-ID, and
+  unresolved-reference `project-map.json`, `evidence-index.jsonl`, and
+  `project-graph.json` inputs.
+- Direct-match tests for evidence-path, source-reference, generated-fact, graph-node,
+  and not-represented path cases.
+- Projection tests for one-hop graph neighbors, incoming/outgoing orientation,
+  relation-status rows, quality planning hints, deterministic sorting, and cap
+  diagnostics.
+- No-write tests proving impact queries do not scan source, create or mutate
+  `.project-memory/`, refresh cache metadata, write impact reports, edit source files,
+  edit repository docs, or modify configuration.
+- Content-safety tests proving impact output does not serialize source bodies, local
+  document bodies, config contents, generated-source contents, generated Markdown
+  bodies, raw diff text, raw command logs, stack traces, local absolute paths,
+  credentials, tokens, secret-looking values, downstream agent output, or LLM output.
+- Regression tests proving existing `scan`, non-impact `query`, graph relation, and
+  `workspace scan` behavior remain unchanged unless a later contract explicitly says
+  otherwise.
+- Risk-based review is required before release for implementation that changes query
+  grammar, changed-file path handling, artifact reading, graph traversal, output
+  rendering, diagnostics, evidence-reference rendering, query exit codes, or generated
+  output write boundaries.
+
+Stop conditions for implementation:
+
+- Impact output implies complete impact analysis, runtime reachability, full dependency
+  reachability, call graph coverage, source/spec agreement, documentation freshness,
+  test coverage, CI status, assertion behavior, vulnerability, correctness,
+  production impact, business priority, complete architecture ownership, or
+  code-change authority.
+- Changed-file path handling, artifact-root handling, graph projection, caps,
+  confidence labels, uncertainty labels, or output authority cannot be made
+  deterministic and explicit.
+- Direct changed-file mapping would fabricate impact for files not represented by
+  existing deterministic facts, evidence paths, source references, graph nodes,
+  relation/status rows, or explicitly allowed planning hints.
+- Graph projection cannot keep extracted, inferred, uncertain, document-backed,
+  spec-backed, metadata-only, warning, not-analyzed, and structural categories
+  distinct.
+- Impact output would require source file readback, generated-source content scanning,
+  build execution, runtime analysis, complete type solving, dependency resolution,
+  adapter/source-registry joins, workspace relation inference, network access,
+  connectors, optional AI, repository chat, generic RAG, semantic search, automatic
+  code modification, release automation, or publication automation.
 
 ### v1.7 Redaction And Security Hardening Contract
 

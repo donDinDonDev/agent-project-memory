@@ -47,6 +47,14 @@ root rejection, and workspace-root `.project-memory/workspace-map.json` aggregat
 from existing member artifacts. It does not run child repository scans, mutate member
 `.project-memory/` directories, add cross-repo relations, or add workspace query
 behavior.
+The v2.6 design track now accepts a planned first change-impact workflow boundary as a
+read-only single-repo query over existing no-adapter generated artifacts. The planned
+first command shape is `query <path> impact --files ...`, with explicit
+repository-relative changed-file input, one-hop graph navigation, confidence-labeled
+text output, and no generated impact report, raw diff ingestion, workspace impact,
+adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
+freshness scoring, vulnerability claim, business-priority claim, or automatic code
+modification in the first slice.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1691,6 +1699,82 @@ Validation expectations before release:
 - Risk-based security review is required for implementation changes that touch
   config parsing, multiple-root path handling, generated output, evidence reference
   rendering, workspace diagnostics, query behavior, or child-repo write behavior.
+
+## v2.6.0: Change-Impact Workflows (Planned)
+
+Product outcome: provide conservative local change-impact hints from explicit changed
+files while preserving deterministic artifacts, evidence-backed facts, local-only
+operation, and no code-change authority.
+
+Accepted first design boundary:
+
+- The first implementation path is a read-only query-layer expansion:
+  `agent-project-memory query <path> impact --files <changed-file> [...]`. The
+  packaged-jar invocation uses the same arguments after
+  `java -jar agent-project-memory-X.Y.Z.jar`.
+- `<path>` uses the existing query artifact-root policy: a repository directory with
+  `.project-memory/` or the `.project-memory/` directory itself. The command reads
+  existing artifacts only and must not run scans, refresh artifacts, create generated
+  outputs, or write repository files.
+- Changed-file inputs are explicit repository-relative paths. The first boundary does
+  not include local absolute changed-file paths, escaping paths, generated-output paths,
+  glob expansion, raw diff text, standard-input diff parsing, or `--from-git-diff`.
+- The first source artifact set is the no-adapter single-repo set:
+  `project-map.json` with `schema_version: "1.0"`, `evidence-index.jsonl`, and
+  `project-graph.json` with `graph_schema_version: "1.0"`. Adapter-enabled artifact
+  sets, `source-registry.json`, `workspace-map.json`, generated Markdown, cache
+  metadata, agent profiles, AI presentation artifacts, query output, and downstream
+  agent output are not impact fact inputs.
+- Direct matches come only from existing evidence paths, source references, generated
+  fact IDs, or graph nodes already present in generated artifacts. If a changed file is
+  not represented in generated memory, the output reports that status instead of
+  inferring hidden impact.
+- Graph navigation is one hop from direct matches only. It may surface existing graph
+  edges and relation-status rows as orientation, but it must not perform transitive
+  traversal, reachability analysis, call-graph traversal, dependency traversal, or
+  runtime analysis.
+- Output is deterministic text to stdout for the first slice. Stable JSON output,
+  generated Markdown, and `.project-memory/impact-report.json` remain parked until a
+  later explicit output contract accepts them.
+- Impact rows must keep direct matches, graph neighbors, relation/status rows, quality
+  planning hints, uncertain rows, not-represented inputs, and diagnostics visibly
+  separate. Confidence labels describe support for the hint, not certainty of complete
+  downstream impact.
+- Workspace impact is parked for the first v2.6 boundary. The existing
+  `workspace-map.json` artifact remains workspace aggregation metadata, not a query or
+  impact input source.
+
+Non-goals:
+
+- No guaranteed complete impact analysis, runtime tracing, runtime service graph,
+  runtime dependency graph, runtime Spring bean graph, call graph, data-flow graph,
+  complete dependency graph, source/spec agreement scoring, documentation-freshness
+  scoring, test coverage scoring, CI-status claim, assertion analysis, correctness
+  claim, vulnerability finding, production-impact claim, business-priority claim, raw
+  source readback, generated-source content scanning, network access, credentials,
+  repository chat, generic RAG, semantic search, embeddings, vector store, generated
+  impact artifact, workspace impact, cross-repo impact, adapter-aware impact, release
+  automation, package publication, or automatic code modification.
+
+Validation expectations before release:
+
+- Focused query parser and changed-file path tests, including missing, duplicate,
+  escaping, absolute, generated-output, malformed, and unrepresented path inputs.
+- Artifact-loading tests for missing or invalid `project-map.json`,
+  `evidence-index.jsonl`, and `project-graph.json`, including unsupported schema
+  markers and unresolved graph/evidence references.
+- Deterministic output tests for direct matches, one-hop graph neighbors,
+  relation-status rows, quality planning hints, caps, diagnostics, no-result-like
+  not-represented inputs, and repeated runs.
+- No-write tests proving impact queries do not scan source, create or mutate
+  `.project-memory/`, refresh cache metadata, write reports, edit source files, or
+  change repository docs/configuration.
+- Public docs, output contract, evidence model, threat model, changelog, and release
+  notes must agree before release.
+- Risk-based security review is required for implementation changes that touch query
+  grammar, changed-file path handling, artifact reading, graph traversal, output
+  rendering, diagnostics, evidence-reference rendering, or generated-output write
+  boundaries.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

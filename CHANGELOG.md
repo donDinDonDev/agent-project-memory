@@ -9,6 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.6 change-impact workflow boundary, selecting a read-only
+  single-repo `query <path> impact --files ...` shape over existing no-adapter
+  generated artifacts, one-hop graph navigation, confidence-labeled text output, and
+  explicit parking for generated impact reports, raw diff input, workspace impact,
+  adapter-aware impact, source/spec scoring, documentation freshness scoring,
+  vulnerability claims, business-priority claims, and automatic code modification.
+
 ## [2.5.0] - 2026-06-20
 
 Release status: published. The `v2.5.0` tag, GitHub Release, executable jar, and
