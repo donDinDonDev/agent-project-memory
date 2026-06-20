@@ -487,6 +487,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"scan\": {")),
         () -> assertTrue(projectMap.contains("\"source\": \"defaults_only\"")),
+        () -> assertFalse(projectMap.contains("\"policy_profile\"")),
         () -> assertTrue(projectMap.contains("\"module_id\": \"module:.\"")),
         () -> assertTrue(projectMap.contains("\"build_config\": {")),
         () -> assertTrue(projectMap.contains("\"metadata\": {\n"
@@ -495,6 +496,113 @@ final class AgentProjectMemoryCliTest {
             + "                  \"value\": null,\n"
             + "                  \"value_kind\": \"not_declared\"")),
         () -> assertTrue(evidenceIndex.contains("\"symbol_name\":\"pom.xml\"")));
+  }
+
+  @Test
+  void scanWithPolicyProfileWritesBoundedMetadataWithoutEvidenceAuthority()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "guarded-local");
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode policyProfile = projectMap.path("scan").path("policy_profile");
+    String policyJson = policyProfile.toString();
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals("1.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals("analyzed", policyProfile.path("analysis_status").asText()),
+        () -> assertEquals("guarded-local", policyProfile.path("selected_profile").asText()),
+        () -> assertEquals("cli_override", policyProfile.path("selection_source").asText()),
+        () -> assertEquals("1.0", policyProfile.path("profile_version").asText()),
+        () -> assertEquals("local_configuration_preset", policyProfile.path("authority").asText()),
+        () -> assertEquals(
+            "execution_metadata_not_evidence",
+            policyProfile.path("evidence_policy").asText()),
+        () -> assertEquals("fail_closed", policyProfile.path("conflict_policy").asText()),
+        () -> assertEquals("disabled", policyProfile.path("network_access").asText()),
+        () -> assertEquals("disabled", policyProfile.path("source_upload").asText()),
+        () -> assertEquals("disabled", policyProfile.path("credential_lookup").asText()),
+        () -> assertTrue(policyJson.contains("built_in_local_markdown")),
+        () -> assertTrue(policyJson.contains("adapters")),
+        () -> assertTrue(policyJson.contains("ai_presentation")),
+        () -> assertTrue(policyJson.contains("local_markdown_path_rules")),
+        () -> assertFalse(policyJson.contains(tempDir.toString())),
+        () -> assertFalse(policyJson.contains("exports/")),
+        () -> assertFalse(policyProfile.has("evidence_ids")),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("ai-presentations"))),
+        () -> assertFalse(evidenceIndex.contains("policy_profile")),
+        () -> assertFalse(evidenceIndex.contains("guarded-local")));
+  }
+
+  @Test
+  void scanWithConfigPolicyProfileMetadataDoesNotSerializeRawDocumentRules()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        policy_profile: docs-focused
+        documents:
+          include:
+            - notes/token-FAKE_POLICY_METADATA_SECRET.md
+        """);
+
+    CliResult result = runCli("scan", tempDir.toString());
+    JsonNode projectMap = JSON.readTree(
+        Files.readString(tempDir.resolve(".project-memory/project-map.json")));
+    JsonNode policyProfile = projectMap.path("scan").path("policy_profile");
+    String policyJson = policyProfile.toString();
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals("docs-focused", policyProfile.path("selected_profile").asText()),
+        () -> assertEquals("config_file", policyProfile.path("selection_source").asText()),
+        () -> assertTrue(policyJson.contains("local_markdown_path_rules")),
+        () -> assertFalse(policyJson.contains("notes/token")),
+        () -> assertFalse(policyJson.contains("FAKE_POLICY_METADATA_SECRET")),
+        () -> assertFalse(policyJson.contains(tempDir.toString())),
+        () -> assertFalse(policyProfile.has("evidence_ids")));
+  }
+
+  @Test
+  void scanRejectsPolicyProfileAiPresentationCombinationBeforeCreatingOutputDirectory()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    CliResult result = runCli(
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "guarded-local",
+        "--ai-presentation",
+        "mock_no_network");
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("selected policy profile rejects AI presentation")),
+        () -> assertFalse(result.stderr().contains("guarded-local")),
+        () -> assertFalse(result.stderr().contains("mock_no_network")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
 
   @Test
@@ -1351,6 +1459,51 @@ final class AgentProjectMemoryCliTest {
         "--agent-profile",
         "codex");
     assertIncrementalHit(configHit);
+  }
+
+  @Test
+  void scanIncrementalFallsBackWhenPolicyProfileSelectionChangesProjectMapMetadata()
+      throws Exception {
+    Files.writeString(tempDir.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+
+    assertFullIncrementalRefresh(runCli("scan", tempDir.toString(), "--incremental"));
+    Path outputDirectory = tempDir.resolve(".project-memory");
+    Path manifestPath = outputDirectory.resolve("cache/v1/manifest.json");
+    JsonNode defaultManifest = JSON.readTree(Files.readString(manifestPath));
+    JsonNode defaultProjectMap = JSON.readTree(
+        Files.readString(outputDirectory.resolve("project-map.json")));
+
+    CliResult selectedMiss = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--policy-profile",
+        "guarded-local");
+    JsonNode selectedManifest = JSON.readTree(Files.readString(manifestPath));
+    JsonNode selectedProjectMap = JSON.readTree(
+        Files.readString(outputDirectory.resolve("project-map.json")));
+
+    CliResult selectedHit = runCli(
+        "scan",
+        tempDir.toString(),
+        "--incremental",
+        "--policy-profile",
+        "guarded-local");
+
+    assertAll(
+        () -> assertTrue(defaultProjectMap.path("scan").path("policy_profile").isMissingNode()),
+        () -> assertFullIncrementalRefresh(selectedMiss),
+        () -> assertNotEquals(
+            defaultManifest.path("option_fingerprint").asText(),
+            selectedManifest.path("option_fingerprint").asText()),
+        () -> assertEquals(
+            "guarded-local",
+            selectedProjectMap.path("scan").path("policy_profile").path("selected_profile").asText()),
+        () -> assertIncrementalHit(selectedHit));
   }
 
   @Test

@@ -7,6 +7,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterConfiguration;
+import io.github.dondindondev.agentprojectmemory.scanconfig.PolicyProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigPathPattern;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.nio.file.Files;
@@ -121,6 +123,26 @@ final class V10EvidenceFreezeRegressionGateTest {
         () -> assertFalse(joinedOutput.contains("FAKE_FREEZE_STACK_TRACE_VALUE")),
         () -> assertFalse(joinedOutput.contains("docs/*.md")),
         () -> assertFalse(joinedOutput.contains("secret-*.md")));
+  }
+
+  @Test
+  void policyProfileSelectionRemainsExecutionMetadataNotEvidence()
+      throws Exception {
+    GeneratedOutput output = generatePolicyProfileBoundaryOutput();
+    JsonNode projectMap = JSON.readTree(output.projectMap());
+    JsonNode policyProfile = projectMap.path("scan").path("policy_profile");
+    List<JsonNode> evidenceRecords = evidenceRecords(output.evidenceIndex());
+
+    assertAll(
+        () -> assertEquals("guarded-local", policyProfile.path("selected_profile").asText()),
+        () -> assertEquals(
+            "execution_metadata_not_evidence",
+            policyProfile.path("evidence_policy").asText()),
+        () -> assertFalse(hasEvidenceIds(policyProfile)),
+        () -> assertFalse(hasToolConfigEvidence(evidenceRecords)),
+        () -> assertFalse(hasScanMetadataEvidence(evidenceRecords)),
+        () -> assertFalse(evidenceRecords.stream().anyMatch(record -> containsText(record, "policy_profile"))),
+        () -> assertFalse(evidenceRecords.stream().anyMatch(record -> containsText(record, "guarded-local"))));
   }
 
   private void assertEvidenceFreezeInvariants(
@@ -323,6 +345,41 @@ final class V10EvidenceFreezeRegressionGateTest {
     Files.createDirectories(outputDirectory);
 
     SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    assertTrue(result.generated());
+    return readOutput(outputDirectory);
+  }
+
+  private GeneratedOutput generatePolicyProfileBoundaryOutput() throws Exception {
+    Path projectPath = tempDir.resolve("v10-policy-profile-" + System.nanoTime());
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    Files.createDirectories(outputDirectory);
+
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+          <artifactId>v10-policy-profile</artifactId>
+        </project>
+        """);
+
+    ScanConfiguration scanConfiguration = new ScanConfiguration(
+        "defaults_only",
+        null,
+        "not_detected",
+        false,
+        false,
+        PolicyProfile.GUARDED_LOCAL,
+        "cli_override",
+        true,
+        "default",
+        List.of(),
+        List.of(),
+        AdapterConfiguration.disabled());
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(
+        projectPath,
+        outputDirectory,
+        scanConfiguration);
 
     assertTrue(result.generated());
     return readOutput(outputDirectory);

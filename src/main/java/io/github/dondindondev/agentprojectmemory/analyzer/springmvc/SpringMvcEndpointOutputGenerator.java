@@ -141,6 +141,7 @@ import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceDocumen
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.SourceRegistryJsonSerializer;
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.profiles.AgentOutputProfile;
+import io.github.dondindondev.agentprojectmemory.scanconfig.PolicyProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -3366,6 +3367,9 @@ public final class SpringMvcEndpointOutputGenerator {
     appendIndentedBooleanField(json, 3, "cli_overrides_applied", scanConfiguration.cliOverridesApplied(), true);
     appendIndentedBooleanField(json, 3, "raw_values_serialized", scanConfiguration.rawValuesSerialized(), false);
     json.append("    },\n");
+    if (scanConfiguration.policyProfile() != null) {
+      appendPolicyProfileMetadata(json, scanConfiguration);
+    }
     json.append("    \"features\": {\n");
     json.append("      \"local_markdown\": {\n");
     appendIndentedBooleanField(json, 4, "enabled", scanConfiguration.localMarkdownEnabled(), true);
@@ -3438,6 +3442,50 @@ public final class SpringMvcEndpointOutputGenerator {
     appendScanDiagnosticItems(json, scanDiagnostics, false);
     json.append("    }\n");
     json.append("  }");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private void appendPolicyProfileMetadata(StringBuilder json, ScanConfiguration scanConfiguration) {
+    PolicyProfile policyProfile = scanConfiguration.policyProfile();
+    json.append("    \"policy_profile\": {\n");
+    appendIndentedStringField(json, 3, "analysis_status", ANALYSIS_ANALYZED, true);
+    appendIndentedStringField(json, 3, "selected_profile", policyProfile.selector(), true);
+    appendIndentedStringField(
+        json,
+        3,
+        "selection_source",
+        scanConfiguration.policyProfileSelectionSource(),
+        true);
+    appendIndentedStringField(json, 3, "profile_version", "1.0", true);
+    appendIndentedStringField(json, 3, "authority", "local_configuration_preset", true);
+    appendIndentedStringField(json, 3, "evidence_policy", "execution_metadata_not_evidence", true);
+    appendIndentedStringField(json, 3, "conflict_policy", "fail_closed", true);
+    appendIndentedStringField(json, 3, "network_access", "disabled", true);
+    appendIndentedStringField(json, 3, "source_upload", "disabled", true);
+    appendIndentedEnumStringField(json, 3, "credential_lookup", "disabled", true);
+    appendIndentedStringArrayField(
+        json,
+        3,
+        "allowed_optional_surfaces",
+        policyProfile.allowedOptionalSurfaces(),
+        true);
+    appendIndentedStringArrayField(
+        json,
+        3,
+        "rejected_optional_surfaces",
+        policyProfile.rejectedOptionalSurfaces(),
+        false);
+    json.append("    },\n");
+  }
+
+  private void appendIndentedEnumStringField(
+      StringBuilder json,
+      int indentLevel,
+      String name,
+      String value,
+      boolean trailingComma) {
+    indent(json, indentLevel);
+    json.append(jsonString(name)).append(": ").append(jsonString(value));
     appendLineEnding(json, trailingComma);
   }
 

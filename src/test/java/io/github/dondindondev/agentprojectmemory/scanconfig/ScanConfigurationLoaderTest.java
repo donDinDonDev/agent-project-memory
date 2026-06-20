@@ -123,6 +123,119 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void appliesPolicyProfileMatrixWithoutChangingNoProfileBaseline() throws Exception {
+    Path repositoryRoot = repository("profile-matrix");
+    Files.createDirectories(repositoryRoot.resolve("exports"));
+    Files.writeString(repositoryRoot.resolve("exports/issues.json"), "{}\n");
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        documents:
+          include:
+            - notes/**/*.md
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+    ScanConfiguration noProfile = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: guarded-local
+        documents:
+          include:
+            - notes/token-FAKE_POLICY_DOCUMENT_SECRET.md
+        """);
+    InvalidScanConfigException guardedDocuments = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: guarded-local
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+    InvalidScanConfigException guardedAdapter = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: docs-focused
+        documents:
+          include:
+            - notes/**/*.md
+          exclude:
+            - notes/archive/**
+        """);
+    ScanConfiguration docsFocused = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: docs-focused
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+    InvalidScanConfigException docsAdapter = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: adapter-local
+        """);
+    ScanConfiguration adapterLocalWithoutAdapter = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: adapter-local
+        adapters:
+          local_structured_import:
+            enabled: true
+            path: exports/issues.json
+        """);
+    ScanConfiguration adapterLocalWithAdapter = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null);
+
+    assertAll(
+        () -> assertNull(noProfile.policyProfile()),
+        () -> assertTrue(noProfile.adapterConfiguration().enabled()),
+        () -> assertEquals(1, noProfile.documentIncludes().size()),
+        () -> assertTrue(guardedDocuments.getMessage().contains("document path rules")),
+        () -> assertFalse(guardedDocuments.getMessage().contains("notes/token")),
+        () -> assertFalse(guardedDocuments.getMessage().contains("FAKE_POLICY_DOCUMENT_SECRET")),
+        () -> assertTrue(guardedAdapter.getMessage().contains("adapter enablement")),
+        () -> assertFalse(guardedAdapter.getMessage().contains("exports/issues.json")),
+        () -> assertEquals(PolicyProfile.DOCS_FOCUSED, docsFocused.policyProfile()),
+        () -> assertEquals(1, docsFocused.documentIncludes().size()),
+        () -> assertEquals(1, docsFocused.documentExcludes().size()),
+        () -> assertFalse(docsFocused.adapterConfiguration().enabled()),
+        () -> assertTrue(docsAdapter.getMessage().contains("adapter enablement")),
+        () -> assertEquals(PolicyProfile.ADAPTER_LOCAL, adapterLocalWithoutAdapter.policyProfile()),
+        () -> assertFalse(adapterLocalWithoutAdapter.adapterConfiguration().enabled()),
+        () -> assertEquals(PolicyProfile.ADAPTER_LOCAL, adapterLocalWithAdapter.policyProfile()),
+        () -> assertTrue(adapterLocalWithAdapter.adapterConfiguration().enabled()),
+        () -> assertEquals(1, adapterLocalWithAdapter.adapterConfiguration().localImports().size()));
+  }
+
+  @Test
   void rejectsUnsupportedOrMismatchedPolicyProfileWithoutEchoingValues() throws Exception {
     Path repositoryRoot = repository("invalid-policy");
     writeConfig(repositoryRoot, """
@@ -539,6 +652,16 @@ final class ScanConfigurationLoaderTest {
         InvalidScanConfigException.class,
         () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
 
+    writeConfig(repositoryRoot, """
+        version: 1
+        features:
+          follow_symlinks: true
+        """);
+
+    InvalidScanConfigException symlink = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
     Files.writeString(repositoryRoot.resolve("agent-project-memory.yml"), """
         version: 1
         api_token: FAKE_SECRET_TOKEN_VALUE
@@ -550,6 +673,7 @@ final class ScanConfigurationLoaderTest {
 
     assertAll(
         () -> assertTrue(reserved.getMessage().contains("reserved scan modes cannot be enabled")),
+        () -> assertTrue(symlink.getMessage().contains("reserved scan modes cannot be enabled")),
         () -> assertFalse(unknown.getMessage().contains("api_token")),
         () -> assertFalse(unknown.getMessage().contains("FAKE_SECRET_TOKEN_VALUE")));
   }

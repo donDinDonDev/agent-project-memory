@@ -730,6 +730,11 @@ public final class AgentProjectMemoryCli {
       return invalidConfigError(ex.getMessage());
     }
 
+    if (scanConfiguration.policyProfile() != null && aiPresentationOptions.enabled()) {
+      return invalidConfigError(
+          "Invalid config: selected policy profile rejects AI presentation.");
+    }
+
     Path outputDirectory = normalizedProjectPath.resolve(OUTPUT_DIRECTORY_NAME);
     if (Files.isSymbolicLink(outputDirectory)) {
       return scanInputError("Output path must not be a symbolic link.");

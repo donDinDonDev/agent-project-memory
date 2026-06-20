@@ -22,6 +22,11 @@ architecture documents.
   `policy_profile: <name>` with accepted names, duplicate/unknown selector
   failures, and fail-closed config-plus-CLI mismatch validation while preserving
   no-profile scan compatibility.
+- Implemented the accepted policy profile behavior matrix for `guarded-local`,
+  `docs-focused`, and `adapter-local`, including fail-closed unsafe-combination
+  validation, bounded `scan.policy_profile` execution metadata for explicit
+  selections only, no-profile output compatibility, and tests that keep policy
+  metadata outside evidence semantics.
 
 ## [2.6.0] - 2026-06-20
 

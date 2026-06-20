@@ -505,6 +505,14 @@ public final class IncrementalCacheMetadataWriter {
     canonical.append("local_markdown_enabled=").append(scanConfiguration.localMarkdownEnabled()).append('\n');
     canonical.append("config_source=").append(scanConfiguration.configSource()).append('\n');
     canonical.append("config_status=").append(scanConfiguration.configFileStatus()).append('\n');
+    if (scanConfiguration.policyProfile() != null) {
+      canonical.append("policy_profile=")
+          .append(scanConfiguration.policyProfile().selector())
+          .append('\n');
+      canonical.append("policy_profile_source=")
+          .append(scanConfiguration.policyProfileSelectionSource())
+          .append('\n');
+    }
     canonical.append("profiles=");
     for (int index = 0; index < selectedProfiles.size(); index++) {
       if (index > 0) {

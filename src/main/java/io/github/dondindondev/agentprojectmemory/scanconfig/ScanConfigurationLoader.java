@@ -88,6 +88,7 @@ public final class ScanConfigurationLoader {
     PolicyProfile effectivePolicyProfile = effectivePolicyProfile(
         parsedConfig.policyProfile(),
         cliPolicyProfile);
+    validatePolicyProfile(effectivePolicyProfile, parsedConfig);
     return new ScanConfiguration(
         "config_file",
         sourcePath,
@@ -298,6 +299,26 @@ public final class ScanConfigurationLoader {
           "Invalid config: policy_profile and --policy-profile must match.");
     }
     return cliPolicyProfile != null ? cliPolicyProfile : configPolicyProfile;
+  }
+
+  private void validatePolicyProfile(
+      PolicyProfile policyProfile,
+      ParsedConfig parsedConfig) throws InvalidScanConfigException {
+    if (policyProfile == null) {
+      return;
+    }
+    if ((policyProfile == PolicyProfile.GUARDED_LOCAL
+        || policyProfile == PolicyProfile.DOCS_FOCUSED)
+        && parsedConfig.adapterConfiguration().enabled()) {
+      throw new InvalidScanConfigException(
+          "Invalid config: selected policy profile rejects adapter enablement.");
+    }
+    if (policyProfile == PolicyProfile.GUARDED_LOCAL
+        && (!parsedConfig.documentIncludes().isEmpty()
+            || !parsedConfig.documentExcludes().isEmpty())) {
+      throw new InvalidScanConfigException(
+          "Invalid config: selected policy profile rejects document path rules.");
+    }
   }
 
   private String policyProfileSelectionSource(

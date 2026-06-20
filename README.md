@@ -105,6 +105,24 @@ java -jar target/agent-project-memory-2.6.0.jar --version
 java -jar target/agent-project-memory-2.6.0.jar version
 ```
 
+Current builds also support opt-in local policy profile selection:
+
+```sh
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --policy-profile guarded-local
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --policy-profile docs-focused
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --policy-profile adapter-local
+```
+
+Supported policy profiles are `guarded-local`, `docs-focused`, and `adapter-local`.
+The same profile may also be selected with root-local config key
+`policy_profile: <name>`. A scan without a policy profile keeps the compatibility
+baseline and does not emit default policy metadata. When a policy profile is selected,
+the scan records bounded execution metadata under `project-map.json` `scan.policy_profile`;
+that metadata is not evidence and must not be treated as a security or compliance claim.
+Selected profiles fail closed on unsafe combinations such as AI presentation with policy
+profiles, adapter enablement outside `adapter-local`, document path-rule expansion under
+`guarded-local`, and reserved generated-source or symlink modes.
+
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
