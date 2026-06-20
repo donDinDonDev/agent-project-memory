@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.6.0] - 2026-06-20
+
+Release status: release candidate. The `v2.6.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
 ### Added
 
 - Documented the planned v2.6 change-impact workflow boundary, selecting a read-only
@@ -30,6 +35,26 @@ architecture documents.
   reports, raw diff handling, workspace impact, adapter-aware impact, source readback,
   scoring claims, vulnerability claims, business-priority claims, or code-change
   authority.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, v2.6
+  release notes, and public release wording for release-candidate review.
+
+### Security
+
+- Completed release-level security review for the accepted v2.6 impact query scope,
+  with no release-blocking findings remaining.
+
+### Not Included
+
+- Top-level `impact` command; `--from-git-diff`; raw diff parsing; Git working-tree
+  inspection; branch or commit comparison; rename detection; stable JSON output;
+  generated Markdown; generated impact reports; workspace impact; cross-repo impact;
+  adapter-aware impact; source/spec scoring; documentation freshness scoring; runtime
+  tracing; call graphs; vulnerability claims; business-priority claims; package-manager
+  publication; signing; native images; container images; release automation; or
+  automatic code modification.
 
 ## [2.5.0] - 2026-06-20
 

@@ -47,9 +47,9 @@ root rejection, and workspace-root `.project-memory/workspace-map.json` aggregat
 from existing member artifacts. It does not run child repository scans, mutate member
 `.project-memory/` directories, add cross-repo relations, or add workspace query
 behavior.
-The v2.6 design track accepts a first change-impact workflow boundary as a read-only
-single-repo query over existing no-adapter generated artifacts. Current development
-includes the `query <path> impact --files ...` direct mapping and conservative one-hop
+The v2.6.0 release candidate adds a first change-impact workflow boundary as a
+read-only single-repo query over existing no-adapter generated artifacts. It includes
+the `query <path> impact --files ...` direct mapping and conservative one-hop
 projection implementation for explicit repository-relative changed-file input, required
 `project-map.json`, `evidence-index.jsonl`, and `project-graph.json` artifacts,
 deterministic text output, direct matches, graph neighbors, relation-status rows,
@@ -1703,7 +1703,7 @@ Validation expectations before release:
   config parsing, multiple-root path handling, generated output, evidence reference
   rendering, workspace diagnostics, query behavior, or child-repo write behavior.
 
-## v2.6.0: Change-Impact Workflows (Planned)
+## v2.6.0: Change-Impact Workflows (Release Candidate)
 
 Product outcome: provide conservative local change-impact hints from explicit changed
 files while preserving deterministic artifacts, evidence-backed facts, local-only
@@ -1778,6 +1778,15 @@ Validation expectations before release:
   grammar, changed-file path handling, artifact reading, graph traversal, output
   rendering, diagnostics, evidence-reference rendering, or generated-output write
   boundaries.
+
+Release scope:
+
+- v2.6 ships the read-only single-repo `query <path> impact --files ...` boundary with
+  direct mapping, one-hop graph projection, relation-status rows, low-confidence
+  planning hints, explicit `not_represented` rows, bounded diagnostics, and deterministic
+  text output only.
+- The `v2.6.0` tag and GitHub Release are not published yet. Publication requires the
+  separate maintainer release workflow after release-prep review.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

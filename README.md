@@ -81,7 +81,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-2.5.0.jar
+target/agent-project-memory-2.6.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -92,24 +92,24 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar --help
-java -jar target/agent-project-memory-2.5.0.jar help
-java -jar target/agent-project-memory-2.5.0.jar scan --help
-java -jar target/agent-project-memory-2.5.0.jar --version
-java -jar target/agent-project-memory-2.5.0.jar version
+java -jar target/agent-project-memory-2.6.0.jar --help
+java -jar target/agent-project-memory-2.6.0.jar help
+java -jar target/agent-project-memory-2.6.0.jar scan --help
+java -jar target/agent-project-memory-2.6.0.jar --version
+java -jar target/agent-project-memory-2.6.0.jar version
 ```
 
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-2.5.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -124,7 +124,7 @@ Current builds also support explicitly enabled mock/no-network AI presentation
 artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
 ```
 
 Default scans do not create AI presentation artifacts. When enabled, the mock/no-network
@@ -142,7 +142,7 @@ presentation slice runs a full scan and skips incremental cache metadata refresh
 Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-2.6.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -158,18 +158,18 @@ Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project relations <id> --direction incoming
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project agent-context
-java -jar target/agent-project-memory-2.5.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project agent-context
+java -jar target/agent-project-memory-2.6.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -194,7 +194,7 @@ graph node ID or a generated fact ID that maps through node `source_ref`, and re
 only one-hop incoming, outgoing, or default `both` graph neighbors while keeping graph
 edges separate from `relation_statuses[]`. Graph `source_ref` and `derivation` fields
 are navigation metadata, not evidence. Stable JSON query output remains future work and
-is not included in the current published release line.
+is not included in the current build line.
 
 `impact --files <changed-file> [...]` renders conservative direct mapping and one-hop
 projection for explicit repository-relative changed-file paths over existing no-adapter
@@ -225,7 +225,7 @@ Current builds also include workspace map aggregation over explicitly configured
 member roots:
 
 ```sh
-java -jar target/agent-project-memory-2.5.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
+java -jar target/agent-project-memory-2.6.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
 ```
 
 The accepted workspace config shape is an explicit local YAML file:
@@ -624,7 +624,10 @@ presentation plumbing and no real AI provider integration.
 
 The latest published release is `v2.5.0`. It ships an executable jar and `SHA256SUMS`
 asset and adds explicit local workspace map aggregation through
-`workspace scan <config>`. Normal no-adapter generated
+`workspace scan <config>`. The current release candidate is `v2.6.0`, which adds
+conservative read-only change-impact hints through
+`query <path> impact --files ...`; it is not published until the tag, GitHub Release,
+and release assets are created. Normal no-adapter generated
 `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
@@ -660,6 +663,11 @@ The v2.5.0 release adds explicit local workspace map aggregation through
 `workspace scan <config>`, writing a separate workspace-root
 `.project-memory/workspace-map.json` from existing member artifacts while preserving
 single-repo scan/query artifacts unchanged.
+The v2.6.0 release candidate adds read-only single-repo
+`query <path> impact --files ...` output over existing no-adapter generated artifacts,
+including direct matches, one-hop graph neighbors, relation-status rows, planning
+hints, explicit `not_represented` rows, and bounded diagnostics without generated
+impact reports or source readback.
 
 The current Java/Spring line includes module-aware Maven analysis, build/config
 orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
