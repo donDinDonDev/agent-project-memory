@@ -11,8 +11,8 @@ architecture documents.
 
 ## [2.7.0] - 2026-06-20
 
-Release status: release candidate. The `v2.7.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.7.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 
@@ -37,13 +37,13 @@ and `SHA256SUMS` assets are not published yet.
 
 - Aligned the Maven project version, README local build examples, roadmap status,
   v2.7 release notes, output/evidence wording, and public release wording for
-  release-candidate review.
+  publication.
 
 ### Security
 
 - Completed release-level security review for the accepted v2.7 policy profile scope,
   with no release-blocking findings remaining.
-- Hardened release-candidate output safety around non-standard authorization header
+- Hardened release output safety around non-standard authorization header
   redaction, bounded Java/OpenAPI analysis, generated/build/vendor-like OpenAPI spec
   exclusions, query artifact evidence path validation, project-map evidence-reference
   validation, and evidence-backed impact path matching.

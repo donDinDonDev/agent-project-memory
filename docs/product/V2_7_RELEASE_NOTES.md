@@ -2,8 +2,8 @@
 
 Release date: 2026-06-20
 
-Release status: release candidate. The `v2.7.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.7.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.7.0 adds explicit local policy profiles for scan
 configuration presets and guardrails while preserving deterministic local analysis,
@@ -107,19 +107,18 @@ The v2.7.0 policy profile boundary remains local-first and fail-closed:
   reserved invalid configuration in v2.7.
 
 Release-level security review for the accepted policy profile scope completed as part
-of release-candidate validation, with no release-blocking findings remaining for
-v2.7.0.
+of release validation, with no release-blocking findings remaining for v2.7.0.
 
 ## Validation
 
-The v2.7.0 release-candidate validation passed:
+The v2.7.0 release validation passed:
 
 - Focused policy profile CLI/config/output/evidence tests: 112 tests, 0 failures,
   0 errors, 0 skipped.
 - Full local Maven test suite: 566 tests, 0 failures, 0 errors, 0 skipped.
 - Maven package build: 566 tests, 0 failures, 0 errors, 0 skipped, including the
   packaged CLI smoke bound to the Maven package lifecycle.
-- Focused release-candidate hardening tests cover authorization redaction, query
+- Focused release hardening tests cover authorization redaction, query
   artifact validation, impact matching, Java source file caps, OpenAPI spec discovery
   exclusions, and OpenAPI operation caps.
 - Packaged CLI `--version` reported `agent-project-memory 2.7.0`.
@@ -167,5 +166,4 @@ The intended `v2.7.0` release assets are:
 - `agent-project-memory-2.7.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published with the GitHub Release.

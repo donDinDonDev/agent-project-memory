@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.6.0`. Its release artifact is
-`agent-project-memory-2.6.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.7.0`. Its release artifact is
+`agent-project-memory-2.7.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.6.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.7.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -644,9 +644,9 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v2.6.0`. It ships an executable jar and `SHA256SUMS`
-asset and adds conservative read-only change-impact hints through
-`query <path> impact --files ...`. Normal no-adapter generated
+The latest published release is `v2.7.0`. It ships an executable jar and `SHA256SUMS`
+asset and adds explicit local policy profiles through
+`scan <path> --policy-profile <name>`. Normal no-adapter generated
 `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
@@ -687,7 +687,7 @@ The v2.6.0 release adds read-only single-repo
 including direct matches, one-hop graph neighbors, relation-status rows, planning
 hints, explicit `not_represented` rows, and bounded diagnostics without generated
 impact reports or source readback.
-The v2.7.0 release candidate adds explicit local policy profiles through
+The v2.7.0 release adds explicit local policy profiles through
 `scan <path> --policy-profile <name>` and root-local `policy_profile: <name>`,
 including `guarded-local`, `docs-focused`, and `adapter-local` guardrails, bounded
 `scan.policy_profile` execution metadata for explicit selections only, and fail-closed

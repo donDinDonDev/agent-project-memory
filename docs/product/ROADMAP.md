@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.6.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.7.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -1788,14 +1788,14 @@ Release scope:
 - The `v2.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.7.0: Policy And Configuration Profiles (Release Candidate)
+## v2.7.0: Policy And Configuration Profiles (Published)
 
 Product outcome: add explicit local policy profiles that make scan configuration
 presets and guardrails easier to select, review, and audit while preserving
 deterministic local analysis, evidence-backed facts, no-default-network behavior, and
 the existing agent output profile surface.
 
-Release-candidate boundary:
+Release boundary:
 
 - A policy profile is a local scan configuration preset and guardrail. It is not an
   agent output profile, security certification, compliance mode, vulnerability scanner,
@@ -1914,8 +1914,8 @@ Release scope:
 - v2.7 emits bounded `scan.policy_profile` execution metadata only when a policy
   profile is explicitly selected, preserves no-profile output compatibility, and keeps
   policy metadata outside `evidence-index.jsonl`.
-- The `v2.7.0` tag and GitHub Release are not published yet. Publication requires the
-  separate maintainer release workflow after release-prep review.
+- The `v2.7.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
