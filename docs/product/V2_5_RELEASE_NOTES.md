@@ -2,8 +2,8 @@
 
 Release date: 2026-06-20
 
-Release status: release candidate. The `v2.5.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.5.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.5.0 adds explicit local workspace map aggregation across
 configured local repository or service roots while preserving deterministic
@@ -142,10 +142,9 @@ v2.5.0 does not add:
 
 ## Release Assets
 
-The intended `v2.5.0` GitHub Release assets are:
+The `v2.5.0` GitHub Release assets are:
 
 - `agent-project-memory-2.5.0.jar`
 - `SHA256SUMS`
 
-These assets are not published until the maintainer explicitly performs the release
-publication workflow.
+These assets are published with this GitHub Release.
