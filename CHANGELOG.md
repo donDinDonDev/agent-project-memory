@@ -9,6 +9,11 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.5.0] - 2026-06-20
+
+Release status: release candidate. The `v2.5.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
 ### Added
 
 - Documented the planned v2.5 workspace design boundary, selecting an explicit
@@ -26,6 +31,24 @@ architecture documents.
   summaries, bounded diagnostics for missing or invalid member artifacts, empty
   cross-repo relations, and composite `repo_id` plus existing per-repo `evidence_id`
   sample references without mutating child repositories or single-repo artifacts.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status, v2.5
+  release notes, and public release wording for release-candidate review.
+
+### Security
+
+- Completed release-level security review for the accepted v2.5 workspace scope, with
+  no release-blocking findings remaining.
+
+### Not Included
+
+- Cross-repo relation emission; workspace query; workspace `agent-context`; workspace
+  graph output; adapter-aware workspace context; child repository scan refresh or
+  mutation; remote discovery; network access; credentials; SaaS; repository chat;
+  generic RAG; semantic search; package-manager publication; signing; native images;
+  container images; release automation; or automatic code modification.
 
 ## [2.4.0] - 2026-06-19
 

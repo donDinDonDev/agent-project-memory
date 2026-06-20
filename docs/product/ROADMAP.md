@@ -40,7 +40,7 @@ no-adapter generated artifacts and optional valid graph navigation metadata with
 creating generated artifacts, reading source files, adding adapter-aware query,
 starting a server/API/editor/plugin runtime, using network or credentials, or creating
 automatic code-modification authority.
-The unreleased v2.5 development line adds explicit
+The v2.5.0 release candidate adds explicit
 `workspace scan <config>` support for local workspace YAML configs,
 workspace-relative member roots, required unique logical `repo_id` values, unsafe
 root rejection, and workspace-root `.project-memory/workspace-map.json` aggregation
@@ -76,8 +76,8 @@ and provenance-backed. The v2.3 release also includes explicitly enabled
 mock/no-network AI presentation artifacts that are non-authoritative,
 non-evidence, and separate from the base generated artifact set. The v2.4.0 release
 also includes a CLI-only `agent-context` query view for read-only
-agent/editor consumption over existing no-adapter generated artifacts. The unreleased
-v2.5 development line also includes explicit workspace map aggregation over configured
+agent/editor consumption over existing no-adapter generated artifacts. The v2.5.0
+release candidate also includes explicit workspace map aggregation over configured
 local member roots from existing per-repo artifacts. The current
 public adoption surface also includes a checked-in generated-output example snapshot
 and contributor/reporting templates that point readers back to the output and evidence
@@ -1604,7 +1604,7 @@ Release readiness notes:
 - The `v2.4.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.5.0: Workspace, Monorepo, And Cross-Repo Memory (Planned)
+## v2.5.0: Workspace, Monorepo, And Cross-Repo Memory (Release Candidate)
 
 Product outcome: add local workspace-level project memory across multiple explicitly
 configured local repository or service roots while preserving deterministic single-repo
@@ -1652,7 +1652,7 @@ Accepted design boundary:
   are not part of the first workspace slice unless a later bounded goal updates the
   public contracts, tests, and security review scope.
 
-Current implementation direction:
+Release candidate scope:
 
 - The workspace config and root-safety foundation parses only the accepted config
   shape, validates root identity and path policy, emits bounded diagnostics, and proves
@@ -1660,8 +1660,10 @@ Current implementation direction:
 - Workspace map aggregation prefers existing per-repo artifacts and writes only the
   workspace-root `workspace-map.json`; running or refreshing child repo scans remains a
   separate explicit write-scope decision.
-- Ship v2.5 as workspace aggregation only if no safe cross-repo relation family is
-  accepted before release prep.
+- v2.5 ships as workspace aggregation only; no cross-repo relation family was accepted
+  before release prep.
+- `v2.5.0` is in release-candidate preparation. The tag, GitHub Release, executable
+  jar asset, and `SHA256SUMS` asset are not published yet.
 
 Non-goals:
 
