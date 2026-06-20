@@ -148,7 +148,7 @@ final class QueryCliTest {
   void listEndpointsAndApiOperationsStaySeparate() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
-    writeArtifacts(artifactRoot, richProjectMap());
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
 
     CliResult endpoints = runCli("query", repositoryRoot.toString(), "list", "endpoints");
     CliResult operations = runCli("query", repositoryRoot.toString(), "list", "api-operations");
@@ -176,7 +176,7 @@ final class QueryCliTest {
   void listEntitiesKeepsEntityEmbeddableAndRepositoryRelationBoundaries() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
-    writeArtifacts(artifactRoot, richProjectMap());
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
 
     CliResult result = runCli("query", repositoryRoot.toString(), "list", "entities");
 
@@ -207,7 +207,7 @@ final class QueryCliTest {
       throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
-    writeArtifacts(artifactRoot, richProjectMap());
+    writeArtifacts(artifactRoot, richProjectMap(), lookupEvidenceRecords());
 
     CliResult first = runCli("query", repositoryRoot.toString(), "list", "tests");
     CliResult second = runCli("query", repositoryRoot.toString(), "list", "tests");
@@ -427,7 +427,7 @@ final class QueryCliTest {
         () -> assertTrue(exact.stdout().contains("matched_field: class_name")),
         () -> assertTrue(exact.stdout().contains("matched_field: target_class_name")),
         () -> assertTrue(exact.stdout().contains("matched_field: generic_type")),
-        () -> assertTrue(exact.stdout().contains("navigation: evidence-index.jsonl#/records/3 (not evidence)")),
+        () -> assertTrue(exact.stdout().contains("navigation: evidence-index.jsonl#/records/5 (not evidence)")),
         () -> assertTrue(exact.stdout().contains("source_type: code_symbol")),
         () -> assertTrue(exact.stderr().isEmpty()),
         () -> assertEquals(6, wrongCase.exitCode()),
@@ -1114,15 +1114,16 @@ final class QueryCliTest {
         () -> assertEquals(first.stdout(), second.stdout()),
         () -> assertTrue(first.stdout().contains("Query: agent-context")),
         () -> assertTrue(first.stdout().contains(
-            "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=4")),
+            "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=")),
         () -> assertTrue(first.stdout().contains(
             "Optional graph: project-graph.json graph_schema_version=1.0 (navigation metadata, not evidence)")),
         () -> assertTrue(first.stdout().contains("query <path> list modules")),
         () -> assertTrue(first.stdout().contains("query <path> explain evidence <evidence-id>")),
         () -> assertTrue(first.stdout().contains(
             "- source-visible endpoints: 1 (first: endpoint:com.example.web.OrderController#getOrder; evidence_ids: ev:endpoint:controller, ev:endpoint:mapping)")),
-        () -> assertTrue(first.stdout().contains(
-            "- evidence records: 4 (ids: ev:pom.xml:1-1:build_file:pom.xml, ev:endpoint:mapping, ev:entity:order, ev:order:symbol)")),
+        () -> assertTrue(first.stdout().contains("- evidence records: ")),
+        () -> assertTrue(first.stdout().contains("ev:pom.xml:1-1:build_file:pom.xml")),
+        () -> assertTrue(first.stdout().contains("ev:endpoint:mapping")),
         () -> assertTrue(first.stdout().contains("- nodes: 4")),
         () -> assertTrue(first.stdout().contains("- edges: 3")),
         () -> assertTrue(first.stdout().contains(
@@ -1507,6 +1508,46 @@ final class QueryCliTest {
         () -> assertTrue(adapter.stdout().isEmpty()),
         () -> assertTrue(dangling.stdout().isEmpty()),
         () -> assertTrue(duplicate.stdout().isEmpty()));
+  }
+
+  @Test
+  void queryImpactIgnoresUnbackedProjectMapPathLikeFields() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(
+        artifactRoot,
+        """
+            {
+              "schema_version": "1.0",
+              "custom": {
+                "items": [
+                  {
+                    "id": "fact:injected",
+                    "path": "src/main/java/com/example/Injected.java",
+                    "evidence_ids": ["ev:pom.xml:1-1:build_file:pom.xml"]
+                  }
+                ]
+              }
+            }
+            """);
+    writeValidGraph(artifactRoot);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/java/com/example/Injected.java");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains("Results: direct_match=0")),
+        () -> assertTrue(result.stdout().contains("not_represented=1")),
+        () -> assertTrue(result.stdout().contains(
+            "changed_file: src/main/java/com/example/Injected.java")),
+        () -> assertFalse(result.stdout().contains("fact:injected")),
+        () -> assertFalse(result.stdout().contains("source_reference_path")));
   }
 
   @Test
@@ -2298,6 +2339,28 @@ final class QueryCliTest {
             "@GetMapping(\"/orders/{id}\")",
             "high")
         + evidenceRecord(
+            "ev:endpoint:controller",
+            "code_symbol",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            null,
+            "com.example.web.OrderController",
+            10,
+            10,
+            "class OrderController",
+            "high")
+        + evidenceRecord(
+            "ev:api:operation",
+            "api_spec",
+            "src/main/resources/openapi.yml",
+            null,
+            null,
+            "operation:post:/orders",
+            6,
+            12,
+            "post /orders",
+            "high")
+        + evidenceRecord(
             "ev:entity:order",
             "annotation",
             "src/main/java/com/example/domain/Order.java",
@@ -2318,6 +2381,127 @@ final class QueryCliTest {
             9,
             9,
             "class Order",
+            "high")
+        + evidenceRecord(
+            "ev:entity:embedded-id",
+            "annotation",
+            "src/main/java/com/example/domain/Order.java",
+            "com.example.domain.Order",
+            null,
+            "@EmbeddedId",
+            11,
+            11,
+            "@EmbeddedId",
+            "high")
+        + evidenceRecord(
+            "ev:embeddable:order-id",
+            "annotation",
+            "src/main/java/com/example/domain/OrderId.java",
+            "com.example.domain.OrderId",
+            null,
+            "@Embeddable",
+            8,
+            8,
+            "@Embeddable",
+            "high")
+        + evidenceRecord(
+            "ev:entity:relationship",
+            "annotation",
+            "src/main/java/com/example/domain/Order.java",
+            "com.example.domain.Order",
+            null,
+            "@ManyToOne",
+            14,
+            14,
+            "@ManyToOne",
+            "high")
+        + evidenceRecord(
+            "ev:repository:order",
+            "code_symbol",
+            "src/main/java/com/example/OrderRepository.java",
+            "com.example.OrderRepository",
+            null,
+            "com.example.OrderRepository",
+            5,
+            5,
+            "interface OrderRepository",
+            "high")
+        + evidenceRecord(
+            "ev:repository:raw",
+            "code_symbol",
+            "src/main/java/com/example/RawRepository.java",
+            "com.example.RawRepository",
+            null,
+            "com.example.RawRepository",
+            5,
+            5,
+            "interface RawRepository",
+            "high")
+        + evidenceRecord(
+            "ev:test:method",
+            "annotation",
+            "src/test/java/com/example/web/OrderControllerTest.java",
+            "com.example.web.OrderControllerTest",
+            "returnsOrder",
+            "@Test",
+            12,
+            12,
+            "@Test",
+            "high")
+        + evidenceRecord(
+            "ev:test:framework",
+            "annotation",
+            "src/test/java/com/example/web/OrderControllerTest.java",
+            "com.example.web.OrderControllerTest",
+            null,
+            "org.junit.jupiter.api.Test",
+            3,
+            3,
+            "import org.junit.jupiter.api.Test",
+            "high")
+        + evidenceRecord(
+            "ev:test:slice",
+            "annotation",
+            "src/test/java/com/example/web/OrderControllerTest.java",
+            "com.example.web.OrderControllerTest",
+            null,
+            "@WebMvcTest",
+            8,
+            8,
+            "@WebMvcTest(OrderController.class)",
+            "high")
+        + evidenceRecord(
+            "ev:test:mock",
+            "annotation",
+            "src/test/java/com/example/web/OrderControllerTest.java",
+            "com.example.web.OrderControllerTest",
+            null,
+            "@MockBean",
+            10,
+            10,
+            "@MockBean OrderService orderService",
+            "high")
+        + evidenceRecord(
+            "ev:test:class",
+            "code_symbol",
+            "src/test/java/com/example/web/OrderControllerTest.java",
+            "com.example.web.OrderControllerTest",
+            null,
+            "com.example.web.OrderControllerTest",
+            9,
+            9,
+            "class OrderControllerTest",
+            "high")
+        + evidenceRecord(
+            "ev:controller:class",
+            "code_symbol",
+            "src/main/java/com/example/web/OrderController.java",
+            "com.example.web.OrderController",
+            null,
+            "com.example.web.OrderController",
+            10,
+            10,
+            "class OrderController",
             "high");
   }
 

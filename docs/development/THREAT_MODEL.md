@@ -52,6 +52,11 @@ contract. The read-only query layer still treats artifact files as untrusted inp
 must validate schema markers, required fields, IDs, graph references, evidence
 references, and path safety before rendering results.
 
+Persistent incremental cache metadata is execution metadata, not evidence. A normal
+scan without `--incremental` ignores pre-existing cache files; an explicit incremental
+scan may reuse a previously generated output set only after the documented cache and
+output fingerprint checks pass.
+
 Planned workspace config and workspace artifacts add a multiple-root local trust
 boundary. The workspace config, configured member roots, per-repo generated artifacts,
 member `repo_id` values, and workspace diagnostics must be treated as untrusted input
@@ -384,7 +389,7 @@ Policy profile defaults:
 - policy profiles are local scan configuration presets and guardrails, not security
   certifications, compliance modes, vulnerability scanners, secret inventories, hosted
   policy systems, or complete safety proofs;
-- the planned first selector is explicit through a scan CLI flag or root-local scan
+- the first selector is explicit through a scan CLI flag or root-local scan
   config key, with no user-home policy discovery, remote policy loading, organization
   crawling, background sync, telemetry, or update checks;
 - normal no-profile scans remain the compatibility baseline and keep local-first,

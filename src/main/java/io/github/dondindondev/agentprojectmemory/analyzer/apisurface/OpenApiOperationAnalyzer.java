@@ -35,12 +35,15 @@ public final class OpenApiOperationAnalyzer {
   private static final String WARNING_SIGNAL_PARSE_ERROR = "openapi_spec_parse_error";
   private static final String WARNING_SIGNAL_UNSUPPORTED = "openapi_spec_unsupported";
   private static final String WARNING_SIGNAL_DUPLICATE_OPERATION = "openapi_spec_duplicate_operation";
+  private static final String WARNING_SIGNAL_OPERATION_COUNT_CAP =
+      "openapi_operation_count_cap_reached";
   private static final int MAX_SPEC_BYTES = 1024 * 1024;
   private static final int MAX_NESTING_DEPTH = 80;
   private static final int MAX_OPERATION_ID_LENGTH = 160;
   private static final int MAX_TAG_LENGTH = 120;
   private static final int MAX_TAGS = 8;
   private static final int MAX_JSON_STRING_LENGTH = 64 * 1024;
+  private static final int MAX_OPERATION_FACTS = 4096;
   private static final Set<String> SUPPORTED_HTTP_METHODS = Set.of(
       "get",
       "put",
@@ -67,8 +70,16 @@ public final class OpenApiOperationAnalyzer {
       .thenComparing(OpenApiSpecWarningFact::id);
 
   private final ObjectMapper jsonMapper;
+  private final int maxOperationFacts;
 
   public OpenApiOperationAnalyzer() {
+    this(MAX_OPERATION_FACTS);
+  }
+
+  OpenApiOperationAnalyzer(int maxOperationFacts) {
+    if (maxOperationFacts < 0) {
+      throw new IllegalArgumentException("maxOperationFacts must not be negative.");
+    }
     JsonFactory jsonFactory = JsonFactory.builder()
         .enable(StreamReadFeature.STRICT_DUPLICATE_DETECTION)
         .streamReadConstraints(StreamReadConstraints.builder()
@@ -77,6 +88,7 @@ public final class OpenApiOperationAnalyzer {
             .build())
         .build();
     this.jsonMapper = new ObjectMapper(jsonFactory);
+    this.maxOperationFacts = maxOperationFacts;
   }
 
   public OpenApiOperationAnalysis analyze(
@@ -98,8 +110,23 @@ public final class OpenApiOperationAnalyzer {
     List<OpenApiOperationFact> operations = new ArrayList<>();
     List<ApiSpecEvidence> evidence = new ArrayList<>();
     List<OpenApiSpecWarningFact> warnings = new ArrayList<>();
+    boolean operationCapReached = false;
 
     for (OpenApiSpecFileFact specFile : specFiles) {
+      if (operations.size() >= maxOperationFacts) {
+        if (!operationCapReached) {
+          addWarning(
+              specFile,
+              WARNING_SIGNAL_OPERATION_COUNT_CAP,
+              "Additional OpenAPI/Swagger operations were skipped because the analyzer reached "
+                  + "the bounded operation fact limit.",
+              new LinkedHashSet<>(),
+              evidence,
+              warnings);
+          operationCapReached = true;
+        }
+        break;
+      }
       parseSpec(
           normalizedRepositoryRoot,
           canonicalRepositoryRoot,
@@ -210,6 +237,17 @@ public final class OpenApiOperationAnalyzer {
             evidence,
             warnings);
         continue;
+      }
+      if (operations.size() >= maxOperationFacts) {
+        addWarning(
+            specFile,
+            WARNING_SIGNAL_OPERATION_COUNT_CAP,
+            "Additional OpenAPI/Swagger operations from this spec were skipped because the "
+                + "analyzer reached the bounded operation fact limit.",
+            emittedWarningSignals,
+            evidence,
+            warnings);
+        break;
       }
       addOperation(groupedCandidates.get(0), operations, evidence);
     }

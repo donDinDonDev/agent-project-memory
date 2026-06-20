@@ -36,6 +36,18 @@ public final class OpenApiSpecDiscoveryAnalyzer {
       "swagger.yml",
       "swagger.yaml",
       "swagger.json");
+  private static final Set<String> EXCLUDED_SEGMENTS = Set.of(
+      ".git",
+      ".project-memory",
+      "target",
+      "build",
+      "out",
+      "dist",
+      "node_modules",
+      "maintainer",
+      "internal",
+      "private",
+      "secrets");
   private static final Pattern YAML_OPENAPI_VERSION = Pattern.compile(
       "^\\s*openapi\\s*:\\s*[\"']?([^\\s\"'#]{1," + MAX_VERSION_LENGTH + "})");
   private static final Pattern YAML_SWAGGER_VERSION = Pattern.compile(
@@ -186,12 +198,22 @@ public final class OpenApiSpecDiscoveryAnalyzer {
   private boolean isExcluded(Path repositoryRoot, Path path) {
     Path relativePath = repositoryRoot.relativize(path.toAbsolutePath().normalize());
     for (Path part : relativePath) {
-      String name = part.toString();
-      if (".git".equals(name) || ".project-memory".equals(name) || "target".equals(name)) {
+      String name = part.toString().toLowerCase(Locale.ROOT);
+      if (name.startsWith(".")
+          || EXCLUDED_SEGMENTS.contains(name)
+          || isGeneratedLike(name)) {
         return true;
       }
     }
     return false;
+  }
+
+  private boolean isGeneratedLike(String segment) {
+    return "generated".equals(segment)
+        || segment.startsWith("generated-")
+        || segment.endsWith("-generated")
+        || segment.startsWith("generated_")
+        || segment.endsWith("_generated");
   }
 
   private Optional<SupportedModuleRoot> owningModule(

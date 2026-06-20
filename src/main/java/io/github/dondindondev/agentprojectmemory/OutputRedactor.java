@@ -17,7 +17,8 @@ public final class OutputRedactor {
   private static final Pattern XML_KEY_VALUE = Pattern.compile(
       "(?is)(<\\s*" + CREDENTIAL_KEY_PATTERN + "\\b[^>]*>)(.*?)(</\\s*[^>]+>)");
   private static final Pattern AUTHORIZATION_CREDENTIAL_PREFIX = Pattern.compile(
-      "(?i)\\b(?:authorization\\s*[:=]\\s*)?(?:bearer|basic)\\s+");
+      "(?i)\\bauthorization\\s*[:=]\\s*(?:[A-Za-z][A-Za-z0-9._~-]*\\s+)?"
+          + "|\\b(?:bearer|basic)\\s+");
   private static final Pattern QUOTED_KEY_VALUE = Pattern.compile(
       "(?i)(\\b" + CREDENTIAL_KEY_PATTERN + "\\b\\s*[:=]\\s*)([\"'`])([^\"'`\\r\\n]*)(\\2)");
   private static final Pattern BARE_KEY_VALUE = Pattern.compile(
@@ -375,6 +376,10 @@ public final class OutputRedactor {
         matcher.appendReplacement(redacted, Matcher.quoteReplacement(matcher.group(0)));
         continue;
       }
+      if (isAuthorizationSchemeBeforeRedactedCredential(matcher, value)) {
+        matcher.appendReplacement(redacted, Matcher.quoteReplacement(matcher.group(0)));
+        continue;
+      }
       matcher.appendReplacement(
           redacted,
           Matcher.quoteReplacement(matcher.group(1) + REDACTION_MARKER));
@@ -387,6 +392,20 @@ public final class OutputRedactor {
     String prefix = "mention ";
     return keyStart >= prefix.length()
         && value.regionMatches(true, keyStart - prefix.length(), prefix, 0, prefix.length());
+  }
+
+  private static boolean isAuthorizationSchemeBeforeRedactedCredential(
+      Matcher matcher,
+      String value) {
+    if (!matcher.group(1).toLowerCase(Locale.ROOT).contains("authorization")) {
+      return false;
+    }
+    int nextToken = skipWhitespace(value, matcher.end(2));
+    if (startsWithRedactionMarker(value, nextToken)) {
+      return true;
+    }
+    AuthorizationWrapper wrapper = authorizationWrapperAt(value, nextToken);
+    return wrapper != null && startsWithRedactionMarker(value, wrapper.contentStart());
   }
 
   private static String normalizeKey(String key) {

@@ -320,6 +320,11 @@ AI presentation Markdown, profile Markdown, generated Markdown bodies, cache met
 downstream agent output, prompts, and LLM output remain non-evidence and are not fact
 inputs for the first agent-context slice.
 
+Agent-context loading must validate the same existing evidence boundary it renders:
+evidence paths remain normalized repository-relative safe paths, and project-map
+evidence references must resolve to `evidence-index.jsonl` before they are displayed as
+navigation references.
+
 Agent consumption must not read repository source files, generated-source contents, raw
 local document bodies, raw connector exports, raw adapter input files, raw prompt
 transcripts, raw API requests or responses, environment values, credentials, tokens,
@@ -410,6 +415,10 @@ reference, but the changed path itself is not a new evidence source. If a file i
 represented in generated memory, impact output must report that absence instead of
 creating a fact or evidence record from the path string.
 
+Generated fact source-reference path matches are valid only when the matched path is
+backed by the fact or graph node's resolved evidence paths. Path-like fields without
+matching evidence remain generated metadata and must not become direct impact evidence.
+
 Impact confidence labels describe support for the rendered hint, not certainty of
 complete downstream impact:
 
@@ -439,15 +448,15 @@ applicable, a changelog entry, release notes, and a separate security review.
 
 ## Policy Profile Evidence Decision
 
-Policy profile selection is execution metadata, not project evidence. The planned v2.7
+Policy profile selection is execution metadata, not project evidence. The v2.7
 policy profile boundary treats selected profiles as local scan configuration presets and
 guardrails. They do not prove repository facts, security correctness, compliance,
 complete safety, credential absence, vulnerability absence, runtime behavior, source/spec
 agreement, documentation freshness, production impact, or business priority.
 
 Policy profiles do not add evidence types, evidence fields, evidence records,
-confidence labels, evidence IDs, source references, or tool-config evidence. Selected
-profile metadata, if emitted, belongs under `project-map.json` `scan.policy_profile` as
+confidence labels, evidence IDs, source references, or tool-config evidence. Explicit
+selected-profile metadata belongs under `project-map.json` `scan.policy_profile` as
 redacted execution metadata. It must not be copied into `evidence-index.jsonl` and must
 not be referenced from `evidence_ids`.
 
@@ -804,6 +813,9 @@ Spec-backed evidence:
   absolute, start with `./`, or escape the scanned repository root.
 - Symlink path entries are not emitted as `api_spec` facts. A regular target file inside
   the repository can be emitted only through its own normalized repository-relative path.
+- Generated, build-output, dependency, hidden, private, internal, secret-like, and
+  maintainer-only path segments are not accepted as local OpenAPI/Swagger spec evidence
+  locations in the current boundary.
 - `api_spec` evidence IDs use
   `ev:<spec_path_key>:<line_range_key>:api_spec:<api_spec_symbol_key>`.
 - `spec_path_key` and `api_spec_symbol_key` preserve case and slash separators, and

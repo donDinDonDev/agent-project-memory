@@ -214,15 +214,14 @@ claims, and code-change authority remain separate later design decisions.
 
 Policy profiles should make local scan configuration easier to review without becoming
 security certifications, compliance modes, hosted policy management, or a second
-meaning for existing agent output profiles. The planned v2.7 boundary treats policy
+meaning for existing agent output profiles. The v2.7 boundary treats policy
 profiles as optional local configuration presets and guardrails selected through an
 explicit scan selector or root-local scan config key. No policy profile may silently
 enable adapters, AI presentation, generated-source content scanning, symlink following,
 network access, credentials, telemetry, source upload, repository chat, generic RAG, or
 automatic code modification. Selected profile metadata should remain redacted scan
-execution metadata, not project evidence, and normal no-profile scans should keep the
-existing local-first compatibility baseline unless a later implementation contract
-explicitly documents an additive metadata change.
+execution metadata, not project evidence, and normal no-profile scans keep the existing
+local-first compatibility baseline without default policy metadata.
 
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI

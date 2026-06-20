@@ -184,9 +184,11 @@ public final class ProjectMemoryImpactRenderer {
         }
         List<String> evidenceIds = collectEvidenceIds(node, artifacts);
         Set<String> sourcePaths = new TreeSet<>();
+        Set<String> evidencePaths = new TreeSet<>();
         for (String evidenceId : evidenceIds) {
           JsonNode evidence = artifacts.evidenceById().get(evidenceId);
           String evidencePath = requiredText(evidence, "path", "Malformed evidence-index.jsonl.");
+          evidencePaths.add(evidencePath);
           sourcePaths.add(evidencePath);
           addFactMatch(
               factsByPath,
@@ -203,6 +205,9 @@ public final class ProjectMemoryImpactRenderer {
         while (fields.hasNext()) {
           Map.Entry<String, JsonNode> field = fields.next();
           for (String sourcePath : sourcePathValues(field.getKey(), field.getValue())) {
+            if (!evidencePaths.contains(sourcePath)) {
+              continue;
+            }
             sourcePaths.add(sourcePath);
             addFactMatch(
                 factsByPath,
@@ -266,9 +271,12 @@ public final class ProjectMemoryImpactRenderer {
       }
       List<String> evidenceIds = collectGraphEvidenceIds(node, artifacts);
       Set<String> sourcePaths = new TreeSet<>();
+      Set<String> evidencePaths = new TreeSet<>();
       for (String evidenceId : evidenceIds) {
         JsonNode evidence = artifacts.evidenceById().get(evidenceId);
-        sourcePaths.add(requiredText(evidence, "path", "Malformed evidence-index.jsonl."));
+        String evidencePath = requiredText(evidence, "path", "Malformed evidence-index.jsonl.");
+        evidencePaths.add(evidencePath);
+        sourcePaths.add(evidencePath);
       }
       String sourceRefId = textOrNull(node.at("/source_ref/id"));
       if (sourceRefId != null) {
@@ -277,7 +285,11 @@ public final class ProjectMemoryImpactRenderer {
       Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
       while (fields.hasNext()) {
         Map.Entry<String, JsonNode> field = fields.next();
-        sourcePaths.addAll(sourcePathValues(field.getKey(), field.getValue()));
+        for (String sourcePath : sourcePathValues(field.getKey(), field.getValue())) {
+          if (evidencePaths.contains(sourcePath)) {
+            sourcePaths.add(sourcePath);
+          }
+        }
       }
       for (String sourcePath : sourcePaths) {
         addMatch(

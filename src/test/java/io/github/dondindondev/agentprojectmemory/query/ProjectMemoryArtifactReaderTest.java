@@ -33,8 +33,8 @@ final class ProjectMemoryArtifactReaderTest {
         ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
 
     assertAll(
-        () -> assertEquals(artifactRoot, fromRepository.artifactRoot()),
-        () -> assertEquals(artifactRoot, fromArtifactRoot.artifactRoot()),
+        () -> assertEquals(artifactRoot.toRealPath(), fromRepository.artifactRoot()),
+        () -> assertEquals(artifactRoot.toRealPath(), fromArtifactRoot.artifactRoot()),
         () -> assertEquals("1.0", fromRepository.projectMapSchemaVersion()),
         () -> assertEquals(1, fromRepository.evidenceRecords().size()),
         () -> assertEquals(1, fromRepository.evidenceById().size()));
@@ -169,6 +169,40 @@ final class ProjectMemoryArtifactReaderTest {
   }
 
   @Test
+  void rejectsUnsafeEvidencePathsBeforeRenderingQueryOutput() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("evidence-index.jsonl"),
+        evidenceRecord("ev:one").replace("\"path\":\"pom.xml\"", "\"path\":\"/Users/example/.ssh/id_rsa\""));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Malformed evidence-index.jsonl path.");
+  }
+
+  @Test
+  void rejectsDanglingProjectMapEvidenceReferencesForEveryQueryMode() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeBaseArtifacts(artifactRoot);
+    Files.writeString(artifactRoot.resolve("project-map.json"), """
+        {
+          "schema_version": "1.0",
+          "warnings": [
+            {
+              "id": "warning:bad-reference",
+              "evidence_ids": ["ev:missing"]
+            }
+          ]
+        }
+        """);
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Invalid project-map.json evidence reference.");
+  }
+
+  @Test
   void rejectsInvalidGraphReferencesAndEvidenceReferences() throws Exception {
     Path artifactRoot = tempDir.resolve("repo/.project-memory");
     writeBaseArtifacts(artifactRoot);
@@ -226,6 +260,21 @@ final class ProjectMemoryArtifactReaderTest {
     assertArtifactError(
         secondRepositoryRoot,
         "project-map.json must not be a symbolic link.");
+  }
+
+  @Test
+  void resolvesQueryPathsThroughCanonicalDirectoryBeforeArtifactReads() throws Exception {
+    Path realParent = tempDir.resolve("real-parent");
+    Path repositoryRoot = realParent.resolve("repo");
+    writeBaseArtifacts(repositoryRoot.resolve(".project-memory"));
+    Path linkedParent = tempDir.resolve("linked-parent");
+    assumeTrue(createSymbolicLink(linkedParent, realParent));
+
+    ProjectMemoryArtifacts artifacts = reader.load(
+        linkedParent.resolve("repo"),
+        ProjectMemoryArtifactReader.GraphRequirement.OPTIONAL);
+
+    assertEquals(repositoryRoot.resolve(".project-memory").toRealPath(), artifacts.artifactRoot());
   }
 
   @Test

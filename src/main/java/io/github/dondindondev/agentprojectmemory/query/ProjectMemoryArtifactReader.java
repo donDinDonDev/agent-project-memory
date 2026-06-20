@@ -61,6 +61,7 @@ public final class ProjectMemoryArtifactReader {
         "schema_version",
         SUPPORTED_PROJECT_MAP_SCHEMA);
     EvidenceIndex evidenceIndex = readEvidenceIndex(requiredArtifact(artifactRoot, EVIDENCE_INDEX));
+    validateProjectMapEvidenceReferences(projectMap, evidenceIndex.ids());
     JsonNode projectGraph = null;
     String graphSchema = null;
     if (graphRequirement != GraphRequirement.NONE) {
@@ -86,17 +87,23 @@ public final class ProjectMemoryArtifactReader {
     if (queryPath == null) {
       throw new QueryArtifactException("Missing query path.");
     }
-    Path normalizedPath = queryPath.toAbsolutePath().normalize();
-    if (Files.notExists(normalizedPath, LinkOption.NOFOLLOW_LINKS)) {
+    Path inputPath = queryPath.toAbsolutePath().normalize();
+    if (Files.notExists(inputPath, LinkOption.NOFOLLOW_LINKS)) {
       throw new QueryArtifactException("Query path does not exist.");
     }
-    if (Files.isSymbolicLink(normalizedPath)) {
+    if (Files.isSymbolicLink(inputPath)) {
       throw new QueryArtifactException("Query path must not be a symbolic link.");
     }
-    if (!Files.isDirectory(normalizedPath, LinkOption.NOFOLLOW_LINKS)) {
+    if (!Files.isDirectory(inputPath, LinkOption.NOFOLLOW_LINKS)) {
       throw new QueryArtifactException("Query path is not a directory.");
     }
 
+    Path normalizedPath;
+    try {
+      normalizedPath = inputPath.toRealPath().normalize();
+    } catch (IOException exception) {
+      throw new QueryArtifactException("Query path does not exist.");
+    }
     Path fileName = normalizedPath.getFileName();
     boolean directArtifactRoot = fileName != null && ARTIFACT_ROOT_NAME.equals(fileName.toString());
     Path artifactRoot = directArtifactRoot
@@ -204,9 +211,50 @@ public final class ProjectMemoryArtifactReader {
       if (byId.putIfAbsent(id, record) != null) {
         throw new QueryArtifactException("Duplicate evidence id in evidence-index.jsonl.");
       }
+      JsonNode pathNode = record.path("path");
+      if (!pathNode.isTextual() || !isSafeRepositoryRelativePath(pathNode.asText())) {
+        throw new QueryArtifactException("Malformed evidence-index.jsonl path.");
+      }
       records.add(record);
     }
     return new EvidenceIndex(List.copyOf(records), Map.copyOf(byId), Set.copyOf(byId.keySet()));
+  }
+
+  private void validateProjectMapEvidenceReferences(JsonNode projectMap, Set<String> evidenceIds)
+      throws QueryArtifactException {
+    if (projectMap.isObject()) {
+      Iterator<Map.Entry<String, JsonNode>> fields = projectMap.fields();
+      while (fields.hasNext()) {
+        Map.Entry<String, JsonNode> field = fields.next();
+        if (isEvidenceIdField(field.getKey())) {
+          validateProjectMapEvidenceIdsArray(field.getValue(), evidenceIds);
+        } else {
+          validateProjectMapEvidenceReferences(field.getValue(), evidenceIds);
+        }
+      }
+      return;
+    }
+    if (projectMap.isArray()) {
+      for (JsonNode item : projectMap) {
+        validateProjectMapEvidenceReferences(item, evidenceIds);
+      }
+    }
+  }
+
+  private void validateProjectMapEvidenceIdsArray(JsonNode value, Set<String> evidenceIds)
+      throws QueryArtifactException {
+    if (!value.isArray()) {
+      throw new QueryArtifactException("Invalid project-map.json evidence reference.");
+    }
+    for (JsonNode id : value) {
+      if (!id.isTextual() || !evidenceIds.contains(id.asText())) {
+        throw new QueryArtifactException("Invalid project-map.json evidence reference.");
+      }
+    }
+  }
+
+  private boolean isEvidenceIdField(String fieldName) {
+    return "evidence_ids".equals(fieldName) || fieldName.endsWith("_evidence_ids");
   }
 
   private String validateGraph(JsonNode graph, Set<String> evidenceIds) throws QueryArtifactException {
@@ -373,6 +421,37 @@ public final class ProjectMemoryArtifactReader {
       }
     }
     return false;
+  }
+
+  private boolean isSafeRepositoryRelativePath(String path) {
+    if (path == null
+        || path.isBlank()
+        || !path.equals(path.strip())
+        || path.startsWith("/")
+        || path.startsWith("./")
+        || path.contains("\\")
+        || path.indexOf('\n') >= 0
+        || path.indexOf('\r') >= 0
+        || ".project-memory".equals(path)
+        || path.startsWith(".project-memory/")
+        || path.matches("^[A-Za-z]:[/\\\\].*")
+        || path.matches("^[A-Za-z][A-Za-z0-9+.-]*://.*")
+        || path.regionMatches(true, 0, "file:", 0, "file:".length())) {
+      return false;
+    }
+    try {
+      if (Path.of(path).isAbsolute()) {
+        return false;
+      }
+    } catch (RuntimeException exception) {
+      return false;
+    }
+    for (String segment : path.split("/", -1)) {
+      if (segment.isBlank() || ".".equals(segment) || "..".equals(segment)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   public enum GraphRequirement {

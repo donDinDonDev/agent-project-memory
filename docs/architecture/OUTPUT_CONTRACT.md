@@ -71,12 +71,11 @@ single-repo generated artifacts. It does not add a generated artifact in the fir
 slice. A future generated impact report, if accepted, must update this file before
 implementation.
 
-The planned v2.7 policy profile boundary does not add a generated artifact. When a
+The v2.7 policy profile boundary does not add a generated artifact. When a
 policy profile is explicitly selected, the accepted placement for selected profile
 metadata is the existing `project-map.json` top-level `scan` object. A normal scan with
-no policy profile remains the compatibility baseline and should not gain default
-policy-profile metadata unless a later implementation contract explicitly accepts that
-change.
+no policy profile remains the compatibility baseline and does not gain default
+policy-profile metadata in the v2.7 boundary.
 
 ## v2 Adapter Output Boundary
 
@@ -5649,7 +5648,13 @@ Artifact validation policy:
   Adapter-enabled `schema_version: "2.0"` artifact sets are outside current query
   support unless a later query contract explicitly adds adapter-aware behavior.
 - `evidence-index.jsonl` must parse as newline-delimited JSON with unique evidence
-  `id` values and the documented evidence field set.
+  `id` values and the documented evidence field set. Evidence `path` values must be
+  normalized repository-relative safe paths: no local absolute paths, `./` prefixes,
+  parent traversal, backslash separators, URL/file-URL values, blank or newline-bearing
+  values, drive paths, or `.project-memory/` generated-output paths.
+- `project-map.json` evidence reference fields named `evidence_ids` or ending in
+  `_evidence_ids` must be arrays whose string values resolve to
+  `evidence-index.jsonl`.
 - `project-graph.json`, when required by `relations` or graph-backed `find fact`, must
   parse as JSON and use a supported `graph_schema_version`. The initial v1.6 contract
   supports `"1.0"`.
@@ -6285,6 +6290,10 @@ Impact matching and projection behavior:
 - Direct changed-file matches are created only when an input path equals an existing
   evidence `path`, a generated fact source reference path, or a graph node source path
   already present in accepted source artifacts.
+- Generated fact source reference paths are accepted as direct matches only when the
+  same path is also present in the fact or graph node's resolved evidence paths.
+  Path-like fields without matching evidence remain generated metadata, not direct
+  impact support.
 - The direct mapping foundation renders `direct_match`, `not_represented`, and
   `diagnostic` rows. The conservative projection slice also renders `graph_neighbor`,
   `relation_status`, and `planning_hint` rows without changing the source artifact set.
@@ -6427,10 +6436,10 @@ Stop conditions for implementation:
   connectors, optional AI, repository chat, generic RAG, semantic search, automatic
   code modification, release automation, or publication automation.
 
-### v2.7 Policy Profile Design Contract
+### v2.7 Policy Profile Contract
 
-This section defines the accepted v2.7 design boundary for policy profiles before
-implementation. A policy profile is a local scan configuration preset and guardrail. It
+This section defines the accepted v2.7 boundary for policy profiles. A policy profile is
+a local scan configuration preset and guardrail. It
 is not an agent output profile, security certification, compliance mode, vulnerability
 scanner, secret inventory, hosted policy service, enterprise policy enforcement system,
 or complete safety proof.
@@ -6441,11 +6450,11 @@ Terminology and selector boundary:
 - Existing `scan <path> --agent-profile <profile>` selectors keep the v1.3 agent output
   profile meaning. They generate deterministic Markdown presentations under
   `.project-memory/agent-profiles/` and must not be used for policy profile selection.
-- The planned CLI selector is a single optional
+- The CLI selector is a single optional
   `scan <path> --policy-profile <name>` flag.
-- The planned root-local scan config selector is a single optional top-level
+- The root-local scan config selector is a single optional top-level
   `policy_profile: <name>` key in `agent-project-memory.yml`.
-- The planned selector accepts only canonical names. Unknown names fail closed before
+- The selector accepts only canonical names. Unknown names fail closed before
   output generation. Repeated CLI selectors are usage errors.
 - The initial accepted policy profile names are `guarded-local`, `docs-focused`, and
   `adapter-local`.
@@ -6456,8 +6465,7 @@ Terminology and selector boundary:
 Default and precedence rules:
 
 - A normal scan with no policy profile remains the default compatibility baseline. It
-  preserves current local-first, no-default-network behavior and should keep generated
-  output byte-stable unless a later implementation contract explicitly accepts default
+  preserves current local-first, no-default-network behavior and does not emit default
   policy metadata.
 - Effective policy calculation is built-in defaults first, then the selected policy
   profile, then explicit root-local config keys, then explicit CLI flags.
@@ -6497,7 +6505,7 @@ Unsafe-combination behavior:
   absolute paths, command logs, stack traces, credentials, tokens, or secret-looking
   values.
 
-Planned `project-map.json` metadata shape when a policy profile is explicitly selected:
+`project-map.json` metadata shape when a policy profile is explicitly selected:
 
 ```json
 {
@@ -6563,7 +6571,7 @@ Evidence and generated artifact decisions:
   query output, adapter provenance, release notes, and downstream agent output remain
   non-evidence and cannot be used to satisfy policy profile evidence requirements.
 
-Validation requirements before implementation release:
+Validation requirements:
 
 - Focused CLI/config tests for accepted profile names, unsupported names, duplicated
   selectors, config selection, CLI selection, matching config-plus-CLI selection, and
@@ -6633,6 +6641,8 @@ Secret-looking value policy:
   credential-like key or header, such as password, token, secret, credential, private
   key, API key, client secret, access key, authorization, bearer, or basic credential
   forms.
+- Authorization header or key/value forms must redact credentials for standard and
+  non-standard schemes as well as schemeless authorization values.
 - In scope are obvious private-key material markers when such material appears inside a
   selected excerpt or rendered output string.
 - The redaction primitive should mask the value portion when the boundary is clear,
@@ -6687,7 +6697,7 @@ Path, symlink, and hardlink audit matrix:
 | Cache metadata | Keep cache files under `.project-memory/cache/v1/`; fail closed on unsafe, stale, corrupt, mismatched, symlinked, hardlinked, or inconsistent cache state. |
 | Graph output | Generate navigation metadata from existing facts, evidence IDs, relation/status rows, and derivation metadata only. |
 | Agent profile output | Render selected deterministic Markdown from existing structured facts and evidence references only. |
-| Query artifact root and files | Read only direct child artifacts required by the query command; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; never write during query. |
+| Query artifact root and files | Read only direct child artifacts required by the query command; resolve accepted query directories canonically; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; reject unsafe evidence paths and unresolved project-map evidence references; never write during query. |
 | CLI stdout and stderr | Keep messages deterministic and bounded; do not print stack traces, local absolute paths, raw command text, source bodies, document bodies, config contents, generated-source contents, credentials, tokens, or secret-looking values. |
 
 Validation requirements before v1.7 release:

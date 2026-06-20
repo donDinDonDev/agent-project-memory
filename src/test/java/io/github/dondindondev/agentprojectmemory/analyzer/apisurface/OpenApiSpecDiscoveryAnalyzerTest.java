@@ -126,6 +126,18 @@ final class OpenApiSpecDiscoveryAnalyzerTest {
     writeFile(repositoryRoot.resolve("target/generated-sources/openapi/openapi.yml"), """
         openapi: 3.0.0
         """);
+    writeFile(repositoryRoot.resolve("build/openapi.yml"), """
+        openapi: 3.0.0
+        """);
+    writeFile(repositoryRoot.resolve("out/swagger.json"), """
+        {"openapi": "3.0.0"}
+        """);
+    writeFile(repositoryRoot.resolve("node_modules/example/openapi.json"), """
+        {"openapi": "3.0.0"}
+        """);
+    writeFile(repositoryRoot.resolve("src/generated/openapi.yaml"), """
+        openapi: 3.0.0
+        """);
     writeFile(repositoryRoot.resolve(".project-memory/openapi.yml"), """
         openapi: 3.0.0
         """);

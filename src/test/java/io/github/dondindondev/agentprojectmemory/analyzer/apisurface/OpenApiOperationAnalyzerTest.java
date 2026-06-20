@@ -114,6 +114,34 @@ final class OpenApiOperationAnalyzerTest {
   }
 
   @Test
+  void capsOperationFactsAcrossSpecParsing() throws Exception {
+    Path repositoryRoot = repository("operation-cap");
+    writeFile(repositoryRoot.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.0
+        paths:
+          /alpha:
+            get: {}
+          /bravo:
+            post: {}
+          /charlie:
+            patch:
+              operationId: FAKE_SKIPPED_OPERATION
+        """);
+    OpenApiOperationAnalyzer cappedAnalyzer = new OpenApiOperationAnalyzer(2);
+
+    OpenApiOperationAnalysis analysis = cappedAnalyzer.analyze(
+        repositoryRoot,
+        discovery(repositoryRoot, List.of(supportedModule("module:.", "."))).specFiles());
+
+    assertAll(
+        () -> assertEquals(2, analysis.operations().size()),
+        () -> assertEquals(1, analysis.warnings().size()),
+        () -> assertEquals("openapi_operation_count_cap_reached", analysis.warnings().get(0).signal()),
+        () -> assertFalse(analysis.toString().contains("FAKE_SKIPPED_OPERATION")),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
   void boundsOperationIdAndTags() throws Exception {
     Path repositoryRoot = repository("bounded-values");
     writeFile(repositoryRoot.resolve("src/main/resources/openapi.yml"), """

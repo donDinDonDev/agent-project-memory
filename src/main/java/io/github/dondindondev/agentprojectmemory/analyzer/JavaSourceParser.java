@@ -352,7 +352,10 @@ public final class JavaSourceParser {
         return cached;
       }
 
-      List<JavaFileCandidate> javaFileCandidates = new ArrayList<>();
+      BoundedCandidateSet<JavaFileCandidate> javaFileCandidates = new BoundedCandidateSet<>(
+          MAX_JAVA_SOURCE_FILES,
+          Comparator.comparing(candidate -> candidate.path().toString()),
+          candidate -> candidate.path().toString());
       Files.walkFileTree(sourceRoot, new SimpleFileVisitor<>() {
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
@@ -369,9 +372,11 @@ public final class JavaSourceParser {
           return FileVisitResult.CONTINUE;
         }
       });
-      List<JavaFileCandidate> sortedJavaFileCandidates = javaFileCandidates.stream()
-          .sorted(Comparator.comparing(candidate -> candidate.path().toString()))
-          .toList();
+      if (javaFileCandidates.capReached()) {
+        skippedSources = true;
+        addDiagnostic(fileCountCapDiagnostic());
+      }
+      List<JavaFileCandidate> sortedJavaFileCandidates = javaFileCandidates.sorted();
       List<Path> cappedJavaFiles = new ArrayList<>();
       for (JavaFileCandidate candidate : sortedJavaFileCandidates) {
         if (!allowSourceFile(candidate.path())) {

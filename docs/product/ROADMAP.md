@@ -1788,14 +1788,14 @@ Release scope:
 - The `v2.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.7.0: Policy And Configuration Profiles (Planned)
+## v2.7.0: Policy And Configuration Profiles (Release Candidate)
 
 Product outcome: add explicit local policy profiles that make scan configuration
 presets and guardrails easier to select, review, and audit while preserving
 deterministic local analysis, evidence-backed facts, no-default-network behavior, and
 the existing agent output profile surface.
 
-Accepted design boundary:
+Release-candidate boundary:
 
 - A policy profile is a local scan configuration preset and guardrail. It is not an
   agent output profile, security certification, compliance mode, vulnerability scanner,
@@ -1805,18 +1805,18 @@ Accepted design boundary:
   deterministic generated presentations under `.project-memory/agent-profiles/`.
   Policy profiles use a separate selector and must not reuse the `codex`, `claude`,
   `cursor`, `generic`, or `all` agent-profile names.
-- The planned selector shape is a single optional
+- The selector shape is a single optional
   `scan <path> --policy-profile <name>` CLI flag plus a single optional root-local scan
   config key, `policy_profile: <name>`. Unknown names fail closed before output
   generation. Repeated CLI selectors are usage errors.
-- The planned initial profile names are `guarded-local`, `docs-focused`, and
+- The initial profile names are `guarded-local`, `docs-focused`, and
   `adapter-local`. `strict`, `no-network`, `enterprise-local`, `oss`, `docs-heavy`,
   and `generated-source-enabled` remain parked names because they are ambiguous,
   overstate guarantees, or imply behavior that is not safe in the first boundary.
 - A normal scan with no policy profile remains the compatibility baseline and should
-  keep the existing default output set and local-first behavior. If selected profile
-  metadata is implemented, no-profile scans should remain byte-stable unless a later
-  contract explicitly accepts default metadata.
+  keep the existing default output set and local-first behavior. Explicit selected
+  profile metadata is additive, and no-profile scans do not emit default policy
+  metadata.
 - Effective policy calculation is built-in defaults first, then the selected policy
   profile, then explicit root-local config keys, then explicit CLI flags. Explicit
   config or CLI values may be stricter than the selected profile, but they must not
@@ -1904,6 +1904,18 @@ Stop conditions for implementation:
   runtime, repository chat, generic RAG, generated-source content scanning, symlink
   following, source upload, release automation, package publication, or automatic code
   modification.
+
+Release scope:
+
+- v2.7 ships explicit local policy profiles through
+  `scan <path> --policy-profile <name>` and root-local `policy_profile: <name>`,
+  with `guarded-local`, `docs-focused`, and `adapter-local` as the accepted profile
+  names.
+- v2.7 emits bounded `scan.policy_profile` execution metadata only when a policy
+  profile is explicitly selected, preserves no-profile output compatibility, and keeps
+  policy metadata outside `evidence-index.jsonl`.
+- The `v2.7.0` tag and GitHub Release are not published yet. Publication requires the
+  separate maintainer release workflow after release-prep review.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

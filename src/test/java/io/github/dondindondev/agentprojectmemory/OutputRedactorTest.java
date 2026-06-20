@@ -56,6 +56,25 @@ final class OutputRedactorTest {
   }
 
   @Test
+  void redactsAuthorizationCredentialsForNonStandardSchemes() {
+    String redacted = OutputRedactor.redact(
+        "Authorization: Token FAKE_V270_TOKEN_AUTH "
+            + "authorization=ApiKey \"FAKE_V270_APIKEY_AUTH\" "
+            + "Authorization: FAKE_V270_SCHEMELESS_AUTH");
+
+    assertAll(
+        () -> assertTrue(redacted.contains(
+            "Authorization: Token [REDACTED_SECRET_LIKE_VALUE]")),
+        () -> assertTrue(redacted.contains(
+            "authorization=ApiKey \"[REDACTED_SECRET_LIKE_VALUE]\"")),
+        () -> assertTrue(redacted.contains(
+            "Authorization: [REDACTED_SECRET_LIKE_VALUE]")),
+        () -> assertFalse(redacted.contains("FAKE_V270_TOKEN_AUTH")),
+        () -> assertFalse(redacted.contains("FAKE_V270_APIKEY_AUTH")),
+        () -> assertFalse(redacted.contains("FAKE_V270_SCHEMELESS_AUTH")));
+  }
+
+  @Test
   void redactsJsonStyleQuotedCredentialKeysWhilePreservingNonCredentialValues() {
     String redacted = OutputRedactor.redact(
         "{\"password\":\"FAKE_V170_JSON_PASSWORD\","

@@ -9,9 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.7.0] - 2026-06-20
+
+Release status: release candidate. The `v2.7.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
 ### Added
 
-- Documented the planned v2.7 policy profile boundary, selecting local
+- Documented the v2.7 policy profile boundary, selecting local
   configuration presets and guardrails with explicit selector precedence,
   fail-closed unsafe combinations, additive scan metadata, and a non-evidence
   evidence decision while parking hosted policy management, network defaults,
@@ -27,6 +32,33 @@ architecture documents.
   validation, bounded `scan.policy_profile` execution metadata for explicit
   selections only, no-profile output compatibility, and tests that keep policy
   metadata outside evidence semantics.
+
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  v2.7 release notes, output/evidence wording, and public release wording for
+  release-candidate review.
+
+### Security
+
+- Completed release-level security review for the accepted v2.7 policy profile scope,
+  with no release-blocking findings remaining.
+- Hardened release-candidate output safety around non-standard authorization header
+  redaction, bounded Java/OpenAPI analysis, generated/build/vendor-like OpenAPI spec
+  exclusions, query artifact evidence path validation, project-map evidence-reference
+  validation, and evidence-backed impact path matching.
+
+### Not Included
+
+- Hosted policy management; remote policy registry; remote configuration; user-home
+  policy discovery; organization policy crawling; background sync; update checks;
+  telemetry; network calls; provider API calls; source upload; credential lookup,
+  storage, validation, or handling; real provider AI; embeddings; vector stores;
+  repository chat; generic RAG; web UI; server/API/editor/plugin runtime;
+  generated-source content scanning; symlink following; security certification;
+  compliance mode; vulnerability scanning; secret inventory; package-manager
+  publication; signing; native images; container images; release automation; or
+  automatic code modification.
 
 ## [2.6.0] - 2026-06-20
 
