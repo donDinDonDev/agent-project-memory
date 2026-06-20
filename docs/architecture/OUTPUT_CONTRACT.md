@@ -71,6 +71,13 @@ single-repo generated artifacts. It does not add a generated artifact in the fir
 slice. A future generated impact report, if accepted, must update this file before
 implementation.
 
+The planned v2.7 policy profile boundary does not add a generated artifact. When a
+policy profile is explicitly selected, the accepted placement for selected profile
+metadata is the existing `project-map.json` top-level `scan` object. A normal scan with
+no policy profile remains the compatibility baseline and should not gain default
+policy-profile metadata unless a later implementation contract explicitly accepts that
+change.
+
 ## v2 Adapter Output Boundary
 
 The current implementation does not emit adapter packages, network connector output,
@@ -6419,6 +6426,178 @@ Stop conditions for implementation:
   adapter/source-registry joins, workspace relation inference, network access,
   connectors, optional AI, repository chat, generic RAG, semantic search, automatic
   code modification, release automation, or publication automation.
+
+### v2.7 Policy Profile Design Contract
+
+This section defines the accepted v2.7 design boundary for policy profiles before
+implementation. A policy profile is a local scan configuration preset and guardrail. It
+is not an agent output profile, security certification, compliance mode, vulnerability
+scanner, secret inventory, hosted policy service, enterprise policy enforcement system,
+or complete safety proof.
+
+Terminology and selector boundary:
+
+- Use the public term `policy profile` for this scan configuration surface.
+- Existing `scan <path> --agent-profile <profile>` selectors keep the v1.3 agent output
+  profile meaning. They generate deterministic Markdown presentations under
+  `.project-memory/agent-profiles/` and must not be used for policy profile selection.
+- The planned CLI selector is a single optional
+  `scan <path> --policy-profile <name>` flag.
+- The planned root-local scan config selector is a single optional top-level
+  `policy_profile: <name>` key in `agent-project-memory.yml`.
+- The planned selector accepts only canonical names. Unknown names fail closed before
+  output generation. Repeated CLI selectors are usage errors.
+- The initial accepted policy profile names are `guarded-local`, `docs-focused`, and
+  `adapter-local`.
+- `strict`, `no-network`, `enterprise-local`, `oss`, `docs-heavy`, and
+  `generated-source-enabled` are parked names. They either overstate guarantees, are too
+  ambiguous for a first public contract, or imply behavior that is out of scope.
+
+Default and precedence rules:
+
+- A normal scan with no policy profile remains the default compatibility baseline. It
+  preserves current local-first, no-default-network behavior and should keep generated
+  output byte-stable unless a later implementation contract explicitly accepts default
+  policy metadata.
+- Effective policy calculation is built-in defaults first, then the selected policy
+  profile, then explicit root-local config keys, then explicit CLI flags.
+- Explicit config keys or CLI flags may be stricter than the selected profile, but they
+  must not weaken selected profile guardrails.
+- If config and CLI both select a policy profile, the selected names must match exactly.
+  A mismatch fails closed before output generation instead of silently replacing a
+  repository-local policy choice.
+- Policy profiles are single-selection presets. Composition, inheritance, aliases, and
+  profile bundles are out of scope for the first boundary.
+
+Initial profile behavior matrix:
+
+| Profile | Purpose | Allowed optional surfaces | Rejected combinations |
+| --- | --- | --- | --- |
+| `guarded-local` | Keep the scan on the narrow built-in local-input path. | Built-in default-scope local Markdown; existing no-adapter scan behavior. | Adapters, AI presentation, user document include/exclude expansion, generated-source content scanning, symlink following, network access, credentials, telemetry, source upload. |
+| `docs-focused` | Keep local-only analysis while allowing validated Markdown document refinement. | Built-in default-scope local Markdown plus validated Markdown-only `documents.include` and `documents.exclude` rules. | Adapters, AI presentation, generated-source content scanning, symlink following, network access, credentials, telemetry, source upload, non-Markdown document expansion. |
+| `adapter-local` | Allow explicitly configured existing local import adapters under the current local-file validation rules. | At most one explicitly enabled existing local import adapter, plus normal local scan behavior. | Silent adapter enablement, network/API connectors, credentials, AI presentation, generated-source content scanning, symlink following, telemetry, source upload. |
+
+These profiles do not enable an analyzer or adapter by themselves unless this table says
+the selected profile allows the already documented explicit configuration surface. The
+existing reserved config values `features.generated_sources: true` and
+`features.follow_symlinks: true` remain invalid in v2.7.
+
+Unsafe-combination behavior:
+
+- Unsupported profile names, duplicated selectors, mismatched config and CLI selectors,
+  and attempts to weaken selected profile guardrails fail closed before output
+  generation.
+- Policy profiles must not silently enable adapters, AI presentation, generated-source
+  content scanning, symlink following, network access, credentials, telemetry,
+  source upload, hosted policy management, server/API/editor/plugin runtime,
+  repository chat, generic RAG, or automatic code modification.
+- Redaction posture must not be weakened. Profile metadata, diagnostics, and conflict
+  messages must not serialize raw config values, user include/exclude patterns, adapter
+  import paths, source bodies, document bodies, generated-source contents, local
+  absolute paths, command logs, stack traces, credentials, tokens, or secret-looking
+  values.
+
+Planned `project-map.json` metadata shape when a policy profile is explicitly selected:
+
+```json
+{
+  "schema_version": "1.0",
+  "scan": {
+    "policy_profile": {
+      "analysis_status": "analyzed",
+      "selected_profile": "guarded-local",
+      "selection_source": "cli_override",
+      "profile_version": "1.0",
+      "authority": "local_configuration_preset",
+      "evidence_policy": "execution_metadata_not_evidence",
+      "conflict_policy": "fail_closed",
+      "network_access": "disabled",
+      "source_upload": "disabled",
+      "credential_lookup": "disabled",
+      "allowed_optional_surfaces": [
+        "built_in_local_markdown"
+      ],
+      "rejected_optional_surfaces": [
+        "adapters",
+        "ai_presentation",
+        "generated_source_content",
+        "symlink_following"
+      ]
+    }
+  }
+}
+```
+
+Metadata rules:
+
+- `scan.policy_profile` is emitted only when a policy profile is explicitly selected in
+  the first boundary, unless a later compatibility decision accepts default metadata.
+- `selected_profile` uses one of the canonical policy profile names.
+- `selection_source` is one of `"config_file"`, `"cli_override"`, or
+  `"config_file_and_cli_confirmed"`.
+- `profile_version` is `"1.0"` for the first policy-profile metadata contract.
+- `authority` is `"local_configuration_preset"`.
+- `evidence_policy` is `"execution_metadata_not_evidence"`.
+- `conflict_policy` is `"fail_closed"` for the first boundary.
+- `network_access`, `source_upload`, and `credential_lookup` must be `"disabled"` for
+  the accepted v2.7 profiles.
+- Optional-surface arrays use bounded enum-like values only. They must not contain raw
+  config values, paths, include/exclude rules, adapter import paths, provider names,
+  local absolute paths, credentials, tokens, command text, or source excerpts.
+- Selected policy metadata is additive scan execution metadata and does not require a
+  `project-map.json` schema marker migration by itself. If `adapter-local` is selected
+  and an existing local import adapter is explicitly enabled, the adapter context still
+  follows the existing v2 adapter schema-marker rules.
+- Consumers that do not understand `scan.policy_profile` may ignore it. Consumers must
+  not treat policy profile metadata as evidence, proof of compliance, complete safety,
+  vulnerability scanning, credential scanning, or security correctness.
+
+Evidence and generated artifact decisions:
+
+- Policy profiles do not add generated artifacts in the first boundary.
+- Policy profiles do not create `evidence-index.jsonl` records, add evidence fields,
+  add evidence types, create confidence labels, reinterpret evidence IDs, or reuse
+  `config_file` evidence for the tool config.
+- Policy metadata must not be referenced from `evidence_ids`.
+- Agent profile artifacts, AI presentation artifacts, cache metadata, graph derivation,
+  query output, adapter provenance, release notes, and downstream agent output remain
+  non-evidence and cannot be used to satisfy policy profile evidence requirements.
+
+Validation requirements before implementation release:
+
+- Focused CLI/config tests for accepted profile names, unsupported names, duplicated
+  selectors, config selection, CLI selection, matching config-plus-CLI selection, and
+  mismatched config-plus-CLI failure.
+- Profile matrix tests for `guarded-local`, `docs-focused`, `adapter-local`, and the
+  no-profile baseline.
+- Unsafe-combination tests for adapters, AI presentation, reserved generated-source and
+  symlink modes, local document include/exclude expansion, network/credential/source
+  upload defaults, and redaction-sensitive diagnostics.
+- Golden or structured output tests if `scan.policy_profile` metadata is emitted.
+- Regression tests proving no-profile scans remain stable if the byte-stability
+  compatibility decision is retained.
+- Evidence tests proving policy profiles do not create evidence records, evidence
+  fields, evidence types, or tool-config evidence.
+- Risk-based review is required before release for implementation that changes CLI or
+  config parsing, precedence, path or filesystem handling, adapter allowance,
+  generated-output rendering, evidence serialization, redaction, diagnostics, network or
+  credential posture, or output write boundaries.
+
+Stop conditions for implementation:
+
+- Policy wording or names imply security certification, compliance, enterprise
+  enforcement, vulnerability scanning, secret inventory, production correctness, or
+  complete safety.
+- Defaults stop being local-first, no-network, no-source-upload, deterministic, and
+  compatible for no-profile scans.
+- Precedence, conflict behavior, output metadata authority, or evidence semantics
+  cannot be made explicit and fail-closed.
+- Profile behavior would require hosted policy management, remote configuration,
+  user-home policy discovery, organization crawling, background sync, telemetry, update
+  checks, credentials, network calls, provider AI, plugin loading, server/API/editor
+  runtime, repository chat, generic RAG, generated-source content scanning, symlink
+  following, source upload, release automation, package publication, or automatic code
+  modification.
 
 ### v1.7 Redaction And Security Hardening Contract
 

@@ -379,6 +379,29 @@ Change-impact query defaults:
   planning hints, adapter diagnostics, workspace diagnostics, AI output, prompts,
   downstream agent output, release notes, and chat output remain non-evidence.
 
+Policy profile defaults:
+
+- policy profiles are local scan configuration presets and guardrails, not security
+  certifications, compliance modes, vulnerability scanners, secret inventories, hosted
+  policy systems, or complete safety proofs;
+- the planned first selector is explicit through a scan CLI flag or root-local scan
+  config key, with no user-home policy discovery, remote policy loading, organization
+  crawling, background sync, telemetry, or update checks;
+- normal no-profile scans remain the compatibility baseline and keep local-first,
+  no-default-network, no-source-upload behavior;
+- unknown profile names, duplicated selectors, mismatched config-plus-CLI selectors, and
+  attempts to weaken selected profile guardrails must fail closed before output
+  generation;
+- selected policy metadata is redacted scan execution metadata only. It must not create
+  evidence records, change evidence semantics, serialize raw config values, user path
+  rules, adapter import paths, source bodies, document bodies, generated-source
+  contents, local absolute paths, credentials, tokens, prompts, command logs, or
+  secret-looking values;
+- accepted policy profiles must not silently enable adapters, AI presentation,
+  generated-source content scanning, symlink following, network access, credentials,
+  telemetry, source upload, hosted policy management, server/API/editor/plugin runtime,
+  repository chat, generic RAG, or automatic code modification.
+
 Future v2 security review expectations:
 
 - design-only documentation changes can be reviewed with a lightweight documentation

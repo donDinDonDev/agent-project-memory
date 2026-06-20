@@ -437,6 +437,49 @@ code-modification impact behavior must update this document and `OUTPUT_CONTRACT
 before implementation. Such a change would also need focused tests or goldens where
 applicable, a changelog entry, release notes, and a separate security review.
 
+## Policy Profile Evidence Decision
+
+Policy profile selection is execution metadata, not project evidence. The planned v2.7
+policy profile boundary treats selected profiles as local scan configuration presets and
+guardrails. They do not prove repository facts, security correctness, compliance,
+complete safety, credential absence, vulnerability absence, runtime behavior, source/spec
+agreement, documentation freshness, production impact, or business priority.
+
+Policy profiles do not add evidence types, evidence fields, evidence records,
+confidence labels, evidence IDs, source references, or tool-config evidence. Selected
+profile metadata, if emitted, belongs under `project-map.json` `scan.policy_profile` as
+redacted execution metadata. It must not be copied into `evidence-index.jsonl` and must
+not be referenced from `evidence_ids`.
+
+The selected root-local scan config file remains covered by the v0.9 no-tool-config
+evidence decision. Existing `config_file` evidence remains reserved for project
+application/logging config file presence and legacy filename-only OpenAPI/Swagger
+warning evidence; it must not be reused for `agent-project-memory.yml` or
+`policy_profile` selections unless a later contract explicitly changes that boundary.
+
+Policy profile metadata may record bounded enum-like values such as selected profile
+name, selector source, profile version, fail-closed conflict policy, disabled network
+and source-upload posture, credential lookup posture, allowed optional surfaces, and
+rejected optional surfaces. It must not serialize raw config values, raw user
+include/exclude patterns, adapter import paths, source bodies, document bodies,
+generated-source contents, command logs, stack traces, local absolute paths,
+credentials, tokens, secret-looking values, prompts, or downstream agent output.
+
+Policy profiles may make existing local behavior easier to select, but they must not
+strengthen, weaken, replace, suppress, reinterpret, or fabricate underlying generated
+facts or evidence records. Agent profile Markdown, AI presentation artifacts, query
+output, graph derivation metadata, cache metadata, adapter provenance, connector
+records, diagnostics, release notes, chat output, downstream agent output, and LLM
+output remain non-evidence for policy profile behavior.
+
+Any future policy feature that treats profile selection, profile metadata, policy
+diagnostics, hosted policy records, remote configuration, connector records, AI output,
+query output, or generated Markdown as evidence must update this document and
+`OUTPUT_CONTRACT.md` before implementation. Such a change would also need focused tests
+or goldens where applicable, a changelog entry, release notes, and a separate security
+review. The preferred boundary is that policy profile metadata remains permanently
+non-evidence execution metadata.
+
 ## Fact Categories
 
 ### Extracted Facts

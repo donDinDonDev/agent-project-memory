@@ -1788,6 +1788,123 @@ Release scope:
 - The `v2.6.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
+## v2.7.0: Policy And Configuration Profiles (Planned)
+
+Product outcome: add explicit local policy profiles that make scan configuration
+presets and guardrails easier to select, review, and audit while preserving
+deterministic local analysis, evidence-backed facts, no-default-network behavior, and
+the existing agent output profile surface.
+
+Accepted design boundary:
+
+- A policy profile is a local scan configuration preset and guardrail. It is not an
+  agent output profile, security certification, compliance mode, vulnerability scanner,
+  secret inventory, hosted policy, enterprise policy enforcement system, or complete
+  safety proof.
+- Existing `scan <path> --agent-profile <profile>` selectors keep their v1.3 meaning:
+  deterministic generated presentations under `.project-memory/agent-profiles/`.
+  Policy profiles use a separate selector and must not reuse the `codex`, `claude`,
+  `cursor`, `generic`, or `all` agent-profile names.
+- The planned selector shape is a single optional
+  `scan <path> --policy-profile <name>` CLI flag plus a single optional root-local scan
+  config key, `policy_profile: <name>`. Unknown names fail closed before output
+  generation. Repeated CLI selectors are usage errors.
+- The planned initial profile names are `guarded-local`, `docs-focused`, and
+  `adapter-local`. `strict`, `no-network`, `enterprise-local`, `oss`, `docs-heavy`,
+  and `generated-source-enabled` remain parked names because they are ambiguous,
+  overstate guarantees, or imply behavior that is not safe in the first boundary.
+- A normal scan with no policy profile remains the compatibility baseline and should
+  keep the existing default output set and local-first behavior. If selected profile
+  metadata is implemented, no-profile scans should remain byte-stable unless a later
+  contract explicitly accepts default metadata.
+- Effective policy calculation is built-in defaults first, then the selected policy
+  profile, then explicit root-local config keys, then explicit CLI flags. Explicit
+  config or CLI values may be stricter than the selected profile, but they must not
+  weaken profile guardrails.
+- If `policy_profile` in config and `--policy-profile` on the CLI are both present,
+  they must name the same profile. A mismatch fails closed rather than letting a CLI
+  invocation silently weaken a repository-local policy choice.
+- Policy profiles never silently enable adapters, AI presentation, generated-source
+  content scanning, symlink following, network access, credentials, telemetry,
+  source upload, hosted policy management, server/API/editor/plugin runtime,
+  repository chat, generic RAG, or automatic code modification.
+- `guarded-local` rejects optional expanding surfaces such as adapters, AI
+  presentation, generated-source content scanning, symlink following, and local
+  document include/exclude expansion. It may still use the existing built-in
+  default-scope local Markdown policy.
+- `docs-focused` keeps the run local-only and no-network while allowing validated
+  Markdown-only document include/exclude refinement under the existing path policy.
+  It rejects adapters, AI presentation, generated-source content scanning, symlink
+  following, credentials, and source upload.
+- `adapter-local` allows explicitly configured existing local import adapters under the
+  current repository-relative local-file validation rules. It does not enable any
+  adapter by itself and still rejects network access, credentials, AI presentation,
+  generated-source content scanning, symlink following, and source upload.
+- `features.generated_sources: true` and `features.follow_symlinks: true` remain invalid
+  config in v2.7. A generated-source content profile stays parked until a separate
+  design defines path policy, traversal caps, fact labels, evidence semantics, tests,
+  evaluation, and security review.
+- Redaction posture must not be weakened by a profile. Profile metadata, diagnostics,
+  and conflict messages must not serialize raw config values, user include/exclude
+  patterns, adapter import paths, source bodies, document bodies, generated-source
+  contents, local absolute paths, command logs, credentials, tokens, or secret-looking
+  values.
+
+Output and evidence stance:
+
+- Selected policy metadata, when emitted, belongs under `project-map.json` `scan`
+  metadata as redacted execution metadata. It should record the selected profile name,
+  selector source, profile version, local/network/source-upload/credential posture,
+  allowed optional surfaces, fail-closed conflict policy, and non-evidence authority.
+- Policy metadata is an additive compatibility expansion and should not require a
+  `project-map.json` schema marker migration by itself. Adapter-enabled scans still use
+  the existing adapter schema-marker rules when adapter context is emitted.
+- Policy profile selection does not create `evidence-index.jsonl` records, add evidence
+  fields or evidence types, reuse `config_file` evidence for the tool config, or change
+  the meaning of existing evidence IDs.
+- Downstream consumers that do not understand policy metadata may ignore
+  `scan.policy_profile` and continue using generated facts and evidence references.
+  Consumers must not treat policy metadata as proof of compliance, complete safety, or
+  security correctness.
+
+Validation expectations before release:
+
+- Focused CLI/config tests for accepted names, unsupported names, duplicate selectors,
+  config selection, CLI selection, matching config-plus-CLI selection, and mismatched
+  config-plus-CLI failure.
+- Profile matrix tests for `guarded-local`, `docs-focused`, `adapter-local`, and
+  no-profile baseline behavior.
+- Unsafe-combination tests for adapters, AI presentation, reserved generated-source and
+  symlink modes, local document expansion, redaction-sensitive diagnostics, and
+  no-network/no-credential/no-source-upload defaults.
+- Golden/output tests if selected profile metadata changes generated outputs, plus
+  regression tests proving no-profile scans remain stable if that compatibility decision
+  is retained.
+- Evidence tests proving no policy profile creates evidence records, evidence fields,
+  evidence types, or tool-config evidence.
+- Public docs, output contract, evidence model, threat model, changelog, and release
+  notes must agree before release.
+- Risk-based security review is required for implementation changes that touch CLI or
+  config parsing, precedence, filesystem/path handling, adapter allowance,
+  generated-output rendering, evidence serialization, redaction, diagnostics, network or
+  credential posture, or output write boundaries.
+
+Stop conditions for implementation:
+
+- A profile name or public wording implies security certification, compliance,
+  enterprise enforcement, vulnerability scanning, secret inventory, production
+  correctness, or complete safety.
+- Defaults stop being local-first, no-network, no-source-upload, deterministic, and
+  compatible for no-profile scans.
+- Precedence, conflict behavior, metadata authority, or evidence semantics cannot be
+  made explicit and fail-closed.
+- Profile behavior would require hosted policy management, remote configuration,
+  user-home policy discovery, organization crawling, background sync, telemetry, update
+  checks, credentials, network calls, provider AI, plugin loading, server/API/editor
+  runtime, repository chat, generic RAG, generated-source content scanning, symlink
+  following, source upload, release automation, package publication, or automatic code
+  modification.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:
@@ -1801,6 +1918,8 @@ Expected direction:
   authoritative evidence.
 - Read-only agent integrations such as MCP or agent prompt bundles.
 - Workspace and change-impact workflows.
+- Local policy/configuration profiles that make safe scan presets easier to select and
+  review without becoming security certifications or hosted policy management.
 
 The core analyzer must continue to run without adapters, network access, credentials,
 plugin loading, source upload, or AI. Adapter-backed records must remain backed by

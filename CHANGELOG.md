@@ -9,6 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.7 policy profile boundary, selecting local
+  configuration presets and guardrails with explicit selector precedence,
+  fail-closed unsafe combinations, additive scan metadata, and a non-evidence
+  evidence decision while parking hosted policy management, network defaults,
+  credentials, compliance/security certification claims, generated-source content
+  scanning, and automatic code modification.
+
 ## [2.6.0] - 2026-06-20
 
 Release status: published. The `v2.6.0` tag, GitHub Release, executable jar, and
