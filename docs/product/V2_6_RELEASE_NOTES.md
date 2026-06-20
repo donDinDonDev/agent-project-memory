@@ -2,8 +2,8 @@
 
 Release date: 2026-06-20
 
-Release status: release candidate. The `v2.6.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.6.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.6.0 adds conservative read-only change-impact hints for
 explicit changed-file inputs while preserving deterministic artifacts, evidence-backed
@@ -136,5 +136,4 @@ The intended `v2.6.0` release assets are:
 - `agent-project-memory-2.6.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published with the GitHub Release.

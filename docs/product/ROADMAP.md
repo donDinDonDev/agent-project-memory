@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.5.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.6.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -47,7 +47,7 @@ root rejection, and workspace-root `.project-memory/workspace-map.json` aggregat
 from existing member artifacts. It does not run child repository scans, mutate member
 `.project-memory/` directories, add cross-repo relations, or add workspace query
 behavior.
-The v2.6.0 release candidate adds a first change-impact workflow boundary as a
+The v2.6.0 release adds a first change-impact workflow boundary as a
 read-only single-repo query over existing no-adapter generated artifacts. It includes
 the `query <path> impact --files ...` direct mapping and conservative one-hop
 projection implementation for explicit repository-relative changed-file input, required
@@ -1703,7 +1703,7 @@ Validation expectations before release:
   config parsing, multiple-root path handling, generated output, evidence reference
   rendering, workspace diagnostics, query behavior, or child-repo write behavior.
 
-## v2.6.0: Change-Impact Workflows (Release Candidate)
+## v2.6.0: Change-Impact Workflows (Published)
 
 Product outcome: provide conservative local change-impact hints from explicit changed
 files while preserving deterministic artifacts, evidence-backed facts, local-only
@@ -1785,8 +1785,8 @@ Release scope:
   direct mapping, one-hop graph projection, relation-status rows, low-confidence
   planning hints, explicit `not_represented` rows, bounded diagnostics, and deterministic
   text output only.
-- The `v2.6.0` tag and GitHub Release are not published yet. Publication requires the
-  separate maintainer release workflow after release-prep review.
+- The `v2.6.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

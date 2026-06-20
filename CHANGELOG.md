@@ -11,8 +11,8 @@ architecture documents.
 
 ## [2.6.0] - 2026-06-20
 
-Release status: release candidate. The `v2.6.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.6.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 
@@ -39,7 +39,7 @@ and `SHA256SUMS` assets are not published yet.
 ### Changed
 
 - Aligned the Maven project version, README local build examples, roadmap status, v2.6
-  release notes, and public release wording for release-candidate review.
+  release notes, and public release wording for publication.
 
 ### Security
 
