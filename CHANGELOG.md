@@ -17,6 +17,11 @@ architecture documents.
   evidence decision while parking hosted policy management, network defaults,
   credentials, compliance/security certification claims, generated-source content
   scanning, and automatic code modification.
+- Implemented the v2.7 policy profile selector/config foundation for
+  `scan <path> --policy-profile <name>` and root-local
+  `policy_profile: <name>` with accepted names, duplicate/unknown selector
+  failures, and fail-closed config-plus-CLI mismatch validation while preserving
+  no-profile scan compatibility.
 
 ## [2.6.0] - 2026-06-20
 

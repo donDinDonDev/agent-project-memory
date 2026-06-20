@@ -31,6 +31,7 @@ public final class ScanConfigurationLoader {
       java.util.regex.Pattern.compile("^[A-Za-z][A-Za-z0-9+.-]*://.*");
   private static final Set<String> ROOT_KEYS = Set.of(
       "version",
+      "policy_profile",
       "features",
       "documents",
       "adapters");
@@ -49,6 +50,14 @@ public final class ScanConfigurationLoader {
       Path repositoryRoot,
       Path canonicalRepositoryRoot,
       String explicitConfigPath) throws InvalidScanConfigException {
+    return load(repositoryRoot, canonicalRepositoryRoot, explicitConfigPath, null);
+  }
+
+  public ScanConfiguration load(
+      Path repositoryRoot,
+      Path canonicalRepositoryRoot,
+      String explicitConfigPath,
+      PolicyProfile cliPolicyProfile) throws InvalidScanConfigException {
     Objects.requireNonNull(repositoryRoot, "repositoryRoot");
     Objects.requireNonNull(canonicalRepositoryRoot, "canonicalRepositoryRoot");
     Path normalizedRepositoryRoot = repositoryRoot.toAbsolutePath().normalize();
@@ -59,17 +68,34 @@ public final class ScanConfigurationLoader {
         normalizedCanonicalRepositoryRoot,
         explicitConfigPath);
     if (selectedConfig == null) {
-      return ScanConfiguration.defaultsOnly();
+      return new ScanConfiguration(
+          "defaults_only",
+          null,
+          "not_detected",
+          false,
+          false,
+          cliPolicyProfile,
+          policyProfileSelectionSource(null, cliPolicyProfile),
+          true,
+          "default",
+          List.of(),
+          List.of(),
+          AdapterConfiguration.disabled());
     }
 
     String sourcePath = repositoryRelativePath(normalizedRepositoryRoot, selectedConfig);
     ParsedConfig parsedConfig = parsedConfig(normalizedRepositoryRoot, selectedConfig);
+    PolicyProfile effectivePolicyProfile = effectivePolicyProfile(
+        parsedConfig.policyProfile(),
+        cliPolicyProfile);
     return new ScanConfiguration(
         "config_file",
         sourcePath,
         explicitConfigPath == null ? "applied" : "explicit",
         false,
         false,
+        effectivePolicyProfile,
+        policyProfileSelectionSource(parsedConfig.policyProfile(), cliPolicyProfile),
         parsedConfig.localMarkdownEnabled(),
         parsedConfig.localMarkdownConfigured() ? "config_file" : "default",
         parsedConfig.documentIncludes(),
@@ -208,12 +234,14 @@ public final class ScanConfigurationLoader {
     rejectUnknownKeys(rootMap, ROOT_KEYS, "root");
     requireVersion(rootMap.get("version"));
 
+    PolicyProfile policyProfile = policyProfile(rootMap.get("policy_profile"));
     FeatureConfig featureConfig = featureConfig(rootMap.get("features"));
     DocumentRules documentRules = documentRules(rootMap.get("documents"));
     AdapterConfiguration adapterConfiguration = adapterConfiguration(
         rootMap.get("adapters"),
         repositoryRoot);
     return new ParsedConfig(
+        policyProfile,
         featureConfig.localMarkdownEnabled(),
         featureConfig.localMarkdownConfigured(),
         documentRules.includes(),
@@ -247,6 +275,44 @@ public final class ScanConfigurationLoader {
     if (!(value instanceof Integer version) || version != 1) {
       throw new InvalidScanConfigException("Invalid config: version must be 1.");
     }
+  }
+
+  private PolicyProfile policyProfile(Object value) throws InvalidScanConfigException {
+    if (value == null) {
+      return null;
+    }
+    if (!(value instanceof String selector)) {
+      throw new InvalidScanConfigException("Invalid config: policy_profile must be a string.");
+    }
+    return PolicyProfile.fromSelector(selector)
+        .orElseThrow(() -> new InvalidScanConfigException(
+            "Invalid config: unsupported policy_profile value."));
+  }
+
+  private PolicyProfile effectivePolicyProfile(
+      PolicyProfile configPolicyProfile,
+      PolicyProfile cliPolicyProfile) throws InvalidScanConfigException {
+    if (configPolicyProfile != null && cliPolicyProfile != null
+        && configPolicyProfile != cliPolicyProfile) {
+      throw new InvalidScanConfigException(
+          "Invalid config: policy_profile and --policy-profile must match.");
+    }
+    return cliPolicyProfile != null ? cliPolicyProfile : configPolicyProfile;
+  }
+
+  private String policyProfileSelectionSource(
+      PolicyProfile configPolicyProfile,
+      PolicyProfile cliPolicyProfile) {
+    if (configPolicyProfile != null && cliPolicyProfile != null) {
+      return "config_file_and_cli_confirmed";
+    }
+    if (cliPolicyProfile != null) {
+      return "cli_override";
+    }
+    if (configPolicyProfile != null) {
+      return "config_file";
+    }
+    return null;
   }
 
   private FeatureConfig featureConfig(Object value) throws InvalidScanConfigException {
@@ -474,6 +540,7 @@ public final class ScanConfigurationLoader {
   }
 
   private record ParsedConfig(
+      PolicyProfile policyProfile,
       boolean localMarkdownEnabled,
       boolean localMarkdownConfigured,
       List<ScanConfigPathPattern> documentIncludes,

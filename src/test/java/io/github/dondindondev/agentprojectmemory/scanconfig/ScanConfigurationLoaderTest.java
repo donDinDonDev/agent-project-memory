@@ -3,6 +3,7 @@ package io.github.dondindondev.agentprojectmemory.scanconfig;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -35,6 +36,8 @@ final class ScanConfigurationLoaderTest {
     assertAll(
         () -> assertEquals("defaults_only", configuration.configSource()),
         () -> assertEquals("not_detected", configuration.configFileStatus()),
+        () -> assertNull(configuration.policyProfile()),
+        () -> assertNull(configuration.policyProfileSelectionSource()),
         () -> assertTrue(configuration.localMarkdownEnabled()),
         () -> assertEquals("default", configuration.localMarkdownSource()),
         () -> assertEquals(List.of(), configuration.documentIncludes()),
@@ -45,10 +48,31 @@ final class ScanConfigurationLoaderTest {
   }
 
   @Test
+  void returnsCliPolicyProfileWithSafeDefaultsWhenRootConfigIsAbsent() throws Exception {
+    Path repositoryRoot = repository("cli-policy-defaults");
+
+    ScanConfiguration configuration = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null,
+        PolicyProfile.GUARDED_LOCAL);
+
+    assertAll(
+        () -> assertEquals("defaults_only", configuration.configSource()),
+        () -> assertEquals("not_detected", configuration.configFileStatus()),
+        () -> assertEquals(PolicyProfile.GUARDED_LOCAL, configuration.policyProfile()),
+        () -> assertEquals("cli_override", configuration.policyProfileSelectionSource()),
+        () -> assertTrue(configuration.localMarkdownEnabled()),
+        () -> assertEquals("default", configuration.localMarkdownSource()),
+        () -> assertFalse(configuration.adapterConfiguration().enabled()));
+  }
+
+  @Test
   void parsesApprovedRootLocalYamlSchema() throws Exception {
     Path repositoryRoot = repository("valid");
     writeConfig(repositoryRoot, """
         version: 1
+        policy_profile: docs-focused
         features:
           local_markdown: false
           generated_sources: false
@@ -69,10 +93,76 @@ final class ScanConfigurationLoaderTest {
         () -> assertEquals("config_file", configuration.configSource()),
         () -> assertEquals("agent-project-memory.yml", configuration.configFilePath()),
         () -> assertEquals("applied", configuration.configFileStatus()),
+        () -> assertEquals(PolicyProfile.DOCS_FOCUSED, configuration.policyProfile()),
+        () -> assertEquals("config_file", configuration.policyProfileSelectionSource()),
         () -> assertFalse(configuration.localMarkdownEnabled()),
         () -> assertEquals("config_file", configuration.localMarkdownSource()),
         () -> assertTrue(configuration.documentIncludes().get(0).matches("notes/a/b/guide.md")),
         () -> assertTrue(configuration.documentExcludes().get(0).matches("docs/archive/old.md")));
+  }
+
+  @Test
+  void confirmsMatchingCliAndConfigPolicyProfile() throws Exception {
+    Path repositoryRoot = repository("matching-policy");
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: adapter-local
+        """);
+
+    ScanConfiguration configuration = loader.load(
+        repositoryRoot,
+        ScanPathContainment.canonicalRoot(repositoryRoot),
+        null,
+        PolicyProfile.ADAPTER_LOCAL);
+
+    assertAll(
+        () -> assertEquals(PolicyProfile.ADAPTER_LOCAL, configuration.policyProfile()),
+        () -> assertEquals(
+            "config_file_and_cli_confirmed",
+            configuration.policyProfileSelectionSource()));
+  }
+
+  @Test
+  void rejectsUnsupportedOrMismatchedPolicyProfileWithoutEchoingValues() throws Exception {
+    Path repositoryRoot = repository("invalid-policy");
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: strict-token-FAKE_POLICY_SECRET
+        """);
+
+    InvalidScanConfigException unsupported = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: guarded-local
+        """);
+    InvalidScanConfigException mismatch = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(
+            repositoryRoot,
+            ScanPathContainment.canonicalRoot(repositoryRoot),
+            null,
+            PolicyProfile.DOCS_FOCUSED));
+
+    writeConfig(repositoryRoot, """
+        version: 1
+        policy_profile: 123
+        """);
+    InvalidScanConfigException nonString = assertThrows(
+        InvalidScanConfigException.class,
+        () -> loader.load(repositoryRoot, ScanPathContainment.canonicalRoot(repositoryRoot), null));
+
+    assertAll(
+        () -> assertTrue(unsupported.getMessage().contains("unsupported policy_profile value")),
+        () -> assertFalse(unsupported.getMessage().contains("strict-token")),
+        () -> assertFalse(unsupported.getMessage().contains("FAKE_POLICY_SECRET")),
+        () -> assertTrue(mismatch.getMessage().contains("policy_profile and --policy-profile must match")),
+        () -> assertFalse(mismatch.getMessage().contains("guarded-local")),
+        () -> assertFalse(mismatch.getMessage().contains("docs-focused")),
+        () -> assertTrue(nonString.getMessage().contains("policy_profile must be a string")),
+        () -> assertFalse(nonString.getMessage().contains("123")));
   }
 
   @Test

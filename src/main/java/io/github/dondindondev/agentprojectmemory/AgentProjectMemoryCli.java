@@ -15,6 +15,7 @@ import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryLookupRender
 import io.github.dondindondev.agentprojectmemory.query.ProjectMemoryRelationRenderer;
 import io.github.dondindondev.agentprojectmemory.query.QueryArtifactException;
 import io.github.dondindondev.agentprojectmemory.scanconfig.InvalidScanConfigException;
+import io.github.dondindondev.agentprojectmemory.scanconfig.PolicyProfile;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfiguration;
 import io.github.dondindondev.agentprojectmemory.scanconfig.ScanConfigurationLoader;
 import io.github.dondindondev.agentprojectmemory.workspace.InvalidWorkspaceConfigException;
@@ -36,21 +37,21 @@ import java.util.Properties;
 
 public final class AgentProjectMemoryCli {
   public static final String USAGE =
-      "Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] "
+      "Usage: agent-project-memory scan <path> [--config <path>] [--policy-profile <name>] [--agent-profile <profile>] "
           + "[--ai-presentation mock_no_network] [--incremental]\n"
           + "       agent-project-memory workspace scan <config>";
   private static final String GENERAL_HELP = """
       agent-project-memory - local evidence-backed project memory for Java/Spring projects
 
       Usage:
-        agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
+        agent-project-memory scan <path> [--config <path>] [--policy-profile <name>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
         agent-project-memory workspace scan <config>
         agent-project-memory query <path> <query-command>
         agent-project-memory help
         agent-project-memory version
 
       Commands:
-        scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
+        scan <path> [--config <path>] [--policy-profile <name>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
                                        Generate .project-memory output for a local repository.
         workspace scan <config>        Generate a workspace map from existing member artifacts.
         query <path> <query-command>   Validate and read existing .project-memory artifacts.
@@ -62,12 +63,13 @@ public final class AgentProjectMemoryCli {
         --version                      Show the CLI version.
       """;
   private static final String SCAN_HELP = """
-      Usage: agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
+      Usage: agent-project-memory scan <path> [--config <path>] [--policy-profile <name>] [--agent-profile <profile>] [--ai-presentation mock_no_network] [--incremental]
 
       Generate local evidence-backed project memory under <path>/.project-memory/.
 
       Options:
         --config <path>            Use a repository-relative YAML config file under the scan root.
+        --policy-profile <name>    Select guarded-local, docs-focused, or adapter-local.
         --agent-profile <profile>  Generate opt-in profile artifacts for codex, claude, cursor,
                                    generic, or all. May be repeated.
         --ai-presentation mock_no_network
@@ -238,6 +240,7 @@ public final class AgentProjectMemoryCli {
     return scan(
         scanArgs.path(),
         scanArgs.configPath(),
+        scanArgs.policyProfile(),
         scanArgs.agentProfiles(),
         scanArgs.aiPresentationOptions(),
         scanArgs.incremental());
@@ -260,6 +263,7 @@ public final class AgentProjectMemoryCli {
     }
     if (scanPath.startsWith("--")) {
       return "--config".equals(scanPath)
+              || "--policy-profile".equals(scanPath)
               || "--agent-profile".equals(scanPath)
               || "--ai-presentation".equals(scanPath)
               || "--incremental".equals(scanPath)
@@ -267,6 +271,7 @@ public final class AgentProjectMemoryCli {
           : ScanArgs.usageError("Unknown flag.");
     }
     String configPath = null;
+    PolicyProfile policyProfile = null;
     EnumSet<AgentOutputProfile> agentProfiles = EnumSet.noneOf(AgentOutputProfile.class);
     AiPresentationOptions aiPresentationOptions = AiPresentationOptions.disabled();
     boolean incremental = false;
@@ -289,6 +294,20 @@ public final class AgentProjectMemoryCli {
           return ScanArgs.usageError("Missing --config value.");
         }
         configPath = args[index + 1];
+        index += 2;
+        continue;
+      }
+      if ("--policy-profile".equals(argument)) {
+        if (policyProfile != null) {
+          return ScanArgs.usageError("Duplicate --policy-profile flag.");
+        }
+        if (index + 1 >= args.length) {
+          return ScanArgs.usageError("Missing --policy-profile value.");
+        }
+        policyProfile = PolicyProfile.fromSelector(args[index + 1]).orElse(null);
+        if (policyProfile == null) {
+          return ScanArgs.usageError("Unsupported --policy-profile value.");
+        }
         index += 2;
         continue;
       }
@@ -328,6 +347,7 @@ public final class AgentProjectMemoryCli {
     return ScanArgs.valid(
         scanPath,
         configPath,
+        policyProfile,
         canonicalProfiles(agentProfiles),
         aiPresentationOptions,
         incremental);
@@ -669,6 +689,7 @@ public final class AgentProjectMemoryCli {
   private int scan(
       String rawPath,
       String explicitConfigPath,
+      PolicyProfile policyProfile,
       List<AgentOutputProfile> agentProfiles,
       AiPresentationOptions aiPresentationOptions,
       boolean incremental) {
@@ -703,7 +724,8 @@ public final class AgentProjectMemoryCli {
       scanConfiguration = scanConfigurationLoader.load(
           normalizedProjectPath,
           canonicalProjectPath,
-          explicitConfigPath);
+          explicitConfigPath,
+          policyProfile);
     } catch (InvalidScanConfigException ex) {
       return invalidConfigError(ex.getMessage());
     }
@@ -976,6 +998,7 @@ public final class AgentProjectMemoryCli {
   private record ScanArgs(
       String path,
       String configPath,
+      PolicyProfile policyProfile,
       List<AgentOutputProfile> agentProfiles,
       AiPresentationOptions aiPresentationOptions,
       boolean incremental,
@@ -985,12 +1008,14 @@ public final class AgentProjectMemoryCli {
     static ScanArgs valid(
         String path,
         String configPath,
+        PolicyProfile policyProfile,
         List<AgentOutputProfile> agentProfiles,
         AiPresentationOptions aiPresentationOptions,
         boolean incremental) {
       return new ScanArgs(
           path,
           configPath,
+          policyProfile,
           agentProfiles,
           aiPresentationOptions,
           incremental,
@@ -1001,6 +1026,7 @@ public final class AgentProjectMemoryCli {
 
     static ScanArgs helpRequested() {
       return new ScanArgs(
+          null,
           null,
           null,
           List.of(),
@@ -1015,6 +1041,7 @@ public final class AgentProjectMemoryCli {
       return new ScanArgs(
           null,
           null,
+          null,
           List.of(),
           AiPresentationOptions.disabled(),
           false,
@@ -1025,6 +1052,7 @@ public final class AgentProjectMemoryCli {
 
     static ScanArgs scanInputError(String message) {
       return new ScanArgs(
+          null,
           null,
           null,
           List.of(),

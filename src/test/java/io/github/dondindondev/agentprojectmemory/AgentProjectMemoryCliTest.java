@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.analyzer.springmvc.SpringMvcEndpointOutputGenerator;
 import io.github.dondindondev.agentprojectmemory.ingestion.adapter.AdapterLocalImport;
+import io.github.dondindondev.agentprojectmemory.scanconfig.PolicyProfile;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -61,7 +62,7 @@ final class AgentProjectMemoryCliTest {
           () -> assertTrue(result.stdout().contains("agent-project-memory - local evidence-backed")),
           () -> assertTrue(result.stdout().contains("Usage:")),
           () -> assertTrue(result.stdout().contains(
-              "agent-project-memory scan <path> [--config <path>] [--agent-profile <profile>]")),
+              "agent-project-memory scan <path> [--config <path>] [--policy-profile <name>]")),
           () -> assertTrue(result.stderr().isEmpty()),
           () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
     }
@@ -75,6 +76,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("Usage: agent-project-memory scan <path>")),
         () -> assertTrue(result.stdout().contains("--config <path>")),
+        () -> assertTrue(result.stdout().contains("--policy-profile <name>")),
         () -> assertTrue(result.stdout().contains("--agent-profile <profile>")),
         () -> assertTrue(result.stdout().contains("--ai-presentation mock_no_network")),
         () -> assertTrue(result.stdout().contains("--incremental")),
@@ -283,6 +285,129 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(2, result.exitCode()),
         () -> assertTrue(result.stderr().contains("Usage error: Missing scan path.")),
         () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void scanPolicyProfileFlagBeforePathReturnsUsageExitCodeWithoutScanning() {
+    CliResult result = runCli("scan", "--policy-profile", "guarded-local");
+
+    assertAll(
+        () -> assertEquals(2, result.exitCode()),
+        () -> assertTrue(result.stderr().contains("Usage error: Missing scan path.")),
+        () -> assertTrue(result.stderr().contains(AgentProjectMemoryCli.USAGE)),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
+  }
+
+  @Test
+  void scanRejectsDuplicateOrUnsupportedPolicyProfileWithoutScanningOrLeakingValues() {
+    CliResult duplicate = runCli(
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "guarded-local",
+        "--policy-profile",
+        "guarded-local");
+    CliResult unsupported = runCli(
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "strict-token-FAKE_POLICY_SECRET");
+    CliResult missing = runCli("scan", tempDir.toString(), "--policy-profile");
+
+    assertAll(
+        () -> assertEquals(2, duplicate.exitCode()),
+        () -> assertTrue(duplicate.stderr().contains("Duplicate --policy-profile flag.")),
+        () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))),
+        () -> assertEquals(2, unsupported.exitCode()),
+        () -> assertTrue(unsupported.stderr().contains("Unsupported --policy-profile value.")),
+        () -> assertFalse(unsupported.stderr().contains("strict-token")),
+        () -> assertFalse(unsupported.stderr().contains("FAKE_POLICY_SECRET")),
+        () -> assertEquals(2, missing.exitCode()),
+        () -> assertTrue(missing.stderr().contains("Missing --policy-profile value.")));
+  }
+
+  @Test
+  void scanPassesCliPolicyProfileToGenerator() {
+    AtomicInteger generatorCalls = new AtomicInteger();
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles, aiPresentationOptions) -> {
+          generatorCalls.incrementAndGet();
+          assertAll(
+              () -> assertEquals(PolicyProfile.GUARDED_LOCAL, scanConfiguration.policyProfile()),
+              () -> assertEquals("cli_override", scanConfiguration.policyProfileSelectionSource()),
+              () -> assertTrue(agentProfiles.isEmpty()),
+              () -> assertFalse(aiPresentationOptions.enabled()));
+          return new SpringMvcEndpointOutputGenerator.Result(false, 0, 0, 0, 0, 0, 0, 0);
+        },
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "guarded-local");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals(1, generatorCalls.get()),
+        () -> assertTrue(result.stdout().contains("No project memory output generated.")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void scanConfirmsMatchingConfigAndCliPolicyProfileBeforeGeneration() throws Exception {
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        policy_profile: docs-focused
+        """);
+    AtomicInteger generatorCalls = new AtomicInteger();
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles, aiPresentationOptions) -> {
+          generatorCalls.incrementAndGet();
+          assertAll(
+              () -> assertEquals(PolicyProfile.DOCS_FOCUSED, scanConfiguration.policyProfile()),
+              () -> assertEquals(
+                  "config_file_and_cli_confirmed",
+                  scanConfiguration.policyProfileSelectionSource()));
+          return new SpringMvcEndpointOutputGenerator.Result(false, 0, 0, 0, 0, 0, 0, 0);
+        },
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "docs-focused");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertEquals(1, generatorCalls.get()),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void scanRejectsMismatchedConfigAndCliPolicyProfileBeforeCreatingOutputDirectory()
+      throws Exception {
+    Files.writeString(tempDir.resolve("agent-project-memory.yml"), """
+        version: 1
+        policy_profile: guarded-local
+        """);
+    AtomicInteger generatorCalls = new AtomicInteger();
+
+    CliResult result = runCliWithGenerator(
+        (repositoryRoot, outputDirectory, scanConfiguration, agentProfiles, aiPresentationOptions) -> {
+          generatorCalls.incrementAndGet();
+          throw new AssertionError("mismatched policy profiles must not run generation");
+        },
+        "scan",
+        tempDir.toString(),
+        "--policy-profile",
+        "docs-focused");
+
+    assertAll(
+        () -> assertEquals(4, result.exitCode()),
+        () -> assertEquals(0, generatorCalls.get()),
+        () -> assertTrue(result.stderr().contains("policy_profile and --policy-profile must match")),
+        () -> assertFalse(result.stderr().contains("guarded-local")),
+        () -> assertFalse(result.stderr().contains("docs-focused")),
+        () -> assertFalse(result.stderr().contains(tempDir.toString())),
         () -> assertFalse(Files.exists(tempDir.resolve(".project-memory"))));
   }
 
