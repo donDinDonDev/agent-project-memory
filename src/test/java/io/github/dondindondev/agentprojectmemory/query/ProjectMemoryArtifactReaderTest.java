@@ -76,6 +76,21 @@ final class ProjectMemoryArtifactReaderTest {
   }
 
   @Test
+  void validatesManifestBackedArtifactSetWithoutExposingGraphForNonGraphQueries() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+
+    ProjectMemoryArtifacts artifacts = reader.load(
+        artifactRoot.getParent(),
+        ProjectMemoryArtifactReader.GraphRequirement.NONE);
+
+    assertAll(
+        () -> assertEquals("1.0", artifacts.projectMapSchemaVersion()),
+        () -> assertEquals(1, artifacts.evidenceRecords().size()),
+        () -> assertTrue(!artifacts.hasProjectGraph()));
+  }
+
+  @Test
   void requiresGraphWhenRequested() throws Exception {
     Path artifactRoot = tempDir.resolve("repo/.project-memory");
     writeBaseArtifacts(artifactRoot);
@@ -153,6 +168,34 @@ final class ProjectMemoryArtifactReaderTest {
     assertArtifactError(
         artifactRoot.getParent(),
         "Unsupported project-graph.json graph_schema_version.");
+  }
+
+  @Test
+  void rejectsUnsupportedArtifactSetManifestSchema() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"artifact_set_schema_version\": \"1.0\"",
+            "\"artifact_set_schema_version\": \"2.0\""));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Unsupported artifact-set.json artifact_set_schema_version.");
+  }
+
+  @Test
+  void rejectsMixedManifestAndGeneratedArtifacts() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("source-registry.json"),
+        "{\"source_registry_schema_version\":\"1.0\"}");
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Mixed artifact set: source-registry.json presence does not match artifact-set.json.");
   }
 
   @Test
@@ -310,6 +353,14 @@ final class ProjectMemoryArtifactReaderTest {
     Files.writeString(artifactRoot.resolve("evidence-index.jsonl"), evidenceRecord("ev:one"));
   }
 
+  private void writeManifestBackedArtifacts(Path artifactRoot) throws IOException {
+    writeBaseArtifacts(artifactRoot);
+    writeValidGraph(artifactRoot);
+    Files.writeString(artifactRoot.resolve("endpoints.md"), "# Endpoints\n");
+    Files.writeString(artifactRoot.resolve("agent-guide.md"), "# Agent Guide\n");
+    Files.writeString(artifactRoot.resolve("artifact-set.json"), validArtifactSet());
+  }
+
   private void writeValidGraph(Path artifactRoot) throws IOException {
     Files.writeString(artifactRoot.resolve("project-graph.json"), validGraph());
   }
@@ -327,6 +378,137 @@ final class ProjectMemoryArtifactReaderTest {
           "edges":[],
           "relation_statuses":[],
           "warnings":[]
+        }
+        """;
+  }
+
+  private String validArtifactSet() {
+    return """
+        {
+          "artifact_set_schema_version": "1.0",
+          "artifact_set_id": "artifact-set:single-repository-scan:project-map-1.0:source-registry-absent:agent-profiles-absent:ai-presentations-absent:cache-managed-separately:workspace-out-of-scope",
+          "artifact_set_kind": "single_repository_scan",
+          "contract_line": "v3_artifact_set_manifest_foundation",
+          "writer": {
+            "name": "agent-project-memory",
+            "version": "unknown"
+          },
+          "artifact_root": ".project-memory",
+          "evidence_boundary": {
+            "authority": "contract_provenance_metadata",
+            "evidence_policy": "manifest_is_not_evidence",
+            "evidence_artifact": "evidence-index.jsonl"
+          },
+          "artifacts": [
+            {
+              "path": "artifact-set.json",
+              "artifact_kind": "artifact_set_manifest",
+              "required": true,
+              "status": "present",
+              "schema": {
+                "field": "artifact_set_schema_version",
+                "value": "1.0"
+              },
+              "authority": "contract_provenance_metadata",
+              "evidence_category": "non_evidence_metadata"
+            },
+            {
+              "path": "project-map.json",
+              "artifact_kind": "project_map",
+              "required": true,
+              "status": "present",
+              "schema": {
+                "field": "schema_version",
+                "value": "1.0"
+              },
+              "authority": "project_facts",
+              "evidence_category": "source_facts_reference_evidence_index"
+            },
+            {
+              "path": "project-graph.json",
+              "artifact_kind": "project_graph",
+              "required": true,
+              "status": "present",
+              "schema": {
+                "field": "graph_schema_version",
+                "value": "1.0"
+              },
+              "authority": "navigation_metadata",
+              "evidence_category": "non_evidence_derivation_metadata"
+            },
+            {
+              "path": "evidence-index.jsonl",
+              "artifact_kind": "evidence_index",
+              "required": true,
+              "status": "present",
+              "schema": null,
+              "authority": "source_backed_evidence",
+              "evidence_category": "authoritative_evidence_index"
+            },
+            {
+              "path": "endpoints.md",
+              "artifact_kind": "endpoints_markdown",
+              "required": true,
+              "status": "present",
+              "schema": null,
+              "authority": "deterministic_markdown_presentation",
+              "evidence_category": "references_existing_evidence"
+            },
+            {
+              "path": "agent-guide.md",
+              "artifact_kind": "agent_guide_markdown",
+              "required": true,
+              "status": "present",
+              "schema": null,
+              "authority": "deterministic_markdown_presentation",
+              "evidence_category": "references_existing_evidence"
+            },
+            {
+              "path": "source-registry.json",
+              "artifact_kind": "source_registry",
+              "required": false,
+              "status": "absent",
+              "schema": null,
+              "authority": "adapter_provenance_metadata",
+              "evidence_category": "not_evidence"
+            },
+            {
+              "path": "agent-profiles/manifest.json",
+              "artifact_kind": "agent_profile_manifest",
+              "required": false,
+              "status": "absent",
+              "schema": null,
+              "authority": "deterministic_profile_presentation",
+              "evidence_category": "references_existing_evidence_only"
+            },
+            {
+              "path": "ai-presentations/manifest.json",
+              "artifact_kind": "ai_presentation_manifest",
+              "required": false,
+              "status": "absent",
+              "schema": null,
+              "authority": "non_authoritative_presentation",
+              "evidence_category": "references_existing_evidence_only"
+            },
+            {
+              "path": "cache/v1/manifest.json",
+              "artifact_kind": "incremental_cache_manifest",
+              "required": false,
+              "status": "managed_separately",
+              "schema": null,
+              "authority": "execution_metadata",
+              "evidence_category": "not_evidence"
+            },
+            {
+              "path": "workspace-map.json",
+              "artifact_kind": "workspace_map",
+              "required": false,
+              "status": "intentionally_out_of_scope",
+              "schema": null,
+              "authority": "workspace_aggregation_metadata",
+              "evidence_category": "composite_navigation_references_not_evidence"
+            }
+          ]
         }
         """;
   }

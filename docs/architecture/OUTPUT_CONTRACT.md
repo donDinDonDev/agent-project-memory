@@ -91,12 +91,15 @@ records, and does not make adapter provenance, graph derivation, cache metadata,
 profile output, AI presentation, workspace aggregation, generated Markdown, query
 output, release metadata, or downstream agent output authoritative evidence.
 
-The current manifest foundation deliberately does not bump `project-map.json` to
-`schema_version: "3.0"` and does not add reader, query, migration, or mixed-artifact
-compatibility behavior. Current no-adapter scans still emit `project-map.json`
-`schema_version: "1.0"`. Current adapter-enabled scans still emit `project-map.json`
-`schema_version: "2.0"` plus `source-registry.json` when an explicitly enabled adapter
-accepts input.
+The current manifest and compatibility foundation deliberately does not bump
+`project-map.json` to `schema_version: "3.0"`. Current no-adapter scans still emit
+`project-map.json` `schema_version: "1.0"`. Current adapter-enabled scans still emit
+`project-map.json` `schema_version: "2.0"` plus `source-registry.json` when an
+explicitly enabled adapter accepts input. Current query, `agent-context`, and impact
+readers accept legacy no-manifest no-adapter `schema_version: "1.0"` artifact sets as
+before. When `artifact-set.json` is present, those readers validate it as set-level
+contract metadata before rendering output and fail closed on unsupported or mixed
+artifact-set state.
 
 Current `artifact-set.json` shape for a no-adapter scan:
 
@@ -239,14 +242,41 @@ Optional and related surfaces:
 Cache metadata remains a separate non-evidence execution surface and does not become a
 source of project facts.
 
+Current reader/query compatibility behavior:
+
+- Legacy no-manifest no-adapter artifact sets using `project-map.json`
+  `schema_version: "1.0"` remain supported for current query commands.
+- A present `artifact-set.json` is validated for
+  `artifact_set_schema_version: "1.0"`, `artifact_set_kind:
+  "single_repository_scan"`, `contract_line: "v3_artifact_set_manifest_foundation"`,
+  `artifact_root: ".project-memory"`, and the documented evidence boundary.
+- Manifest-present query input must describe a coherent no-adapter artifact set:
+  `project-map.json` `schema_version: "1.0"`, `project-graph.json`
+  `graph_schema_version: "1.0"`, required base artifacts present as safe local files,
+  `source-registry.json` absent, `workspace-map.json` out of scope, and optional
+  profile or AI presentation manifests present only when the manifest says they are
+  present.
+- Adapter-enabled `project-map.json` `schema_version: "2.0"` artifact sets and
+  manifest-present sets that include `source-registry.json` remain unsupported query
+  inputs in the current slice.
+- Unsupported manifest schema markers, future project-map schema markers, manifest/file
+  presence mismatches, graph schema mismatches, stale source registries, and workspace
+  maps mixed into a single-repo manifest-present set fail closed before query output is
+  rendered.
+- The migration action for unsupported or mixed artifact sets is regeneration of the
+  complete `.project-memory/` output set from source and from the same explicitly
+  configured local adapter exports. The current tool does not mutate an existing
+  generated directory in place as a migration source.
+
 ## Planned v3 Schema/API Migration Design
 
 This section is a design plan for future v3 behavior beyond the current
-`artifact-set.json` manifest foundation. Current no-adapter scans still emit
-`project-map.json` with `schema_version: "1.0"`. Current adapter-enabled scans still
-emit `project-map.json` with `schema_version: "2.0"` plus the optional
-`source-registry.json` contract described below. Current query, agent-context, and
-impact commands still support the schema markers documented in their existing sections.
+`artifact-set.json` manifest and reader/query compatibility foundation. Current
+no-adapter scans still emit `project-map.json` with `schema_version: "1.0"`. Current
+adapter-enabled scans still emit `project-map.json` with `schema_version: "2.0"` plus
+the optional `source-registry.json` contract described below. Current query,
+agent-context, and impact commands still support the schema markers documented in their
+existing sections and validate `artifact-set.json` when it is present.
 
 The future v3 contract should be implemented as one coherent artifact set rather than
 as isolated per-file changes. A v3-capable generator, reader, or query command must not
@@ -261,8 +291,9 @@ Planned v3 artifact-set decisions:
   `schema_version: "3.0"` only when v3 serialization, reading, compatibility tests, and
   migration documentation are implemented together.
 - The current v3 foundation adds `artifact-set.json` as the generated set-level
-  manifest. Future v3 reader/query/migration work must decide when this manifest becomes
-  required for accepting v3 artifacts as a coherent machine-readable set.
+  manifest and validates it when present for current no-adapter query input. Future v3
+  reader/query/migration work must decide when this manifest becomes required for
+  accepting future v3 artifacts as a coherent machine-readable set.
 - `evidence-index.jsonl` remains the source-backed evidence artifact. If v3 changes
   evidence fields, IDs, confidence labels, uncertainty semantics, excerpts, or source
   type taxonomy, those changes must be documented in this file and in

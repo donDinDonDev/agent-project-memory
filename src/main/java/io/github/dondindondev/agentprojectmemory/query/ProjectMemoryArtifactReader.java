@@ -23,14 +23,49 @@ import java.util.Set;
 
 public final class ProjectMemoryArtifactReader {
   private static final String ARTIFACT_ROOT_NAME = ".project-memory";
+  private static final String ARTIFACT_SET = "artifact-set.json";
   private static final String PROJECT_MAP = "project-map.json";
   private static final String EVIDENCE_INDEX = "evidence-index.jsonl";
   private static final String PROJECT_GRAPH = "project-graph.json";
+  private static final String ENDPOINTS_MARKDOWN = "endpoints.md";
+  private static final String AGENT_GUIDE_MARKDOWN = "agent-guide.md";
+  private static final String SOURCE_REGISTRY = "source-registry.json";
+  private static final String AGENT_PROFILE_MANIFEST = "agent-profiles/manifest.json";
+  private static final String AI_PRESENTATION_MANIFEST = "ai-presentations/manifest.json";
+  private static final String CACHE_MANIFEST = "cache/v1/manifest.json";
+  private static final String WORKSPACE_MAP = "workspace-map.json";
+  private static final Set<String> EXPECTED_ARTIFACT_SET_PATHS = Set.of(
+      ARTIFACT_SET,
+      PROJECT_MAP,
+      PROJECT_GRAPH,
+      EVIDENCE_INDEX,
+      ENDPOINTS_MARKDOWN,
+      AGENT_GUIDE_MARKDOWN,
+      SOURCE_REGISTRY,
+      AGENT_PROFILE_MANIFEST,
+      AI_PRESENTATION_MANIFEST,
+      CACHE_MANIFEST,
+      WORKSPACE_MAP);
+  private static final String SUPPORTED_ARTIFACT_SET_SCHEMA = "1.0";
+  private static final String SUPPORTED_ARTIFACT_SET_KIND = "single_repository_scan";
+  private static final String SUPPORTED_ARTIFACT_SET_CONTRACT_LINE =
+      "v3_artifact_set_manifest_foundation";
   private static final String SUPPORTED_PROJECT_MAP_SCHEMA = "1.0";
   private static final String SUPPORTED_GRAPH_SCHEMA = "1.0";
   private static final int MAX_ARTIFACT_BYTES = 128 * 1024 * 1024;
   private static final int MAX_JSON_NESTING_DEPTH = 256;
   private static final int MAX_JSON_STRING_LENGTH = 1024 * 1024;
+  private static final String ARTIFACT_STATUS_PRESENT = "present";
+  private static final String ARTIFACT_STATUS_ABSENT = "absent";
+  private static final String ARTIFACT_STATUS_MANAGED_SEPARATELY = "managed_separately";
+  private static final String ARTIFACT_STATUS_INTENTIONALLY_OUT_OF_SCOPE =
+      "intentionally_out_of_scope";
+  private static final Set<String> ARTIFACT_STATUS_VALUES = Set.of(
+      ARTIFACT_STATUS_PRESENT,
+      ARTIFACT_STATUS_ABSENT,
+      ARTIFACT_STATUS_MANAGED_SEPARATELY,
+      ARTIFACT_STATUS_INTENTIONALLY_OUT_OF_SCOPE);
+  private static final Set<String> SUPPORTED_SOURCE_REGISTRY_SCHEMAS = Set.of("1.0", "1.1", "1.2");
   private static final Set<String> EVIDENCE_FIELDS = Set.of(
       "id",
       "source_type",
@@ -54,23 +89,42 @@ public final class ProjectMemoryArtifactReader {
       throws QueryArtifactException {
     Objects.requireNonNull(graphRequirement, "graphRequirement");
     Path artifactRoot = resolveArtifactRoot(queryPath);
+    Optional<ArtifactSetManifest> artifactSet = readArtifactSetManifest(artifactRoot);
     JsonNode projectMap = readJson(requiredArtifact(artifactRoot, PROJECT_MAP), PROJECT_MAP);
     String projectMapSchema = supportedSchema(
         projectMap,
         PROJECT_MAP,
         "schema_version",
         SUPPORTED_PROJECT_MAP_SCHEMA);
+    if (artifactSet.isPresent()
+        && !projectMapSchema.equals(artifactSet.orElseThrow().projectMapSchemaVersion())) {
+      throw new QueryArtifactException(
+          "Mixed artifact set: artifact-set.json project-map schema does not match project-map.json.");
+    }
     EvidenceIndex evidenceIndex = readEvidenceIndex(requiredArtifact(artifactRoot, EVIDENCE_INDEX));
     validateProjectMapEvidenceReferences(projectMap, evidenceIndex.ids());
     JsonNode projectGraph = null;
     String graphSchema = null;
-    if (graphRequirement != GraphRequirement.NONE) {
-      Optional<Path> graphPath = optionalArtifact(artifactRoot, PROJECT_GRAPH);
-      if (graphPath.isPresent()) {
-        projectGraph = readJson(graphPath.orElseThrow(), PROJECT_GRAPH);
-        graphSchema = validateGraph(projectGraph, evidenceIndex.ids());
-      } else if (graphRequirement == GraphRequirement.REQUIRED) {
-        throw new QueryArtifactException("Missing project-graph.json.");
+    if (graphRequirement != GraphRequirement.NONE || artifactSet.isPresent()) {
+      Optional<Path> graphPath = artifactSet.isPresent()
+          ? Optional.of(requiredArtifact(artifactRoot, PROJECT_GRAPH))
+          : optionalArtifact(artifactRoot, PROJECT_GRAPH);
+      if (graphPath.isEmpty()) {
+        if (graphRequirement == GraphRequirement.REQUIRED || artifactSet.isPresent()) {
+          throw new QueryArtifactException("Missing project-graph.json.");
+        }
+      } else {
+        JsonNode validatedGraph = readJson(graphPath.orElseThrow(), PROJECT_GRAPH);
+        String validatedGraphSchema = validateGraph(validatedGraph, evidenceIndex.ids());
+        if (artifactSet.isPresent()
+            && !validatedGraphSchema.equals(artifactSet.orElseThrow().projectGraphSchemaVersion())) {
+          throw new QueryArtifactException(
+              "Mixed artifact set: artifact-set.json graph schema does not match project-graph.json.");
+        }
+        if (graphRequirement != GraphRequirement.NONE) {
+          projectGraph = validatedGraph;
+          graphSchema = validatedGraphSchema;
+        }
       }
     }
     return new ProjectMemoryArtifacts(
@@ -121,6 +175,335 @@ public final class ProjectMemoryArtifactReader {
       throw new QueryArtifactException("Query artifact root is not a directory.");
     }
     return artifactRoot;
+  }
+
+  private Optional<ArtifactSetManifest> readArtifactSetManifest(Path artifactRoot)
+      throws QueryArtifactException {
+    Optional<Path> manifestPath = optionalArtifact(artifactRoot, ARTIFACT_SET);
+    if (manifestPath.isEmpty()) {
+      return Optional.empty();
+    }
+    JsonNode manifest = readJson(manifestPath.orElseThrow(), ARTIFACT_SET);
+    supportedSchema(
+        manifest,
+        ARTIFACT_SET,
+        "artifact_set_schema_version",
+        SUPPORTED_ARTIFACT_SET_SCHEMA);
+    requireSupportedText(
+        manifest,
+        "artifact_set_kind",
+        SUPPORTED_ARTIFACT_SET_KIND,
+        "Unsupported artifact-set.json artifact_set_kind.");
+    requireSupportedText(
+        manifest,
+        "contract_line",
+        SUPPORTED_ARTIFACT_SET_CONTRACT_LINE,
+        "Unsupported artifact-set.json contract_line.");
+    requireSupportedText(
+        manifest,
+        "artifact_root",
+        ARTIFACT_ROOT_NAME,
+        "Unsupported artifact-set.json artifact_root.");
+    validateArtifactSetEvidenceBoundary(manifest);
+
+    Map<String, JsonNode> items = artifactInventoryByPath(manifest.path("artifacts"));
+    String projectMapSchema = requiredItemSchemaValue(
+        items,
+        PROJECT_MAP,
+        "schema_version",
+        true,
+        ARTIFACT_STATUS_PRESENT);
+    if (!SUPPORTED_PROJECT_MAP_SCHEMA.equals(projectMapSchema)) {
+      throw new QueryArtifactException("Unsupported artifact-set.json project-map schema_version.");
+    }
+    String graphSchema = requiredItemSchemaValue(
+        items,
+        PROJECT_GRAPH,
+        "graph_schema_version",
+        true,
+        ARTIFACT_STATUS_PRESENT);
+    if (!SUPPORTED_GRAPH_SCHEMA.equals(graphSchema)) {
+      throw new QueryArtifactException("Unsupported artifact-set.json graph_schema_version.");
+    }
+
+    String artifactSetItemSchema = requiredItemSchemaValue(
+        items,
+        ARTIFACT_SET,
+        "artifact_set_schema_version",
+        true,
+        ARTIFACT_STATUS_PRESENT);
+    if (!SUPPORTED_ARTIFACT_SET_SCHEMA.equals(artifactSetItemSchema)) {
+      throw new QueryArtifactException("Unsupported artifact-set.json artifact_set_schema_version.");
+    }
+    requireNoItemSchema(items, EVIDENCE_INDEX, true, ARTIFACT_STATUS_PRESENT);
+    requireNoItemSchema(items, ENDPOINTS_MARKDOWN, true, ARTIFACT_STATUS_PRESENT);
+    requireNoItemSchema(items, AGENT_GUIDE_MARKDOWN, true, ARTIFACT_STATUS_PRESENT);
+    SourceRegistryManifest sourceRegistry = sourceRegistryManifest(items);
+    if (ARTIFACT_STATUS_PRESENT.equals(sourceRegistry.status())) {
+      throw new QueryArtifactException("Unsupported artifact-set.json source-registry status.");
+    }
+    OptionalSurfaceManifest agentProfile = optionalSurfaceManifest(
+        items,
+        AGENT_PROFILE_MANIFEST,
+        "manifest_version",
+        Set.of("1.0"));
+    OptionalSurfaceManifest aiPresentation = optionalSurfaceManifest(
+        items,
+        AI_PRESENTATION_MANIFEST,
+        "ai_presentation_schema_version",
+        Set.of("1.0"));
+    requireNoItemSchema(items, CACHE_MANIFEST, false, ARTIFACT_STATUS_MANAGED_SEPARATELY);
+    requireNoItemSchema(
+        items,
+        WORKSPACE_MAP,
+        false,
+        ARTIFACT_STATUS_INTENTIONALLY_OUT_OF_SCOPE);
+
+    String artifactSetId = requiredText(
+        manifest,
+        "artifact_set_id",
+        "Malformed artifact-set.json.");
+    String expectedArtifactSetId = artifactSetId(
+        projectMapSchema,
+        sourceRegistry.schemaVersion(),
+        agentProfile.status(),
+        aiPresentation.status());
+    if (!expectedArtifactSetId.equals(artifactSetId)) {
+      throw new QueryArtifactException(
+          "Mixed artifact set: artifact-set.json identity does not match artifact inventory.");
+    }
+
+    validateArtifactSetPresence(artifactRoot, sourceRegistry, agentProfile, aiPresentation);
+    return Optional.of(new ArtifactSetManifest(projectMapSchema, graphSchema));
+  }
+
+  private void validateArtifactSetEvidenceBoundary(JsonNode manifest) throws QueryArtifactException {
+    JsonNode boundary = manifest.path("evidence_boundary");
+    if (!boundary.isObject()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(
+        boundary,
+        "authority",
+        "contract_provenance_metadata",
+        "Unsupported artifact-set.json evidence_boundary.");
+    requireSupportedText(
+        boundary,
+        "evidence_policy",
+        "manifest_is_not_evidence",
+        "Unsupported artifact-set.json evidence_boundary.");
+    requireSupportedText(
+        boundary,
+        "evidence_artifact",
+        EVIDENCE_INDEX,
+        "Unsupported artifact-set.json evidence_boundary.");
+  }
+
+  private Map<String, JsonNode> artifactInventoryByPath(JsonNode artifacts)
+      throws QueryArtifactException {
+    if (!artifacts.isArray()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    Map<String, JsonNode> items = new LinkedHashMap<>();
+    for (JsonNode item : artifacts) {
+      if (!item.isObject()) {
+        throw new QueryArtifactException("Malformed artifact-set.json.");
+      }
+      JsonNode path = item.path("path");
+      if (!path.isTextual()
+          || !isSafeArtifactRelativePath(path.asText())
+          || !EXPECTED_ARTIFACT_SET_PATHS.contains(path.asText())) {
+        throw new QueryArtifactException("Malformed artifact-set.json.");
+      }
+      if (items.putIfAbsent(path.asText(), item) != null) {
+        throw new QueryArtifactException("Malformed artifact-set.json.");
+      }
+    }
+    return Map.copyOf(items);
+  }
+
+  private String requiredItemSchemaValue(
+      Map<String, JsonNode> items,
+      String path,
+      String schemaField,
+      boolean required,
+      String status) throws QueryArtifactException {
+    JsonNode item = requiredManifestItem(items, path, required, status);
+    JsonNode schema = item.path("schema");
+    if (!schema.isObject()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(
+        schema,
+        "field",
+        schemaField,
+        "Malformed artifact-set.json.");
+    JsonNode value = schema.path("value");
+    if (!value.isTextual() || value.asText().isBlank()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    return value.asText();
+  }
+
+  private void requireNoItemSchema(
+      Map<String, JsonNode> items,
+      String path,
+      boolean required,
+      String status) throws QueryArtifactException {
+    JsonNode item = requiredManifestItem(items, path, required, status);
+    if (!item.path("schema").isNull()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+  }
+
+  private JsonNode requiredManifestItem(
+      Map<String, JsonNode> items,
+      String path,
+      boolean required,
+      String status) throws QueryArtifactException {
+    JsonNode item = items.get(path);
+    if (item == null) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    JsonNode requiredNode = item.path("required");
+    if (!requiredNode.isBoolean() || requiredNode.asBoolean() != required) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(
+        item,
+        "status",
+        status,
+        "Malformed artifact-set.json.");
+    return item;
+  }
+
+  private SourceRegistryManifest sourceRegistryManifest(Map<String, JsonNode> items)
+      throws QueryArtifactException {
+    JsonNode item = items.get(SOURCE_REGISTRY);
+    if (item == null) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    JsonNode requiredNode = item.path("required");
+    if (!requiredNode.isBoolean() || requiredNode.asBoolean()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    String status = requiredArtifactStatus(item);
+    if (ARTIFACT_STATUS_ABSENT.equals(status)) {
+      if (!item.path("schema").isNull()) {
+        throw new QueryArtifactException("Malformed artifact-set.json.");
+      }
+      return new SourceRegistryManifest(status, null);
+    }
+    if (!ARTIFACT_STATUS_PRESENT.equals(status)) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    JsonNode schema = item.path("schema");
+    if (!schema.isObject()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(
+        schema,
+        "field",
+        "source_registry_schema_version",
+        "Malformed artifact-set.json.");
+    String schemaVersion = requiredText(schema, "value", "Malformed artifact-set.json.");
+    if (!SUPPORTED_SOURCE_REGISTRY_SCHEMAS.contains(schemaVersion)) {
+      throw new QueryArtifactException(
+          "Unsupported artifact-set.json source_registry_schema_version.");
+    }
+    return new SourceRegistryManifest(status, schemaVersion);
+  }
+
+  private OptionalSurfaceManifest optionalSurfaceManifest(
+      Map<String, JsonNode> items,
+      String path,
+      String schemaField,
+      Set<String> supportedValues) throws QueryArtifactException {
+    JsonNode item = items.get(path);
+    if (item == null) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    JsonNode requiredNode = item.path("required");
+    if (!requiredNode.isBoolean() || requiredNode.asBoolean()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    String status = requiredArtifactStatus(item);
+    if (ARTIFACT_STATUS_ABSENT.equals(status)) {
+      if (!item.path("schema").isNull()) {
+        throw new QueryArtifactException("Malformed artifact-set.json.");
+      }
+      return new OptionalSurfaceManifest(status);
+    }
+    if (!ARTIFACT_STATUS_PRESENT.equals(status)) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    JsonNode schema = item.path("schema");
+    if (!schema.isObject()) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(schema, "field", schemaField, "Malformed artifact-set.json.");
+    String schemaVersion = requiredText(schema, "value", "Malformed artifact-set.json.");
+    if (!supportedValues.contains(schemaVersion)) {
+      throw new QueryArtifactException("Unsupported artifact-set.json optional surface schema.");
+    }
+    return new OptionalSurfaceManifest(status);
+  }
+
+  private String requiredArtifactStatus(JsonNode item) throws QueryArtifactException {
+    String status = requiredText(item, "status", "Malformed artifact-set.json.");
+    if (!ARTIFACT_STATUS_VALUES.contains(status)) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    return status;
+  }
+
+  private void validateArtifactSetPresence(
+      Path artifactRoot,
+      SourceRegistryManifest sourceRegistry,
+      OptionalSurfaceManifest agentProfile,
+      OptionalSurfaceManifest aiPresentation) throws QueryArtifactException {
+    requiredArtifact(artifactRoot, PROJECT_MAP);
+    requiredArtifact(artifactRoot, PROJECT_GRAPH);
+    requiredArtifact(artifactRoot, EVIDENCE_INDEX);
+    requiredArtifact(artifactRoot, ENDPOINTS_MARKDOWN);
+    requiredArtifact(artifactRoot, AGENT_GUIDE_MARKDOWN);
+    validateOptionalArtifactPresence(artifactRoot, SOURCE_REGISTRY, sourceRegistry.status());
+    validateOptionalArtifactPresence(artifactRoot, AGENT_PROFILE_MANIFEST, agentProfile.status());
+    validateOptionalArtifactPresence(artifactRoot, AI_PRESENTATION_MANIFEST, aiPresentation.status());
+    if (optionalArtifact(artifactRoot, WORKSPACE_MAP).isPresent()) {
+      throw new QueryArtifactException(
+          "Mixed artifact set: workspace-map.json presence does not match artifact-set.json.");
+    }
+  }
+
+  private void validateOptionalArtifactPresence(Path artifactRoot, String path, String status)
+      throws QueryArtifactException {
+    Optional<Path> artifact = optionalArtifact(artifactRoot, path);
+    if (ARTIFACT_STATUS_PRESENT.equals(status) && artifact.isEmpty()) {
+      throw new QueryArtifactException(
+          "Mixed artifact set: " + path + " presence does not match artifact-set.json.");
+    }
+    if (ARTIFACT_STATUS_ABSENT.equals(status) && artifact.isPresent()) {
+      throw new QueryArtifactException(
+          "Mixed artifact set: " + path + " presence does not match artifact-set.json.");
+    }
+  }
+
+  private String artifactSetId(
+      String projectMapSchemaVersion,
+      String sourceRegistrySchemaVersion,
+      String agentProfileStatus,
+      String aiPresentationStatus) {
+    String sourceRegistryMarker = sourceRegistrySchemaVersion == null
+        ? ARTIFACT_STATUS_ABSENT
+        : sourceRegistrySchemaVersion;
+    return "artifact-set:single-repository-scan"
+        + ":project-map-" + projectMapSchemaVersion
+        + ":source-registry-" + sourceRegistryMarker
+        + ":agent-profiles-" + agentProfileStatus
+        + ":ai-presentations-" + aiPresentationStatus
+        + ":cache-managed-separately"
+        + ":workspace-out-of-scope";
   }
 
   private Path requiredArtifact(Path artifactRoot, String fileName) throws QueryArtifactException {
@@ -298,6 +681,17 @@ public final class ProjectMemoryArtifactReader {
     return schema.asText();
   }
 
+  private void requireSupportedText(
+      JsonNode root,
+      String fieldName,
+      String supportedValue,
+      String errorMessage) throws QueryArtifactException {
+    JsonNode value = root.path(fieldName);
+    if (!value.isTextual() || !supportedValue.equals(value.asText())) {
+      throw new QueryArtifactException(errorMessage);
+    }
+  }
+
   private JsonNode requiredArray(JsonNode root, String fieldName) throws QueryArtifactException {
     JsonNode value = root.path(fieldName);
     if (!value.isArray()) {
@@ -380,9 +774,14 @@ public final class ProjectMemoryArtifactReader {
   }
 
   private String requiredText(JsonNode node, String fieldName) throws QueryArtifactException {
+    return requiredText(node, fieldName, "Malformed project-graph.json.");
+  }
+
+  private String requiredText(JsonNode node, String fieldName, String errorMessage)
+      throws QueryArtifactException {
     JsonNode value = node.path(fieldName);
     if (!value.isTextual() || value.asText().isBlank()) {
-      throw new QueryArtifactException("Malformed project-graph.json.");
+      throw new QueryArtifactException(errorMessage);
     }
     return value.asText();
   }
@@ -454,6 +853,37 @@ public final class ProjectMemoryArtifactReader {
     return true;
   }
 
+  private boolean isSafeArtifactRelativePath(String path) {
+    if (path == null
+        || path.isBlank()
+        || !path.equals(path.strip())
+        || path.startsWith("/")
+        || path.startsWith("./")
+        || path.contains("\\")
+        || path.indexOf('\n') >= 0
+        || path.indexOf('\r') >= 0
+        || ".project-memory".equals(path)
+        || path.startsWith(".project-memory/")
+        || path.matches("^[A-Za-z]:[/\\\\].*")
+        || path.matches("^[A-Za-z][A-Za-z0-9+.-]*://.*")
+        || path.regionMatches(true, 0, "file:", 0, "file:".length())) {
+      return false;
+    }
+    try {
+      if (Path.of(path).isAbsolute()) {
+        return false;
+      }
+    } catch (RuntimeException exception) {
+      return false;
+    }
+    for (String segment : path.split("/", -1)) {
+      if (segment.isBlank() || ".".equals(segment) || "..".equals(segment)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   public enum GraphRequirement {
     NONE,
     OPTIONAL,
@@ -464,5 +894,18 @@ public final class ProjectMemoryArtifactReader {
       List<JsonNode> records,
       Map<String, JsonNode> byId,
       Set<String> ids) {
+  }
+
+  private record ArtifactSetManifest(
+      String projectMapSchemaVersion,
+      String projectGraphSchemaVersion) {
+  }
+
+  private record SourceRegistryManifest(
+      String status,
+      String schemaVersion) {
+  }
+
+  private record OptionalSurfaceManifest(String status) {
   }
 }

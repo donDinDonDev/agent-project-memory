@@ -73,10 +73,13 @@ readiness direction. It does not implement v3 schema markers, migration behavior
 runtime surfaces, provider AI, live connectors, release automation, or new distribution
 channels.
 Current unreleased development after v2.9.0 starts the v3 implementation path with a
-generated `.project-memory/artifact-set.json` manifest foundation only. It inventories
-the generated artifact set and optional related surfaces without bumping
-`project-map.json` to `schema_version: "3.0"`, changing query/reader/migration
-compatibility, or changing evidence semantics.
+generated `.project-memory/artifact-set.json` manifest foundation plus bounded
+reader/query compatibility validation when that manifest is present. It inventories the
+generated artifact set and optional related surfaces, accepts coherent no-adapter
+`schema_version: "1.0"` query input sets, and fails closed on unsupported or mixed
+manifest-present artifact sets without bumping `project-map.json` to
+`schema_version: "3.0"`, adding adapter-aware query behavior, or changing evidence
+semantics.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and

@@ -194,18 +194,27 @@ java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-proje
 
 `query <path> ...` accepts either a repository directory containing
 `.project-memory/` or the `.project-memory/` directory itself. These commands read the
-existing `project-map.json` and `evidence-index.jsonl` artifacts, print deterministic
-human text, and do not run scans, create `.project-memory/`, refresh cache/profile
-artifacts, read repository source files, or write repository files. Current query
-support remains focused on no-adapter `project-map.json` `schema_version: "1.0"`
-artifact sets; adapter-enabled `schema_version: "2.0"` outputs and
-`source-registry.json` are not query input sources in this slice. Non-graph query
-commands do not require or parse `project-graph.json`; a missing or malformed graph
-artifact is ignored unless the command needs graph-backed lookup. Source-visible
-endpoint rows and spec-backed declared API operation rows stay separate; entity rows
-and embeddable rows stay separate. Query artifact loading fails closed when evidence
-paths are unsafe, project-map evidence references do not resolve to
-`evidence-index.jsonl`, or required artifact files are unsafe local files.
+existing `project-map.json` and `evidence-index.jsonl` artifacts, and read
+`artifact-set.json` for set-level validation when the manifest is present. They print
+deterministic human text and do not run scans, create `.project-memory/`, refresh
+cache/profile artifacts, read repository source files, or write repository files.
+Current query support remains focused on no-adapter `project-map.json`
+`schema_version: "1.0"` artifact sets; adapter-enabled `schema_version: "2.0"` outputs
+and `source-registry.json` are not query input sources in this slice. Legacy
+no-manifest no-adapter artifact sets keep the earlier behavior: non-graph query
+commands do not require or parse `project-graph.json`, and a missing or malformed graph
+artifact is ignored unless the command needs graph-backed lookup. When
+`artifact-set.json` is present, the reader validates the coherent generated set before
+rendering query output and fails closed on unsupported manifest schema markers, mixed
+manifest/file state, mixed artifact schemas, or stale optional artifacts such as a
+`source-registry.json` that the manifest does not include. The migration action for
+mixed or unsupported artifact sets is to regenerate the complete `.project-memory/`
+output set from source and from the same explicitly configured local adapter exports,
+not to edit or copy individual generated files in place. Source-visible endpoint rows
+and spec-backed declared API operation rows stay separate; entity rows and embeddable
+rows stay separate. Query artifact loading fails closed when evidence paths are unsafe,
+project-map evidence references do not resolve to `evidence-index.jsonl`, or required
+artifact files are unsafe local files.
 `explain evidence <id>` resolves exact evidence IDs from `evidence-index.jsonl`.
 `find fact <term>` and `find symbol <term>` are exact and case-sensitive; they do not
 perform substring, fuzzy, regex, semantic, natural-language, or embedding search.
@@ -512,7 +521,9 @@ Compatibility and migration notes:
   set-level generated-output manifest. No-adapter `project-map.json` remains on
   `schema_version: "1.0"`, adapter-enabled `project-map.json` remains on
   `schema_version: "2.0"`, and `evidence-index.jsonl` remains the source-backed
-  evidence artifact.
+  evidence artifact. Current query, `agent-context`, and impact loading validate the
+  manifest when it is present, accept only coherent no-adapter `schema_version: "1.0"`
+  query input sets, and fail closed on unsupported or mixed artifact-set state.
 - Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
   `schema_version: "1.0"` outputs. Consumers that encounter
   `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
@@ -728,9 +739,10 @@ migration and evidence/provenance boundary, and keeps all v3 schemas, migration
 behavior, runtime surfaces, and distribution-channel changes as future work until a
 later implementation release.
 Current unreleased development starts that implementation path with a generated
-`.project-memory/artifact-set.json` manifest foundation only: no `project-map.json`
-`schema_version: "3.0"` bump, no reader/query/migration compatibility change, and no
-evidence semantic change.
+`.project-memory/artifact-set.json` manifest foundation plus bounded reader/query
+compatibility validation when the manifest is present: no `project-map.json`
+`schema_version: "3.0"` bump, no adapter-aware query expansion, and no evidence
+semantic change.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
 

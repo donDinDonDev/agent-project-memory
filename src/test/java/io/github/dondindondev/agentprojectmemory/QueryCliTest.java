@@ -93,6 +93,44 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryListModulesValidatesManifestBackedArtifactSet() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "list", "modules");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Query: list modules")),
+        () -> assertTrue(result.stdout().contains(
+            "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=1")),
+        () -> assertFalse(result.stdout().contains("project-graph.json")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryListModulesRejectsUnsupportedArtifactSetManifest() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"artifact_set_schema_version\":\"1.0\"",
+            "\"artifact_set_schema_version\":\"2.0\""));
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "list", "modules");
+
+    assertAll(
+        () -> assertEquals(3, result.exitCode()),
+        () -> assertTrue(result.stdout().isEmpty()),
+        () -> assertTrue(result.stderr().contains(
+            "Unsupported artifact-set.json artifact_set_schema_version.")),
+        () -> assertFalse(result.stderr().contains(repositoryRoot.toString())));
+  }
+
+  @Test
   void nonGraphQueryCommandsIgnoreMalformedPresentGraph() throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
@@ -1193,6 +1231,38 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryAgentContextAndImpactRejectMixedManifestArtifacts() throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("source-registry.json"),
+        "{\"source_registry_schema_version\":\"1.0\",\"secret\":\"FAKE_MIXED_MANIFEST_SECRET\"}");
+
+    CliResult agentContext = runCli("query", repositoryRoot.toString(), "agent-context");
+    CliResult impact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "pom.xml");
+
+    assertAll(
+        () -> assertEquals(3, agentContext.exitCode()),
+        () -> assertEquals(3, impact.exitCode()),
+        () -> assertTrue(agentContext.stdout().isEmpty()),
+        () -> assertTrue(impact.stdout().isEmpty()),
+        () -> assertTrue(agentContext.stderr().contains(
+            "Mixed artifact set: source-registry.json presence does not match artifact-set.json.")),
+        () -> assertTrue(impact.stderr().contains(
+            "Mixed artifact set: source-registry.json presence does not match artifact-set.json.")),
+        () -> assertFalse(agentContext.stderr().contains("FAKE_MIXED_MANIFEST_SECRET")),
+        () -> assertFalse(impact.stderr().contains("FAKE_MIXED_MANIFEST_SECRET")),
+        () -> assertFalse(agentContext.stderr().contains(repositoryRoot.toString())),
+        () -> assertFalse(impact.stderr().contains(repositoryRoot.toString())));
+  }
+
+  @Test
   void queryAgentContextRejectsExtraArgsAdapterSchemaAndMalformedGraphSafely()
       throws Exception {
     Path usageRoot = tempDir.resolve("usage-repo");
@@ -1637,6 +1707,14 @@ final class QueryCliTest {
         """);
   }
 
+  private void writeManifestBackedArtifacts(Path artifactRoot) throws IOException {
+    writeBaseArtifacts(artifactRoot);
+    writeValidGraph(artifactRoot);
+    Files.writeString(artifactRoot.resolve("endpoints.md"), "# Endpoints\n");
+    Files.writeString(artifactRoot.resolve("agent-guide.md"), "# Agent Guide\n");
+    Files.writeString(artifactRoot.resolve("artifact-set.json"), validArtifactSet());
+  }
+
   private void writeArtifacts(Path artifactRoot, String projectMap) throws IOException {
     writeArtifacts(artifactRoot, projectMap, evidenceRecord("ev:pom.xml:1-1:build_file:pom.xml"));
   }
@@ -1663,6 +1741,36 @@ final class QueryCliTest {
 
   private void writeMalformedGraph(Path artifactRoot) throws IOException {
     Files.writeString(artifactRoot.resolve("project-graph.json"), "{not-json-with-SECRET_TOKEN}");
+  }
+
+  private String validArtifactSet() {
+    return """
+        {
+          "artifact_set_schema_version":"1.0",
+          "artifact_set_id":"artifact-set:single-repository-scan:project-map-1.0:source-registry-absent:agent-profiles-absent:ai-presentations-absent:cache-managed-separately:workspace-out-of-scope",
+          "artifact_set_kind":"single_repository_scan",
+          "contract_line":"v3_artifact_set_manifest_foundation",
+          "artifact_root":".project-memory",
+          "evidence_boundary":{
+            "authority":"contract_provenance_metadata",
+            "evidence_policy":"manifest_is_not_evidence",
+            "evidence_artifact":"evidence-index.jsonl"
+          },
+          "artifacts":[
+            {"path":"artifact-set.json","required":true,"status":"present","schema":{"field":"artifact_set_schema_version","value":"1.0"}},
+            {"path":"project-map.json","required":true,"status":"present","schema":{"field":"schema_version","value":"1.0"}},
+            {"path":"project-graph.json","required":true,"status":"present","schema":{"field":"graph_schema_version","value":"1.0"}},
+            {"path":"evidence-index.jsonl","required":true,"status":"present","schema":null},
+            {"path":"endpoints.md","required":true,"status":"present","schema":null},
+            {"path":"agent-guide.md","required":true,"status":"present","schema":null},
+            {"path":"source-registry.json","required":false,"status":"absent","schema":null},
+            {"path":"agent-profiles/manifest.json","required":false,"status":"absent","schema":null},
+            {"path":"ai-presentations/manifest.json","required":false,"status":"absent","schema":null},
+            {"path":"cache/v1/manifest.json","required":false,"status":"managed_separately","schema":null},
+            {"path":"workspace-map.json","required":false,"status":"intentionally_out_of_scope","schema":null}
+          ]
+        }
+        """;
   }
 
   private void writeLookupGraph(Path artifactRoot) throws IOException {

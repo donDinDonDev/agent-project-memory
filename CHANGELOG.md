@@ -15,12 +15,26 @@ architecture documents.
   scans, inventorying the required base artifacts plus optional adapter, profile, AI,
   cache, and workspace-related surfaces without bumping `project-map.json` to
   `schema_version: "3.0"`.
+- Added bounded reader/query compatibility validation for manifest-present artifact
+  sets. Current query, `agent-context`, and impact loading validate
+  `artifact-set.json` when present, accept coherent no-adapter
+  `schema_version: "1.0"` query input sets, and reject unsupported or mixed
+  artifact-set state.
+
+### Changed
+
+- Preserved regeneration-first migration guidance for mixed or unsupported generated
+  artifact sets: regenerate the complete `.project-memory/` output set from source and
+  configured local adapter exports instead of mutating generated artifacts in place.
 
 ### Security
 
 - Preserved the evidence boundary for the artifact-set manifest: it is
   contract/provenance metadata only, while `evidence-index.jsonl` remains the
   source-backed evidence artifact.
+- Query artifact loading now fails closed when a present artifact-set manifest is
+  unsupported, internally inconsistent, or does not match required generated artifact
+  presence and schema markers.
 
 ## [2.9.0] - 2026-06-21
 
