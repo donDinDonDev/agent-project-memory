@@ -11,8 +11,8 @@ architecture documents.
 
 ## [2.8.0] - 2026-06-21
 
-Release status: release candidate. The `v2.8.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.8.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 
@@ -31,14 +31,14 @@ and `SHA256SUMS` assets are not published yet.
 ### Changed
 
 - Aligned the Maven project version, README local build examples, roadmap status,
-  v2.8 release notes, and public release wording for release-candidate review.
+  v2.8 release notes, and public release wording for publication.
 - Synchronized release-process wording around the v2.8 distribution hardening baseline
   while preserving manual maintainer authority for all publication actions.
 
 ### Fixed
 
-- Corrected `SECURITY.md` to identify `v2.7.0` as the latest published supported public
-  release line for vulnerability reports.
+- Synchronized `SECURITY.md` to identify `v2.8.0` as the latest published supported
+  public release line for vulnerability reports.
 
 ### Security
 
@@ -53,8 +53,9 @@ and `SHA256SUMS` assets are not published yet.
 
 - Signing, SBOM generation or publication, package-manager channels, first-party
   installed-command distribution, native images, container images, release automation,
-  artifact upload, release publication, tag creation or movement, dependency workflow
-  automation, CI release workflow changes, credentials, network release actions,
+  automatic artifact upload, automatic release publication, automatic tag creation or
+  movement, dependency workflow automation, CI release workflow changes, credentials,
+  network release actions,
   SaaS, web UI, repository chat, generic RAG, provider AI, plugin/runtime expansion,
   or automatic code modification.
 

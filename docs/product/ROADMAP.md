@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.7.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.8.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -58,8 +58,8 @@ diagnostics. Generated impact reports, raw diff ingestion, workspace impact,
 adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
 freshness scoring, vulnerability claim, business-priority claim, and automatic code
 modification remain out of scope for the first boundary.
-The v2.8.0 release candidate adds local distribution and supply-chain hardening around
-candidate jar integrity checks. It keeps the published jar plus `SHA256SUMS` as the
+The v2.8.0 release adds local distribution and supply-chain hardening around candidate
+jar integrity checks. It keeps the published jar plus `SHA256SUMS` as the
 supported distribution baseline while adding a no-secret local artifact-integrity
 dry-run for candidate jar filename, CLI version output, manifest entrypoint, Maven
 artifact metadata, exact dry-run release asset list, and filename-only checksum
@@ -1926,13 +1926,13 @@ Release scope:
 - The `v2.7.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.8.0: Distribution And Supply-Chain Hardening (Release Candidate)
+## v2.8.0: Distribution And Supply-Chain Hardening (Published)
 
 Product outcome: improve release artifact integrity, dependency workflow review, and
 release approval clarity while preserving manual maintainer authority over every
 publication action.
 
-Release-candidate boundary:
+Release boundary:
 
 - The supported public distribution baseline remains the executable jar attached to a
   GitHub Release plus `SHA256SUMS`.
@@ -1944,7 +1944,7 @@ Release-candidate boundary:
 - The current dependency workflow baseline is Dependabot coverage for Maven and GitHub
   Actions updates plus human review. Dependency/security workflow automation changes are
   release-sensitive and require risk-based review before release.
-- CI release validation remains parked for this release candidate. If implemented in a
+- CI release validation remains parked for this release. If implemented in a
   later release, it must run with read-only repository permissions and no secrets. It
   must not attach assets, upload artifacts, create or move tags, publish releases, sign
   files, deploy packages, or mutate remote state.
@@ -1979,17 +1979,17 @@ Output and evidence stance:
   `OUTPUT_CONTRACT.md`, `EVIDENCE_MODEL.md`, tests or goldens where applicable, the
   changelog, release notes, and security review scope before implementation.
 
-Validation expectations before release:
+Validation completed for release:
 
 - Public docs, threat model, release process, changelog, README install wording, and
   release notes must agree on the supported distribution channel and parked surfaces.
 - If artifact-integrity validation is implemented, focused validation should prove
   filename-only checksum entries, jar/version/manifest metadata checks, no local
   absolute paths, no credential use, and no remote state mutation.
-- CI release workflow changes are not included in this release candidate.
-- Release prep should still run full tests, packaging checks, packaged CLI smoke, local
-  checksum dry-run, public-surface review, and downloaded asset verification after
-  explicit publication approval.
+- CI release workflow changes are not included in this release.
+- Release prep ran full tests, packaging checks, packaged CLI smoke, local checksum
+  dry-run, public-surface review, and downloaded asset verification after explicit
+  publication approval.
 - Risk-based security review is required for implementation changes that touch release
   artifacts, checksums, dependencies, GitHub Actions workflows, security configuration,
   signing, SBOMs, package channels, credentials, scripts, or release automation.
@@ -2015,8 +2015,8 @@ Release scope:
 - v2.8 ships a local artifact-integrity dry-run helper and public release-process
   hardening while remaining a distribution/process hardening release, not an analyzer
   capability expansion.
-- The `v2.8.0` tag and GitHub Release are not published yet. Publication requires the
-  separate maintainer release workflow after release-prep review.
+- The `v2.8.0` tag and GitHub Release are published with the packaged jar and checksum
+  assets.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

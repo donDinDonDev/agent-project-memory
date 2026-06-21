@@ -2,8 +2,8 @@
 
 Release date: 2026-06-21
 
-Release status: release candidate. The `v2.8.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.8.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.8.0 improves distribution and release artifact integrity
 without turning release preparation into publication automation. The supported public
@@ -90,14 +90,14 @@ The v2.8.0 distribution hardening boundary remains local-first and manual:
   uploads, checksum publication, signing, SBOM publication, package-manager
   publication, native image publication, container image publication, and release
   automation require separate explicit maintainer approval and are not part of this
-  release candidate.
+  release.
 
 Release-level distribution and supply-chain review for the accepted v2.8 scope
 completed before release prep, with no release-blocking findings remaining.
 
 ## Validation
 
-The v2.8.0 release-candidate validation passed:
+The v2.8.0 release validation passed:
 
 - Focused artifact-integrity dry-run helper tests: 6 tests, 0 failures, 0 errors,
   0 skipped.
@@ -148,5 +148,4 @@ The intended `v2.8.0` release assets are:
 - `agent-project-memory-2.8.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published with this release.

@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.7.0`. Its release artifact is
-`agent-project-memory-2.7.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.8.0`. Its release artifact is
+`agent-project-memory-2.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.7.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.8.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -644,9 +644,10 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v2.7.0`. It ships an executable jar and `SHA256SUMS`
-asset and adds explicit local policy profiles through
-`scan <path> --policy-profile <name>`. Normal no-adapter generated
+The latest published release is `v2.8.0`. It ships an executable jar and `SHA256SUMS`
+asset and adds local artifact-integrity dry-run support for release jar and checksum
+verification while preserving the GitHub Release jar plus `SHA256SUMS` as the supported
+public distribution baseline. Normal no-adapter generated
 `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
@@ -692,8 +693,8 @@ The v2.7.0 release adds explicit local policy profiles through
 including `guarded-local`, `docs-focused`, and `adapter-local` guardrails, bounded
 `scan.policy_profile` execution metadata for explicit selections only, and fail-closed
 validation for unsafe combinations without changing evidence semantics.
-The v2.8.0 release candidate adds a local artifact-integrity dry-run helper for
-candidate jars and `SHA256SUMS` verification, while keeping the GitHub Release
+The v2.8.0 release adds a local artifact-integrity dry-run helper for candidate jars
+and `SHA256SUMS` verification, while keeping the GitHub Release
 executable jar plus `SHA256SUMS` as the supported public distribution baseline.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
