@@ -11,8 +11,8 @@ architecture documents.
 
 ## [2.9.0] - 2026-06-21
 
-Release status: release candidate. The `v2.9.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.9.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 
@@ -28,14 +28,14 @@ and `SHA256SUMS` assets are not published yet.
 ### Changed
 
 - Aligned the Maven project version, README local build examples, roadmap status,
-  v2.9 release notes, and public release wording for release-candidate review.
+  v2.9 release notes, and public release wording for publication.
 
 ### Security
 
 - Kept v3 security review and release-readiness boundaries as planned future work.
   v2.9.0 does not change shipped parser, path, filesystem, output, evidence, network,
   authentication, provider, plugin/runtime, dependency, release artifact, or
-  publication behavior.
+  release automation behavior.
 
 ### Not Included
 
@@ -43,8 +43,8 @@ and `SHA256SUMS` assets are not published yet.
   generated output changes, evidence semantic changes, server/API/MCP/editor/plugin
   runtime, provider AI, live network connectors, credentials, source upload, signing,
   SBOM publication, package-manager channels, native images, container images, release
-  automation, artifact upload, release publication, tag creation or movement, or
-  automatic code modification.
+  automation, automatic publication, package publication, or automatic code
+  modification.
 
 ## [2.8.0] - 2026-06-21
 

@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v2.8.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v2.9.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -67,8 +67,8 @@ verification. Signing, SBOM publication, package-manager channels, native images
 container images, CI release workflow changes, dependency workflow automation, and
 release automation remain parked until separately approved, implemented, validated, and
 documented.
-The v2.9.0 release candidate completes the public v3 preparation design: frozen v3.0
-scope, planned schema/API migration, evidence/provenance migration boundary, and release
+The v2.9.0 release completes the public v3 preparation design: frozen v3.0 scope,
+planned schema/API migration, evidence/provenance migration boundary, and release
 readiness direction. It does not implement v3 schema markers, migration behavior,
 runtime surfaces, provider AI, live connectors, release automation, or new distribution
 channels.
@@ -2023,12 +2023,12 @@ Release scope:
 - The `v2.8.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.9.0: v3 Preparation (Release Candidate)
+## v2.9.0: v3 Preparation (Published)
 
 Product outcome: freeze the v3.0 product, contract, evidence/provenance, migration, and
 security-review boundaries before v3 implementation starts.
 
-Release-candidate boundary:
+Release boundary:
 
 - v2.9 is a planning, design, review, and release-prep track. It must not implement v3
   output schemas, serializers, parsers, readers, migration code, server/API/MCP
@@ -2044,9 +2044,8 @@ Release-candidate boundary:
   security-review plan, deprecation notes, compatibility-test plan, and release-readiness
   path. Those plans remain prerequisites for v3.0; they do not change current generated
   artifacts by themselves.
-- The current published baseline remains `v2.8.0` until `v2.9.0` is published.
-  The `v2.9.0` release candidate remains a planning/design release and does not ship
-  v3 implementation behavior.
+- The `v2.9.0` release is the current published baseline. It remains a planning/design
+  release and does not ship v3 implementation behavior.
 
 Design constraints:
 

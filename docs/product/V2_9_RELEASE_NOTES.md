@@ -2,8 +2,8 @@
 
 Release date: 2026-06-21
 
-Release status: release candidate. The `v2.9.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v2.9.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v2.9.0 is a planning/design release for v3 preparation. It
 freezes the public v3.0 direction, documents the planned v3 schema/API migration and
@@ -50,7 +50,7 @@ docs, tests, changelog, and release notes together before any v3 behavior ships.
 
 v2.9.0 does not change production security behavior. It does not change parser, path,
 filesystem, output rendering, evidence serialization, dependency, release artifact,
-checksum, network, authentication, provider, plugin/runtime, CI, or publication
+checksum, network, authentication, provider, plugin/runtime, CI, or release automation
 behavior.
 
 The release keeps current local-first defaults:
@@ -61,16 +61,16 @@ The release keeps current local-first defaults:
 - no real provider AI;
 - no server/API/MCP/editor/plugin runtime;
 - no signing, SBOM publication, package-manager channel, native image, container image,
-  release automation, artifact upload, tag creation, or GitHub Release publication.
+  or release automation.
 
-Release preparation remains separate from publication. Tags, GitHub Releases, asset
-uploads, checksum publication, signing, SBOM publication, package-manager publication,
-native image publication, container image publication, and release automation require
-separate explicit maintainer approval and are not part of this release candidate.
+The published release includes only the GitHub Release jar and `SHA256SUMS` assets.
+Signing, SBOM publication, package-manager publication, native image publication,
+container image publication, and release automation remain future work and require
+separate explicit maintainer approval.
 
 ## Validation
 
-The v2.9.0 release-candidate validation passed:
+The v2.9.0 release validation passed:
 
 - Full local Maven test suite: 572 tests, 0 failures, 0 errors, 0 skipped.
 - Maven package build: 572 tests, 0 failures, 0 errors, 0 skipped, including the
@@ -102,19 +102,16 @@ v2.9.0 does not add:
   or publication, package-manager channels, first-party installed-command distribution,
   JBang catalogs, Homebrew taps, Maven Central publication, SDKMAN/asdf plugins, native
   images, container images, dependency workflow automation, CI release workflow changes,
-  release automation, automatic tag creation, automatic GitHub Release creation,
-  artifact upload, checksum publication, or package publication.
+  release automation, automatic publication, or package publication.
 - Analyzer behavior changes, generated output schema changes, evidence semantic
   changes, adapter behavior changes, workspace behavior changes, policy profile
-  behavior changes, change-impact behavior changes, release publication, or automatic
-  code modification.
+  behavior changes, change-impact behavior changes, or automatic code modification.
 
 ## Release Assets
 
-The intended `v2.9.0` release assets are:
+The published `v2.9.0` release assets are:
 
 - `agent-project-memory-2.9.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published on the GitHub Release for `v2.9.0`.

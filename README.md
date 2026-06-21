@@ -48,13 +48,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.8.0`. Its release artifact is
-`agent-project-memory-2.8.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v2.9.0`. Its release artifact is
+`agent-project-memory-2.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.8.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-2.9.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -654,10 +654,10 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v2.8.0`. It ships an executable jar and `SHA256SUMS`
-asset and adds local artifact-integrity dry-run support for release jar and checksum
-verification while preserving the GitHub Release jar plus `SHA256SUMS` as the supported
-public distribution baseline. Normal no-adapter generated
+The latest published release is `v2.9.0`. It ships an executable jar and `SHA256SUMS`
+asset and completes the public v3 preparation design while preserving the GitHub
+Release jar plus `SHA256SUMS` as the supported public distribution baseline. Normal
+no-adapter generated
 `project-map.json` files use
 `schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
 expansion is additive, the v1.6 read-only query expansion adds deterministic
@@ -706,10 +706,10 @@ validation for unsafe combinations without changing evidence semantics.
 The v2.8.0 release adds a local artifact-integrity dry-run helper for candidate jars
 and `SHA256SUMS` verification, while keeping the GitHub Release
 executable jar plus `SHA256SUMS` as the supported public distribution baseline.
-The v2.9.0 release candidate freezes the planned v3.0 scope, documents the v3
-schema/API migration and evidence/provenance boundary, and keeps all v3 schemas,
-migration behavior, runtime surfaces, and distribution-channel changes as future work
-until a later implementation release.
+The v2.9.0 release freezes the planned v3.0 scope, documents the v3 schema/API
+migration and evidence/provenance boundary, and keeps all v3 schemas, migration
+behavior, runtime surfaces, and distribution-channel changes as future work until a
+later implementation release.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
 
