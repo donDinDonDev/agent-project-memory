@@ -58,6 +58,12 @@ diagnostics. Generated impact reports, raw diff ingestion, workspace impact,
 adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
 freshness scoring, vulnerability claim, business-priority claim, and automatic code
 modification remain out of scope for the first boundary.
+The next planned v2.8 track is distribution and supply-chain hardening. It keeps the
+published jar plus `SHA256SUMS` as the supported distribution baseline while designing
+no-secret checksum, release metadata, dependency workflow, and read-only CI validation
+improvements. Signing, SBOM publication, package-manager channels, native images,
+container images, and release automation remain parked until separately approved,
+implemented, validated, and documented.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1917,6 +1923,97 @@ Release scope:
 - The `v2.7.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
+## v2.8.0: Distribution And Supply-Chain Hardening (Planned)
+
+Product outcome: improve release artifact integrity, dependency workflow review, and
+release approval clarity while preserving manual maintainer authority over every
+publication action.
+
+Release boundary:
+
+- The supported public distribution baseline remains the executable jar attached to a
+  GitHub Release plus `SHA256SUMS`.
+- Checksum hardening is accepted only as future local dry-run or read-only CI
+  validation unless a later release changes this document. It may validate candidate jar
+  filename, CLI version output, manifest entrypoint, Maven artifact metadata, release
+  asset list, and filename-only checksum contents, but it must not publish, upload,
+  sign, create releases, move tags, or require secrets.
+- The current dependency workflow baseline is Dependabot coverage for Maven and GitHub
+  Actions updates plus human review. Dependency/security workflow automation changes are
+  release-sensitive and require risk-based review before release.
+- CI release validation, if implemented for v2.8, must run with read-only repository
+  permissions and no secrets. It must not attach assets, upload artifacts, create or move
+  tags, publish releases, sign files, deploy packages, or mutate remote state.
+- Signing remains parked. A later design must define signing model, key custody,
+  verification instructions, release asset status, maintainer approval, and security
+  review before any signing implementation or public signing claim.
+- SBOM generation and publication remain parked. A later design must define the SBOM
+  tool, dependency-resolution boundary, generated-file status, release asset status,
+  validation, wording limits, and review gate before any SBOM implementation or public
+  asset claim.
+- Package-manager channels, a first-party installed command, JBang catalogs, Homebrew
+  taps, Maven Central publication, SDKMAN/asdf plugins, native images, and container
+  images remain unavailable until a specific channel is implemented, tested, documented,
+  and published in release notes.
+- Release automation remains parked. Release preparation may produce checklists,
+  validation output, and reviewed release materials, but publication remains a separate
+  explicit maintainer action.
+- Release credentials, signing keys, package-registry tokens, account details,
+  passphrases, secret names, and private publication state must not be stored in
+  repository files, generated artifacts, fixtures, scripts, public docs, release notes,
+  or logs intended for public review.
+
+Output and evidence stance:
+
+- v2.8 distribution hardening is expected to have no `.project-memory/` output contract
+  impact and no evidence model impact.
+- Release notes, GitHub Release bodies, checksums, signatures, SBOMs, CI logs,
+  dependency update reports, security review summaries, package metadata, and LLM output
+  remain non-evidence for generated Java/Spring project facts.
+- Any future proposal to emit a generated release metadata artifact, treat SBOMs or
+  signatures as project evidence, or add generated output fields must update
+  `OUTPUT_CONTRACT.md`, `EVIDENCE_MODEL.md`, tests or goldens where applicable, the
+  changelog, release notes, and security review scope before implementation.
+
+Validation expectations before release:
+
+- Public docs, threat model, release process, changelog, README install wording, and
+  release notes must agree on the supported distribution channel and parked surfaces.
+- If artifact-integrity validation is implemented, focused validation should prove
+  filename-only checksum entries, jar/version/manifest metadata checks, no local
+  absolute paths, no credential use, and no remote state mutation.
+- If CI release validation is implemented, workflow review must prove read-only
+  permissions, no secrets, and no publish/upload/sign/package/tag/release capability.
+- Release prep should still run full tests, packaging checks, packaged CLI smoke, local
+  checksum dry-run, public-surface review, and downloaded asset verification after
+  explicit publication approval.
+- Risk-based security review is required for implementation changes that touch release
+  artifacts, checksums, dependencies, GitHub Actions workflows, security configuration,
+  signing, SBOMs, package channels, credentials, scripts, or release automation.
+
+Stop conditions for implementation:
+
+- A proposed helper, workflow, or documented path can publish, upload, sign, create or
+  move tags, create releases, deploy packages, or mutate remote state without a separate
+  explicit maintainer approval.
+- Ordinary validation requires credentials, signing keys, tokens, package-registry
+  accounts, private endpoints, or account-specific publication state.
+- Public docs present a package channel, signature, SBOM, native image, container image,
+  or installed command as available before that channel or asset is implemented, tested,
+  documented, and released.
+- Checksums, logs, docs, release notes, or generated output would include local absolute
+  paths, temporary paths, raw command transcripts, credentials, tokens, secret names, or
+  private publication state.
+- Distribution work would change output or evidence semantics without synchronized
+  architecture docs, tests, changelog, release notes, and security review.
+
+Release scope:
+
+- v2.8 is planned as distribution/process hardening, not analyzer capability expansion.
+- No package-manager publication, signing, SBOM publication, native image, container
+  image, release automation, release upload, tag, push, or publication action is part of
+  the design boundary by itself.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:
@@ -1932,6 +2029,9 @@ Expected direction:
 - Workspace and change-impact workflows.
 - Local policy/configuration profiles that make safe scan presets easier to select and
   review without becoming security certifications or hosted policy management.
+- Distribution and supply-chain hardening that improves release artifact validation
+  while preserving explicit maintainer approval for publication, signing, package
+  channels, and release automation.
 
 The core analyzer must continue to run without adapters, network access, credentials,
 plugin loading, source upload, or AI. Adapter-backed records must remain backed by

@@ -233,6 +233,30 @@ Planned v2 credential and network defaults:
   connector exports, raw source/document bodies, prompt transcripts, or local absolute
   paths by default.
 
+Distribution and release supply-chain defaults:
+
+- the supported public distribution baseline is the executable GitHub Release jar plus
+  filename-only `SHA256SUMS`;
+- release artifact dry-runs and read-only CI validation, when implemented, must not
+  publish, upload, sign, create or move tags, create releases, mutate package registries,
+  or require credentials;
+- dependency and GitHub Actions update workflows are review inputs, not automatic release
+  approval, and changes to dependency/security workflow automation require risk-based
+  review before release;
+- signing, SBOM publication, package-manager channels, installed-command distribution,
+  native images, container images, and release automation remain separate later surfaces
+  until their key custody, credential boundary, publication authority, validation,
+  public wording, and review gates are designed;
+- release credentials, signing keys, package-registry tokens, account details,
+  passphrases, secret names, raw command logs, local absolute paths, and private
+  publication state must not be committed or serialized into generated artifacts, public
+  docs, fixtures, scripts, release notes, CI logs intended for public review, or query
+  output;
+- release notes, checksums, signatures, SBOMs, CI logs, dependency update reports,
+  security review summaries, package metadata, and LLM output are not project evidence
+  and must not create Java/Spring facts, vulnerability proof, compliance proof, runtime
+  claims, dependency-freshness claims, or code-change authority.
+
 Optional AI security defaults:
 
 - AI presentation is disabled unless explicitly enabled;

@@ -223,6 +223,15 @@ automatic code modification. Selected profile metadata should remain redacted sc
 execution metadata, not project evidence, and normal no-profile scans keep the existing
 local-first compatibility baseline without default policy metadata.
 
+Distribution and supply-chain hardening should improve release confidence without
+turning release preparation into automatic publication. The v2.8 boundary keeps the
+GitHub Release executable jar plus `SHA256SUMS` as the supported distribution baseline
+while allowing later no-secret checksum, jar metadata, dependency workflow, and read-only
+CI validation work. Signing, SBOM publication, package-manager channels,
+installed-command distribution, native images, container images, and release automation
+remain parked until separate designs define credentials, key custody, publication
+authority, validation, user-facing documentation, and security review requirements.
+
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
 platform with deterministic analyzers, stable adapter/plugin APIs, optional AI
 presentation, and agent-native workflows.

@@ -147,6 +147,11 @@ Before a release, confirm that:
 - meaningful analyzer expansions have public validation summaries;
 - focused tests, full local tests, packaging checks, and release artifact checks have
   passed for the release scope;
+- release dry-run and CI validation, when present, run without secrets or write
+  permissions and cannot publish, upload, sign, create tags, create releases, or mutate
+  package registries;
+- dependency and GitHub Actions update coverage is reviewed for the release scope, and
+  any dependency/security workflow change has risk-based review before release;
 - risk-based security review is complete where the release changes parser, path,
   filesystem, dependency, output, evidence, network/auth, security configuration, or
   packaging behavior;
@@ -174,6 +179,12 @@ The artifact/checksum process is verification and packaging discipline. It must 
 treated as permission for automated commits, tags, pushes, uploads, GitHub Release
 publication, credentials use, or other remote state changes.
 
+Local dry-runs or read-only CI checks may validate the candidate jar filename, CLI
+version output, manifest entrypoint, Maven artifact metadata, release asset list, and
+filename-only `SHA256SUMS` contents when a release scope approves that work. Those
+checks are validation only: they must not attach assets, upload artifacts, publish
+checksums, sign files, create releases, move tags, or require secrets.
+
 ## Installation Channel Policy
 
 Until a future approved distribution channel changes this document, public binary
@@ -189,6 +200,50 @@ plugins, native images, and container images are separate distribution channels.
 any of them requires an explicit scoped change to release checklist expectations,
 user-facing installation documentation, and release notes. They must not be bundled into
 ordinary release prep.
+
+## Supply-Chain Hardening Boundary
+
+The planned v2.8 distribution hardening baseline keeps the executable GitHub Release jar
+and `SHA256SUMS` as the only supported public distribution channel until a later release
+implements, validates, documents, and publishes another channel.
+
+Accepted v2.8 hardening work may improve local artifact-integrity repeatability and
+read-only CI validation, but only when the checks run without credentials, secrets,
+write permissions, uploads, package registry access, signing authority, release
+publication, or remote state mutation.
+
+Signing remains parked until a later explicit design chooses a signing model, key
+custody boundary, verification instructions, release asset status, and maintainer
+approval gate. Signing keys, identities, account details, passphrases, tokens, and
+secret names must not be stored in repository files, generated artifacts, public docs,
+fixtures, scripts, logs, or release notes.
+
+SBOM generation and publication remain parked until a later explicit design chooses the
+tool, dependency-resolution boundary, generated-file status, release asset status,
+security wording, validation expectations, and review gate. An SBOM must not be
+presented as proof of vulnerability absence, license compliance, dependency freshness,
+or release safety.
+
+Package-manager channels, installed-command distribution, native images, and container
+images remain unavailable until the specific channel is implemented, tested, documented,
+and published in a release note. Public install docs must not show channel commands as
+available before that happens.
+
+## Release Approval Gates
+
+Release dry-runs, artifact checks, dependency review, and documentation preparation are
+not publication approval. Each action below needs an explicit maintainer approval for
+that action and release:
+
+- pushing a release branch or `main`;
+- creating, moving, or deleting a tag;
+- creating, publishing, or editing a GitHub Release;
+- uploading, replacing, or deleting release assets;
+- publishing checksums, signatures, SBOMs, package-manager artifacts, native images, or
+  container images;
+- enabling release automation or package publication automation;
+- using release credentials, signing keys, package-registry tokens, or account-specific
+  publication state.
 
 ## Publication Responsibility
 
@@ -222,6 +277,12 @@ Coding agents must not, unless explicitly asked by the maintainer:
 - push branches or tags;
 - publish GitHub releases;
 - upload release artifacts;
+- sign artifacts;
+- publish checksums, SBOMs, package-manager artifacts, native images, or container
+  images;
+- use release credentials, signing keys, package-registry tokens, or account-specific
+  publication state;
+- enable release automation or package publication automation;
 - change release scope;
 - bypass failed checks;
 - treat external connector data or LLM output as release evidence.

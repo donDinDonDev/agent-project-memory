@@ -9,6 +9,20 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.8 distribution and supply-chain hardening boundary,
+  keeping the GitHub Release executable jar plus `SHA256SUMS` as the supported
+  distribution baseline while defining future no-secret checksum/metadata validation,
+  release approval gates, credential boundaries, CI/dependency workflow constraints, and
+  parked signing, SBOM, package-manager, native image, container, and release automation
+  work.
+
+### Fixed
+
+- Corrected `SECURITY.md` to identify `v2.7.0` as the latest published supported public
+  release line for vulnerability reports.
+
 ## [2.7.0] - 2026-06-20
 
 Release status: published. The `v2.7.0` tag, GitHub Release, executable jar, and
