@@ -489,6 +489,48 @@ or goldens where applicable, a changelog entry, release notes, and a separate se
 review. The preferred boundary is that policy profile metadata remains permanently
 non-evidence execution metadata.
 
+## Planned v3 Evidence And Provenance Migration Design
+
+This section is a design plan for a future v3 implementation. It is not current shipped
+behavior and does not add evidence fields, evidence types, schema markers, adapters,
+queries, readers, serializers, or migration code.
+
+The planned v3 evidence boundary preserves the current authority model: repository
+source files and accepted local documentation provide evidence for project facts;
+adapter provenance, source-registry rows, query output, generated Markdown, graph
+derivation metadata, workspace diagnostics, cache metadata, profile output, AI
+presentation output, release metadata, security reports, downstream agent output, chat
+output, and LLM output remain non-evidence unless a later contract explicitly changes
+the model before implementation.
+
+Planned v3 migration decisions:
+
+- A future v3 artifact-set marker may identify the evidence model version, but that
+  marker is metadata. It must not convert provenance, AI output, query output, or
+  generated documentation into project evidence.
+- If v3 changes evidence record fields, evidence IDs, source type taxonomy, confidence
+  labels, uncertainty semantics, excerpt boundaries, or resolution rules, the change
+  must name the old behavior, new behavior, affected consumers, migration action, and
+  compatibility tests before implementation.
+- Existing `evidence_ids` remain references into `evidence-index.jsonl`. Adapter
+  context should continue to use `source_document_ids` and `provenance_ids`, not
+  `evidence_ids`, unless a later evidence contract explicitly introduces a new
+  source-backed evidence type and tests it.
+- Workspace composite references should remain navigation keys into member repository
+  artifacts. They should not be written back into per-repo evidence records, and
+  cross-repo claims should remain unsupported unless a future contract defines evidence
+  from each participating repository.
+- Query, agent-context, impact, profile, cache, AI presentation, and release surfaces
+  should preserve evidence IDs and confidence labels from source artifacts rather than
+  strengthening or fabricating evidence.
+
+The future v3 compatibility test plan must prove that every project fact still resolves
+to valid evidence or to an explicitly documented non-evidence support category; that
+adapter provenance joins resolve without becoming evidence; that mixed artifact sets are
+rejected or handled by an explicitly tested legacy mode; and that regenerated workspace,
+profile, cache, AI, query, agent-context, and impact surfaces do not create new evidence
+authority by derivation.
+
 ## Fact Categories
 
 ### Extracted Facts

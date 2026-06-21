@@ -77,6 +77,91 @@ metadata is the existing `project-map.json` top-level `scan` object. A normal sc
 no policy profile remains the compatibility baseline and does not gain default
 policy-profile metadata in the v2.7 boundary.
 
+## Planned v3 Schema/API Migration Design
+
+This section is a design plan for a future v3 implementation. It is not current shipped
+behavior. Current no-adapter scans still emit `project-map.json` with
+`schema_version: "1.0"`. Current adapter-enabled scans still emit
+`project-map.json` with `schema_version: "2.0"` plus the optional
+`source-registry.json` contract described below. Current query, agent-context, and
+impact commands still support the schema markers documented in their existing sections.
+
+The future v3 contract should be implemented as one coherent artifact set rather than
+as isolated per-file changes. A v3-capable generator, reader, or query command must not
+silently mix current v1-compatible, current v2 adapter-enabled, and future v3 artifacts.
+The primary migration action for existing users should be regeneration from source and
+from explicitly configured local adapter exports, not in-place mutation of an existing
+`.project-memory/` directory.
+
+Planned v3 artifact-set decisions:
+
+- `project-map.json` should receive a future major schema marker such as
+  `schema_version: "3.0"` only when v3 serialization, reading, compatibility tests, and
+  migration documentation are implemented together.
+- The v3 implementation should add either a required artifact-set manifest or an
+  equivalent documented set-level validation mechanism before accepting v3 artifacts as
+  a coherent machine-readable set. That mechanism must identify the project-map schema,
+  evidence model version, graph schema, optional source-registry schema, optional
+  workspace schema, optional profile/AI/cache surfaces, and the tool version that wrote
+  them, without relying on local absolute paths or command transcripts.
+- `evidence-index.jsonl` remains the source-backed evidence artifact. If v3 changes
+  evidence fields, IDs, confidence labels, uncertainty semantics, excerpts, or source
+  type taxonomy, those changes must be documented in this file and in
+  `EVIDENCE_MODEL.md` before implementation. A manifest-level evidence model marker is
+  acceptable only as metadata; it must not make non-evidence artifacts authoritative.
+- `source-registry.json` remains the home for adapter source documents, adapter runs,
+  and provenance. v3 may bump the source-registry schema only with explicit join-key,
+  source-document identity, provenance metadata, rejection, and regeneration tests.
+  Adapter records must remain provenance-backed context unless a later evidence contract
+  explicitly changes that boundary.
+- `project-graph.json`, `workspace-map.json`, profile manifests, AI presentation
+  manifests, and cache manifests should keep their own schema markers. Any v3 marker
+  bump for those surfaces must name the affected fields, old behavior, new behavior,
+  supported reader behavior, and migration action.
+
+Planned migration and compatibility behavior:
+
+- Existing no-adapter artifact sets using `schema_version: "1.0"` remain the current
+  compatibility baseline for released v1.x/v2.x behavior. A future v3 tool should not
+  reinterpret those artifacts as v3 output. Consumers that need v3 semantics should
+  regenerate the full artifact set with the v3 tool.
+- Existing adapter-enabled artifact sets using `project-map.json`
+  `schema_version: "2.0"` and `source-registry.json` `1.0`, `1.1`, or `1.2` should be
+  treated as pre-v3 adapter output. The planned v3 migration action is to rerun the scan
+  with the same explicit local adapter input configuration and regenerate both
+  project-map and source-registry output together.
+- Query, agent-context, and impact readers should fail closed on unsupported or mixed
+  artifact schema markers unless a specific legacy compatibility mode is implemented
+  and tested. Text query output remains a human-readable interface unless a future JSON
+  query envelope is explicitly designed and versioned.
+- Workspace migration should regenerate member repositories first and then regenerate
+  the workspace map from the explicit workspace config. Workspace output must continue
+  to use logical repo identity and composite evidence references rather than local
+  absolute paths.
+- Cache migration should invalidate pre-v3 cache metadata. A v3 cache contract must
+  either include the v3 artifact-set identity in its input/output fingerprints or keep
+  cache metadata disabled for surfaces it cannot validate.
+- Agent profile Markdown and AI presentation artifacts should be regenerated from v3
+  artifacts. They remain derived, non-authoritative, and non-evidence. They must not be
+  used as a migration source for project facts.
+
+Planned deprecations for v3 consumers:
+
+- treating generated Markdown, query text, profile output, AI presentation output,
+  cache metadata, release notes, or adapter provenance as stable project-fact evidence;
+- accepting unknown schema markers or mixed artifact sets by best-effort parsing;
+- using `source-registry.json` rows as Java/Spring source facts or `evidence_ids`;
+- relying on v1 cache metadata, profile manifests, or AI presentation manifests after a
+  major artifact contract change without regeneration;
+- parsing Markdown files as the stable machine API when JSON/JSONL artifacts exist.
+
+The v3 compatibility test plan must include no-adapter regeneration, adapter-enabled
+regeneration, mixed-artifact rejection, unsupported-schema rejection, evidence-reference
+resolution, provenance join resolution, workspace composite-reference checks, cache
+invalidation, profile/AI regeneration, and query/agent-context/impact support or
+rejection behavior. These tests belong to the future implementation work, not this
+design-only section.
+
 ## v2 Adapter Output Boundary
 
 The current implementation does not emit adapter packages, network connector output,

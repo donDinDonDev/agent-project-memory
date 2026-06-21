@@ -11,6 +11,10 @@ architecture documents.
 
 ### Added
 
+- Documented the planned v3 schema/API migration strategy, including artifact-set
+  regeneration, fail-closed compatibility behavior, deprecation guidance, compatibility
+  test categories, and the future evidence/provenance boundary without implementing v3
+  behavior.
 - Documented the planned v2.9 preparation boundary and frozen v3.0 scope direction,
   including included platform scope, excluded/deferred surfaces, implementation
   prerequisites, breaking-change categories, and the distinction between planned v3
