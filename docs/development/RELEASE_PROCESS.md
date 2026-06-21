@@ -217,7 +217,7 @@ ordinary release prep.
 
 ## Supply-Chain Hardening Boundary
 
-The planned v2.8 distribution hardening baseline keeps the executable GitHub Release jar
+The v2.8 distribution hardening baseline keeps the executable GitHub Release jar
 and `SHA256SUMS` as the only supported public distribution channel until a later release
 implements, validates, documents, and publishes another channel.
 

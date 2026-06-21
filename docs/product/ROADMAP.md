@@ -58,12 +58,15 @@ diagnostics. Generated impact reports, raw diff ingestion, workspace impact,
 adapter-aware impact, runtime tracing, call graph, source/spec scoring, documentation
 freshness scoring, vulnerability claim, business-priority claim, and automatic code
 modification remain out of scope for the first boundary.
-The next planned v2.8 track is distribution and supply-chain hardening. It keeps the
-published jar plus `SHA256SUMS` as the supported distribution baseline while designing
-no-secret checksum, release metadata, dependency workflow, and read-only CI validation
-improvements. Signing, SBOM publication, package-manager channels, native images,
-container images, and release automation remain parked until separately approved,
-implemented, validated, and documented.
+The v2.8.0 release candidate adds local distribution and supply-chain hardening around
+candidate jar integrity checks. It keeps the published jar plus `SHA256SUMS` as the
+supported distribution baseline while adding a no-secret local artifact-integrity
+dry-run for candidate jar filename, CLI version output, manifest entrypoint, Maven
+artifact metadata, exact dry-run release asset list, and filename-only checksum
+verification. Signing, SBOM publication, package-manager channels, native images,
+container images, CI release workflow changes, dependency workflow automation, and
+release automation remain parked until separately approved, implemented, validated, and
+documented.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -1923,27 +1926,28 @@ Release scope:
 - The `v2.7.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.8.0: Distribution And Supply-Chain Hardening (Planned)
+## v2.8.0: Distribution And Supply-Chain Hardening (Release Candidate)
 
 Product outcome: improve release artifact integrity, dependency workflow review, and
 release approval clarity while preserving manual maintainer authority over every
 publication action.
 
-Release boundary:
+Release-candidate boundary:
 
 - The supported public distribution baseline remains the executable jar attached to a
   GitHub Release plus `SHA256SUMS`.
-- Checksum hardening is accepted only as future local dry-run or read-only CI
-  validation unless a later release changes this document. It may validate candidate jar
-  filename, CLI version output, manifest entrypoint, Maven artifact metadata, release
-  asset list, and filename-only checksum contents, but it must not publish, upload,
-  sign, create releases, move tags, or require secrets.
+- Checksum hardening is implemented as a local artifact-integrity dry-run helper. It
+  validates candidate jar filename, CLI version output, manifest entrypoint, Maven
+  artifact metadata, exact local dry-run release asset list, and filename-only
+  `SHA256SUMS` contents, but it must not publish, upload, sign, create releases, move
+  tags, or require secrets.
 - The current dependency workflow baseline is Dependabot coverage for Maven and GitHub
   Actions updates plus human review. Dependency/security workflow automation changes are
   release-sensitive and require risk-based review before release.
-- CI release validation, if implemented for v2.8, must run with read-only repository
-  permissions and no secrets. It must not attach assets, upload artifacts, create or move
-  tags, publish releases, sign files, deploy packages, or mutate remote state.
+- CI release validation remains parked for this release candidate. If implemented in a
+  later release, it must run with read-only repository permissions and no secrets. It
+  must not attach assets, upload artifacts, create or move tags, publish releases, sign
+  files, deploy packages, or mutate remote state.
 - Signing remains parked. A later design must define signing model, key custody,
   verification instructions, release asset status, maintainer approval, and security
   review before any signing implementation or public signing claim.
@@ -1982,8 +1986,7 @@ Validation expectations before release:
 - If artifact-integrity validation is implemented, focused validation should prove
   filename-only checksum entries, jar/version/manifest metadata checks, no local
   absolute paths, no credential use, and no remote state mutation.
-- If CI release validation is implemented, workflow review must prove read-only
-  permissions, no secrets, and no publish/upload/sign/package/tag/release capability.
+- CI release workflow changes are not included in this release candidate.
 - Release prep should still run full tests, packaging checks, packaged CLI smoke, local
   checksum dry-run, public-surface review, and downloaded asset verification after
   explicit publication approval.
@@ -2009,10 +2012,11 @@ Stop conditions for implementation:
 
 Release scope:
 
-- v2.8 is planned as distribution/process hardening, not analyzer capability expansion.
-- No package-manager publication, signing, SBOM publication, native image, container
-  image, release automation, release upload, tag, push, or publication action is part of
-  the design boundary by itself.
+- v2.8 ships a local artifact-integrity dry-run helper and public release-process
+  hardening while remaining a distribution/process hardening release, not an analyzer
+  capability expansion.
+- The `v2.8.0` tag and GitHub Release are not published yet. Publication requires the
+  separate maintainer release workflow after release-prep review.
 
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 

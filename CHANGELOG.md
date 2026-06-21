@@ -9,9 +9,14 @@ architecture documents.
 
 ## [Unreleased]
 
+## [2.8.0] - 2026-06-21
+
+Release status: release candidate. The `v2.8.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
 ### Added
 
-- Documented the planned v2.8 distribution and supply-chain hardening boundary,
+- Documented the v2.8 distribution and supply-chain hardening boundary,
   keeping the GitHub Release executable jar plus `SHA256SUMS` as the supported
   distribution baseline while defining future no-secret checksum/metadata validation,
   release approval gates, credential boundaries, CI/dependency workflow constraints, and
@@ -23,10 +28,35 @@ architecture documents.
   `SHA256SUMS` contents without publishing, uploading, signing, creating releases,
   moving tags, requiring secrets, or contacting remote services.
 
+### Changed
+
+- Aligned the Maven project version, README local build examples, roadmap status,
+  v2.8 release notes, and public release wording for release-candidate review.
+- Synchronized release-process wording around the v2.8 distribution hardening baseline
+  while preserving manual maintainer authority for all publication actions.
+
 ### Fixed
 
 - Corrected `SECURITY.md` to identify `v2.7.0` as the latest published supported public
   release line for vulnerability reports.
+
+### Security
+
+- Completed release-level distribution and supply-chain review for the accepted v2.8
+  scope, with no release-blocking findings remaining before release prep.
+- Kept the artifact-integrity dry-run local-only: it validates jar filename, CLI
+  version output, manifest entrypoint, Maven artifact metadata, exact local dry-run
+  asset list, and filename-only `SHA256SUMS` contents without network access,
+  credentials, uploads, signing, tag mutation, release mutation, or package publication.
+
+### Not Included
+
+- Signing, SBOM generation or publication, package-manager channels, first-party
+  installed-command distribution, native images, container images, release automation,
+  artifact upload, release publication, tag creation or movement, dependency workflow
+  automation, CI release workflow changes, credentials, network release actions,
+  SaaS, web UI, repository chat, generic RAG, provider AI, plugin/runtime expansion,
+  or automatic code modification.
 
 ## [2.7.0] - 2026-06-20
 
