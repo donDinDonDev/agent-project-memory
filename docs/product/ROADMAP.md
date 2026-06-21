@@ -2018,6 +2018,41 @@ Release scope:
 - The `v2.8.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
+## v2.9.0: v3 Preparation (Planned)
+
+Product outcome: freeze the v3.0 product, contract, evidence/provenance, migration, and
+security-review boundaries before v3 implementation starts.
+
+Planned release boundary:
+
+- v2.9 is a planning, design, review, and release-prep track. It must not implement v3
+  output schemas, serializers, parsers, readers, migration code, server/API/MCP
+  runtimes, editor or plugin runtimes, provider AI, network connector behavior, release
+  automation, or distribution channels.
+- Public v2.9 docs may describe planned v3.0 behavior only as future/draft scope. They
+  must not present v3 schemas, APIs, migration behavior, security gates, or platform
+  capabilities as current shipped behavior.
+- The accepted v3.0 scope must name the included platform boundary, excluded surfaces,
+  implementation prerequisites, and breaking-change categories before v3 code changes
+  start.
+- v2.9 may prepare a v3 schema/API migration plan, evidence/provenance review,
+  security-review plan, deprecation notes, compatibility-test plan, and release-readiness
+  path. Those plans remain prerequisites for v3.0; they do not change current generated
+  artifacts by themselves.
+- The current shipped baseline remains `v2.8.0` until a later release is implemented,
+  validated, and published.
+
+Design constraints:
+
+- No SaaS-first positioning, default source upload, LLM calls in the core analyzer, LLM
+  output as evidence, repository chat as the core product, generic RAG as the core
+  product, or automatic code modification as product authority.
+- No network connector defaults, credentials, background sync, remote cache, provider AI,
+  server/API/MCP/editor/plugin runtime, plugin code loading, signing, SBOM publication,
+  package-manager channels, native images, container images, or release automation unless
+  a later release explicitly designs, implements, tests, documents, and reviews that
+  surface.
+
 ## v2.x: Extensible Platform, Adapters, And Optional AI
 
 Expected direction:
@@ -2084,7 +2119,95 @@ a later release explicitly designs and implements them.
 
 ## v3.0.0: Agent-Native Project Memory Platform
 
-The long-term target is a mature local-first evidence-backed project memory platform for
-developers and AI coding agents, with deterministic analyzers, explicit evidence, stable
-adapter/plugin APIs, optional non-authoritative AI presentation, and agent-native
-read-only workflows.
+Frozen product goal:
+
+v3.0 is planned as a stable local-first, evidence-backed project memory platform for
+developers and AI coding agents. Its center is the deterministic Java/Spring analyzer
+and generated local artifact contract. Optional layers may improve ingestion,
+presentation, workspace orientation, impact inspection, and agent consumption, but they
+must remain explicit, local-first, non-authoritative, and separable from the core
+analyzer.
+
+Included v3.0 scope:
+
+- Stable v3 generated artifact contract and compatibility policy for the mature platform
+  line, with explicit migration guidance from the existing no-adapter v1-compatible
+  artifact set and v2 adapter-enabled artifact set.
+- Stable evidence/provenance categories that preserve source-backed evidence as the
+  authority for project facts while keeping adapter provenance, AI output, query output,
+  graph derivation, cache metadata, profile output, release metadata, and generated
+  Markdown as non-evidence unless a later contract explicitly changes that boundary.
+- Mature deterministic Java/Spring analyzer reference behavior, including current
+  module/build/config/API/application-surface/domain/test/document/graph/query/profile,
+  workspace, impact, policy-profile, adapter-import, AI-presentation, and distribution
+  boundaries that have already been accepted in v1.x and v2.x.
+- Stable local adapter and extension contract boundaries for explicitly configured local
+  inputs and provenance-backed context. v3.0 may stabilize adapter-facing interfaces and
+  manifest/schema expectations, but plugin code loading or runtime extension execution
+  is excluded from the frozen v3.0 scope unless a later release separately approves it.
+- Read-only agent workflows over generated artifacts, staying local and artifact-backed.
+  CLI query and deterministic agent-context output are in scope; server, socket, daemon,
+  editor plugin, MCP runtime, or public API service behavior is not included in the
+  frozen v3.0 scope.
+- Workspace and change-impact maturity for existing local artifact-backed workflows,
+  including clearer compatibility and regeneration guidance. Remote discovery,
+  organization crawling, adapter-aware workspace inference, generated impact reports,
+  and automatic code modification remain separate later work.
+- Security, migration, evaluation, documentation, and release-readiness gates strong
+  enough to justify a major version. v3 implementation must not start until the v2.9
+  preparation plans are reviewed and accepted.
+
+Excluded or deferred from v3.0:
+
+- Mandatory SaaS, hosted project-memory storage, default source upload, network access by
+  default, telemetry by default, or source-upload claims.
+- LLM calls in the core analyzer, LLM output as evidence, AI-created project facts,
+  connector truth, vulnerability proof, runtime claims, or code-change authority.
+- Provider-backed AI as required behavior. Optional AI remains presentation-only unless a
+  later design separately accepts real provider behavior, request minimization,
+  credential handling, prompt/content-injection controls, diagnostics, retention wording,
+  and review requirements.
+- Live network connectors, connector credentials, credential lookup/storage, background
+  sync, remote cache, provider discovery, pagination/retry/rate-limit behavior, and
+  remote freshness claims.
+- Repository chat as the core product, generic RAG as the core product, embeddings,
+  vector stores, semantic search as authority, and automatic repository modification.
+- Server/API/MCP/editor/plugin runtime, plugin code loading, marketplace behavior, socket
+  listeners, daemons, and public service modes.
+- Signing, SBOM publication, package-manager channels, installed-command distribution,
+  native images, container images, release automation, or automatic publication.
+
+Breaking-change categories that may be considered for v3.0:
+
+- Generated artifact schema markers, required files, field names, nesting, nullability,
+  repeated-value conventions, and documented field semantics.
+- Evidence field shape, evidence type taxonomy, evidence ID stability expectations,
+  confidence/uncertainty semantics, excerpt boundaries, and evidence-resolution rules.
+- Adapter/source-registry/provenance join keys, source-document identity rules, accepted
+  provenance metadata, adapter-context placement, and regeneration requirements.
+- Query and agent-consumption supported schema markers, validation failures, exit codes,
+  command grammar, output wording where documented as contractual, and rejection behavior
+  for unsupported artifact sets.
+- Workspace-map, graph, impact, profile, policy-profile, cache, and AI-presentation
+  schema markers and metadata placement when those surfaces are included in v3
+  compatibility.
+- CLI/config selection semantics, default compatibility behavior, and migration or
+  deprecation warnings.
+- Release and distribution compatibility expectations such as supported artifact naming,
+  checksum validation wording, and documented installation channel support when those
+  surfaces are intentionally changed.
+
+Breaking changes are not accepted merely because v3 is a major version. Each breaking
+change must name the old behavior, new behavior, affected consumers, migration action,
+tests or evaluation coverage, release-note impact, and security-review impact before
+implementation.
+
+Current shipped behavior boundary:
+
+- Current no-adapter scans remain on `project-map.json` `schema_version: "1.0"`.
+- Current adapter-enabled scans use `project-map.json` `schema_version: "2.0"` plus the
+  optional `source-registry.json` provenance artifact.
+- Current query support remains focused on no-adapter v1-compatible artifact sets unless
+  a later release explicitly documents adapter-aware or v3-aware query behavior.
+- This section describes planned v3.0 scope, not behavior already available in the latest
+  published release.

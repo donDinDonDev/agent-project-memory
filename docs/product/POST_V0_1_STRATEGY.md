@@ -233,8 +233,34 @@ remain parked until separate designs define credentials, key custody, publicatio
 authority, validation, user-facing documentation, and security review requirements.
 
 v3.0 is the long-term platform target: a local-first evidence-backed project memory
-platform with deterministic analyzers, stable adapter/plugin APIs, optional AI
-presentation, and agent-native workflows.
+platform with deterministic analyzers, stable adapter and extension contract
+boundaries, optional AI presentation, and agent-native workflows.
+
+The v2.9 preparation track should freeze that v3.0 target before implementation starts.
+The frozen v3.0 scope should treat the release primarily as a stable local platform
+contract: generated artifact compatibility, evidence/provenance authority boundaries,
+local adapter and extension contracts, read-only artifact-backed agent workflows,
+workspace and impact workflow maturity, migration guidance, evaluation coverage,
+security review, and release-readiness discipline. It should distinguish draft v3
+design from current shipped behavior and should not require users or downstream
+consumers to assume that planned v3 schemas or APIs already exist.
+
+The v3.0 line may make justified breaking changes only when the affected artifact,
+field, evidence type, schema marker, CLI/config behavior, query behavior, adapter join,
+workspace/impact/profile/cache/AI metadata, or distribution expectation is named with
+old behavior, new behavior, compatibility impact, migration action, tests or evaluation
+coverage, and release-note impact before implementation. Existing no-adapter v1
+artifact sets and v2 adapter-enabled artifact sets should have explicit regeneration,
+migration, support, or rejection guidance rather than silent mixing.
+
+The frozen v3.0 scope does not include mandatory SaaS, default source upload, LLM calls
+in the core analyzer, LLM output as evidence, AI-created project facts, provider-backed
+AI as required behavior, live network connectors, connector credentials, background
+sync, remote cache, repository chat as the core product, generic RAG as the core
+product, automatic code modification, server/API/MCP/editor/plugin runtime, plugin code
+loading, signing, SBOM publication, package-manager channels, native images, containers,
+or release automation unless a later release separately designs, implements, tests,
+documents, and reviews that surface.
 
 ## Explicit Non-Goals
 

@@ -9,6 +9,13 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Documented the planned v2.9 preparation boundary and frozen v3.0 scope direction,
+  including included platform scope, excluded/deferred surfaces, implementation
+  prerequisites, breaking-change categories, and the distinction between planned v3
+  design and current shipped behavior.
+
 ## [2.8.0] - 2026-06-21
 
 Release status: published. The `v2.8.0` tag, GitHub Release, executable jar, and
