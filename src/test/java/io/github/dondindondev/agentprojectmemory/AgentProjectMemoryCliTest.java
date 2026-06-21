@@ -446,6 +446,7 @@ final class AgentProjectMemoryCliTest {
 
     assertAll(
         () -> assertEquals(0, result.exitCode()),
+        () -> assertFalse(Files.exists(outputDirectory.resolve("artifact-set.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
@@ -466,6 +467,7 @@ final class AgentProjectMemoryCliTest {
 
     CliResult result = runCli("scan", tempDir.toString());
     Path outputDirectory = tempDir.resolve(".project-memory");
+    String artifactSet = Files.readString(outputDirectory.resolve("artifact-set.json"));
     String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
     String projectGraph = Files.readString(outputDirectory.resolve("project-graph.json"));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
@@ -474,8 +476,10 @@ final class AgentProjectMemoryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(Files.isDirectory(outputDirectory)),
         () -> assertTrue(result.stdout().contains("Generated project-map.json")),
+        () -> assertTrue(result.stdout().contains("Generated artifact-set.json.")),
         () -> assertTrue(result.stdout().contains("Diagnostics: none.")),
         () -> assertFalse(result.stdout().contains(tempDir.toString())),
+        () -> assertTrue(Files.exists(outputDirectory.resolve("artifact-set.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-map.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("project-graph.json"))),
         () -> assertTrue(Files.exists(outputDirectory.resolve("evidence-index.jsonl"))),
@@ -484,6 +488,12 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(Files.exists(outputDirectory.resolve("source-registry.json"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("agent-profiles"))),
         () -> assertFalse(Files.exists(outputDirectory.resolve("ai-presentations"))),
+        () -> assertTrue(artifactSet.contains("\"artifact_set_schema_version\": \"1.0\"")),
+        () -> assertTrue(artifactSet.contains("\"path\": \"project-map.json\"")),
+        () -> assertTrue(artifactSet.contains("\"value\": \"1.0\"")),
+        () -> assertTrue(artifactSet.contains("\"path\": \"source-registry.json\"")),
+        () -> assertTrue(artifactSet.contains("\"status\": \"absent\"")),
+        () -> assertFalse(artifactSet.contains(tempDir.toString())),
         () -> assertTrue(projectMap.contains("\"schema_version\": \"1.0\"")),
         () -> assertTrue(projectMap.contains("\"scan\": {")),
         () -> assertTrue(projectMap.contains("\"source\": \"defaults_only\"")),
@@ -1045,6 +1055,7 @@ final class AgentProjectMemoryCliTest {
         () -> assertCacheInput(inputs, "local_markdown_document", "README.md", true),
         () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources", false),
         () -> assertCacheInput(inputs, "generated_source_root_path", "target/generated-sources/openapi", false),
+        () -> assertCacheOutput(outputs, "artifact_set_manifest", "artifact-set.json"),
         () -> assertCacheOutput(outputs, "project_map", "project-map.json"),
         () -> assertCacheOutput(outputs, "project_graph", "project-graph.json"),
         () -> assertCacheOutput(outputs, "evidence_index", "evidence-index.jsonl"),
@@ -1880,6 +1891,7 @@ final class AgentProjectMemoryCliTest {
         "all");
     Path outputDirectory = tempDir.resolve(".project-memory");
     List<Path> surfaceFiles = List.of(
+        outputDirectory.resolve("artifact-set.json"),
         outputDirectory.resolve("project-map.json"),
         outputDirectory.resolve("project-graph.json"),
         outputDirectory.resolve("evidence-index.jsonl"),
@@ -1958,6 +1970,7 @@ final class AgentProjectMemoryCliTest {
         "generated_source_root_path",
         "target/generated-sources/openapi",
         false);
+    assertCacheOutput(cacheOutputs, "artifact_set_manifest", "artifact-set.json");
     assertCacheOutput(cacheOutputs, "project_map", "project-map.json");
     assertCacheOutput(cacheOutputs, "project_graph", "project-graph.json");
     assertCacheOutput(cacheOutputs, "evidence_index", "evidence-index.jsonl");
@@ -2256,9 +2269,11 @@ final class AgentProjectMemoryCliTest {
     JsonNode projectGraph = JSON.readTree(Files.readString(outputDirectory.resolve("project-graph.json")));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String artifactSet = Files.readString(outputDirectory.resolve("artifact-set.json"));
     String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
     String generatedSurfaces = String.join(
         "\n",
+        artifactSet,
         projectMap.toString(),
         sourceRegistryJson,
         evidenceIndex,
@@ -2357,9 +2372,11 @@ final class AgentProjectMemoryCliTest {
     JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
     String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String artifactSet = Files.readString(outputDirectory.resolve("artifact-set.json"));
     String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
     String generatedSurfaces = String.join(
         "\n",
+        artifactSet,
         projectMap.toString(),
         sourceRegistryJson,
         evidenceIndex,
@@ -2453,9 +2470,11 @@ final class AgentProjectMemoryCliTest {
     JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
     JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
     String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String artifactSet = Files.readString(outputDirectory.resolve("artifact-set.json"));
     String sourceRegistryJson = Files.readString(outputDirectory.resolve("source-registry.json"));
     String generatedSurfaces = String.join(
         "\n",
+        artifactSet,
         projectMap.toString(),
         sourceRegistryJson,
         evidenceIndex,
@@ -2633,6 +2652,7 @@ final class AgentProjectMemoryCliTest {
     JsonNode sourceRegistry = JSON.readTree(Files.readString(outputDirectory.resolve("source-registry.json")));
     String generatedSurfaces = String.join(
         "\n",
+        Files.readString(outputDirectory.resolve("artifact-set.json")),
         Files.readString(outputDirectory.resolve("project-map.json")),
         Files.readString(outputDirectory.resolve("source-registry.json")),
         Files.readString(outputDirectory.resolve("project-graph.json")),

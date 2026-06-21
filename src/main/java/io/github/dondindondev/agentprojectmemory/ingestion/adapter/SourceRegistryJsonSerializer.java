@@ -181,7 +181,7 @@ public final class SourceRegistryJsonSerializer {
     appendLineEnding(json, trailingComma);
   }
 
-  private String schemaVersion(AdapterIngestionResult result) {
+  public String schemaVersion(AdapterIngestionResult result) {
     if (result.provenance().stream().anyMatch(provenance -> provenance.connector() != null)
         || result.adapterRuns().stream().anyMatch(run ->
             AdapterLocalImport.CONNECTOR_IMPORT_ADAPTER.equals(run.adapterIdentity().name()))) {

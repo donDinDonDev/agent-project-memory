@@ -72,6 +72,11 @@ planned schema/API migration, evidence/provenance migration boundary, and releas
 readiness direction. It does not implement v3 schema markers, migration behavior,
 runtime surfaces, provider AI, live connectors, release automation, or new distribution
 channels.
+Current unreleased development after v2.9.0 starts the v3 implementation path with a
+generated `.project-memory/artifact-set.json` manifest foundation only. It inventories
+the generated artifact set and optional related surfaces without bumping
+`project-map.json` to `schema_version: "3.0"`, changing query/reader/migration
+compatibility, or changing evidence semantics.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -89,8 +94,9 @@ document inventory, generated-source/codegen metadata-only inventory, opt-in
 deterministic agent profile artifacts for supported coding-agent consumption, opt-in
 incremental cache metadata and whole-output-set reuse, a bounded lightweight relation
 graph artifact, read-only text query commands over existing generated artifacts,
-redacted scan metadata, safe root-local YAML config support, stable CLI help/version
-behavior, deterministic output redaction for obvious secret-looking values, and a
+set-level artifact manifest output, redacted scan metadata, safe root-local YAML config
+support, stable CLI help/version behavior, deterministic output redaction for obvious
+secret-looking values, and a
 documented release-jar verification path. The v2.0 release also includes a bounded
 local structured import adapter that is disabled by default, local-only, and
 provenance-backed. The v2.1 release also includes a bounded local
@@ -2212,7 +2218,10 @@ Current shipped behavior boundary:
 - Current no-adapter scans remain on `project-map.json` `schema_version: "1.0"`.
 - Current adapter-enabled scans use `project-map.json` `schema_version: "2.0"` plus the
   optional `source-registry.json` provenance artifact.
+- Current unreleased v3 foundation work adds `artifact-set.json` as a generated
+  contract/provenance manifest without making it evidence and without making it a
+  reader/query/migration compatibility requirement.
 - Current query support remains focused on no-adapter v1-compatible artifact sets unless
   a later release explicitly documents adapter-aware or v3-aware query behavior.
-- This section describes planned v3.0 scope, not behavior already available in the latest
-  published release.
+- This section describes planned v3.0 scope plus the current unreleased manifest
+  foundation, not a published v3.0 release.

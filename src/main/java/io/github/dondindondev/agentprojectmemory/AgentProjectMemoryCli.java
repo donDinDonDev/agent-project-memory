@@ -803,6 +803,7 @@ public final class AgentProjectMemoryCli {
                 + " test facts and "
                 + result.documentCount()
                 + " document facts.");
+        out.println("Generated artifact-set.json.");
         out.println("Generated endpoints.md with " + result.endpointCount() + " endpoint facts.");
         out.println(
             "Generated evidence-index.jsonl with "

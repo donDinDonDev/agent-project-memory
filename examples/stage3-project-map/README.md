@@ -26,6 +26,7 @@ committed under `examples/`.
 Only the base generated output set is committed:
 
 ```text
+examples/stage3-project-map/.project-memory/artifact-set.json
 examples/stage3-project-map/.project-memory/project-map.json
 examples/stage3-project-map/.project-memory/project-graph.json
 examples/stage3-project-map/.project-memory/evidence-index.jsonl
@@ -33,9 +34,10 @@ examples/stage3-project-map/.project-memory/endpoints.md
 examples/stage3-project-map/.project-memory/agent-guide.md
 ```
 
-Opt-in agent profile artifacts and incremental cache metadata are intentionally omitted
-because they are optional generated presentations or execution metadata, not the base
-output set.
+The artifact-set manifest is contract/provenance metadata, not project evidence.
+Opt-in agent profile artifacts, AI presentation artifacts, and incremental cache
+metadata are intentionally omitted because they are optional generated presentations or
+execution metadata, not the base output set.
 
 ## Regenerate And Compare
 
@@ -46,9 +48,9 @@ and compare the generated base files with this example snapshot:
 mvn package
 workdir="$(mktemp -d)"
 cp -R src/test/resources/fixtures/stage3-project-map "$workdir/stage3-project-map"
-java -jar target/agent-project-memory-1.8.0.jar scan "$workdir/stage3-project-map"
+java -jar target/agent-project-memory-2.9.0.jar scan "$workdir/stage3-project-map"
 
-for file in project-map.json project-graph.json evidence-index.jsonl endpoints.md agent-guide.md; do
+for file in artifact-set.json project-map.json project-graph.json evidence-index.jsonl endpoints.md agent-guide.md; do
   diff -u \
     "examples/stage3-project-map/.project-memory/$file" \
     "$workdir/stage3-project-map/.project-memory/$file"

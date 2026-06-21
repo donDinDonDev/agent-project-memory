@@ -9,6 +9,19 @@ architecture documents.
 
 ## [Unreleased]
 
+### Added
+
+- Added generated `.project-memory/artifact-set.json` manifest output for single-repo
+  scans, inventorying the required base artifacts plus optional adapter, profile, AI,
+  cache, and workspace-related surfaces without bumping `project-map.json` to
+  `schema_version: "3.0"`.
+
+### Security
+
+- Preserved the evidence boundary for the artifact-set manifest: it is
+  contract/provenance metadata only, while `evidence-index.jsonl` remains the
+  source-backed evidence artifact.
+
 ## [2.9.0] - 2026-06-21
 
 Release status: published. The `v2.9.0` tag, GitHub Release, executable jar, and

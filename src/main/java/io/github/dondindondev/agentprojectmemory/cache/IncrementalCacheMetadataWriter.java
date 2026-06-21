@@ -79,6 +79,7 @@ public final class IncrementalCacheMetadataWriter {
       "private",
       "secrets");
   private static final List<OutputArtifact> BASE_OUTPUTS = List.of(
+      new OutputArtifact("artifact-set.json", "artifact_set_manifest"),
       new OutputArtifact("project-map.json", "project_map"),
       new OutputArtifact("project-graph.json", "project_graph"),
       new OutputArtifact("evidence-index.jsonl", "evidence_index"),

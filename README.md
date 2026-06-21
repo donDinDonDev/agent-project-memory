@@ -353,6 +353,7 @@ edges, conservative inferred repository/entity and tested-subject relation edges
 status-only or uncertain relation rows kept separate from edges, then write:
 
 ```text
+<path>/.project-memory/artifact-set.json
 <path>/.project-memory/project-map.json
 <path>/.project-memory/project-graph.json
 <path>/.project-memory/endpoints.md
@@ -387,6 +388,15 @@ add fields to `project-map.json`, do not create `evidence-index.jsonl` records, 
 not store source bodies, local document bodies, config contents, generated-source
 contents, generated Markdown bodies, local absolute paths, command logs, timing
 measurements, credentials, tokens, or secret-looking values.
+
+`artifact-set.json` is the deterministic set-level manifest for generated
+single-repo scan output. It inventories the required base artifacts plus optional
+adapter, profile, AI presentation, cache, and workspace-related surfaces without
+making those surfaces evidence. It is contract/provenance metadata only, keeps
+`artifact_root` relative as `.project-memory`, and does not serialize local absolute
+paths, command transcripts, credentials, tokens, raw source bodies, or environment
+values. The initial manifest uses `artifact_set_schema_version: "1.0"` and does not
+bump `project-map.json` to `schema_version: "3.0"`.
 
 `project-map.json` is the minimal stable machine-readable project map. No-adapter
 current development output uses `schema_version: "1.0"` and includes redacted scan
@@ -497,6 +507,12 @@ Compatibility and migration notes:
   credentials, adapter-aware query behavior, raw issue/page/article bodies, comments,
   rendered HTML, attachment details, configured import paths, or local absolute paths
   are serialized by default.
+- The current unreleased v3 artifact-set foundation adds
+  `.project-memory/artifact-set.json` with `artifact_set_schema_version: "1.0"` as a
+  set-level generated-output manifest. No-adapter `project-map.json` remains on
+  `schema_version: "1.0"`, adapter-enabled `project-map.json` remains on
+  `schema_version: "2.0"`, and `evidence-index.jsonl` remains the source-backed
+  evidence artifact.
 - Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
   `schema_version: "1.0"` outputs. Consumers that encounter
   `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
@@ -542,6 +558,7 @@ agent-project-memory version
 The same output files:
 
 ```text
+.project-memory/artifact-set.json
 .project-memory/project-map.json
 .project-memory/project-graph.json
 .project-memory/evidence-index.jsonl
@@ -710,6 +727,10 @@ The v2.9.0 release freezes the planned v3.0 scope, documents the v3 schema/API
 migration and evidence/provenance boundary, and keeps all v3 schemas, migration
 behavior, runtime surfaces, and distribution-channel changes as future work until a
 later implementation release.
+Current unreleased development starts that implementation path with a generated
+`.project-memory/artifact-set.json` manifest foundation only: no `project-map.json`
+`schema_version: "3.0"` bump, no reader/query/migration compatibility change, and no
+evidence semantic change.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
 
@@ -720,7 +741,8 @@ metadata, source-visible test and quality planning signals, default-scope local 
 document inventory, opt-in deterministic agent profile artifacts, opt-in incremental
 cache metadata under `.project-memory/cache/v1/`, a bounded lightweight relation graph
 artifact under `.project-memory/project-graph.json`, read-only text query commands over
-existing generated artifacts, deterministic output redaction for obvious
+existing generated artifacts, a set-level artifact manifest under
+`.project-memory/artifact-set.json`, deterministic output redaction for obvious
 secret-looking values, redacted scan metadata, safe root-local YAML config support,
 explicit local policy profiles, stable CLI help/version behavior, and documented
 release-jar verification with local artifact-integrity dry-run support.
@@ -1000,6 +1022,10 @@ Current limitations:
   fields, create `evidence-index.jsonl` records, mutate `source-registry.json`, mutate
   profile/cache/query artifacts, read raw source or local document bodies as AI input,
   use credentials, access the network, upload source, or call a real provider.
+- `artifact-set.json` is generated contract/provenance metadata only. It inventories
+  generated artifact names, schema markers, required/optional status, and evidence
+  boundary labels, but it does not create project facts, evidence IDs, evidence records,
+  adapter truth, runtime claims, release evidence, or code-change authority.
 - Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional

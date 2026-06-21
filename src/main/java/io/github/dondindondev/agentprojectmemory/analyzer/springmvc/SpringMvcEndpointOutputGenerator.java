@@ -191,10 +191,20 @@ public final class SpringMvcEndpointOutputGenerator {
       "source_visible_change_surface_only";
   private static final String PROJECT_MAP_FILE_NAME = "project-map.json";
   private static final String PROJECT_GRAPH_FILE_NAME = "project-graph.json";
+  private static final String ARTIFACT_SET_FILE_NAME = "artifact-set.json";
   private static final String ENDPOINTS_FILE_NAME = "endpoints.md";
   private static final String EVIDENCE_INDEX_FILE_NAME = "evidence-index.jsonl";
   private static final String SOURCE_REGISTRY_FILE_NAME = "source-registry.json";
   private static final String AGENT_GUIDE_FILE_NAME = "agent-guide.md";
+  private static final String ARTIFACT_SET_SCHEMA_VERSION = "1.0";
+  private static final String ARTIFACT_SET_KIND = "single_repository_scan";
+  private static final String ARTIFACT_SET_CONTRACT_LINE =
+      "v3_artifact_set_manifest_foundation";
+  private static final String ARTIFACT_STATUS_PRESENT = "present";
+  private static final String ARTIFACT_STATUS_ABSENT = "absent";
+  private static final String ARTIFACT_STATUS_MANAGED_SEPARATELY = "managed_separately";
+  private static final String ARTIFACT_STATUS_INTENTIONALLY_OUT_OF_SCOPE =
+      "intentionally_out_of_scope";
   private static final String AGENT_PROFILE_MANIFEST_FILE_NAME =
       "agent-profiles/manifest.json";
   private static final String AGENT_PROFILE_MANIFEST_VERSION = "1.0";
@@ -785,8 +795,19 @@ public final class SpringMvcEndpointOutputGenerator {
         documentDiscoveryAnalysis,
         documentReconciliationAnalysis,
         projectMapSchemaVersion);
+    String sourceRegistrySchemaVersion = adapterIngestionResult.enabled()
+        ? sourceRegistryJsonSerializer.schemaVersion(adapterIngestionResult)
+        : null;
+    String artifactSetJson = artifactSetJson(
+        projectMapSchemaVersion,
+        sourceRegistrySchemaVersion,
+        !selectedAgentProfiles.isEmpty(),
+        aiPresentationOptions.enabled());
 
     List<GeneratedOutputFile> generatedOutputFiles = new ArrayList<>();
+    generatedOutputFiles.add(new GeneratedOutputFile(
+        ARTIFACT_SET_FILE_NAME,
+        artifactSetJson));
     generatedOutputFiles.add(new GeneratedOutputFile(
         ENDPOINTS_FILE_NAME,
         endpointsMarkdown(
@@ -7899,6 +7920,242 @@ public final class SpringMvcEndpointOutputGenerator {
     manifest.append("  ]\n");
     manifest.append("}\n");
     return manifest.toString();
+  }
+
+  private String artifactSetJson(
+      String projectMapSchemaVersion,
+      String sourceRegistrySchemaVersion,
+      boolean agentProfilesPresent,
+      boolean aiPresentationPresent) {
+    String sourceRegistryStatus = sourceRegistrySchemaVersion == null
+        ? ARTIFACT_STATUS_ABSENT
+        : ARTIFACT_STATUS_PRESENT;
+    String agentProfileStatus = agentProfilesPresent
+        ? ARTIFACT_STATUS_PRESENT
+        : ARTIFACT_STATUS_ABSENT;
+    String aiPresentationStatus = aiPresentationPresent
+        ? ARTIFACT_STATUS_PRESENT
+        : ARTIFACT_STATUS_ABSENT;
+    String artifactSetId = artifactSetId(
+        projectMapSchemaVersion,
+        sourceRegistrySchemaVersion,
+        agentProfileStatus,
+        aiPresentationStatus);
+
+    StringBuilder json = new StringBuilder();
+    json.append("{\n");
+    appendIndentedStringField(
+        json,
+        1,
+        "artifact_set_schema_version",
+        ARTIFACT_SET_SCHEMA_VERSION,
+        true);
+    appendIndentedStringField(json, 1, "artifact_set_id", artifactSetId, true);
+    appendIndentedStringField(json, 1, "artifact_set_kind", ARTIFACT_SET_KIND, true);
+    appendIndentedStringField(json, 1, "contract_line", ARTIFACT_SET_CONTRACT_LINE, true);
+    indent(json, 1);
+    json.append("\"writer\": {\n");
+    appendIndentedStringField(json, 2, "name", "agent-project-memory", true);
+    appendIndentedStringField(json, 2, "version", writerVersion(), false);
+    indent(json, 1);
+    json.append("},\n");
+    appendIndentedStringField(json, 1, "artifact_root", ".project-memory", true);
+    indent(json, 1);
+    json.append("\"evidence_boundary\": {\n");
+    appendIndentedStringField(json, 2, "authority", "contract_provenance_metadata", true);
+    appendIndentedStringField(json, 2, "evidence_policy", "manifest_is_not_evidence", true);
+    appendIndentedStringField(json, 2, "evidence_artifact", EVIDENCE_INDEX_FILE_NAME, false);
+    indent(json, 1);
+    json.append("},\n");
+    indent(json, 1);
+    json.append("\"artifacts\": [\n");
+    appendArtifactInventoryItem(
+        json,
+        ARTIFACT_SET_FILE_NAME,
+        "artifact_set_manifest",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        "artifact_set_schema_version",
+        ARTIFACT_SET_SCHEMA_VERSION,
+        "contract_provenance_metadata",
+        "non_evidence_metadata",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        PROJECT_MAP_FILE_NAME,
+        "project_map",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        "schema_version",
+        projectMapSchemaVersion,
+        "project_facts",
+        "source_facts_reference_evidence_index",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        PROJECT_GRAPH_FILE_NAME,
+        "project_graph",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        "graph_schema_version",
+        "1.0",
+        "navigation_metadata",
+        "non_evidence_derivation_metadata",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        EVIDENCE_INDEX_FILE_NAME,
+        "evidence_index",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        null,
+        null,
+        "source_backed_evidence",
+        "authoritative_evidence_index",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        ENDPOINTS_FILE_NAME,
+        "endpoints_markdown",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        null,
+        null,
+        "deterministic_markdown_presentation",
+        "references_existing_evidence",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        AGENT_GUIDE_FILE_NAME,
+        "agent_guide_markdown",
+        true,
+        ARTIFACT_STATUS_PRESENT,
+        null,
+        null,
+        "deterministic_markdown_presentation",
+        "references_existing_evidence",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        SOURCE_REGISTRY_FILE_NAME,
+        "source_registry",
+        false,
+        sourceRegistryStatus,
+        "source_registry_schema_version",
+        sourceRegistrySchemaVersion,
+        "adapter_provenance_metadata",
+        "not_evidence",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        AGENT_PROFILE_MANIFEST_FILE_NAME,
+        "agent_profile_manifest",
+        false,
+        agentProfileStatus,
+        "manifest_version",
+        agentProfilesPresent ? AGENT_PROFILE_MANIFEST_VERSION : null,
+        "deterministic_profile_presentation",
+        "references_existing_evidence_only",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        AiPresentationArtifactGenerator.MANIFEST_PATH,
+        "ai_presentation_manifest",
+        false,
+        aiPresentationStatus,
+        "ai_presentation_schema_version",
+        aiPresentationPresent ? "1.0" : null,
+        "non_authoritative_presentation",
+        "references_existing_evidence_only",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        "cache/v1/manifest.json",
+        "incremental_cache_manifest",
+        false,
+        ARTIFACT_STATUS_MANAGED_SEPARATELY,
+        "cache_schema_version",
+        null,
+        "execution_metadata",
+        "not_evidence",
+        true);
+    appendArtifactInventoryItem(
+        json,
+        "workspace-map.json",
+        "workspace_map",
+        false,
+        ARTIFACT_STATUS_INTENTIONALLY_OUT_OF_SCOPE,
+        "workspace_schema_version",
+        null,
+        "workspace_aggregation_metadata",
+        "composite_navigation_references_not_evidence",
+        false);
+    indent(json, 1);
+    json.append("]\n");
+    json.append("}\n");
+    return json.toString();
+  }
+
+  private void appendArtifactInventoryItem(
+      StringBuilder json,
+      String path,
+      String artifactKind,
+      boolean required,
+      String status,
+      String schemaField,
+      String schemaValue,
+      String authority,
+      String evidenceCategory,
+      boolean trailingComma) {
+    indent(json, 2);
+    json.append("{\n");
+    appendIndentedStringField(json, 3, "path", path, true);
+    appendIndentedStringField(json, 3, "artifact_kind", artifactKind, true);
+    appendIndentedBooleanField(json, 3, "required", required, true);
+    appendIndentedStringField(json, 3, "status", status, true);
+    indent(json, 3);
+    json.append("\"schema\": ");
+    if (schemaField == null || schemaValue == null) {
+      json.append("null,\n");
+    } else {
+      json.append("{\n");
+      appendIndentedStringField(json, 4, "field", schemaField, true);
+      appendIndentedStringField(json, 4, "value", schemaValue, false);
+      indent(json, 3);
+      json.append("},\n");
+    }
+    appendIndentedStringField(json, 3, "authority", authority, true);
+    appendIndentedStringField(json, 3, "evidence_category", evidenceCategory, false);
+    indent(json, 2);
+    json.append("}");
+    appendLineEnding(json, trailingComma);
+  }
+
+  private String artifactSetId(
+      String projectMapSchemaVersion,
+      String sourceRegistrySchemaVersion,
+      String agentProfileStatus,
+      String aiPresentationStatus) {
+    String sourceRegistryMarker = sourceRegistrySchemaVersion == null
+        ? ARTIFACT_STATUS_ABSENT
+        : sourceRegistrySchemaVersion;
+    return "artifact-set:single-repository-scan"
+        + ":project-map-" + projectMapSchemaVersion
+        + ":source-registry-" + sourceRegistryMarker
+        + ":agent-profiles-" + agentProfileStatus
+        + ":ai-presentations-" + aiPresentationStatus
+        + ":cache-managed-separately"
+        + ":workspace-out-of-scope";
+  }
+
+  private String writerVersion() {
+    Package generatorPackage = SpringMvcEndpointOutputGenerator.class.getPackage();
+    if (generatorPackage == null
+        || generatorPackage.getImplementationVersion() == null
+        || generatorPackage.getImplementationVersion().isBlank()) {
+      return "unknown";
+    }
+    return generatorPackage.getImplementationVersion();
   }
 
   private void writeGeneratedFiles(

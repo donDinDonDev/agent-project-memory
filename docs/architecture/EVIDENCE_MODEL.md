@@ -489,6 +489,37 @@ or goldens where applicable, a changelog entry, release notes, and a separate se
 review. The preferred boundary is that policy profile metadata remains permanently
 non-evidence execution metadata.
 
+## Artifact-Set Manifest Evidence Decision
+
+`artifact-set.json` is generated contract/provenance metadata, not evidence. It must not
+add evidence types, evidence fields, evidence records, confidence labels, evidence IDs,
+source references, adapter evidence, workspace evidence, security findings,
+vulnerability proof, runtime claims, source/spec agreement claims, documentation
+freshness claims, release evidence, or code-modification authority.
+
+The manifest may identify generated artifact names, schema marker fields and values,
+required/optional status, and evidence boundary labels. Those labels are navigation and
+compatibility metadata only. They do not strengthen, weaken, replace, suppress,
+reinterpret, or fabricate the underlying facts or evidence records.
+
+`evidence-index.jsonl` remains the source-backed evidence artifact. A manifest entry
+for `evidence-index.jsonl` points to that artifact by name; it does not copy evidence
+records and does not make any other generated artifact authoritative evidence.
+
+Adapter provenance remains in `source-registry.json`, workspace aggregation remains in
+`workspace-map.json`, graph derivation remains in `project-graph.json`, cache metadata
+remains under `.project-memory/cache/v1/`, and profile or AI presentation output
+remains derived non-evidence output. Listing those surfaces in `artifact-set.json` does
+not promote them into Java/Spring project facts or evidence.
+
+Any future change that treats the artifact-set manifest, schema markers, artifact
+status, artifact fingerprints, generated Markdown, graph derivation, cache metadata,
+profile output, AI presentation, adapter provenance, workspace aggregation, release
+metadata, downstream agent output, chat output, or LLM output as evidence must update
+this document and `OUTPUT_CONTRACT.md` before implementation. Such a change would also
+need focused tests or goldens where applicable, a changelog entry, release notes, and a
+separate security review.
+
 ## Planned v3 Evidence And Provenance Migration Design
 
 This section is a design plan for a future v3 implementation. It is not current shipped

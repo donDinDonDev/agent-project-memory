@@ -6,11 +6,12 @@ Any output field addition, removal, rename, or semantic change requires updating
 
 ## Directory Structure
 
-The current scan output uses the base project-memory files plus the v1.5 graph
-artifact:
+The current scan output uses an artifact-set manifest, the base project-memory files,
+and the v1.5 graph artifact:
 
 ```text
 .project-memory/
+  artifact-set.json
   project-map.json
   project-graph.json
   evidence-index.jsonl
@@ -18,11 +19,11 @@ artifact:
   agent-guide.md
 ```
 
-In the current implementation, `scan <path>` writes all base files when supported Maven
-or Gradle module roots, supported root source, test, or resource roots, supported config
-files, Maven/Gradle module warnings, or graph-supported facts are detected. Unsupported
-directories still only get a prepared `.project-memory/` directory and do not get
-contract output files.
+In the current implementation, `scan <path>` writes `artifact-set.json` and all base
+files when supported Maven or Gradle module roots, supported root source, test, or
+resource roots, supported config files, Maven/Gradle module warnings, or
+graph-supported facts are detected. Unsupported directories still only get a prepared
+`.project-memory/` directory and do not get contract output files.
 When `--agent-profile` is selected and the scan writes the base contract files, the
 current v1.3 development profile layer also writes
 `.project-memory/agent-profiles/manifest.json` and selected deterministic profile
@@ -77,12 +78,173 @@ metadata is the existing `project-map.json` top-level `scan` object. A normal sc
 no policy profile remains the compatibility baseline and does not gain default
 policy-profile metadata in the v2.7 boundary.
 
+## `artifact-set.json`
+
+`artifact-set.json` is the set-level generated artifact manifest for current
+single-repo scan output. It identifies the generated artifact set and inventories the
+required base artifacts plus optional adapter, profile, AI, cache, and workspace
+surfaces without changing the existing per-artifact schema markers.
+
+The manifest is contract/provenance metadata for generated files. It is not
+`evidence-index.jsonl` evidence, does not create project facts, does not add evidence
+records, and does not make adapter provenance, graph derivation, cache metadata,
+profile output, AI presentation, workspace aggregation, generated Markdown, query
+output, release metadata, or downstream agent output authoritative evidence.
+
+The current manifest foundation deliberately does not bump `project-map.json` to
+`schema_version: "3.0"` and does not add reader, query, migration, or mixed-artifact
+compatibility behavior. Current no-adapter scans still emit `project-map.json`
+`schema_version: "1.0"`. Current adapter-enabled scans still emit `project-map.json`
+`schema_version: "2.0"` plus `source-registry.json` when an explicitly enabled adapter
+accepts input.
+
+Current `artifact-set.json` shape for a no-adapter scan:
+
+```json
+{
+  "artifact_set_schema_version": "1.0",
+  "artifact_set_id": "artifact-set:single-repository-scan:project-map-1.0:source-registry-absent:agent-profiles-absent:ai-presentations-absent:cache-managed-separately:workspace-out-of-scope",
+  "artifact_set_kind": "single_repository_scan",
+  "contract_line": "v3_artifact_set_manifest_foundation",
+  "writer": {
+    "name": "agent-project-memory",
+    "version": "unknown"
+  },
+  "artifact_root": ".project-memory",
+  "evidence_boundary": {
+    "authority": "contract_provenance_metadata",
+    "evidence_policy": "manifest_is_not_evidence",
+    "evidence_artifact": "evidence-index.jsonl"
+  },
+  "artifacts": [
+    {
+      "path": "artifact-set.json",
+      "artifact_kind": "artifact_set_manifest",
+      "required": true,
+      "status": "present",
+      "schema": {
+        "field": "artifact_set_schema_version",
+        "value": "1.0"
+      },
+      "authority": "contract_provenance_metadata",
+      "evidence_category": "non_evidence_metadata"
+    },
+    {
+      "path": "project-map.json",
+      "artifact_kind": "project_map",
+      "required": true,
+      "status": "present",
+      "schema": {
+        "field": "schema_version",
+        "value": "1.0"
+      },
+      "authority": "project_facts",
+      "evidence_category": "source_facts_reference_evidence_index"
+    }
+  ]
+}
+```
+
+The example above is abbreviated after the first two artifacts. The full manifest
+inventory uses the same object shape for these entries in deterministic order:
+
+1. `artifact-set.json`
+2. `project-map.json`
+3. `project-graph.json`
+4. `evidence-index.jsonl`
+5. `endpoints.md`
+6. `agent-guide.md`
+7. `source-registry.json`
+8. `agent-profiles/manifest.json`
+9. `ai-presentations/manifest.json`
+10. `cache/v1/manifest.json`
+11. `workspace-map.json`
+
+Top-level rules:
+
+- `artifact_set_schema_version` is `"1.0"` for the initial manifest foundation.
+- `artifact_set_id` is deterministic for the manifest's current schema/status markers.
+  It is a generated set identifier, not a content hash and not evidence.
+- `artifact_set_kind` is `"single_repository_scan"` for normal `scan <path>` output.
+- `contract_line` is `"v3_artifact_set_manifest_foundation"` for this foundation slice.
+- `writer.name` is `"agent-project-memory"`.
+- `writer.version` records the package implementation version when available and
+  `"unknown"` otherwise. It must not contain local paths, command lines, environment
+  values, credentials, tokens, or source contents.
+- `artifact_root` is the literal generated-output root name `.project-memory`; it is not
+  a local absolute path.
+- `evidence_boundary.evidence_policy` is `"manifest_is_not_evidence"`.
+- `evidence_boundary.evidence_artifact` is `"evidence-index.jsonl"`.
+
+Artifact item rules:
+
+- `path` is a normalized `.project-memory`-relative slash path. It must not be absolute,
+  start with `./`, contain `.` or `..` path segments, use backslash separators, or
+  serialize a configured local input path.
+- `artifact_kind` is the deterministic artifact family identifier.
+- `required` is `true` for the manifest and required single-repo scan artifacts, and
+  `false` for optional or out-of-scope surfaces.
+- `status` describes whether the artifact belongs to this generated artifact set. The
+  current statuses are `"present"`, `"absent"`, `"managed_separately"`, and
+  `"intentionally_out_of_scope"`.
+- `schema` is either `null` for artifacts without a dedicated machine schema marker or
+  an object with `field` and `value`.
+- `authority` identifies the artifact's contract role.
+- `evidence_category` records whether the artifact is source-backed evidence,
+  references existing evidence, or is non-evidence metadata.
+
+Required single-repo scan artifacts:
+
+- `artifact-set.json`: `artifact_set_schema_version: "1.0"`,
+  `authority: "contract_provenance_metadata"`,
+  `evidence_category: "non_evidence_metadata"`.
+- `project-map.json`: current no-adapter `schema_version: "1.0"` or current
+  adapter-enabled `schema_version: "2.0"`,
+  `authority: "project_facts"`,
+  `evidence_category: "source_facts_reference_evidence_index"`.
+- `project-graph.json`: `graph_schema_version: "1.0"`,
+  `authority: "navigation_metadata"`,
+  `evidence_category: "non_evidence_derivation_metadata"`.
+- `evidence-index.jsonl`: no separate schema marker in the current contract,
+  `authority: "source_backed_evidence"`,
+  `evidence_category: "authoritative_evidence_index"`.
+- `endpoints.md`: deterministic Markdown presentation,
+  `evidence_category: "references_existing_evidence"`.
+- `agent-guide.md`: deterministic Markdown presentation,
+  `evidence_category: "references_existing_evidence"`.
+
+Optional and related surfaces:
+
+- `source-registry.json` is `status: "present"` only when an explicitly enabled adapter
+  accepts input and the source registry is emitted. Its schema marker is
+  `source_registry_schema_version` with current values `"1.0"`, `"1.1"`, or `"1.2"`.
+  Otherwise its status is `"absent"`. It remains adapter provenance metadata, not
+  evidence.
+- `agent-profiles/manifest.json` is `status: "present"` only when at least one
+  `--agent-profile` selector is used and profile artifacts are generated. Its schema
+  marker is `manifest_version: "1.0"` when present. Otherwise its status is `"absent"`.
+- `ai-presentations/manifest.json` is `status: "present"` only when
+  `--ai-presentation mock_no_network` is explicitly selected and AI presentation
+  artifacts are generated. Its schema marker is `ai_presentation_schema_version: "1.0"`
+  when present. Otherwise its status is `"absent"`.
+- `cache/v1/manifest.json` uses `status: "managed_separately"` because incremental
+  cache metadata is written after successful scan output generation when
+  `--incremental` is selected and cache refresh is allowed. Cache metadata remains
+  execution metadata, not evidence.
+- `workspace-map.json` uses `status: "intentionally_out_of_scope"` in normal single-repo
+  scan manifests because workspace output belongs to the explicit
+  `workspace scan <config>` workflow and is written under the workspace root.
+
+`artifact-set.json` is included in the v1.4 incremental cache output fingerprint set.
+Cache metadata remains a separate non-evidence execution surface and does not become a
+source of project facts.
+
 ## Planned v3 Schema/API Migration Design
 
-This section is a design plan for a future v3 implementation. It is not current shipped
-behavior. Current no-adapter scans still emit `project-map.json` with
-`schema_version: "1.0"`. Current adapter-enabled scans still emit
-`project-map.json` with `schema_version: "2.0"` plus the optional
+This section is a design plan for future v3 behavior beyond the current
+`artifact-set.json` manifest foundation. Current no-adapter scans still emit
+`project-map.json` with `schema_version: "1.0"`. Current adapter-enabled scans still
+emit `project-map.json` with `schema_version: "2.0"` plus the optional
 `source-registry.json` contract described below. Current query, agent-context, and
 impact commands still support the schema markers documented in their existing sections.
 
@@ -98,12 +260,9 @@ Planned v3 artifact-set decisions:
 - `project-map.json` should receive a future major schema marker such as
   `schema_version: "3.0"` only when v3 serialization, reading, compatibility tests, and
   migration documentation are implemented together.
-- The v3 implementation should add either a required artifact-set manifest or an
-  equivalent documented set-level validation mechanism before accepting v3 artifacts as
-  a coherent machine-readable set. That mechanism must identify the project-map schema,
-  evidence model version, graph schema, optional source-registry schema, optional
-  workspace schema, optional profile/AI/cache surfaces, and the tool version that wrote
-  them, without relying on local absolute paths or command transcripts.
+- The current v3 foundation adds `artifact-set.json` as the generated set-level
+  manifest. Future v3 reader/query/migration work must decide when this manifest becomes
+  required for accepting v3 artifacts as a coherent machine-readable set.
 - `evidence-index.jsonl` remains the source-backed evidence artifact. If v3 changes
   evidence fields, IDs, confidence labels, uncertainty semantics, excerpts, or source
   type taxonomy, those changes must be documented in this file and in

@@ -59,6 +59,9 @@ final class SpringMvcEndpointOutputGeneratorTest {
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertEquals(
+            expected("artifact-set.json"),
+            Files.readString(outputDirectory.resolve("artifact-set.json"))),
+        () -> assertEquals(
             expected("project-map.json"),
             Files.readString(outputDirectory.resolve("project-map.json"))),
         () -> assertEquals(
@@ -73,6 +76,60 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             expected("agent-guide.md"),
             Files.readString(outputDirectory.resolve("agent-guide.md"))));
+  }
+
+  @Test
+  void artifactSetManifestInventoriesNoAdapterGeneratedSetWithoutChangingProjectMapSchema()
+      throws Exception {
+    Path projectPath = tempDir.resolve("stage3-project-map");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    copyDirectory(fixtureRoot(), projectPath);
+    Files.createDirectories(outputDirectory);
+
+    generator.generate(projectPath, outputDirectory);
+
+    JsonNode manifest = JSON.readTree(Files.readString(outputDirectory.resolve("artifact-set.json")));
+    JsonNode artifacts = manifest.path("artifacts");
+    JsonNode projectMap = objectWithText(artifacts, "path", "project-map.json");
+    JsonNode sourceRegistry = objectWithText(artifacts, "path", "source-registry.json");
+    JsonNode cacheManifest = objectWithText(artifacts, "path", "cache/v1/manifest.json");
+    JsonNode workspaceMap = objectWithText(artifacts, "path", "workspace-map.json");
+
+    assertAll(
+        () -> assertEquals("1.0", manifest.path("artifact_set_schema_version").asText()),
+        () -> assertEquals(
+            "artifact-set:single-repository-scan:project-map-1.0:source-registry-absent:"
+                + "agent-profiles-absent:ai-presentations-absent:cache-managed-separately:"
+                + "workspace-out-of-scope",
+            manifest.path("artifact_set_id").asText()),
+        () -> assertEquals("single_repository_scan", manifest.path("artifact_set_kind").asText()),
+        () -> assertEquals(
+            "v3_artifact_set_manifest_foundation",
+            manifest.path("contract_line").asText()),
+        () -> assertEquals(
+            "manifest_is_not_evidence",
+            manifest.path("evidence_boundary").path("evidence_policy").asText()),
+        () -> assertEquals(11, artifacts.size()),
+        () -> assertEquals("present", projectMap.path("status").asText()),
+        () -> assertTrue(projectMap.path("required").asBoolean()),
+        () -> assertEquals("schema_version", projectMap.path("schema").path("field").asText()),
+        () -> assertEquals("1.0", projectMap.path("schema").path("value").asText()),
+        () -> assertEquals(
+            "source_facts_reference_evidence_index",
+            projectMap.path("evidence_category").asText()),
+        () -> assertEquals("absent", sourceRegistry.path("status").asText()),
+        () -> assertTrue(sourceRegistry.path("schema").isNull()),
+        () -> assertEquals("managed_separately", cacheManifest.path("status").asText()),
+        () -> assertEquals("not_evidence", cacheManifest.path("evidence_category").asText()),
+        () -> assertEquals("intentionally_out_of_scope", workspaceMap.path("status").asText()),
+        () -> assertEquals(
+            "composite_navigation_references_not_evidence",
+            workspaceMap.path("evidence_category").asText()),
+        () -> assertEquals(
+            "1.0",
+            JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")))
+                .path("schema_version")
+                .asText()));
   }
 
   @Test
@@ -99,12 +156,28 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory,
         scanConfiguration,
         List.of());
+    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
+    JsonNode manifest = JSON.readTree(Files.readString(outputDirectory.resolve("artifact-set.json")));
+    JsonNode sourceRegistryArtifact =
+        objectWithText(manifest.path("artifacts"), "path", "source-registry.json");
 
     assertAll(
         () -> assertTrue(result.generated()),
         () -> assertTrue(result.sourceRegistryGenerated()),
         () -> assertEquals(2, result.sourceDocumentCount()),
         () -> assertEquals(2, result.adapterDiagnosticCount()),
+        () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "artifact-set.json"),
+            Files.readString(outputDirectory.resolve("artifact-set.json"))),
+        () -> assertEquals("present", sourceRegistryArtifact.path("status").asText()),
+        () -> assertEquals(
+            "source_registry_schema_version",
+            sourceRegistryArtifact.path("schema").path("field").asText()),
+        () -> assertEquals("1.0", sourceRegistryArtifact.path("schema").path("value").asText()),
+        () -> assertEquals(
+            "not_evidence",
+            sourceRegistryArtifact.path("evidence_category").asText()),
         () -> assertEquals(
             expected("v2-local-structured-import", "source-registry.json"),
             Files.readString(outputDirectory.resolve("source-registry.json"))));
