@@ -404,8 +404,10 @@ adapter, profile, AI presentation, cache, and workspace-related surfaces without
 making those surfaces evidence. It is contract/provenance metadata only, keeps
 `artifact_root` relative as `.project-memory`, and does not serialize local absolute
 paths, command transcripts, credentials, tokens, raw source bodies, or environment
-values. The initial manifest uses `artifact_set_schema_version: "1.0"` and does not
-bump `project-map.json` to `schema_version: "3.0"`.
+values. Its artifact inventory marks only `evidence-index.jsonl` as authoritative
+source-backed evidence; every other listed surface remains non-evidence. The initial
+manifest uses `artifact_set_schema_version: "1.0"` and does not bump
+`project-map.json` to `schema_version: "3.0"`.
 
 `project-map.json` is the minimal stable machine-readable project map. No-adapter
 current development output uses `schema_version: "1.0"` and includes redacted scan
@@ -1036,8 +1038,10 @@ Current limitations:
   use credentials, access the network, upload source, or call a real provider.
 - `artifact-set.json` is generated contract/provenance metadata only. It inventories
   generated artifact names, schema markers, required/optional status, and evidence
-  boundary labels, but it does not create project facts, evidence IDs, evidence records,
-  adapter truth, runtime claims, release evidence, or code-change authority.
+  boundary labels. Only `evidence-index.jsonl` is marked as authoritative
+  source-backed evidence; all other listed surfaces remain non-evidence. The manifest
+  does not create project facts, evidence IDs, evidence records, adapter truth, runtime
+  claims, release evidence, or code-change authority.
 - Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
   `version: 1`, optional `features.local_markdown`, reserved
   `features.generated_sources: false` and `features.follow_symlinks: false`, optional

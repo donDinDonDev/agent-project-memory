@@ -504,7 +504,13 @@ reinterpret, or fabricate the underlying facts or evidence records.
 
 `evidence-index.jsonl` remains the source-backed evidence artifact. A manifest entry
 for `evidence-index.jsonl` points to that artifact by name; it does not copy evidence
-records and does not make any other generated artifact authoritative evidence.
+records and does not make any other generated artifact authoritative evidence. In the
+manifest inventory, `authoritative_evidence` is `true` only for
+`evidence-index.jsonl`. It is `false` for the manifest itself, `project-map.json`,
+`project-graph.json`, generated Markdown, `source-registry.json`, profile manifests,
+AI presentation manifests, cache manifests, workspace output, query output, release
+metadata, security reports, chat output, downstream-agent output, and any other
+generated or external non-evidence surface.
 
 Adapter provenance remains in `source-registry.json`, workspace aggregation remains in
 `workspace-map.json`, graph derivation remains in `project-graph.json`, cache metadata

@@ -7979,6 +7979,7 @@ public final class SpringMvcEndpointOutputGenerator {
         ARTIFACT_SET_SCHEMA_VERSION,
         "contract_provenance_metadata",
         "non_evidence_metadata",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -7990,6 +7991,7 @@ public final class SpringMvcEndpointOutputGenerator {
         projectMapSchemaVersion,
         "project_facts",
         "source_facts_reference_evidence_index",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8001,6 +8003,7 @@ public final class SpringMvcEndpointOutputGenerator {
         "1.0",
         "navigation_metadata",
         "non_evidence_derivation_metadata",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8012,6 +8015,7 @@ public final class SpringMvcEndpointOutputGenerator {
         null,
         "source_backed_evidence",
         "authoritative_evidence_index",
+        true,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8023,6 +8027,7 @@ public final class SpringMvcEndpointOutputGenerator {
         null,
         "deterministic_markdown_presentation",
         "references_existing_evidence",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8034,6 +8039,7 @@ public final class SpringMvcEndpointOutputGenerator {
         null,
         "deterministic_markdown_presentation",
         "references_existing_evidence",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8045,6 +8051,7 @@ public final class SpringMvcEndpointOutputGenerator {
         sourceRegistrySchemaVersion,
         "adapter_provenance_metadata",
         "not_evidence",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8056,6 +8063,7 @@ public final class SpringMvcEndpointOutputGenerator {
         agentProfilesPresent ? AGENT_PROFILE_MANIFEST_VERSION : null,
         "deterministic_profile_presentation",
         "references_existing_evidence_only",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8067,6 +8075,7 @@ public final class SpringMvcEndpointOutputGenerator {
         aiPresentationPresent ? "1.0" : null,
         "non_authoritative_presentation",
         "references_existing_evidence_only",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8078,6 +8087,7 @@ public final class SpringMvcEndpointOutputGenerator {
         null,
         "execution_metadata",
         "not_evidence",
+        false,
         true);
     appendArtifactInventoryItem(
         json,
@@ -8089,6 +8099,7 @@ public final class SpringMvcEndpointOutputGenerator {
         null,
         "workspace_aggregation_metadata",
         "composite_navigation_references_not_evidence",
+        false,
         false);
     indent(json, 1);
     json.append("]\n");
@@ -8106,6 +8117,7 @@ public final class SpringMvcEndpointOutputGenerator {
       String schemaValue,
       String authority,
       String evidenceCategory,
+      boolean authoritativeEvidence,
       boolean trailingComma) {
     indent(json, 2);
     json.append("{\n");
@@ -8125,7 +8137,8 @@ public final class SpringMvcEndpointOutputGenerator {
       json.append("},\n");
     }
     appendIndentedStringField(json, 3, "authority", authority, true);
-    appendIndentedStringField(json, 3, "evidence_category", evidenceCategory, false);
+    appendIndentedStringField(json, 3, "evidence_category", evidenceCategory, true);
+    appendIndentedBooleanField(json, 3, "authoritative_evidence", authoritativeEvidence, false);
     indent(json, 2);
     json.append("}");
     appendLineEnding(json, trailingComma);

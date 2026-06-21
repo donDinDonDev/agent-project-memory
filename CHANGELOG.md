@@ -20,6 +20,10 @@ architecture documents.
   `artifact-set.json` when present, accept coherent no-adapter
   `schema_version: "1.0"` query input sets, and reject unsupported or mixed
   artifact-set state.
+- Added explicit artifact-set evidence-authority labels: only `evidence-index.jsonl`
+  is marked as authoritative source-backed evidence, while manifest, generated fact,
+  graph, Markdown, adapter, profile, AI, cache, and workspace surfaces are marked as
+  non-authoritative for evidence and remain non-evidence surfaces.
 
 ### Changed
 
@@ -35,6 +39,9 @@ architecture documents.
 - Query artifact loading now fails closed when a present artifact-set manifest is
   unsupported, internally inconsistent, or does not match required generated artifact
   presence and schema markers.
+- Manifest-backed query loading now also fails closed if artifact-set metadata promotes
+  adapter, AI, generated, profile, cache, workspace, or other non-evidence surfaces to
+  authoritative evidence, or demotes `evidence-index.jsonl` from that role.
 
 ## [2.9.0] - 2026-06-21
 

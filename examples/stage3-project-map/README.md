@@ -34,7 +34,8 @@ examples/stage3-project-map/.project-memory/endpoints.md
 examples/stage3-project-map/.project-memory/agent-guide.md
 ```
 
-The artifact-set manifest is contract/provenance metadata, not project evidence.
+The artifact-set manifest is contract/provenance metadata, not project evidence. Its
+inventory marks only `evidence-index.jsonl` as authoritative source-backed evidence.
 Opt-in agent profile artifacts, AI presentation artifacts, and incremental cache
 metadata are intentionally omitted because they are optional generated presentations or
 execution metadata, not the base output set.

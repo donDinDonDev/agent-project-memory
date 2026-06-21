@@ -186,6 +186,68 @@ final class ProjectMemoryArtifactReaderTest {
   }
 
   @Test
+  void rejectsArtifactSetManifestWithUnsupportedArtifactAuthority() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"path\": \"project-map.json\"([\\s\\S]*?)\"authority\": \"project_facts\"",
+            "\"path\": \"project-map.json\"$1\"authority\": \"source_backed_evidence\""));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Unsupported artifact-set.json evidence boundary.");
+  }
+
+  @Test
+  void rejectsArtifactSetManifestWithUnsupportedEvidenceCategory() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"path\": \"source-registry.json\"([\\s\\S]*?)\"evidence_category\": \"not_evidence\"",
+            "\"path\": \"source-registry.json\"$1\"evidence_category\": \"authoritative_evidence_index\""));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Unsupported artifact-set.json evidence boundary.");
+  }
+
+  @Test
+  void rejectsArtifactSetManifestThatPromotesNonEvidenceSurfaces() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"path\": \"ai-presentations/manifest.json\"([\\s\\S]*?)"
+                + "\"authoritative_evidence\": false",
+            "\"path\": \"ai-presentations/manifest.json\"$1"
+                + "\"authoritative_evidence\": true"));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Unsupported artifact-set.json evidence boundary.");
+  }
+
+  @Test
+  void rejectsArtifactSetManifestThatDemotesEvidenceIndexAuthority() throws Exception {
+    Path artifactRoot = tempDir.resolve("repo/.project-memory");
+    writeManifestBackedArtifacts(artifactRoot);
+    Files.writeString(
+        artifactRoot.resolve("artifact-set.json"),
+        validArtifactSet().replaceFirst(
+            "\"path\": \"evidence-index.jsonl\"([\\s\\S]*?)\"authoritative_evidence\": true",
+            "\"path\": \"evidence-index.jsonl\"$1\"authoritative_evidence\": false"));
+
+    assertArtifactError(
+        artifactRoot.getParent(),
+        "Unsupported artifact-set.json evidence boundary.");
+  }
+
+  @Test
   void rejectsMixedManifestAndGeneratedArtifacts() throws Exception {
     Path artifactRoot = tempDir.resolve("repo/.project-memory");
     writeManifestBackedArtifacts(artifactRoot);
@@ -410,7 +472,8 @@ final class ProjectMemoryArtifactReaderTest {
                 "value": "1.0"
               },
               "authority": "contract_provenance_metadata",
-              "evidence_category": "non_evidence_metadata"
+              "evidence_category": "non_evidence_metadata",
+              "authoritative_evidence": false
             },
             {
               "path": "project-map.json",
@@ -422,7 +485,8 @@ final class ProjectMemoryArtifactReaderTest {
                 "value": "1.0"
               },
               "authority": "project_facts",
-              "evidence_category": "source_facts_reference_evidence_index"
+              "evidence_category": "source_facts_reference_evidence_index",
+              "authoritative_evidence": false
             },
             {
               "path": "project-graph.json",
@@ -434,7 +498,8 @@ final class ProjectMemoryArtifactReaderTest {
                 "value": "1.0"
               },
               "authority": "navigation_metadata",
-              "evidence_category": "non_evidence_derivation_metadata"
+              "evidence_category": "non_evidence_derivation_metadata",
+              "authoritative_evidence": false
             },
             {
               "path": "evidence-index.jsonl",
@@ -443,7 +508,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "present",
               "schema": null,
               "authority": "source_backed_evidence",
-              "evidence_category": "authoritative_evidence_index"
+              "evidence_category": "authoritative_evidence_index",
+              "authoritative_evidence": true
             },
             {
               "path": "endpoints.md",
@@ -452,7 +518,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "present",
               "schema": null,
               "authority": "deterministic_markdown_presentation",
-              "evidence_category": "references_existing_evidence"
+              "evidence_category": "references_existing_evidence",
+              "authoritative_evidence": false
             },
             {
               "path": "agent-guide.md",
@@ -461,7 +528,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "present",
               "schema": null,
               "authority": "deterministic_markdown_presentation",
-              "evidence_category": "references_existing_evidence"
+              "evidence_category": "references_existing_evidence",
+              "authoritative_evidence": false
             },
             {
               "path": "source-registry.json",
@@ -470,7 +538,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "absent",
               "schema": null,
               "authority": "adapter_provenance_metadata",
-              "evidence_category": "not_evidence"
+              "evidence_category": "not_evidence",
+              "authoritative_evidence": false
             },
             {
               "path": "agent-profiles/manifest.json",
@@ -479,7 +548,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "absent",
               "schema": null,
               "authority": "deterministic_profile_presentation",
-              "evidence_category": "references_existing_evidence_only"
+              "evidence_category": "references_existing_evidence_only",
+              "authoritative_evidence": false
             },
             {
               "path": "ai-presentations/manifest.json",
@@ -488,7 +558,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "absent",
               "schema": null,
               "authority": "non_authoritative_presentation",
-              "evidence_category": "references_existing_evidence_only"
+              "evidence_category": "references_existing_evidence_only",
+              "authoritative_evidence": false
             },
             {
               "path": "cache/v1/manifest.json",
@@ -497,7 +568,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "managed_separately",
               "schema": null,
               "authority": "execution_metadata",
-              "evidence_category": "not_evidence"
+              "evidence_category": "not_evidence",
+              "authoritative_evidence": false
             },
             {
               "path": "workspace-map.json",
@@ -506,7 +578,8 @@ final class ProjectMemoryArtifactReaderTest {
               "status": "intentionally_out_of_scope",
               "schema": null,
               "authority": "workspace_aggregation_metadata",
-              "evidence_category": "composite_navigation_references_not_evidence"
+              "evidence_category": "composite_navigation_references_not_evidence",
+              "authoritative_evidence": false
             }
           ]
         }

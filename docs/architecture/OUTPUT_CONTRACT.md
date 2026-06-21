@@ -130,7 +130,8 @@ Current `artifact-set.json` shape for a no-adapter scan:
         "value": "1.0"
       },
       "authority": "contract_provenance_metadata",
-      "evidence_category": "non_evidence_metadata"
+      "evidence_category": "non_evidence_metadata",
+      "authoritative_evidence": false
     },
     {
       "path": "project-map.json",
@@ -142,7 +143,8 @@ Current `artifact-set.json` shape for a no-adapter scan:
         "value": "1.0"
       },
       "authority": "project_facts",
-      "evidence_category": "source_facts_reference_evidence_index"
+      "evidence_category": "source_facts_reference_evidence_index",
+      "authoritative_evidence": false
     }
   ]
 }
@@ -195,26 +197,37 @@ Artifact item rules:
 - `authority` identifies the artifact's contract role.
 - `evidence_category` records whether the artifact is source-backed evidence,
   references existing evidence, or is non-evidence metadata.
+- `authoritative_evidence` is `true` only for the generated source-backed evidence
+  artifact. It is `false` for the manifest, generated fact artifacts, graph/navigation
+  artifacts, generated Markdown, adapter provenance, profile and AI presentations,
+  cache metadata, workspace aggregation, query output, release metadata, security
+  reports, chat output, downstream-agent output, and any other non-evidence surface.
 
 Required single-repo scan artifacts:
 
 - `artifact-set.json`: `artifact_set_schema_version: "1.0"`,
   `authority: "contract_provenance_metadata"`,
-  `evidence_category: "non_evidence_metadata"`.
+  `evidence_category: "non_evidence_metadata"`,
+  `authoritative_evidence: false`.
 - `project-map.json`: current no-adapter `schema_version: "1.0"` or current
   adapter-enabled `schema_version: "2.0"`,
   `authority: "project_facts"`,
-  `evidence_category: "source_facts_reference_evidence_index"`.
+  `evidence_category: "source_facts_reference_evidence_index"`,
+  `authoritative_evidence: false`.
 - `project-graph.json`: `graph_schema_version: "1.0"`,
   `authority: "navigation_metadata"`,
-  `evidence_category: "non_evidence_derivation_metadata"`.
+  `evidence_category: "non_evidence_derivation_metadata"`,
+  `authoritative_evidence: false`.
 - `evidence-index.jsonl`: no separate schema marker in the current contract,
   `authority: "source_backed_evidence"`,
-  `evidence_category: "authoritative_evidence_index"`.
+  `evidence_category: "authoritative_evidence_index"`,
+  `authoritative_evidence: true`.
 - `endpoints.md`: deterministic Markdown presentation,
-  `evidence_category: "references_existing_evidence"`.
+  `evidence_category: "references_existing_evidence"`,
+  `authoritative_evidence: false`.
 - `agent-guide.md`: deterministic Markdown presentation,
-  `evidence_category: "references_existing_evidence"`.
+  `evidence_category: "references_existing_evidence"`,
+  `authoritative_evidence: false`.
 
 Optional and related surfaces:
 
@@ -222,21 +235,24 @@ Optional and related surfaces:
   accepts input and the source registry is emitted. Its schema marker is
   `source_registry_schema_version` with current values `"1.0"`, `"1.1"`, or `"1.2"`.
   Otherwise its status is `"absent"`. It remains adapter provenance metadata, not
-  evidence.
+  evidence, and uses `authoritative_evidence: false`.
 - `agent-profiles/manifest.json` is `status: "present"` only when at least one
   `--agent-profile` selector is used and profile artifacts are generated. Its schema
   marker is `manifest_version: "1.0"` when present. Otherwise its status is `"absent"`.
+  It uses `authoritative_evidence: false`.
 - `ai-presentations/manifest.json` is `status: "present"` only when
   `--ai-presentation mock_no_network` is explicitly selected and AI presentation
   artifacts are generated. Its schema marker is `ai_presentation_schema_version: "1.0"`
-  when present. Otherwise its status is `"absent"`.
+  when present. Otherwise its status is `"absent"`. It uses
+  `authoritative_evidence: false`.
 - `cache/v1/manifest.json` uses `status: "managed_separately"` because incremental
   cache metadata is written after successful scan output generation when
   `--incremental` is selected and cache refresh is allowed. Cache metadata remains
-  execution metadata, not evidence.
+  execution metadata, not evidence, and uses `authoritative_evidence: false`.
 - `workspace-map.json` uses `status: "intentionally_out_of_scope"` in normal single-repo
   scan manifests because workspace output belongs to the explicit
-  `workspace scan <config>` workflow and is written under the workspace root.
+  `workspace scan <config>` workflow and is written under the workspace root. It uses
+  `authoritative_evidence: false`.
 
 `artifact-set.json` is included in the v1.4 incremental cache output fingerprint set.
 Cache metadata remains a separate non-evidence execution surface and does not become a
@@ -249,7 +265,8 @@ Current reader/query compatibility behavior:
 - A present `artifact-set.json` is validated for
   `artifact_set_schema_version: "1.0"`, `artifact_set_kind:
   "single_repository_scan"`, `contract_line: "v3_artifact_set_manifest_foundation"`,
-  `artifact_root: ".project-memory"`, and the documented evidence boundary.
+  `artifact_root: ".project-memory"`, and the documented evidence boundary, including
+  per-artifact `authority`, `evidence_category`, and `authoritative_evidence` values.
 - Manifest-present query input must describe a coherent no-adapter artifact set:
   `project-map.json` `schema_version: "1.0"`, `project-graph.json`
   `graph_schema_version: "1.0"`, required base artifacts present as safe local files,

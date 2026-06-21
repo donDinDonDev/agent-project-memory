@@ -1757,17 +1757,17 @@ final class QueryCliTest {
             "evidence_artifact":"evidence-index.jsonl"
           },
           "artifacts":[
-            {"path":"artifact-set.json","required":true,"status":"present","schema":{"field":"artifact_set_schema_version","value":"1.0"}},
-            {"path":"project-map.json","required":true,"status":"present","schema":{"field":"schema_version","value":"1.0"}},
-            {"path":"project-graph.json","required":true,"status":"present","schema":{"field":"graph_schema_version","value":"1.0"}},
-            {"path":"evidence-index.jsonl","required":true,"status":"present","schema":null},
-            {"path":"endpoints.md","required":true,"status":"present","schema":null},
-            {"path":"agent-guide.md","required":true,"status":"present","schema":null},
-            {"path":"source-registry.json","required":false,"status":"absent","schema":null},
-            {"path":"agent-profiles/manifest.json","required":false,"status":"absent","schema":null},
-            {"path":"ai-presentations/manifest.json","required":false,"status":"absent","schema":null},
-            {"path":"cache/v1/manifest.json","required":false,"status":"managed_separately","schema":null},
-            {"path":"workspace-map.json","required":false,"status":"intentionally_out_of_scope","schema":null}
+            {"path":"artifact-set.json","required":true,"status":"present","schema":{"field":"artifact_set_schema_version","value":"1.0"},"authority":"contract_provenance_metadata","evidence_category":"non_evidence_metadata","authoritative_evidence":false},
+            {"path":"project-map.json","required":true,"status":"present","schema":{"field":"schema_version","value":"1.0"},"authority":"project_facts","evidence_category":"source_facts_reference_evidence_index","authoritative_evidence":false},
+            {"path":"project-graph.json","required":true,"status":"present","schema":{"field":"graph_schema_version","value":"1.0"},"authority":"navigation_metadata","evidence_category":"non_evidence_derivation_metadata","authoritative_evidence":false},
+            {"path":"evidence-index.jsonl","required":true,"status":"present","schema":null,"authority":"source_backed_evidence","evidence_category":"authoritative_evidence_index","authoritative_evidence":true},
+            {"path":"endpoints.md","required":true,"status":"present","schema":null,"authority":"deterministic_markdown_presentation","evidence_category":"references_existing_evidence","authoritative_evidence":false},
+            {"path":"agent-guide.md","required":true,"status":"present","schema":null,"authority":"deterministic_markdown_presentation","evidence_category":"references_existing_evidence","authoritative_evidence":false},
+            {"path":"source-registry.json","required":false,"status":"absent","schema":null,"authority":"adapter_provenance_metadata","evidence_category":"not_evidence","authoritative_evidence":false},
+            {"path":"agent-profiles/manifest.json","required":false,"status":"absent","schema":null,"authority":"deterministic_profile_presentation","evidence_category":"references_existing_evidence_only","authoritative_evidence":false},
+            {"path":"ai-presentations/manifest.json","required":false,"status":"absent","schema":null,"authority":"non_authoritative_presentation","evidence_category":"references_existing_evidence_only","authoritative_evidence":false},
+            {"path":"cache/v1/manifest.json","required":false,"status":"managed_separately","schema":null,"authority":"execution_metadata","evidence_category":"not_evidence","authoritative_evidence":false},
+            {"path":"workspace-map.json","required":false,"status":"intentionally_out_of_scope","schema":null,"authority":"workspace_aggregation_metadata","evidence_category":"composite_navigation_references_not_evidence","authoritative_evidence":false}
           ]
         }
         """;

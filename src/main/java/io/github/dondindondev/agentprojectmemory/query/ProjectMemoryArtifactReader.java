@@ -207,6 +207,7 @@ public final class ProjectMemoryArtifactReader {
     validateArtifactSetEvidenceBoundary(manifest);
 
     Map<String, JsonNode> items = artifactInventoryByPath(manifest.path("artifacts"));
+    validateArtifactInventoryEvidenceBoundary(items);
     String projectMapSchema = requiredItemSchemaValue(
         items,
         PROJECT_MAP,
@@ -275,6 +276,103 @@ public final class ProjectMemoryArtifactReader {
 
     validateArtifactSetPresence(artifactRoot, sourceRegistry, agentProfile, aiPresentation);
     return Optional.of(new ArtifactSetManifest(projectMapSchema, graphSchema));
+  }
+
+  private void validateArtifactInventoryEvidenceBoundary(Map<String, JsonNode> items)
+      throws QueryArtifactException {
+    requireItemEvidenceBoundary(
+        items,
+        ARTIFACT_SET,
+        "contract_provenance_metadata",
+        "non_evidence_metadata",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        PROJECT_MAP,
+        "project_facts",
+        "source_facts_reference_evidence_index",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        PROJECT_GRAPH,
+        "navigation_metadata",
+        "non_evidence_derivation_metadata",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        EVIDENCE_INDEX,
+        "source_backed_evidence",
+        "authoritative_evidence_index",
+        true);
+    requireItemEvidenceBoundary(
+        items,
+        ENDPOINTS_MARKDOWN,
+        "deterministic_markdown_presentation",
+        "references_existing_evidence",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        AGENT_GUIDE_MARKDOWN,
+        "deterministic_markdown_presentation",
+        "references_existing_evidence",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        SOURCE_REGISTRY,
+        "adapter_provenance_metadata",
+        "not_evidence",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        AGENT_PROFILE_MANIFEST,
+        "deterministic_profile_presentation",
+        "references_existing_evidence_only",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        AI_PRESENTATION_MANIFEST,
+        "non_authoritative_presentation",
+        "references_existing_evidence_only",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        CACHE_MANIFEST,
+        "execution_metadata",
+        "not_evidence",
+        false);
+    requireItemEvidenceBoundary(
+        items,
+        WORKSPACE_MAP,
+        "workspace_aggregation_metadata",
+        "composite_navigation_references_not_evidence",
+        false);
+  }
+
+  private void requireItemEvidenceBoundary(
+      Map<String, JsonNode> items,
+      String path,
+      String authority,
+      String evidenceCategory,
+      boolean authoritativeEvidence) throws QueryArtifactException {
+    JsonNode item = items.get(path);
+    if (item == null) {
+      throw new QueryArtifactException("Malformed artifact-set.json.");
+    }
+    requireSupportedText(
+        item,
+        "authority",
+        authority,
+        "Unsupported artifact-set.json evidence boundary.");
+    requireSupportedText(
+        item,
+        "evidence_category",
+        evidenceCategory,
+        "Unsupported artifact-set.json evidence boundary.");
+    JsonNode authoritativeEvidenceNode = item.path("authoritative_evidence");
+    if (!authoritativeEvidenceNode.isBoolean()
+        || authoritativeEvidenceNode.asBoolean() != authoritativeEvidence) {
+      throw new QueryArtifactException("Unsupported artifact-set.json evidence boundary.");
+    }
   }
 
   private void validateArtifactSetEvidenceBoundary(JsonNode manifest) throws QueryArtifactException {

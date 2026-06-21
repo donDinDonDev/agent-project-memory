@@ -94,6 +94,8 @@ final class SpringMvcEndpointOutputGeneratorTest {
     JsonNode sourceRegistry = objectWithText(artifacts, "path", "source-registry.json");
     JsonNode cacheManifest = objectWithText(artifacts, "path", "cache/v1/manifest.json");
     JsonNode workspaceMap = objectWithText(artifacts, "path", "workspace-map.json");
+    JsonNode evidenceIndex = objectWithText(artifacts, "path", "evidence-index.jsonl");
+    JsonNode aiPresentation = objectWithText(artifacts, "path", "ai-presentations/manifest.json");
 
     assertAll(
         () -> assertEquals("1.0", manifest.path("artifact_set_schema_version").asText()),
@@ -117,14 +119,23 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             "source_facts_reference_evidence_index",
             projectMap.path("evidence_category").asText()),
+        () -> assertFalse(projectMap.path("authoritative_evidence").asBoolean()),
+        () -> assertEquals(
+            "authoritative_evidence_index",
+            evidenceIndex.path("evidence_category").asText()),
+        () -> assertTrue(evidenceIndex.path("authoritative_evidence").asBoolean()),
         () -> assertEquals("absent", sourceRegistry.path("status").asText()),
         () -> assertTrue(sourceRegistry.path("schema").isNull()),
+        () -> assertFalse(sourceRegistry.path("authoritative_evidence").asBoolean()),
+        () -> assertFalse(aiPresentation.path("authoritative_evidence").asBoolean()),
         () -> assertEquals("managed_separately", cacheManifest.path("status").asText()),
         () -> assertEquals("not_evidence", cacheManifest.path("evidence_category").asText()),
+        () -> assertFalse(cacheManifest.path("authoritative_evidence").asBoolean()),
         () -> assertEquals("intentionally_out_of_scope", workspaceMap.path("status").asText()),
         () -> assertEquals(
             "composite_navigation_references_not_evidence",
             workspaceMap.path("evidence_category").asText()),
+        () -> assertFalse(workspaceMap.path("authoritative_evidence").asBoolean()),
         () -> assertEquals(
             "1.0",
             JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")))
@@ -178,6 +189,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(
             "not_evidence",
             sourceRegistryArtifact.path("evidence_category").asText()),
+        () -> assertFalse(sourceRegistryArtifact.path("authoritative_evidence").asBoolean()),
         () -> assertEquals(
             expected("v2-local-structured-import", "source-registry.json"),
             Files.readString(outputDirectory.resolve("source-registry.json"))));

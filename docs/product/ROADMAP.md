@@ -2222,8 +2222,10 @@ Current shipped behavior boundary:
 - Current adapter-enabled scans use `project-map.json` `schema_version: "2.0"` plus the
   optional `source-registry.json` provenance artifact.
 - Current unreleased v3 foundation work adds `artifact-set.json` as a generated
-  contract/provenance manifest without making it evidence and without making it a
-  reader/query/migration compatibility requirement.
+  contract/provenance manifest with explicit evidence-authority labels: only
+  `evidence-index.jsonl` is authoritative source-backed evidence, and generated,
+  adapter, profile, AI, cache, workspace, query, release, security-report, chat, and
+  downstream-agent surfaces remain non-evidence.
 - Current query support remains focused on no-adapter v1-compatible artifact sets unless
   a later release explicitly documents adapter-aware or v3-aware query behavior.
 - This section describes planned v3.0 scope plus the current unreleased manifest

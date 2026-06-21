@@ -24,7 +24,8 @@
         "value": "1.0"
       },
       "authority": "contract_provenance_metadata",
-      "evidence_category": "non_evidence_metadata"
+      "evidence_category": "non_evidence_metadata",
+      "authoritative_evidence": false
     },
     {
       "path": "project-map.json",
@@ -36,7 +37,8 @@
         "value": "1.0"
       },
       "authority": "project_facts",
-      "evidence_category": "source_facts_reference_evidence_index"
+      "evidence_category": "source_facts_reference_evidence_index",
+      "authoritative_evidence": false
     },
     {
       "path": "project-graph.json",
@@ -48,7 +50,8 @@
         "value": "1.0"
       },
       "authority": "navigation_metadata",
-      "evidence_category": "non_evidence_derivation_metadata"
+      "evidence_category": "non_evidence_derivation_metadata",
+      "authoritative_evidence": false
     },
     {
       "path": "evidence-index.jsonl",
@@ -57,7 +60,8 @@
       "status": "present",
       "schema": null,
       "authority": "source_backed_evidence",
-      "evidence_category": "authoritative_evidence_index"
+      "evidence_category": "authoritative_evidence_index",
+      "authoritative_evidence": true
     },
     {
       "path": "endpoints.md",
@@ -66,7 +70,8 @@
       "status": "present",
       "schema": null,
       "authority": "deterministic_markdown_presentation",
-      "evidence_category": "references_existing_evidence"
+      "evidence_category": "references_existing_evidence",
+      "authoritative_evidence": false
     },
     {
       "path": "agent-guide.md",
@@ -75,7 +80,8 @@
       "status": "present",
       "schema": null,
       "authority": "deterministic_markdown_presentation",
-      "evidence_category": "references_existing_evidence"
+      "evidence_category": "references_existing_evidence",
+      "authoritative_evidence": false
     },
     {
       "path": "source-registry.json",
@@ -84,7 +90,8 @@
       "status": "absent",
       "schema": null,
       "authority": "adapter_provenance_metadata",
-      "evidence_category": "not_evidence"
+      "evidence_category": "not_evidence",
+      "authoritative_evidence": false
     },
     {
       "path": "agent-profiles/manifest.json",
@@ -93,7 +100,8 @@
       "status": "absent",
       "schema": null,
       "authority": "deterministic_profile_presentation",
-      "evidence_category": "references_existing_evidence_only"
+      "evidence_category": "references_existing_evidence_only",
+      "authoritative_evidence": false
     },
     {
       "path": "ai-presentations/manifest.json",
@@ -102,7 +110,8 @@
       "status": "absent",
       "schema": null,
       "authority": "non_authoritative_presentation",
-      "evidence_category": "references_existing_evidence_only"
+      "evidence_category": "references_existing_evidence_only",
+      "authoritative_evidence": false
     },
     {
       "path": "cache/v1/manifest.json",
@@ -111,7 +120,8 @@
       "status": "managed_separately",
       "schema": null,
       "authority": "execution_metadata",
-      "evidence_category": "not_evidence"
+      "evidence_category": "not_evidence",
+      "authoritative_evidence": false
     },
     {
       "path": "workspace-map.json",
@@ -120,7 +130,8 @@
       "status": "intentionally_out_of_scope",
       "schema": null,
       "authority": "workspace_aggregation_metadata",
-      "evidence_category": "composite_navigation_references_not_evidence"
+      "evidence_category": "composite_navigation_references_not_evidence",
+      "authoritative_evidence": false
     }
   ]
 }
