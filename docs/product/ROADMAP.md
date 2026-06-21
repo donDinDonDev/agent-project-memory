@@ -67,6 +67,11 @@ verification. Signing, SBOM publication, package-manager channels, native images
 container images, CI release workflow changes, dependency workflow automation, and
 release automation remain parked until separately approved, implemented, validated, and
 documented.
+The v2.9.0 release candidate completes the public v3 preparation design: frozen v3.0
+scope, planned schema/API migration, evidence/provenance migration boundary, and release
+readiness direction. It does not implement v3 schema markers, migration behavior,
+runtime surfaces, provider AI, live connectors, release automation, or new distribution
+channels.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2018,12 +2023,12 @@ Release scope:
 - The `v2.8.0` tag and GitHub Release are published with the packaged jar and checksum
   assets.
 
-## v2.9.0: v3 Preparation (Planned)
+## v2.9.0: v3 Preparation (Release Candidate)
 
 Product outcome: freeze the v3.0 product, contract, evidence/provenance, migration, and
 security-review boundaries before v3 implementation starts.
 
-Planned release boundary:
+Release-candidate boundary:
 
 - v2.9 is a planning, design, review, and release-prep track. It must not implement v3
   output schemas, serializers, parsers, readers, migration code, server/API/MCP
@@ -2039,8 +2044,9 @@ Planned release boundary:
   security-review plan, deprecation notes, compatibility-test plan, and release-readiness
   path. Those plans remain prerequisites for v3.0; they do not change current generated
   artifacts by themselves.
-- The current shipped baseline remains `v2.8.0` until a later release is implemented,
-  validated, and published.
+- The current published baseline remains `v2.8.0` until `v2.9.0` is published.
+  The `v2.9.0` release candidate remains a planning/design release and does not ship
+  v3 implementation behavior.
 
 Design constraints:
 
