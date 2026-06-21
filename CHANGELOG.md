@@ -17,6 +17,11 @@ architecture documents.
   release approval gates, credential boundaries, CI/dependency workflow constraints, and
   parked signing, SBOM, package-manager, native image, container, and release automation
   work.
+- Added a local artifact-integrity dry-run helper for packaged release candidates. It
+  validates the candidate jar filename, CLI version output, manifest entrypoint, Maven
+  artifact metadata, exact local dry-run release asset list, and filename-only
+  `SHA256SUMS` contents without publishing, uploading, signing, creating releases,
+  moving tags, requiring secrets, or contacting remote services.
 
 ### Fixed
 

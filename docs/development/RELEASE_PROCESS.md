@@ -185,6 +185,20 @@ filename-only `SHA256SUMS` contents when a release scope approves that work. Tho
 checks are validation only: they must not attach assets, upload artifacts, publish
 checksums, sign files, create releases, move tags, or require secrets.
 
+After `mvn package`, maintainers can run the local artifact-integrity dry-run:
+
+```sh
+bash scripts/release-artifact-integrity-dry-run.sh
+```
+
+The helper validates the expected candidate jar filename, packaged CLI `--version`
+output, jar manifest `Main-Class`, embedded Maven `pom.properties` coordinates, the
+local dry-run release asset list, and a `SHA256SUMS` file with the jar filename only.
+It creates or refreshes only `target/release-artifact-dry-run/` by default. The helper
+does not publish, upload, attach assets, sign files, generate an SBOM, create or move
+tags, create or edit releases, deploy packages, use credentials, or contact remote
+services.
+
 ## Installation Channel Policy
 
 Until a future approved distribution channel changes this document, public binary
