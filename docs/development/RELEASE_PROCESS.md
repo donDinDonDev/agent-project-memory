@@ -115,6 +115,12 @@ Migration notes belong in release notes for released behavior and in README usag
 when everyday users need to change commands, installation steps, schema-version
 allowlists, or generated-output consumption.
 
+For current unreleased development, public docs may describe implemented unreleased
+behavior only when they clearly keep it separate from the latest published release.
+Unreleased migration guidance should stay regeneration-first and should not imply that a
+tag, release artifact, package channel, compatibility promise, or publication action
+exists before release prep and publication have actually happened.
+
 ## Public Surface Review
 
 Before release documentation or release metadata is published, public-facing text should

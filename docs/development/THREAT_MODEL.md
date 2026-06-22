@@ -52,6 +52,13 @@ contract. The read-only query layer still treats artifact files as untrusted inp
 must validate schema markers, required fields, IDs, graph references, evidence
 references, and path safety before rendering results.
 
+The artifact-set manifest is generated contract/provenance metadata, not evidence. When
+present, it is validated before current query output is rendered, including the
+documented artifact presence, schema, authority, evidence-category, and authoritative
+evidence labels. A manifest must not promote generated Markdown, adapter provenance,
+profile output, AI presentation, cache metadata, workspace output, query output, release
+metadata, or other non-evidence surfaces into project evidence.
+
 Persistent incremental cache metadata is execution metadata, not evidence. A normal
 scan without `--incremental` ignores pre-existing cache files; an explicit incremental
 scan may reuse a previously generated output set only after the documented cache and
@@ -109,6 +116,9 @@ The intended security properties are:
 - no raw source bodies, document bodies, generated-source contents, command logs, stack
   traces, credentials, tokens, or secret-looking values in generated metadata or query
   output;
+- bounded defense-in-depth checks for selected display and provenance values such as
+  OpenAPI operation IDs, connector source URLs, local structured source identities,
+  query-rendered path/ID text, and workspace sample evidence IDs;
 - evidence-backed facts remain distinct from inferred relations, uncertain signals,
   document-backed hints, graph derivation metadata, cache metadata, profile output, and
   query output.
@@ -503,6 +513,7 @@ The v1.7 hardening work audits these surfaces against the documented target poli
 | Local Markdown documents | Use default safety exclusions, user rules only for local Markdown, no symlink following, and verified single-link regular-file checks. |
 | Generated-source metadata | Record path-presence metadata only; do not read generated-source contents by default. |
 | Cache metadata | Keep cache files under `.project-memory/cache/v1/`; fail closed on unsafe, stale, corrupt, or inconsistent cache state. |
+| Artifact-set manifest | Treat `artifact-set.json` as contract/provenance metadata; validate schema, presence, authority, and evidence-boundary labels before manifest-backed query rendering. |
 | Graph output | Generate navigation metadata only from existing facts, evidence IDs, and derivation metadata. |
 | Agent profile output | Render selected deterministic Markdown from existing facts and evidence references only. |
 | Query artifact root and files | Read only required direct child artifacts; reject symlinked artifact roots and symlinked, multi-link, or link-count-unverifiable required artifact files; never write during query. |

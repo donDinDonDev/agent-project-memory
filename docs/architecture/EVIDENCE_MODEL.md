@@ -529,9 +529,13 @@ separate security review.
 
 ## Planned v3 Evidence And Provenance Migration Design
 
-This section is a design plan for a future v3 implementation. It is not current shipped
-behavior and does not add evidence fields, evidence types, schema markers, adapters,
-queries, readers, serializers, or migration code.
+This section is a design plan for future v3 behavior beyond the current
+`artifact-set.json` evidence-boundary foundation. Current unreleased behavior already
+keeps `evidence-index.jsonl` as the only authoritative evidence artifact in the
+manifest inventory and validates that boundary when manifest-present query input is
+loaded. The future migration design below does not add further evidence fields,
+evidence types, project-map schema markers, adapters, queries, serializers, or
+migration code by itself.
 
 The planned v3 evidence boundary preserves the current authority model: repository
 source files and accepted local documentation provide evidence for project facts;
@@ -1833,7 +1837,9 @@ Secret-looking value boundary:
 
 - The policy covers obvious credential-like key/value or header/value strings,
   obvious bearer/basic authorization values, and obvious private-key material markers
-  only when such text has already been selected for generated or rendered output.
+  only when such text has already been selected for generated or rendered output,
+  including selected OpenAPI `operationId` values that match the same secret-looking
+  boundary.
 - The policy does not scan the whole repository for secrets, perform entropy-only
   detection, detect every unlabeled or split secret, validate credentials, classify
   secrets by provider, or prove that no secrets exist.

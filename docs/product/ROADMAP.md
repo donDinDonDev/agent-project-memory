@@ -80,6 +80,13 @@ generated artifact set and optional related surfaces, accepts coherent no-adapte
 manifest-present artifact sets without bumping `project-map.json` to
 `schema_version: "3.0"`, adding adapter-aware query behavior, or changing evidence
 semantics.
+Current unreleased v3 development also adds bounded output/provenance and CI hardening
+around secret-like OpenAPI `operationId` values, connector `source_url` identity
+binding, local structured `source_identity` validation, query-rendered path/ID text,
+workspace sample evidence IDs, and workflow action pinning. These are local safety and
+provenance-boundary changes, not vulnerability scanning, complete secret discovery,
+security correctness proof, live connector behavior, provider AI, or release
+automation.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2216,7 +2223,7 @@ change must name the old behavior, new behavior, affected consumers, migration a
 tests or evaluation coverage, release-note impact, and security-review impact before
 implementation.
 
-Current shipped behavior boundary:
+Current behavior boundary:
 
 - Current no-adapter scans remain on `project-map.json` `schema_version: "1.0"`.
 - Current adapter-enabled scans use `project-map.json` `schema_version: "2.0"` plus the
@@ -2226,6 +2233,10 @@ Current shipped behavior boundary:
   `evidence-index.jsonl` is authoritative source-backed evidence, and generated,
   adapter, profile, AI, cache, workspace, query, release, security-report, chat, and
   downstream-agent surfaces remain non-evidence.
+- Current unreleased v3 hardening stays inside local output/provenance and CI
+  boundaries: it redacts or rejects selected unsafe display/provenance values and pins
+  CI actions, without adding broad security product claims, live network connectors,
+  provider-backed AI, release automation, or publication behavior.
 - Current query support remains focused on no-adapter v1-compatible artifact sets unless
   a later release explicitly documents adapter-aware or v3-aware query behavior.
 - This section describes planned v3.0 scope plus the current unreleased manifest

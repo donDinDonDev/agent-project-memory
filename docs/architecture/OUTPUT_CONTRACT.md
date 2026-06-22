@@ -2537,7 +2537,10 @@ OpenAPI operation rules:
 - `http_method` is the normalized HTTP method declared under a spec path item.
 - `path` is the declared OpenAPI/Swagger path template, not a Spring MVC path.
 - `operation_id` is the direct `operationId` value when present and bounded, otherwise
-  `null`.
+  `null`. Secret-like `operationId` values covered by the output redaction policy are
+  emitted with the redaction marker in generated facts, evidence excerpts, generated
+  Markdown, agent guidance, and query-rendered output rather than serializing the raw
+  sensitive-looking value.
 - `tags` contains bounded direct tag strings when present and is an empty array when no
   tags are present or deterministically usable. The initial implementation preserves up
   to eight direct string tags of up to 120 characters each.
@@ -6423,7 +6426,9 @@ Shape rules:
 - `sample_evidence_references[]` is a bounded navigation sample from the member's
   existing `evidence-index.jsonl`. Each item must use the composite workspace reference
   shape with `repo_id`, `evidence_id`, and `artifact: "evidence-index.jsonl"`. These
-  references are not new evidence records and do not imply relation support.
+  references are not new evidence records and do not imply relation support. Unsafe,
+  path-shaped, local, secret-like, non-ASCII, oversized, or otherwise unsupported
+  evidence IDs are skipped as samples rather than serialized into workspace output.
 - `relations.analysis_status: "not_analyzed"` and empty `items[]` are the first
   planned relation boundary. Cross-repo relation emission is parked until a later
   bounded goal accepts deterministic relation families and updates this contract.

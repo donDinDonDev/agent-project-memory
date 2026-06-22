@@ -42,6 +42,10 @@ The tool is not a vulnerability scanner, security correctness engine, complete s
 detector, secret inventory, or credential classification tool. Security hardening is
 focused on local path safety, bounded parsing, evidence integrity, and avoiding
 accidental serialization of sensitive-looking values in generated or rendered output.
+Unreleased hardening may improve these local output and provenance boundaries before the
+next release, but it should not be read as a broader vulnerability-scanning or
+security-certification claim. The supported public vulnerability-reporting line remains
+the latest published release until a newer release is published.
 
 See [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
 threat model, trust boundaries, and redaction limitations.

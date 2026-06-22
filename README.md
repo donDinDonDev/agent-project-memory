@@ -34,6 +34,13 @@ otherwise appear in generated excerpts or rendered query output, while explicitl
 preserving evidence IDs, normalized repository-relative paths, symbols, line ranges,
 confidence, uncertainty, and claim categories.
 
+Current unreleased builds keep that boundary and add defense-in-depth checks around
+set-level artifact metadata, OpenAPI operation IDs, connector source URLs, local
+structured source identities, query-rendered path/ID text, and workspace sample
+evidence IDs. These checks protect generated-output and provenance boundaries; they are
+not vulnerability scanning, complete secret discovery, security correctness proof, or a
+guarantee that every sensitive value in a repository will be detected.
+
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
 product threat model and security limitations.
@@ -745,6 +752,12 @@ Current unreleased development starts that implementation path with a generated
 compatibility validation when the manifest is present: no `project-map.json`
 `schema_version: "3.0"` bump, no adapter-aware query expansion, and no evidence
 semantic change.
+It also includes bounded output/provenance hardening for secret-like OpenAPI
+`operationId` values, connector `source_url` identity binding, local structured
+`source_identity` values, query-rendered path/ID text, workspace sample evidence IDs,
+and CI action pinning. These hardening changes are local output, provenance, and CI
+safety work; they do not make the tool a vulnerability scanner, secret inventory,
+security correctness engine, or release-publication automation.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
 

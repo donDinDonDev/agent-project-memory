@@ -30,6 +30,9 @@ architecture documents.
 - Preserved regeneration-first migration guidance for mixed or unsupported generated
   artifact sets: regenerate the complete `.project-memory/` output set from source and
   configured local adapter exports instead of mutating generated artifacts in place.
+- Clarified public v3 documentation, migration, security-limitation, and product
+  positioning wording for the current unreleased v3 foundation while keeping `v2.9.0`
+  as the latest published release.
 
 ### Security
 
@@ -42,9 +45,19 @@ architecture documents.
 - Manifest-backed query loading now also fails closed if artifact-set metadata promotes
   adapter, AI, generated, profile, cache, workspace, or other non-evidence surfaces to
   authoritative evidence, or demotes `evidence-index.jsonl` from that role.
+- Hardened secret-like OpenAPI `operationId` handling so generated facts, evidence
+  excerpts, Markdown, agent guidance, and query-rendered output keep ordinary operation
+  IDs stable while redacting obvious sensitive values.
 - Hardened connector import `source_url` provenance so same-host URLs are serialized
   only when their provider-specific path matches the accepted Jira, YouTrack, or
   Confluence connector record identity.
+- Hardened local structured import `source_identity` validation so sensitive
+  token-shaped identity fragments are rejected before generated adapter provenance is
+  emitted.
+- Hardened query-rendered path and ID display plus workspace sample evidence ID
+  serialization so unsafe path-shaped or sensitive values do not become generated or
+  rendered navigation text.
+- Pinned GitHub Actions workflow actions by commit for the current CI workflow.
 
 ## [2.9.0] - 2026-06-21
 
