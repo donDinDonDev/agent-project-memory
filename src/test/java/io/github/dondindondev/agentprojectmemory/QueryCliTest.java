@@ -874,7 +874,7 @@ final class QueryCliTest {
   }
 
   @Test
-  void queryListApiOperationsRedactsLegacyTagsWhilePreservingNavigationFields()
+  void queryListApiOperationsRedactsLegacyOperationIdAndTagsWhilePreservingNavigationFields()
       throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
     Path artifactRoot = repositoryRoot.resolve(".project-memory");
@@ -892,7 +892,7 @@ final class QueryCliTest {
                     "spec_path": "src/main/resources/openapi.yml",
                     "http_method": "GET",
                     "path": "/redaction",
-                    "operation_id": "redaction",
+                    "operation_id": "password=FAKE_V300_QUERY_OPERATION_ID_SECRET",
                     "tags": ["password=FAKE_V170_QUERY_TAG_SECRET"],
                     "implementation_status": "not_analyzed",
                     "evidence_ids": ["ev:api:secret"]
@@ -920,10 +920,72 @@ final class QueryCliTest {
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout().contains("api-operation:get:/redaction")),
         () -> assertTrue(result.stdout().contains("path: /redaction")),
+        () -> assertTrue(result.stdout().contains(
+            "operation_id: password=" + OutputRedactor.REDACTION_MARKER)),
         () -> assertTrue(result.stdout().contains("evidence_ids: ev:api:secret")),
         () -> assertTrue(result.stdout().contains(
             "tags: password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_V300_QUERY_OPERATION_ID_SECRET")),
         () -> assertFalse(result.stdout().contains("FAKE_V170_QUERY_TAG_SECRET")),
+        () -> assertTrue(result.stderr().isEmpty()));
+  }
+
+  @Test
+  void queryLookupRedactsMatchedOpenApiOperationIdFromOlderArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    writeArtifacts(artifactRoot, """
+        {
+          "schema_version": "1.0",
+          "api_surface": {
+            "openapi": {
+              "operations": {
+                "items": [
+                  {
+                    "id": "api-operation:get:/redaction",
+                    "module_id": "module:.",
+                    "api_surface_category": "openapi_declared_operation",
+                    "spec_path": "src/main/resources/openapi.yml",
+                    "http_method": "GET",
+                    "path": "/redaction",
+                    "operation_id": "password=FAKE_V300_QUERY_LOOKUP_OPERATION_ID_SECRET",
+                    "tags": ["Orders"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:secret"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """, evidenceRecord(
+        "ev:api:secret",
+        "api_spec",
+        "src/main/resources/openapi.yml",
+        null,
+        null,
+        "operation:get:/redaction",
+        7,
+        7,
+        "operation get /redaction",
+        "high"));
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "symbol",
+        "password=FAKE_V300_QUERY_LOOKUP_OPERATION_ID_SECRET");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("matched_field: operation_id")),
+        () -> assertTrue(result.stdout().contains(
+            "matched_value: password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(result.stdout().contains(
+            "operation_id: password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_V300_QUERY_LOOKUP_OPERATION_ID_SECRET")),
         () -> assertTrue(result.stderr().isEmpty()));
   }
 

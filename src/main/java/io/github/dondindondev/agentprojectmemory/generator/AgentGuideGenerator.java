@@ -2,6 +2,7 @@ package io.github.dondindondev.agentprojectmemory.generator;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -863,7 +864,7 @@ public final class AgentGuideGenerator {
           .append(" from ")
           .append(code(text(operation, "spec_path")))
           .append(", operationId ")
-          .append(code(nullDisplay(nullableText(operation, "operation_id"))))
+          .append(code(nullDisplay(redactedNullableText(operation, "operation_id"))))
           .append(", tags ")
           .append(codeList(stringValues(operation.path("tags"))))
           .append(", implementation_status ")
@@ -3068,6 +3069,10 @@ public final class AgentGuideGenerator {
       return null;
     }
     return value.asText();
+  }
+
+  private String redactedNullableText(JsonNode node, String fieldName) {
+    return OutputRedactor.redactField(fieldName, nullableText(node, fieldName));
   }
 
   private List<String> stringValues(JsonNode values) {

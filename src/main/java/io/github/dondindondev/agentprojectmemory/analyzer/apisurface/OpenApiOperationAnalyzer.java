@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.StreamReadConstraints;
 import com.fasterxml.jackson.core.StreamReadFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.EvidenceExcerpts;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
@@ -410,7 +411,7 @@ public final class OpenApiOperationAnalyzer {
     if (value.isBlank() || value.length() > MAX_OPERATION_ID_LENGTH) {
       return null;
     }
-    return value;
+    return OutputRedactor.redactField("operation_id", value);
   }
 
   private List<String> tags(JsonNode tags) {

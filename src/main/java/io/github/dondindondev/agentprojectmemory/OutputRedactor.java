@@ -70,6 +70,7 @@ public final class OutputRedactor {
           "title",
           "label",
           "display-name",
+          "operation-id",
           "value",
           "reason",
           "tags" -> true;

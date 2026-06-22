@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Objects;
@@ -26,6 +27,55 @@ final class AgentGuideGeneratorTest {
         "For persistence changes, inspect detected entity evidence in "
             + "`src/main/java/com/example/domain/ProjectEntities.java`"));
     assertEvidenceIsAttachedToDetectedClaims(guide);
+  }
+
+  @Test
+  void redactsLegacyOpenApiOperationIdWhenRenderingGuide() throws Exception {
+    String guide = generator.generate("""
+        {
+          "schema_version": "1.0",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": [],
+            "modules": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "api_surface": {
+            "openapi": {
+              "spec_files": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "operations": {
+                "analysis_status": "analyzed",
+                "items": [
+                  {
+                    "id": "api-operation:get:/tokens",
+                    "module_id": "module:.",
+                    "spec_path": "src/main/resources/openapi.yml",
+                    "http_method": "GET",
+                    "path": "/tokens",
+                    "operation_id": "password=FAKE_V300_GUIDE_OPERATION_ID_SECRET",
+                    "tags": ["Tokens"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": []
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """, "");
+
+    assertTrue(guide.contains("operationId `password=" + OutputRedactor.REDACTION_MARKER + "`"));
+    assertFalse(guide.contains("FAKE_V300_GUIDE_OPERATION_ID_SECRET"));
   }
 
   @Test

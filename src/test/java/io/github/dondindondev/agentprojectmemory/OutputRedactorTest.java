@@ -138,6 +138,22 @@ final class OutputRedactorTest {
   }
 
   @Test
+  void fieldRedactionTreatsOperationIdAsFreeTextWhilePreservingOrdinaryIds() {
+    assertAll(
+        () -> assertEquals("createOrder", OutputRedactor.redactField("operation_id", "createOrder")),
+        () -> assertEquals(
+            "password=" + OutputRedactor.REDACTION_MARKER,
+            OutputRedactor.redactField(
+                "operation_id",
+                "password=FAKE_V300_OPENAPI_OPERATION_ID_SECRET")),
+        () -> assertEquals(
+            "Authorization: Bearer " + OutputRedactor.REDACTION_MARKER,
+            OutputRedactor.redactField(
+                "operation_id",
+                "Authorization: Bearer FAKE_V300_OPENAPI_OPERATION_ID_BEARER")));
+  }
+
+  @Test
   void keepsDocumentMentionTokensAsNavigationText() {
     assertEquals("mention token: /ghost", OutputRedactor.redact("mention token: /ghost"));
   }

@@ -2239,7 +2239,7 @@ public final class SpringMvcEndpointOutputGenerator {
           .append(code(operation.path()))
           .append("\n");
       markdown.append("- Operation ID: ")
-          .append(nullableCode(operation.operationId()))
+          .append(nullableCode(OutputRedactor.redactField("operation_id", operation.operationId())))
           .append("\n");
       markdown.append("- Tags: ")
           .append(codeList(redactedStringValues("tags", operation.tags())))

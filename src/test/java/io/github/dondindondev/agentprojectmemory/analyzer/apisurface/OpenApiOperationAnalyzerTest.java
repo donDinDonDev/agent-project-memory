@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.maven.MavenModuleItem;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -177,6 +178,38 @@ final class OpenApiOperationAnalyzerTest {
             operation.tags()),
         () -> assertTrue(analysis.evidence().get(0).excerpt().length() <= 243),
         () -> assertFalse(analysis.evidence().get(0).excerpt().contains("Tag9")),
+        () -> assertEvidenceIdsResolve(analysis));
+  }
+
+  @Test
+  void redactsSecretLikeOperationIdsBeforeOperationFactsAndEvidence() throws Exception {
+    Path repositoryRoot = repository("operation-id-redaction");
+    writeFile(repositoryRoot.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.0
+        paths:
+          /orders:
+            post:
+              operationId: createOrder
+          /tokens:
+            get:
+              operationId: password=FAKE_V300_OPENAPI_OPERATION_ID_SECRET
+        """);
+
+    OpenApiOperationAnalysis analysis = operationAnalyzer.analyze(
+        repositoryRoot,
+        discovery(repositoryRoot, List.of(supportedModule("module:.", "."))).specFiles());
+
+    List<String> operationIds = analysis.operations().stream()
+        .map(OpenApiOperationFact::operationId)
+        .toList();
+    String joinedEvidence = analysis.evidence().toString();
+
+    assertAll(
+        () -> assertEquals(
+            List.of("createOrder", "password=" + OutputRedactor.REDACTION_MARKER),
+            operationIds),
+        () -> assertTrue(joinedEvidence.contains("operationId password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(joinedEvidence.contains("FAKE_V300_OPENAPI_OPERATION_ID_SECRET")),
         () -> assertEvidenceIdsResolve(analysis));
   }
 

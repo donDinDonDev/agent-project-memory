@@ -2072,6 +2072,56 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
+  void openApiOperationIdRedactionCoversGeneratedSurfaces() throws Exception {
+    Path projectPath = tempDir.resolve("api-operation-id-redaction-project");
+    Path outputDirectory = projectPath.resolve(".project-memory");
+    writeFile(projectPath.resolve("pom.xml"), """
+        <project>
+          <modelVersion>4.0.0</modelVersion>
+        </project>
+        """);
+    writeFile(projectPath.resolve("src/main/resources/openapi.yml"), """
+        openapi: 3.0.3
+        paths:
+          /orders:
+            post:
+              operationId: createOrder
+          /tokens:
+            get:
+              operationId: password=FAKE_V300_OPENAPI_OPERATION_ID_SECRET
+        """);
+    Files.createDirectories(outputDirectory);
+
+    SpringMvcEndpointOutputGenerator.Result result = generator.generate(projectPath, outputDirectory);
+
+    String projectMap = Files.readString(outputDirectory.resolve("project-map.json"));
+    String evidenceIndex = Files.readString(outputDirectory.resolve("evidence-index.jsonl"));
+    String endpoints = Files.readString(outputDirectory.resolve("endpoints.md"));
+    String agentGuide = Files.readString(outputDirectory.resolve("agent-guide.md"));
+    String joinedOutput = String.join("\n", projectMap, evidenceIndex, endpoints, agentGuide);
+    JsonNode operations = JSON.readTree(projectMap)
+        .path("api_surface")
+        .path("openapi")
+        .path("operations")
+        .path("items");
+
+    assertAll(
+        () -> assertTrue(result.generated()),
+        () -> assertEquals("createOrder", operations.get(0).path("operation_id").asText()),
+        () -> assertEquals(
+            "password=" + OutputRedactor.REDACTION_MARKER,
+            operations.get(1).path("operation_id").asText()),
+        () -> assertTrue(endpoints.contains("- Operation ID: `createOrder`")),
+        () -> assertTrue(endpoints.contains(
+            "- Operation ID: `password=" + OutputRedactor.REDACTION_MARKER + "`")),
+        () -> assertTrue(agentGuide.contains(
+            "operationId `password=" + OutputRedactor.REDACTION_MARKER + "`")),
+        () -> assertTrue(evidenceIndex.contains(
+            "operationId password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(joinedOutput.contains("FAKE_V300_OPENAPI_OPERATION_ID_SECRET")));
+  }
+
+  @Test
   void invalidOpenApiSpecProducesWarningWithoutEndpointOrOperationFacts() throws Exception {
     Path projectPath = tempDir.resolve("invalid-openapi-project");
     Path outputDirectory = projectPath.resolve(".project-memory");
