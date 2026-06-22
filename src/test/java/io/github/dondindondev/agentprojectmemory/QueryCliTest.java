@@ -1130,6 +1130,254 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryExplainRedactsUnsafeEvidenceIdWithoutMutatingArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String unsafeEvidenceId = "ev:/Users/example/.ssh/id_rsa";
+    String evidenceIndex = evidenceRecord(
+        unsafeEvidenceId,
+        "build_file",
+        "pom.xml",
+        null,
+        null,
+        "pom.xml",
+        1,
+        1,
+        "<project>",
+        "high");
+    writeArtifacts(
+        artifactRoot,
+        "{\"schema_version\":\"1.0\",\"project\":{\"modules\":{\"items\":[]}}}\n",
+        evidenceIndex);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "explain",
+        "evidence",
+        unsafeEvidenceId);
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("Query: explain evidence")),
+        () -> assertTrue(result.stdout().contains("1. " + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("/Users/example/.ssh/id_rsa")),
+        () -> assertTrue(result.stdout().contains("path: pom.xml")),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertEquals(evidenceIndex, Files.readString(artifactRoot.resolve("evidence-index.jsonl"))));
+  }
+
+  @Test
+  void queryRenderersRedactUnsafeGeneratedPathAndIdValuesWithoutMutatingArtifacts()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String unsafePath = "/Users/example/.ssh/id_rsa";
+    String unsafeOperationId = "openapi_operation:module:.:spec:" + unsafePath + ":operation:get:" + unsafePath;
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "api_surface": {
+            "openapi": {
+              "operations": {
+                "items": [
+                  {
+                    "id": "%s",
+                    "module_id": "module:.",
+                    "api_surface_category": "openapi_declared_operation",
+                    "spec_path": "%s",
+                    "http_method": "GET",
+                    "path": "%s",
+                    "operation_id": "%s",
+                    "tags": ["Orders"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:safe"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """.formatted(unsafeOperationId, unsafePath, unsafePath, unsafePath);
+    String graph = """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "node:%s",
+              "kind": "api_operation",
+              "label": "GET /orders",
+              "claim_category": "spec_backed",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "api_surface.openapi.operations.items",
+                "id": "%s"
+              },
+              "evidence_ids": ["ev:api:safe"]
+            },
+            {
+              "id": "node:safe-neighbor",
+              "kind": "type",
+              "label": "%s",
+              "claim_category": "structural",
+              "module_id": "module:.",
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "components.items",
+                "id": "%s"
+              },
+              "evidence_ids": []
+            }
+          ],
+          "edges": [
+            {
+              "id": "edge:unsafe-display",
+              "type": "declares",
+              "source_id": "node:safe-neighbor",
+              "target_id": "node:%s",
+              "claim_category": "structural",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "high",
+              "uncertainty": null,
+              "relation_attributes": {},
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "api_surface.openapi.operations.items",
+                "fields": ["id"]
+              },
+              "evidence_ids": []
+            }
+          ],
+          "relation_statuses": [],
+          "warnings": []
+        }
+        """.formatted(unsafePath, unsafeOperationId, unsafePath, unsafePath, unsafePath);
+    writeArtifacts(
+        artifactRoot,
+        projectMap,
+        evidenceRecord(
+            "ev:api:safe",
+            "api_spec",
+            "src/main/resources/openapi.yml",
+            null,
+            null,
+            "operation:get:/orders",
+            7,
+            7,
+            "operation get /orders",
+            "high"));
+    Files.writeString(artifactRoot.resolve("project-graph.json"), graph);
+
+    CliResult list = runCli("query", repositoryRoot.toString(), "list", "api-operations");
+    CliResult find = runCli("query", repositoryRoot.toString(), "find", "fact", unsafeOperationId);
+    CliResult impact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "src/main/resources/openapi.yml");
+
+    assertAll(
+        () -> assertEquals(0, list.exitCode()),
+        () -> assertEquals(0, find.exitCode()),
+        () -> assertEquals(0, impact.exitCode()),
+        () -> assertTrue(list.stdout().contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(find.stdout().contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(impact.stdout().contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(impact.stdout().contains("match_type: graph_node")),
+        () -> assertTrue(impact.stdout().contains("neighbor_label: " + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(list.stdout().contains(unsafePath)),
+        () -> assertFalse(find.stdout().contains(unsafePath)),
+        () -> assertFalse(impact.stdout().contains(unsafePath)),
+        () -> assertTrue(list.stderr().isEmpty()),
+        () -> assertTrue(find.stderr().isEmpty()),
+        () -> assertTrue(impact.stderr().isEmpty()),
+        () -> assertEquals(projectMap, Files.readString(artifactRoot.resolve("project-map.json"))),
+        () -> assertEquals(graph, Files.readString(artifactRoot.resolve("project-graph.json"))));
+  }
+
+  @Test
+  void queryListKeepsSafeApiRoutesWhileRedactingUnsafePathShapes()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String percentEncodedTraversal = "%2e%2e%2fetc%2fpasswd";
+    String fileUri = "file:///Users/example/.ssh/id_rsa";
+    String generatedArtifactPath = ".project-memory/project-map.json";
+    String externalUrl = "https://example.test/leak";
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "api_surface": {
+            "openapi": {
+              "operations": {
+                "items": [
+                  {
+                    "id": "openapi_operation:safe-users-route",
+                    "module_id": "module:.",
+                    "api_surface_category": "openapi_declared_operation",
+                    "spec_path": "src/main/resources/openapi.yml",
+                    "http_method": "GET",
+                    "path": "/users/{id}",
+                    "operation_id": "getUser",
+                    "tags": ["Users"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:safe"]
+                  },
+                  {
+                    "id": "openapi_operation:unsafe-path-shapes",
+                    "module_id": "module:.",
+                    "api_surface_category": "openapi_declared_operation",
+                    "spec_path": "%s",
+                    "http_method": "GET",
+                    "path": "%s",
+                    "operation_id": "%s",
+                    "tags": ["%s"],
+                    "implementation_status": "not_analyzed",
+                    "evidence_ids": ["ev:api:safe"]
+                  }
+                ]
+              }
+            }
+          }
+        }
+        """.formatted(percentEncodedTraversal, fileUri, generatedArtifactPath, externalUrl);
+    writeArtifacts(
+        artifactRoot,
+        projectMap,
+        evidenceRecord(
+            "ev:api:safe",
+            "api_spec",
+            "src/main/resources/openapi.yml",
+            null,
+            null,
+            "operation:get:/users/{id}",
+            7,
+            7,
+            "operation get /users/{id}",
+            "high"));
+
+    CliResult result = runCli("query", repositoryRoot.toString(), "list", "api-operations");
+
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stdout().contains("path: /users/{id}")),
+        () -> assertTrue(result.stdout().contains("operation_id: getUser")),
+        () -> assertTrue(result.stdout().contains(OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains(percentEncodedTraversal)),
+        () -> assertFalse(result.stdout().contains(fileUri)),
+        () -> assertFalse(result.stdout().contains(generatedArtifactPath)),
+        () -> assertFalse(result.stdout().contains(externalUrl)),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertEquals(projectMap, Files.readString(artifactRoot.resolve("project-map.json"))));
+  }
+
+  @Test
   void queryMissingPathAndNonDirectoryPathReturnQueryInputErrorsWithoutAbsolutePath()
       throws Exception {
     Path missingPath = tempDir.resolve("missing");

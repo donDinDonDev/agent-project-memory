@@ -417,7 +417,7 @@ public final class ProjectMemoryLookupRenderer {
   }
 
   private String safe(String value, boolean redact) {
-    String rendered = redact ? OutputRedactor.redact(value) : value;
+    String rendered = QueryDisplaySafety.sanitize(value);
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
