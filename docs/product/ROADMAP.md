@@ -72,21 +72,22 @@ planned schema/API migration, evidence/provenance migration boundary, and releas
 readiness direction. It does not implement v3 schema markers, migration behavior,
 runtime surfaces, provider AI, live connectors, release automation, or new distribution
 channels.
-Current unreleased development after v2.9.0 starts the v3 implementation path with a
-generated `.project-memory/artifact-set.json` manifest foundation plus bounded
-reader/query compatibility validation when that manifest is present. It inventories the
-generated artifact set and optional related surfaces, accepts coherent no-adapter
+The local v3.0.0 release candidate starts the v3 implementation path with a generated
+`.project-memory/artifact-set.json` manifest foundation plus bounded reader/query
+compatibility validation when that manifest is present. It inventories the generated
+artifact set and optional related surfaces, accepts coherent no-adapter
 `schema_version: "1.0"` query input sets, and fails closed on unsupported or mixed
 manifest-present artifact sets without bumping `project-map.json` to
 `schema_version: "3.0"`, adding adapter-aware query behavior, or changing evidence
 semantics.
-Current unreleased v3 development also adds bounded output/provenance and CI hardening
+The local v3.0.0 release candidate also adds bounded output/provenance and CI hardening
 around secret-like OpenAPI `operationId` values, connector `source_url` identity
 binding, local structured `source_identity` validation, query-rendered path/ID text,
 workspace sample evidence IDs, and workflow action pinning. These are local safety and
 provenance-boundary changes, not vulnerability scanning, complete secret discovery,
 security correctness proof, live connector behavior, provider AI, or release
-automation.
+automation. The v3.0.0 tag, GitHub Release, executable jar, and `SHA256SUMS` assets are
+not published yet.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2140,6 +2141,9 @@ a later release explicitly designs and implements them.
 
 ## v3.0.0: Agent-Native Project Memory Platform
 
+Release status: local release candidate. The `v3.0.0` tag, GitHub Release, executable
+jar, and `SHA256SUMS` assets are not published yet.
+
 Frozen product goal:
 
 v3.0 is planned as a stable local-first, evidence-backed project memory platform for
@@ -2228,16 +2232,16 @@ Current behavior boundary:
 - Current no-adapter scans remain on `project-map.json` `schema_version: "1.0"`.
 - Current adapter-enabled scans use `project-map.json` `schema_version: "2.0"` plus the
   optional `source-registry.json` provenance artifact.
-- Current unreleased v3 foundation work adds `artifact-set.json` as a generated
+- The local v3.0.0 release candidate adds `artifact-set.json` as a generated
   contract/provenance manifest with explicit evidence-authority labels: only
   `evidence-index.jsonl` is authoritative source-backed evidence, and generated,
   adapter, profile, AI, cache, workspace, query, release, security-report, chat, and
   downstream-agent surfaces remain non-evidence.
-- Current unreleased v3 hardening stays inside local output/provenance and CI
-  boundaries: it redacts or rejects selected unsafe display/provenance values and pins
+- The local v3.0.0 release-candidate hardening stays inside local output/provenance and
+  CI boundaries: it redacts or rejects selected unsafe display/provenance values and pins
   CI actions, without adding broad security product claims, live network connectors,
   provider-backed AI, release automation, or publication behavior.
 - Current query support remains focused on no-adapter v1-compatible artifact sets unless
   a later release explicitly documents adapter-aware or v3-aware query behavior.
-- This section describes planned v3.0 scope plus the current unreleased manifest
-  foundation, not a published v3.0 release.
+- This section describes the local v3.0.0 release candidate, not a published v3.0.0
+  release.

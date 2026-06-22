@@ -263,12 +263,12 @@ or release automation unless a later release separately designs, implements, tes
 documents, and reviews that surface.
 
 As v3 implementation work becomes concrete, public docs should keep three states
-separate: the latest published release, current unreleased development, and future v3
-plans. Security hardening should be described as bounded local output/provenance,
-path/display, and release-process safety unless a later release explicitly implements a
-broader security product surface. Regeneration-first migration guidance remains the
-default for unsupported or mixed generated artifact sets; public wording should not ask
-users to edit generated `.project-memory/` files in place.
+separate: the latest published release, local release-candidate or unreleased
+development, and future v3 plans. Security hardening should be described as bounded
+local output/provenance, path/display, and release-process safety unless a later release
+explicitly implements a broader security product surface. Regeneration-first migration
+guidance remains the default for unsupported or mixed generated artifact sets; public
+wording should not ask users to edit generated `.project-memory/` files in place.
 
 ## Explicit Non-Goals
 

@@ -530,7 +530,7 @@ separate security review.
 ## Planned v3 Evidence And Provenance Migration Design
 
 This section is a design plan for future v3 behavior beyond the current
-`artifact-set.json` evidence-boundary foundation. Current unreleased behavior already
+`artifact-set.json` evidence-boundary foundation. The local v3.0.0 release candidate
 keeps `evidence-index.jsonl` as the only authoritative evidence artifact in the
 manifest inventory and validates that boundary when manifest-present query input is
 loaded. The future migration design below does not add further evidence fields,

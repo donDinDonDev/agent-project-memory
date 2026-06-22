@@ -34,12 +34,13 @@ otherwise appear in generated excerpts or rendered query output, while explicitl
 preserving evidence IDs, normalized repository-relative paths, symbols, line ranges,
 confidence, uncertainty, and claim categories.
 
-Current unreleased builds keep that boundary and add defense-in-depth checks around
-set-level artifact metadata, OpenAPI operation IDs, connector source URLs, local
+The local v3.0.0 release candidate keeps that boundary and adds defense-in-depth checks
+around set-level artifact metadata, OpenAPI operation IDs, connector source URLs, local
 structured source identities, query-rendered path/ID text, and workspace sample
 evidence IDs. These checks protect generated-output and provenance boundaries; they are
 not vulnerability scanning, complete secret discovery, security correctness proof, or a
-guarantee that every sensitive value in a repository will be detected.
+guarantee that every sensitive value in a repository will be detected. The v3.0.0
+release candidate is prepared locally and is not published yet.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
@@ -88,7 +89,7 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-2.9.0.jar
+target/agent-project-memory-3.0.0.jar
 ```
 
 Release artifact and checksum verification expectations are documented in
@@ -99,25 +100,25 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project
 ```
 
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar --help
-java -jar target/agent-project-memory-2.9.0.jar help
-java -jar target/agent-project-memory-2.9.0.jar scan --help
-java -jar target/agent-project-memory-2.9.0.jar --version
-java -jar target/agent-project-memory-2.9.0.jar version
+java -jar target/agent-project-memory-3.0.0.jar --help
+java -jar target/agent-project-memory-3.0.0.jar help
+java -jar target/agent-project-memory-3.0.0.jar scan --help
+java -jar target/agent-project-memory-3.0.0.jar --version
+java -jar target/agent-project-memory-3.0.0.jar version
 ```
 
 Current builds also support opt-in local policy profile selection:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --policy-profile guarded-local
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --policy-profile docs-focused
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --policy-profile adapter-local
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --policy-profile guarded-local
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --policy-profile docs-focused
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --policy-profile adapter-local
 ```
 
 Supported policy profiles are `guarded-local`, `docs-focused`, and `adapter-local`.
@@ -133,8 +134,8 @@ profiles, adapter enablement outside `adapter-local`, document path-rule expansi
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -149,7 +150,7 @@ Current builds also support explicitly enabled mock/no-network AI presentation
 artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
 ```
 
 Default scans do not create AI presentation artifacts. When enabled, the mock/no-network
@@ -167,7 +168,7 @@ presentation slice runs a full scan and skips incremental cache metadata refresh
 Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -185,18 +186,18 @@ Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project relations <id> --direction incoming
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project agent-context
-java -jar target/agent-project-memory-2.9.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project agent-context
+java -jar target/agent-project-memory-3.0.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -263,7 +264,7 @@ Current builds also include workspace map aggregation over explicitly configured
 member roots:
 
 ```sh
-java -jar target/agent-project-memory-2.9.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
+java -jar target/agent-project-memory-3.0.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
 ```
 
 The accepted workspace config shape is an explicit local YAML file:
@@ -525,7 +526,7 @@ Compatibility and migration notes:
   credentials, adapter-aware query behavior, raw issue/page/article bodies, comments,
   rendered HTML, attachment details, configured import paths, or local absolute paths
   are serialized by default.
-- The current unreleased v3 artifact-set foundation adds
+- The v3.0.0 release candidate adds
   `.project-memory/artifact-set.json` with `artifact_set_schema_version: "1.0"` as a
   set-level generated-output manifest. No-adapter `project-map.json` remains on
   `schema_version: "1.0"`, adapter-enabled `project-map.json` remains on
@@ -597,6 +598,8 @@ Start here:
 
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
+- v3.0 release-candidate summary:
+  [docs/product/V3_0_RELEASE_NOTES.md](docs/product/V3_0_RELEASE_NOTES.md).
 - v2.9 release summary:
   [docs/product/V2_9_RELEASE_NOTES.md](docs/product/V2_9_RELEASE_NOTES.md).
 - v2.8 release summary:
@@ -747,7 +750,7 @@ The v2.9.0 release freezes the planned v3.0 scope, documents the v3 schema/API
 migration and evidence/provenance boundary, and keeps all v3 schemas, migration
 behavior, runtime surfaces, and distribution-channel changes as future work until a
 later implementation release.
-Current unreleased development starts that implementation path with a generated
+The local v3.0.0 release candidate starts that implementation path with a generated
 `.project-memory/artifact-set.json` manifest foundation plus bounded reader/query
 compatibility validation when the manifest is present: no `project-map.json`
 `schema_version: "3.0"` bump, no adapter-aware query expansion, and no evidence
@@ -758,6 +761,8 @@ It also includes bounded output/provenance hardening for secret-like OpenAPI
 and CI action pinning. These hardening changes are local output, provenance, and CI
 safety work; they do not make the tool a vulnerability scanner, secret inventory,
 security correctness engine, or release-publication automation.
+The v3.0.0 tag, GitHub Release, executable jar, and `SHA256SUMS` assets are not
+published yet.
 Signing, SBOM publication, package-manager channels, native images, container images,
 release automation, and automatic publication remain parked.
 
