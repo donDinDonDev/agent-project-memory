@@ -8,6 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.node.ArrayNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import io.github.dondindondev.agentprojectmemory.analyzer.ScanPathContainment;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -21,10 +22,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public final class WorkspaceMapGenerator {
   private static final String WORKSPACE_SCHEMA_VERSION = "1.0";
@@ -37,9 +40,44 @@ public final class WorkspaceMapGenerator {
   private static final int MAX_ARTIFACT_BYTES = 128 * 1024 * 1024;
   private static final int MAX_JSON_NESTING_DEPTH = 256;
   private static final int MAX_JSON_STRING_LENGTH = 1024 * 1024;
+  private static final int MAX_SAMPLE_EVIDENCE_ID_LENGTH = 1024;
   private static final int MAX_SAMPLE_EVIDENCE_REFERENCES = 5;
   private static final Set<String> SUPPORTED_PROJECT_MAP_SCHEMAS = Set.of("1.0", "2.0");
   private static final Set<String> SUPPORTED_SOURCE_REGISTRY_SCHEMAS = Set.of("1.0", "1.1", "1.2");
+  private static final Set<String> SUPPORTED_EVIDENCE_SOURCE_TYPES = Set.of(
+      "annotation",
+      "api_spec",
+      "build_file",
+      "code_symbol",
+      "config_file",
+      "document",
+      "path_signal",
+      "test_file");
+  private static final Set<String> SENSITIVE_PATH_SEGMENTS = Set.of(
+      ".aws",
+      ".azure",
+      ".docker",
+      ".env",
+      ".gcp",
+      ".gnupg",
+      ".kube",
+      ".netrc",
+      ".npmrc",
+      ".pypirc",
+      ".ssh",
+      "authorized_keys",
+      "id_dsa",
+      "id_ecdsa",
+      "id_ed25519",
+      "id_rsa",
+      "known_hosts",
+      "passwd");
+  private static final Pattern EVIDENCE_ID_PATH_KEY =
+      Pattern.compile("[A-Za-z0-9._~/%+@=$,()\\[\\]-]+");
+  private static final Pattern EVIDENCE_ID_LINE_RANGE =
+      Pattern.compile("(?:unknown|[1-9][0-9]*-[1-9][0-9]*)");
+  private static final Pattern EVIDENCE_ID_SYMBOL_KEY =
+      Pattern.compile("[A-Za-z0-9._~/%+@#=$,()\\[\\]:-]+");
   private static final Set<String> EVIDENCE_FIELDS = Set.of(
       "id",
       "source_type",
@@ -330,11 +368,186 @@ public final class WorkspaceMapGenerator {
             "Duplicate evidence id in evidence-index.jsonl.");
       }
       if (sampleIds.size() < MAX_SAMPLE_EVIDENCE_REFERENCES) {
-        sampleIds.add(id);
+        if (isSafeSampleEvidenceId(id)) {
+          sampleIds.add(id);
+        }
       }
       records.add(record);
     }
     return new EvidenceIndex(List.copyOf(records), Set.copyOf(byId.keySet()), List.copyOf(sampleIds));
+  }
+
+  private boolean isSafeSampleEvidenceId(String evidenceId) {
+    if (evidenceId == null
+        || evidenceId.isBlank()
+        || evidenceId.length() > MAX_SAMPLE_EVIDENCE_ID_LENGTH
+        || OutputRedactor.isCredentialKey(evidenceId)
+        || !evidenceId.equals(OutputRedactor.redact(evidenceId))
+        || !isPrintableAscii(evidenceId)
+        || !evidenceId.startsWith("ev:")
+        || containsUnsafePathOrIdShape(evidenceId)) {
+      return false;
+    }
+
+    String withoutPrefix = evidenceId.substring("ev:".length());
+    int pathEnd = withoutPrefix.indexOf(':');
+    if (pathEnd <= 0) {
+      return false;
+    }
+    int lineRangeEnd = withoutPrefix.indexOf(':', pathEnd + 1);
+    if (lineRangeEnd <= pathEnd + 1) {
+      return false;
+    }
+    int sourceTypeEnd = withoutPrefix.indexOf(':', lineRangeEnd + 1);
+    if (sourceTypeEnd <= lineRangeEnd + 1 || sourceTypeEnd == withoutPrefix.length() - 1) {
+      return false;
+    }
+
+    String pathKey = withoutPrefix.substring(0, pathEnd);
+    String lineRange = withoutPrefix.substring(pathEnd + 1, lineRangeEnd);
+    String sourceType = withoutPrefix.substring(lineRangeEnd + 1, sourceTypeEnd);
+    String symbolKey = withoutPrefix.substring(sourceTypeEnd + 1);
+
+    return isSafeEvidencePathKey(pathKey)
+        && EVIDENCE_ID_LINE_RANGE.matcher(lineRange).matches()
+        && SUPPORTED_EVIDENCE_SOURCE_TYPES.contains(sourceType)
+        && EVIDENCE_ID_SYMBOL_KEY.matcher(symbolKey).matches()
+        && !containsUnsafePathOrIdShape(pathKey)
+        && !containsUnsafePathOrIdShape(symbolKey);
+  }
+
+  private boolean isSafeEvidencePathKey(String pathKey) {
+    return !pathKey.startsWith("/")
+        && !pathKey.startsWith("./")
+        && !pathKey.startsWith("../")
+        && !pathKey.contains("//")
+        && !pathKey.contains("\\")
+        && EVIDENCE_ID_PATH_KEY.matcher(pathKey).matches();
+  }
+
+  private boolean isPrintableAscii(String value) {
+    for (int index = 0; index < value.length(); index++) {
+      char current = value.charAt(index);
+      if (current < 0x21 || current > 0x7e) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  private boolean containsUnsafePathOrIdShape(String value) {
+    return containsUnsafePathOrIdShapeCandidate(value)
+        || containsUnsafePathOrIdShapeCandidate(percentDecode(value));
+  }
+
+  private boolean containsUnsafePathOrIdShapeCandidate(String value) {
+    if (value == null || value.isEmpty()) {
+      return false;
+    }
+    String normalized = value.replace('\\', '/');
+    String lower = normalized.toLowerCase(Locale.ROOT);
+    return containsUnsafeLocalPathPrefix(normalized, lower)
+        || containsUnsafePathTraversal(lower)
+        || containsUrlLikePath(lower)
+        || containsGeneratedArtifactPath(lower)
+        || containsSensitivePathSegment(normalized);
+  }
+
+  private boolean containsUnsafeLocalPathPrefix(String value, String lower) {
+    return containsDelimited(value, "/Users/")
+        || containsDelimited(lower, "/home/")
+        || containsDelimited(lower, "/root/")
+        || containsDelimited(lower, "/private/")
+        || containsDelimited(lower, "/var/folders/")
+        || containsDelimited(lower, "/tmp/")
+        || containsDelimited(lower, "/etc/")
+        || containsDelimited(lower, "/proc/")
+        || containsDelimited(lower, "/sys/")
+        || containsDelimited(lower, "/dev/")
+        || containsDelimited(lower, "/volumes/")
+        || lower.matches(".*(^|[\\s:=,;()\\[\\]{}\"'`])[a-z]:/.*")
+        || lower.startsWith("~/")
+        || lower.contains("=~/")
+        || lower.contains(":~/");
+  }
+
+  private boolean containsDelimited(String value, String token) {
+    int index = value.indexOf(token);
+    while (index >= 0) {
+      if (index == 0 || isBoundary(value.charAt(index - 1))) {
+        return true;
+      }
+      index = value.indexOf(token, index + 1);
+    }
+    return false;
+  }
+
+  private boolean isBoundary(char value) {
+    return Character.isWhitespace(value)
+        || value == ':'
+        || value == '='
+        || value == ','
+        || value == ';'
+        || value == '('
+        || value == ')'
+        || value == '['
+        || value == ']'
+        || value == '{'
+        || value == '}'
+        || value == '"'
+        || value == '\''
+        || value == '`';
+  }
+
+  private boolean containsUnsafePathTraversal(String lower) {
+    return lower.startsWith("../")
+        || lower.contains("/../")
+        || lower.endsWith("/..")
+        || lower.startsWith("./")
+        || lower.contains("/./")
+        || lower.endsWith("/.");
+  }
+
+  private boolean containsUrlLikePath(String lower) {
+    return lower.matches(".*(^|[\\s:=,;()\\[\\]{}\"'`])[a-z][a-z0-9+.-]*://.*")
+        || lower.matches(".*(^|[\\s:=,;()\\[\\]{}\"'`])file:.*");
+  }
+
+  private boolean containsGeneratedArtifactPath(String lower) {
+    return ".project-memory".equals(lower)
+        || lower.startsWith(".project-memory/")
+        || lower.contains("/.project-memory/")
+        || lower.contains(":.project-memory/")
+        || lower.contains("=.project-memory/");
+  }
+
+  private boolean containsSensitivePathSegment(String value) {
+    for (String segment : value.split("[/:=&#?\\s]+")) {
+      if (SENSITIVE_PATH_SEGMENTS.contains(segment.toLowerCase(Locale.ROOT))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private String percentDecode(String value) {
+    StringBuilder decoded = new StringBuilder(value.length());
+    for (int index = 0; index < value.length(); index++) {
+      char current = value.charAt(index);
+      if (current == '%' && index + 2 < value.length()) {
+        int high = Character.digit(value.charAt(index + 1), 16);
+        int low = Character.digit(value.charAt(index + 2), 16);
+        if (high >= 0 && low >= 0) {
+          decoded.append(new String(
+              new byte[] {(byte) ((high << 4) + low)},
+              StandardCharsets.UTF_8));
+          index += 2;
+          continue;
+        }
+      }
+      decoded.append(current);
+    }
+    return decoded.toString();
   }
 
   private WorkspaceArtifactException malformedEvidenceIndex() {

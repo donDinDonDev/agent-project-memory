@@ -36,13 +36,15 @@ final class WorkspaceMapGeneratorTest {
     writeMemberArtifacts(
         orders,
         "1.0",
-        List.of("ev:orders:pom", "ev:orders:controller"),
+        List.of(
+            "ev:pom.xml:1-1:build_file:pom.xml",
+            "ev:src/main/java/com/example/orders/OrderController.java:20-20:code_symbol:com.example.orders.OrderController"),
         true,
         null);
     writeMemberArtifacts(
         billing,
         "2.0",
-        List.of("ev:billing:pom"),
+        List.of("ev:pom.xml:1-1:build_file:pom.xml"),
         true,
         "1.2");
     Path config = writeWorkspaceConfig(workspaceRoot, """
@@ -85,7 +87,7 @@ final class WorkspaceMapGeneratorTest {
         () -> assertEquals(2, firstMember.path("evidence_record_count").asInt()),
         () -> assertEquals("orders", firstMember.path("sample_evidence_references").get(0)
             .path("repo_id").asText()),
-        () -> assertEquals("ev:orders:pom", firstMember.path("sample_evidence_references").get(0)
+        () -> assertEquals("ev:pom.xml:1-1:build_file:pom.xml", firstMember.path("sample_evidence_references").get(0)
             .path("evidence_id").asText()),
         () -> assertEquals("evidence-index.jsonl", firstMember.path("sample_evidence_references").get(0)
             .path("artifact").asText()),
@@ -114,8 +116,18 @@ final class WorkspaceMapGeneratorTest {
     Path workspaceRoot = workspace("monorepo");
     Path ordersService = workspaceRoot.resolve("platform/services/orders");
     Path sharedLibrary = workspaceRoot.resolve("platform/libs/shared");
-    writeMemberArtifacts(ordersService, "1.0", List.of("ev:orders:pom"), false, null);
-    writeMemberArtifacts(sharedLibrary, "1.0", List.of("ev:shared:pom"), false, null);
+    writeMemberArtifacts(
+        ordersService,
+        "1.0",
+        List.of("ev:pom.xml:1-1:build_file:pom.xml"),
+        false,
+        null);
+    writeMemberArtifacts(
+        sharedLibrary,
+        "1.0",
+        List.of("ev:pom.xml:1-1:build_file:pom.xml"),
+        false,
+        null);
     Path config = writeWorkspaceConfig(workspaceRoot, """
         version: 1
         members:
@@ -154,16 +166,16 @@ final class WorkspaceMapGeneratorTest {
         orders,
         "1.0",
         List.of(
-            "ev:src/main/java/com/example/orders/OrderClient.java:12-12:com.example.orders.OrderClient:OrderClient",
-            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:com.example.shared.CheckoutEvent:CheckoutEvent"),
+            "ev:src/main/java/com/example/orders/OrderClient.java:12-12:code_symbol:com.example.orders.OrderClient",
+            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:code_symbol:com.example.shared.CheckoutEvent"),
         true,
         null);
     writeMemberArtifacts(
         billing,
         "1.0",
         List.of(
-            "ev:src/main/java/com/example/billing/OrderController.java:20-20:com.example.billing.OrderController#get:@GetMapping",
-            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:com.example.shared.CheckoutEvent:CheckoutEvent"),
+            "ev:src/main/java/com/example/billing/OrderController.java:20-20:code_symbol:com.example.billing.OrderController",
+            "ev:src/main/java/com/example/shared/CheckoutEvent.java:8-8:code_symbol:com.example.shared.CheckoutEvent"),
         true,
         null);
     Path config = writeWorkspaceConfig(workspaceRoot, """
@@ -193,6 +205,67 @@ final class WorkspaceMapGeneratorTest {
   }
 
   @Test
+  void omitsUnsafeEvidenceIdsFromWorkspaceSamplesWithoutMutatingMemberArtifacts()
+      throws Exception {
+    Path workspaceRoot = workspace("unsafe-evidence-id-samples");
+    Path service = workspaceRoot.resolve("service");
+    writeMemberArtifacts(
+        service,
+        "1.0",
+        List.of(
+            "not-an-evidence-id",
+            "ev:src/main/java/com/example/CredentialLeak.java:4-4:code_symbol:FAKE_V300_WORKSPACE_TOKEN",
+            "ev:/Users/denispapin/.ssh/id_rsa:1-1:document:id_rsa",
+            "ev:src/main/java/com/example/Secret.java:1-1:code_symbol:password=abc123",
+            "ev:src/main/java/com/example/Unicode.java:1-1:code_symbol:\u043a\u043b\u044e\u0447",
+            "ev:src/main/java/com/example/Long.java:1-1:code_symbol:" + "A".repeat(1024),
+            "ev:src/main/java/com/example/Encoded.java:1-1:code_symbol:%2FUsers%2Fdenispapin%2F.env",
+            "ev:src/main/java/com/example/Safe.java:7-7:code_symbol:com.example.Safe"),
+        false,
+        null);
+    String evidenceIndexBefore = Files.readString(
+        service.resolve(".project-memory/evidence-index.jsonl"));
+    Path config = writeWorkspaceConfig(workspaceRoot, """
+        version: 1
+        members:
+          - repo_id: service
+            root: service
+        """);
+
+    WorkspaceMapGenerator.Result result = generator.generate(loader.load(config.toString()));
+
+    JsonNode workspaceMap = readWorkspaceMap(workspaceRoot);
+    JsonNode member = workspaceMap.path("members").get(0);
+    JsonNode samples = member.path("sample_evidence_references");
+    String output = workspaceMap.toString();
+
+    assertAll(
+        () -> assertEquals(1, result.memberCount()),
+        () -> assertEquals(0, result.diagnosticCount()),
+        () -> assertEquals("present", member.path("artifact_status").asText()),
+        () -> assertEquals(8, member.path("evidence_record_count").asInt()),
+        () -> assertEquals(1, samples.size()),
+        () -> assertEquals("service", samples.get(0).path("repo_id").asText()),
+        () -> assertEquals(
+            "ev:src/main/java/com/example/Safe.java:7-7:code_symbol:com.example.Safe",
+            samples.get(0).path("evidence_id").asText()),
+        () -> assertEquals("evidence-index.jsonl", samples.get(0).path("artifact").asText()),
+        () -> assertFalse(output.contains("not-an-evidence-id")),
+        () -> assertFalse(output.contains("FAKE_V300_WORKSPACE_TOKEN")),
+        () -> assertFalse(output.contains("password=abc123")),
+        () -> assertFalse(output.contains("\u043a\u043b\u044e\u0447")),
+        () -> assertFalse(output.contains("Long.java")),
+        () -> assertFalse(output.contains("%2FUsers%2Fdenispapin%2F.env")),
+        () -> assertFalse(output.contains("/Users/denispapin")),
+        () -> assertFalse(output.contains(".ssh")),
+        () -> assertFalse(output.contains(".env")),
+        () -> assertFalse(output.contains("id_rsa")),
+        () -> assertEquals(
+            evidenceIndexBefore,
+            Files.readString(service.resolve(".project-memory/evidence-index.jsonl"))));
+  }
+
+  @Test
   void recordsMissingAndInvalidMemberArtifactsAsBoundedDiagnostics() throws Exception {
     Path workspaceRoot = workspace("diagnostics");
     Path missing = workspaceRoot.resolve("services/missing-artifacts");
@@ -200,7 +273,9 @@ final class WorkspaceMapGeneratorTest {
     Files.createDirectories(missing);
     Files.createDirectories(invalid.resolve(".project-memory"));
     Files.writeString(invalid.resolve(".project-memory/project-map.json"), "{not-json");
-    Files.writeString(invalid.resolve(".project-memory/evidence-index.jsonl"), evidenceRecord("ev:invalid"));
+    Files.writeString(
+        invalid.resolve(".project-memory/evidence-index.jsonl"),
+        evidenceRecord("ev:pom.xml:1-1:build_file:pom.xml"));
     Path config = writeWorkspaceConfig(workspaceRoot, """
         version: 1
         members:
@@ -234,7 +309,7 @@ final class WorkspaceMapGeneratorTest {
   void rejectsSymlinkedWorkspaceOutputDirectoryWithoutWritingOutsideRoot() throws Exception {
     Path workspaceRoot = workspace("symlinked-output");
     Path service = workspaceRoot.resolve("service");
-    writeMemberArtifacts(service, "1.0", List.of("ev:service:pom"), false, null);
+    writeMemberArtifacts(service, "1.0", List.of("ev:pom.xml:1-1:build_file:pom.xml"), false, null);
     Path outsideOutput = tempDir.resolve("outside-output");
     Files.createDirectories(outsideOutput);
     assumeTrue(createSymbolicLink(workspaceRoot.resolve(".project-memory"), outsideOutput));
@@ -258,7 +333,7 @@ final class WorkspaceMapGeneratorTest {
   void rejectsHardlinkedWorkspaceMapTargetWithoutWritingOutsideAlias() throws Exception {
     Path workspaceRoot = workspace("hardlinked-output");
     Path service = workspaceRoot.resolve("service");
-    writeMemberArtifacts(service, "1.0", List.of("ev:service:pom"), false, null);
+    writeMemberArtifacts(service, "1.0", List.of("ev:pom.xml:1-1:build_file:pom.xml"), false, null);
     Files.createDirectories(workspaceRoot.resolve(".project-memory"));
     Path outsideWorkspaceMap = tempDir.resolve("outside-workspace-map.json");
     Files.writeString(outsideWorkspaceMap, "outside content");
