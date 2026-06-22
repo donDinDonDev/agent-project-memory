@@ -219,6 +219,61 @@ final class LocalStructuredImportAdapterTest {
   }
 
   @Test
+  void rejectsDelimitedSensitiveSourceIdentityFragmentsBeforeSerialization()
+      throws Exception {
+    List<String> unsafeIdentities = List.of(
+        "token#SHOULD_NOT_RENDER_TOKEN",
+        "api_key=SHOULD_NOT_RENDER_EQUALS_API_KEY",
+        "api_key#SHOULD_NOT_RENDER_API_KEY",
+        "api-key#SHOULD_NOT_RENDER_HYPHEN_API_KEY",
+        "client-secret#SHOULD_NOT_RENDER_CLIENT_SECRET",
+        "issues/PM-302=api_key:SHOULD_NOT_RENDER_EMBEDDED_EQUALS_API_KEY",
+        "issues/PM-302#api_key:SHOULD_NOT_RENDER_EMBEDDED_API_KEY");
+    String records = unsafeIdentities.stream()
+        .map(identity -> localExportRecord(
+            identity,
+            "Rejected " + identity,
+            "Rejected body SHOULD_NOT_RENDER_REJECTED_BODY"))
+        .collect(Collectors.joining(",\n"));
+    Path importFile = writeImportFile("""
+        {
+          "format": "agent-project-memory.local_structured_import.v1",
+          "records": [
+        %s,
+        %s
+          ]
+        }
+        """.formatted(
+            records,
+            localExportRecord(
+                "services/orders/issues/PM-301",
+                "Accepted issue-like identity",
+                "Accepted body")));
+
+    AdapterIngestionResult result = adapter.read(
+        tempDir,
+        AdapterLocalImport.localStructuredImport(tempDir.relativize(importFile).toString()));
+    String registryJson = serializer.serialize(result);
+
+    assertAll(
+        () -> assertEquals(1, result.sourceDocuments().size()),
+        () -> assertEquals("services/orders/issues/PM-301", result.sourceDocuments().get(0).sourceIdentity()),
+        () -> assertEquals(unsafeIdentities.size(), result.diagnostics().size()),
+        () -> assertEquals(unsafeIdentities.size(), result.rejectedCount()),
+        () -> assertTrue(result.diagnostics().stream()
+            .allMatch(diagnostic -> "provenance_missing_record_rejected".equals(diagnostic.signal()))),
+        () -> assertFalse(registryJson.contains("SHOULD_NOT_RENDER")),
+        () -> assertFalse(registryJson.contains("token#")),
+        () -> assertFalse(registryJson.contains("api_key=")),
+        () -> assertFalse(registryJson.contains("api_key#")),
+        () -> assertFalse(registryJson.contains("api-key#")),
+        () -> assertFalse(registryJson.contains("client-secret#")),
+        () -> assertFalse(registryJson.contains("PM-302=api_key")),
+        () -> assertFalse(registryJson.contains("PM-302#api_key")),
+        () -> assertTrue(registryJson.contains("services/orders/issues/PM-301")));
+  }
+
+  @Test
   void capsRecordProcessingAndReportsBoundedDiagnostic() throws Exception {
     String records = IntStream.rangeClosed(1, LocalStructuredImportAdapter.MAX_RECORDS + 1)
         .mapToObj(index -> """

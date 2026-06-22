@@ -345,22 +345,22 @@ public final class LocalStructuredImportAdapter {
 
   private static boolean sensitiveSourceIdentitySegment(String segment) {
     String lowerCase = segment.toLowerCase(Locale.ROOT);
-    int delimiter = firstSensitiveKeyDelimiter(lowerCase);
-    String keyCandidate = delimiter >= 0 ? lowerCase.substring(0, delimiter) : lowerCase;
-    String normalizedKey = keyCandidate.replace("-", "").replace("_", "");
-    return SENSITIVE_SOURCE_IDENTITY_SEGMENTS.contains(normalizedKey);
+    int start = 0;
+    for (int index = 0; index <= lowerCase.length(); index++) {
+      if (index == lowerCase.length() || sensitiveKeyDelimiter(lowerCase.charAt(index))) {
+        String keyCandidate = lowerCase.substring(start, index);
+        String normalizedKey = keyCandidate.replace("-", "").replace("_", "");
+        if (SENSITIVE_SOURCE_IDENTITY_SEGMENTS.contains(normalizedKey)) {
+          return true;
+        }
+        start = index + 1;
+      }
+    }
+    return false;
   }
 
-  private static int firstSensitiveKeyDelimiter(String value) {
-    int colon = value.indexOf(':');
-    int equals = value.indexOf('=');
-    if (colon < 0) {
-      return equals;
-    }
-    if (equals < 0) {
-      return colon;
-    }
-    return Math.min(colon, equals);
+  private static boolean sensitiveKeyDelimiter(char value) {
+    return value == ':' || value == '=' || value == '#';
   }
 
   private String boundedTitle(String value) {

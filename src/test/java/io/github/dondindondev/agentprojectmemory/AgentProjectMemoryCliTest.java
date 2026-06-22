@@ -2630,6 +2630,55 @@ final class AgentProjectMemoryCliTest {
             },
             {
               "source_type": "local_export",
+              "source_identity": "token#FAKE_REJECTED_HASH_TOKEN",
+              "title": "Rejected hash token",
+              "body": "FAKE_REJECTED_HASH_TOKEN_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "api_key=FAKE_REJECTED_EQUALS_API_KEY",
+              "title": "Rejected equals api key",
+              "body": "FAKE_REJECTED_EQUALS_API_KEY_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "api_key#FAKE_REJECTED_HASH_API_KEY",
+              "title": "Rejected hash api key",
+              "body": "FAKE_REJECTED_HASH_API_KEY_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "api-key#FAKE_REJECTED_HASH_HYPHEN_API_KEY",
+              "title": "Rejected hash hyphen api key",
+              "body": "FAKE_REJECTED_HASH_HYPHEN_API_KEY_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "client-secret#FAKE_REJECTED_HASH_CLIENT_SECRET",
+              "title": "Rejected hash client secret",
+              "body": "FAKE_REJECTED_HASH_CLIENT_SECRET_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-402=api_key:FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY",
+              "title": "Rejected embedded equals api key",
+              "body": "FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/PM-402#api_key:FAKE_REJECTED_EMBEDDED_API_KEY",
+              "title": "Rejected embedded hash api key",
+              "body": "FAKE_REJECTED_EMBEDDED_HASH_API_KEY_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
               "source_identity": "services/orders/issues/PM-401",
               "title": "Accepted issue",
               "body": "Accepted imported body",
@@ -2666,36 +2715,59 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout()
-            .contains("Generated source-registry.json with 1 source document(s) and 3 adapter diagnostic(s).")),
+            .contains("Generated source-registry.json with 1 source document(s) and 10 adapter diagnostic(s).")),
         () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
         () -> assertEquals(
             "local_import_read_with_partial_rejections",
             projectMap.path("scan").path("features").path("adapters").path("status").asText()),
-        () -> assertEquals(3, projectMap.path("adapter_context").path("diagnostic_count").asInt()),
+        () -> assertEquals(10, projectMap.path("adapter_context").path("diagnostic_count").asInt()),
         () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
         () -> assertEquals("services/orders/issues/PM-401", adapterItem.path("source_identity").asText()),
         () -> assertFalse(adapterItem.has("evidence_ids")),
         () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
         () -> assertEquals(1, sourceRegistry.path("provenance").size()),
-        () -> assertEquals(3, sourceRegistry.path("diagnostics").path("items").size()),
+        () -> assertEquals(10, sourceRegistry.path("diagnostics").path("items").size()),
         () -> assertEquals(
             1,
             sourceRegistry.path("adapter_runs").get(0).path("accepted_count").asInt()),
         () -> assertEquals(
-            3,
+            10,
             sourceRegistry.path("adapter_runs").get(0).path("rejected_count").asInt()),
         () -> assertEquals(
-            3,
+            10,
             sourceRegistry.path("adapter_runs").get(0).path("diagnostic_count").asInt()),
         () -> assertFalse(generatedSurfaces.contains("C:/Users/alice")),
         () -> assertFalse(generatedSurfaces.contains("file:/Users/alice")),
         () -> assertFalse(generatedSurfaces.contains("token/FAKE_REJECTED_TOKEN")),
+        () -> assertFalse(generatedSurfaces.contains("api_key=FAKE_REJECTED_EQUALS_API_KEY")),
+        () -> assertFalse(generatedSurfaces.contains("token#FAKE_REJECTED_HASH_TOKEN")),
+        () -> assertFalse(generatedSurfaces.contains("api_key#FAKE_REJECTED_HASH_API_KEY")),
+        () -> assertFalse(generatedSurfaces.contains("api-key#FAKE_REJECTED_HASH_HYPHEN_API_KEY")),
+        () -> assertFalse(generatedSurfaces.contains("client-secret#FAKE_REJECTED_HASH_CLIENT_SECRET")),
+        () -> assertFalse(generatedSurfaces.contains(
+            "issues/PM-402=api_key:FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY")),
+        () -> assertFalse(generatedSurfaces.contains(
+            "issues/PM-402#api_key:FAKE_REJECTED_EMBEDDED_API_KEY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_DRIVE_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_FILE_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_TOKEN_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_EQUALS_API_KEY_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_HASH_TOKEN_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_HASH_API_KEY_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_HASH_HYPHEN_API_KEY_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_HASH_CLIENT_SECRET_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_EMBEDDED_HASH_API_KEY_BODY")),
         () -> assertFalse(generatedSurfaces.contains("Rejected drive path")),
         () -> assertFalse(generatedSurfaces.contains("Rejected file path")),
         () -> assertFalse(generatedSurfaces.contains("Rejected token path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected equals api key")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected hash token")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected hash api key")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected hash hyphen api key")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected hash client secret")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected embedded equals api key")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected embedded hash api key")),
         () -> assertTrue(generatedSurfaces.contains("services/orders/issues/PM-401")));
   }
 
