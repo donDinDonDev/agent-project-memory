@@ -589,68 +589,22 @@ The same output files:
 These files are meant to give humans and coding agents a compact, evidence-backed map
 of the project plus a bounded relation graph: detected build layout, Spring MVC
 endpoints, generated-source/codegen metadata, important components, structural graph
-navigation, and references back to the source files that prove each fact.
+navigation, and references back to the source files that support each fact.
 
 ## Public Documentation Map
 
 Start here:
 
+- Contributor and coding-agent route: for implementation work, read
+  [AGENTS.md](AGENTS.md) first, then this README and the task-relevant product,
+  roadmap, output, and evidence docs below.
+- Latest release:
+  [docs/product/V3_0_RELEASE_NOTES.md](docs/product/V3_0_RELEASE_NOTES.md).
+- Release history: [CHANGELOG.md](CHANGELOG.md). Detailed historical release notes live
+  under `docs/product/`, and public evaluation summaries are linked from the relevant
+  release notes.
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
-- v3.0 release-candidate summary:
-  [docs/product/V3_0_RELEASE_NOTES.md](docs/product/V3_0_RELEASE_NOTES.md).
-- v2.9 release summary:
-  [docs/product/V2_9_RELEASE_NOTES.md](docs/product/V2_9_RELEASE_NOTES.md).
-- v2.8 release summary:
-  [docs/product/V2_8_RELEASE_NOTES.md](docs/product/V2_8_RELEASE_NOTES.md).
-- v2.7 release summary:
-  [docs/product/V2_7_RELEASE_NOTES.md](docs/product/V2_7_RELEASE_NOTES.md).
-- v2.6 release summary:
-  [docs/product/V2_6_RELEASE_NOTES.md](docs/product/V2_6_RELEASE_NOTES.md).
-- v2.5 release summary:
-  [docs/product/V2_5_RELEASE_NOTES.md](docs/product/V2_5_RELEASE_NOTES.md).
-- v2.4 release summary:
-  [docs/product/V2_4_RELEASE_NOTES.md](docs/product/V2_4_RELEASE_NOTES.md).
-- v2.3 release summary:
-  [docs/product/V2_3_RELEASE_NOTES.md](docs/product/V2_3_RELEASE_NOTES.md).
-- v2.2 release summary:
-  [docs/product/V2_2_RELEASE_NOTES.md](docs/product/V2_2_RELEASE_NOTES.md).
-- v2.1 release summary:
-  [docs/product/V2_1_RELEASE_NOTES.md](docs/product/V2_1_RELEASE_NOTES.md).
-- v2.0 release summary:
-  [docs/product/V2_0_RELEASE_NOTES.md](docs/product/V2_0_RELEASE_NOTES.md).
-- v1.9 release summary:
-  [docs/product/V1_9_RELEASE_NOTES.md](docs/product/V1_9_RELEASE_NOTES.md).
-- v1.8 release summary:
-  [docs/product/V1_8_RELEASE_NOTES.md](docs/product/V1_8_RELEASE_NOTES.md).
-- v1.7 release summary:
-  [docs/product/V1_7_RELEASE_NOTES.md](docs/product/V1_7_RELEASE_NOTES.md).
-- v1.6 release summary:
-  [docs/product/V1_6_RELEASE_NOTES.md](docs/product/V1_6_RELEASE_NOTES.md).
-- v1.5 release summary:
-  [docs/product/V1_5_RELEASE_NOTES.md](docs/product/V1_5_RELEASE_NOTES.md).
-- v1.4 release summary:
-  [docs/product/V1_4_RELEASE_NOTES.md](docs/product/V1_4_RELEASE_NOTES.md).
-- v1.3 release summary:
-  [docs/product/V1_3_RELEASE_NOTES.md](docs/product/V1_3_RELEASE_NOTES.md).
-- v1.2 release summary: [docs/product/V1_2_RELEASE_NOTES.md](docs/product/V1_2_RELEASE_NOTES.md).
-- v1.1 release summary: [docs/product/V1_1_RELEASE_NOTES.md](docs/product/V1_1_RELEASE_NOTES.md).
-- v1.0 release summary: [docs/product/V1_0_RELEASE_NOTES.md](docs/product/V1_0_RELEASE_NOTES.md).
-- v0.9 release summary: [docs/product/V0_9_RELEASE_NOTES.md](docs/product/V0_9_RELEASE_NOTES.md).
-- v0.8 release summary: [docs/product/V0_8_RELEASE_NOTES.md](docs/product/V0_8_RELEASE_NOTES.md).
-- v0.7 release summary: [docs/product/V0_7_RELEASE_NOTES.md](docs/product/V0_7_RELEASE_NOTES.md).
-- v0.6 release summary: [docs/product/V0_6_RELEASE_NOTES.md](docs/product/V0_6_RELEASE_NOTES.md).
-- v0.5 release summary: [docs/product/V0_5_RELEASE_NOTES.md](docs/product/V0_5_RELEASE_NOTES.md).
-- v0.4 release summary: [docs/product/V0_4_RELEASE_NOTES.md](docs/product/V0_4_RELEASE_NOTES.md).
-- v0.3 release summary: [docs/product/V0_3_RELEASE_NOTES.md](docs/product/V0_3_RELEASE_NOTES.md).
-- v0.2 release summary: [docs/product/V0_2_RELEASE_NOTES.md](docs/product/V0_2_RELEASE_NOTES.md).
-- v0.1 release summary: [docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
-- v1.0 evaluation corpus summary:
-  [docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md](docs/development/evaluations/v1.0-evaluation-corpus_SUMMARY.md).
-- v1.1 Gradle evaluation summary:
-  [docs/development/evaluations/v1.1-gradle-java-spring_SUMMARY.md](docs/development/evaluations/v1.1-gradle-java-spring_SUMMARY.md).
-- v1.4 incremental cache evaluation summary:
-  [docs/development/evaluations/v1.4-incremental-cache_SUMMARY.md](docs/development/evaluations/v1.4-incremental-cache_SUMMARY.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
 - Product direction and release tracks:
@@ -662,14 +616,10 @@ Start here:
 - Architecture overview:
   [docs/architecture/ARCHITECTURE_OVERVIEW.md](docs/architecture/ARCHITECTURE_OVERVIEW.md) and
   [docs/architecture/INGESTION_ARCHITECTURE.md](docs/architecture/INGESTION_ARCHITECTURE.md).
-- Roadmap: [docs/product/ROADMAP.md](docs/product/ROADMAP.md).
-- Changelog: [CHANGELOG.md](CHANGELOG.md).
 - Contributing, release process, and security:
   [CONTRIBUTING.md](CONTRIBUTING.md),
   [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md), and
   [SECURITY.md](SECURITY.md).
-
-Public evaluation summaries are linked from the release notes as supporting detail.
 
 ## What This Is Not
 
@@ -693,399 +643,39 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v3.0.0`. It ships an executable jar and `SHA256SUMS`
-asset and completes the public v3 preparation design while preserving the GitHub
-Release jar plus `SHA256SUMS` as the supported public distribution baseline. Normal
-no-adapter generated
-`project-map.json` files use
-`schema_version: "1.0"` as a stable-line marker. The v1.5 lightweight relation graph
-expansion is additive, the v1.6 read-only query expansion adds deterministic
-artifact-backed lookup commands without changing generated project-memory schemas or
-evidence semantics, the v1.7 release adds deterministic redaction hardening for
-selected generated and rendered strings without adding evidence fields or schema
-markers, and the v1.8 release adds public examples and contributor onboarding polish
-without changing analyzer behavior, generated artifact schemas, or evidence semantics.
-The v1.9 release adds public v2 architecture preparation for planned adapters,
-connector provenance, optional AI presentation, plugin/API security, and v1-to-v2
-migration boundaries without changing analyzer behavior, CLI commands or flags,
-generated artifact schemas, evidence semantics, or packaged runtime behavior. The v2.0
-release includes a disabled-by-default local structured import reference adapter for
-explicitly configured repository-relative export files. The v2.1 release adds
-disabled-by-default local GitHub/GitLab export import through
-`adapters.git_hosting_import`. Adapter-enabled scans emit `source-registry.json` and
-`project-map.json` `schema_version: "2.0"` adapter context as provenance-backed
-external/document context only. Git hosting imports use `source-registry.json` schema
-`1.1` for provider provenance. No-adapter scans remain v1-compatible with
-`schema_version: "1.0"` and no `source-registry.json`; current query support remains
-focused on those no-adapter artifact sets. The v2.2 release adds
-disabled-by-default Jira/YouTrack/Confluence local export import through
-`adapters.connector_import`, using `source-registry.json` schema `1.2` connector
-provenance while preserving the same no-adapter compatibility and no adapter-aware query
-baseline. The v2.3 release adds explicitly enabled mock/no-network AI presentation
-artifacts while keeping real provider integration deferred.
-The v2.4.0 release adds a CLI-only
-`query <path> agent-context` read-only consumption surface over existing no-adapter
-generated artifacts and optional graph navigation metadata. It keeps agent-facing
-output as deterministic navigation and presentation only, not project evidence or
-code-change authority.
-The v2.5.0 release adds explicit local workspace map aggregation through
-`workspace scan <config>`, writing a separate workspace-root
-`.project-memory/workspace-map.json` from existing member artifacts while preserving
-single-repo scan/query artifacts unchanged.
-The v2.6.0 release adds read-only single-repo
-`query <path> impact --files ...` output over existing no-adapter generated artifacts,
-including direct matches, one-hop graph neighbors, relation-status rows, planning
-hints, explicit `not_represented` rows, and bounded diagnostics without generated
-impact reports or source readback.
-The v2.7.0 release adds explicit local policy profiles through
-`scan <path> --policy-profile <name>` and root-local `policy_profile: <name>`,
-including `guarded-local`, `docs-focused`, and `adapter-local` guardrails, bounded
-`scan.policy_profile` execution metadata for explicit selections only, and fail-closed
-validation for unsafe combinations without changing evidence semantics.
-The v2.8.0 release adds a local artifact-integrity dry-run helper for candidate jars
-and `SHA256SUMS` verification, while keeping the GitHub Release
-executable jar plus `SHA256SUMS` as the supported public distribution baseline.
-The v2.9.0 release freezes the planned v3.0 scope, documents the v3 schema/API
-migration and evidence/provenance boundary, and keeps all v3 schemas, migration
-behavior, runtime surfaces, and distribution-channel changes as future work until a
-later implementation release.
-The v3.0.0 release starts that implementation path with a generated
-`.project-memory/artifact-set.json` manifest foundation plus bounded reader/query
-compatibility validation when the manifest is present: no `project-map.json`
-`schema_version: "3.0"` bump, no adapter-aware query expansion, and no evidence
-semantic change.
-It also includes bounded output/provenance hardening for secret-like OpenAPI
-`operationId` values, connector `source_url` identity binding, local structured
-`source_identity` values, query-rendered path/ID text, workspace sample evidence IDs,
-and CI action pinning. These hardening changes are local output, provenance, and CI
-safety work; they do not make the tool a vulnerability scanner, secret inventory,
-security correctness engine, or release-publication automation.
-The v3.0.0 tag, GitHub Release, executable jar, and `SHA256SUMS` assets are not
-published yet.
-Signing, SBOM publication, package-manager channels, native images, container images,
-release automation, and automatic publication remain parked.
+The latest published release is `v3.0.0`. The `v3.0.0` tag, GitHub Release,
+executable jar, and `SHA256SUMS` assets are published. The supported public
+distribution remains the GitHub Release executable jar plus `SHA256SUMS`; signing,
+SBOM publication, package-manager channels, native images, container images, release
+automation, and automatic publication are not included.
 
-The current Java/Spring line includes module-aware Maven analysis, build/config
-orientation, bounded static Gradle Java/Spring layout support, source-visible Spring
-MVC and application-surface signals, declared OpenAPI operations, bounded JPA/domain
-metadata, source-visible test and quality planning signals, default-scope local Markdown
-document inventory, opt-in deterministic agent profile artifacts, opt-in incremental
-cache metadata under `.project-memory/cache/v1/`, a bounded lightweight relation graph
-artifact under `.project-memory/project-graph.json`, read-only text query commands over
-existing generated artifacts, a set-level artifact manifest under
-`.project-memory/artifact-set.json`, deterministic output redaction for obvious
-secret-looking values, redacted scan metadata, safe root-local YAML config support,
-explicit local policy profiles, stable CLI help/version behavior, and documented
-release-jar verification with local artifact-integrity dry-run support.
+The current implementation is a local Java 21 CLI for Java/Spring repositories. It
+scans local source and configuration inputs, then writes deterministic `.project-memory/`
+artifacts with explicit source-backed evidence. The current output set includes
+`artifact-set.json`, `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+`endpoints.md`, and `agent-guide.md`, with optional local-only adapter, profile, AI
+presentation, cache, and workspace surfaces when explicitly selected by supported
+workflows.
 
-Earlier v0.x release notes remain available for historical scope, compatibility, and
-validation details. Live network connector work remains a later optional adapter track
-and is not started.
+The current compatibility baseline keeps normal no-adapter `project-map.json` output on
+`schema_version: "1.0"`. Explicit adapter-enabled scans use
+`schema_version: "2.0"` with `source-registry.json` provenance. The v3.0.0 release adds
+the `.project-memory/artifact-set.json` manifest and manifest-present reader/query
+validation without bumping `project-map.json` to `schema_version: "3.0"`, adding
+adapter-aware query behavior, or changing evidence semantics.
 
-The current implementation includes a Java 21 Maven-built CLI, root-declared Maven
-module discovery, bounded static Gradle root and multi-project discovery,
-JavaParser-backed Spring MVC endpoint extraction, source-visible interface mapping
-support when uniquely bindable, stable `project-map.json` and `evidence-index.jsonl`
-outputs, deterministic module-owned source-visible Maven metadata, dependency, and
-plugin extraction, deterministic bounded Gradle build-file and standard-root
-orientation, deterministic direct Spring component and JPA entity inventories,
-deterministic path-only resource-root and supported config-file
-discovery, deterministic hidden HTTP surface, generated-source, and Maven module
-warnings, deterministic local OpenAPI/Swagger spec file discovery as declared API
-inputs, minimal deterministic OpenAPI/Swagger operation extraction as spec-backed
-declared operation facts, deterministic generated-source/codegen metadata-only
-inventory under `generated_sources`, a minimal deterministic tests inventory, deterministic
-repository signal extraction for direct `@Repository` and supported Spring Data
-repository interface extensions, deterministic configuration surface extraction for
-direct `@Configuration`, direct `@Bean`, and direct `@ConfigurationProperties`
-observations, deterministic behavior and messaging signal extraction for direct
-`@Transactional`, `@Scheduled`, `@EventListener`, and common Kafka/Rabbit listener
-annotations, deterministic Spring Security configuration warning extraction for
-supported security annotations and `SecurityFilterChain` `@Bean` methods, deterministic
-direct source-visible JPA field annotation extraction for `@Column`, `@Enumerated`,
-`@GeneratedValue`, and `@Version`, deterministic partial embedded and identifier model
-signals for direct `@Embeddable`, `@Embedded`, `@EmbeddedId`, and `@IdClass`,
-deterministic direct source-visible relationship metadata extraction for relationship
-cardinality, direct `mappedBy`, bounded `@JoinColumn` and `@JoinTable` metadata, and
-direct relationship `optional`, `fetch`, `cascade`, and `orphanRemoval` attributes,
-deterministic bounded tests inventory refinement for direct JUnit Jupiter/JUnit 4 test
-method annotations and direct JUnit/Spring Test framework signals where source origin is
-trusted, direct Spring test slice annotation extraction for `@SpringBootTest`,
-`@WebMvcTest`, `@DataJpaTest`, and `@ContextConfiguration`, conservative
-source-visible `@MockBean` and `@SpyBean` annotation signals on emitted test classes,
-conservative tested-subject relation/status rows from supported naming, exact
-production imports, direct field types, and direct Spring test slice class literals,
-conservative test-gap and change-risk planning hints from existing deterministic facts
-and inferred tested-subject relations, deterministic default-scope local Markdown
-document discovery, inventory, ATX heading references, and bounded chunk references with
-safe path exclusions, aggregate caps, and no symlink following, conservative local
-Markdown/code reconciliation hints kept under `documents.reconciliation`, deterministic
-root-local `agent-project-memory.yml` config discovery with optional explicit
-`scan <path> --config <repo-relative-yaml>` selection, safe config defaults, local
-Markdown-only user include/exclude refinement, non-overridable built-in document safety
-exclusions, reserved generated-source and symlink-following modes rejected when enabled,
-redacted `scan` metadata and bounded diagnostics that avoid raw config values and raw
-user path patterns, deterministic lightweight relation graph generation in
-`project-graph.json` from existing facts, evidence IDs, and derivation metadata,
-`endpoints.md`, and deterministic `agent-guide.md` generation from the
-structured facts and evidence index, including module-grouped Spring application
-surface guidance, bounded JPA field metadata, embedded/id, relationship metadata
-guidance, source-visible test method/framework/slice/mock/tested-subject guidance, and
-quality/change-risk planning guidance
-that keeps extracted facts, inferred signals, relation statuses, uncertain targets,
-not-analyzed statuses, and warnings separate.
+For authoritative details, use the owner documents:
 
-Current limitations:
-
-- Maven module support is limited to the scan root and modules declared directly under
-  the root `pom.xml` `<modules>` section. It does not resolve Maven profiles, recursively
-  discover nested modules, reconstruct effective POMs, build dependency graphs, or run
-  Maven.
-- Maven metadata extraction is limited to direct source-visible module POM text for
-  `groupId`, `artifactId`, `version`, `packaging`, and parent coordinates. It preserves
-  property references and expressions as source-visible values and does not fill missing
-  coordinates from Maven defaults, parent inheritance, profiles, or effective POM data.
-- Maven dependency inventory is limited to direct source-visible module POM
-  `<dependencies><dependency>` declarations and separate direct
-  `<dependencyManagement><dependencies><dependency>` management declarations. It
-  preserves direct `groupId`, `artifactId`, `version`, `scope`, `optional`, `type`, and
-  `classifier` text when present, preserves property references and expressions as
-  source-visible values, and does not resolve parent, managed, profile, effective, or
-  transitive dependency behavior.
-- Maven plugin inventory is limited to direct source-visible module POM
-  `<build><plugins><plugin>` declarations and separate direct
-  `<build><pluginManagement><plugins><plugin>` management declarations. It preserves
-  direct plugin coordinates, bounded direct execution IDs, phases, goals, and conservative
-  configuration/generator signal names without storing arbitrary plugin configuration
-  values. It does not resolve plugin versions, reconstruct lifecycle bindings, inherit
-  executions, execute plugins, scan generated sources by default, parse OpenAPI
-  operations, or create generated API/endpoint facts from plugin signals.
-- Gradle support is limited to accepted root `settings.gradle`, `settings.gradle.kts`,
-  `build.gradle`, and `build.gradle.kts` files, project `build.gradle` or
-  `build.gradle.kts` files under supported Gradle project directories, simple static
-  string-literal settings includes, and standard Java/test/resource roots. It does not
-  execute Gradle, invoke the wrapper, use the Gradle Tooling API, evaluate build
-  scripts, resolve plugins, dependencies, repositories, tasks, effective models, custom
-  `sourceSets`, `projectDir` remapping, included builds, or Kotlin source structure.
-- Resource-root discovery is limited to standard `src/main/resources` and
-  `src/test/resources` roots under supported modules. Config-file discovery is limited
-  to supported Spring `application.properties`, `application.yml`, `application.yaml`,
-  profile-specific `application-*` variants, and supported logging configuration
-  filenames. It records paths and filename-derived metadata only; it does not parse or
-  output config keys, values, YAML nodes, XML elements, environment placeholders,
-  decrypted values, profile activation, or runtime configuration precedence.
-- Spring Boot application build/config signals are limited to direct source-visible
-  `@SpringBootApplication` annotations under supported production source roots and a
-  bounded source-visible `static void main(String[] args)` or varargs `main` method
-  signal on the annotated class. They do not prove executable jar packaging, active
-  profiles, runtime auto-configuration, component scanning results, bean graphs,
-  deployment behavior, or actual process entrypoint behavior.
-- Component inventory is limited to direct source-type-level `@Component`, `@Service`,
-  `@Repository`, `@Controller`, `@RestController`, and `@Configuration` annotations on
-  Java classes or interfaces under `src/main/java`. It does not infer repositories from
-  `extends JpaRepository` without a direct supported stereotype. Inferred Spring Data
-  repository interface extension signals live separately under
-  `spring_application_surface.repositories`, not in `components.items`.
-- Component analysis does not model Spring component scanning semantics, bean lifecycle,
-  bean names, scopes, conditional configuration, dependency injection, or autowiring graphs.
-- Spring application surface repository analysis is limited to repository signals:
-  direct source-visible `@Repository` observations and inferred source-visible Java
-  interfaces that directly extend a supported Spring Data repository base type visible
-  through a fully qualified name or explicit single-type import. Supported base types
-  are `org.springframework.data.repository.Repository`,
-  `org.springframework.data.repository.CrudRepository`,
-  `org.springframework.data.repository.PagingAndSortingRepository`,
-  `org.springframework.data.jpa.repository.JpaRepository`, and
-  `org.springframework.data.mongodb.repository.MongoRepository`. Repository/entity
-  relations are inferred only when a supported source-visible repository generic type
-  can be matched to exactly one emitted entity fact; missing, ambiguous, raw, wildcard,
-  nested, or otherwise unsupported generic shapes use explicit relation statuses and do
-  not emit relation objects. It does not perform dependency type solving, wildcard-import
-  fallback, runtime Spring Data reconstruction, query method parsing, database access
-  analysis, dependency graph analysis, or runtime repository/entity verification.
-- Spring application surface configuration analysis is limited to direct source-visible
-  `@Configuration` classes, direct source-visible `@ConfigurationProperties` types, and
-  direct source-visible `@Bean` methods visible through a fully qualified name or
-  explicit single-type import. It does not extract configuration file values, emit
-  `@ConfigurationProperties` `prefix` or `value` annotation values, prove binding
-  success, infer active profiles, reconstruct runtime bean graphs, infer effective bean
-  names, or model scopes, lifecycle, proxies, autowiring, or dependency graphs.
-- Spring application surface behavior analysis is limited to direct source-visible
-  Spring `@Transactional` annotations on Java types and methods, direct source-visible
-  Spring `@Scheduled` methods, and direct source-visible Spring `@EventListener`
-  methods visible through a fully qualified name or explicit single-type import. It
-  does not interpret transaction propagation, effective transaction managers, rollback
-  behavior, scheduler enablement, runtime registration, frequency correctness, cluster
-  behavior, event publication paths, listener ordering, transaction phases, event
-  delivery, or call graph effects.
-- Spring application surface messaging analysis is limited to direct source-visible
-  Spring Kafka `@KafkaListener`/`@KafkaListeners` and Spring AMQP Rabbit
-  `@RabbitListener`/`@RabbitListeners` annotations on Java types and methods visible
-  through a fully qualified name or explicit single-type import. It records annotation
-  presence and framework family only; it does not serialize topic, queue, exchange,
-  routing-key, or group-id annotation values, verify broker topology, infer consumer
-  groups, bindings, delivery semantics, or deployment configuration.
-- Spring application surface security analysis is limited to source-visible Spring
-  Security configuration warnings for supported direct security annotations and
-  `SecurityFilterChain` `@Bean` methods visible through a fully qualified name or
-  explicit single-type import. It records warning/change-risk signals only; it does not
-  analyze security policy, endpoint protection state, authentication behavior,
-  authorization behavior, runtime filter-chain ordering, vulnerabilities, or security
-  correctness.
-- Entity analysis is limited to direct class-level `@Entity`, direct class-level
-  `@Table(name = "...")`, field-level `@Id` declared on the entity class or on a
-  conservative source-visible `@MappedSuperclass` chain, field-level `@Column`,
-  `@Enumerated`, `@GeneratedValue`, and `@Version` annotations on direct entity fields,
-  direct `@Embeddable` classes, direct field-level `@Embedded` and `@EmbeddedId`
-  signals, direct class-level `@IdClass` signals, and field-level `@ManyToOne`,
-  `@OneToMany`, `@OneToOne`, and `@ManyToMany` annotations under `src/main/java`.
-- Entity field metadata is limited to supported direct field-level annotations on the
-  entity class. It records only bounded source-visible annotation attributes for
-  `@Column`, `@Enumerated`, and `@GeneratedValue`, plus direct `@Version` presence, and
-  does not fill runtime JPA defaults.
-- Entity relationship metadata is limited to supported direct field-level relationship
-  annotations and direct source-visible annotation attributes. It records cardinality
-  from the relationship annotation, direct string-literal `mappedBy`, bounded direct
-  `@JoinColumn` and `@JoinTable` metadata, and direct `optional`, `fetch`, `cascade`,
-  and `orphanRemoval` values when supported. Missing attributes remain `null` or empty
-  arrays, relationship targets remain declared-type-only and uncertain, and the output
-  does not claim ORM ownership correctness, foreign keys, join tables, database
-  constraints, fetch behavior, cascade behavior, provider defaults, or runtime ORM
-  behavior.
-- Entity embedded/id support is partial: it records direct `@Embeddable`,
-  `@Embedded`, `@EmbeddedId`, and `@IdClass` source-visible signals, links embedded
-  targets only when a unique local embeddable can be matched deterministically, and
-  marks unresolved embedded targets and `@IdClass` semantic reconstruction explicitly.
-- Entity analysis does not implement getter/property-access mapping, full composite-key
-  semantic reconstruction, schema generation, transactional semantics, symbol solving,
-  relationship target resolution, runtime repository/entity verification, or ORM runtime
-  behavior.
-- API surface spec discovery is limited to common local filenames such as
-  `openapi.yml`, `openapi.yaml`, `openapi.json`, `swagger.yml`, `swagger.yaml`, and
-  `swagger.json`. It records normalized repository-relative paths, format, spec kind,
-  bounded version signals when directly visible near the file header, module ownership
-  when the file is under a supported module, and `api_spec` evidence. Minimal operation
-  extraction reads bounded local YAML/JSON specs and records only declared path, HTTP
-  method, bounded `operationId`, bounded tags, `implementation_status: "not_analyzed"`,
-  and operation `api_spec` evidence. It does not validate the full spec, follow `$ref`,
-  fetch external schemas, claim implementation, treat symlink entries as spec files, or
-  scan generated-source roots. Invalid or unsupported specs degrade to warnings rather
-  than endpoint facts.
-- Generated-source/codegen metadata remains warning, inventory, and guide orientation
-  only. Generated roots are reported with `content_status: "not_scanned"` and
-  `source_origin: "metadata_only"`; generated-source contents are not read, do not
-  produce scanned-content evidence, and do not create endpoint, component, Spring/JPA,
-  test, or API implementation facts. `features.generated_sources: false` remains a
-  valid reserved config value, while `features.generated_sources: true` remains invalid
-  config.
-- Hidden HTTP surface and generated-source warnings are limited to OpenAPI/Swagger spec filename presence,
-  supported module `pom.xml` OpenAPI/Swagger Maven plugin declarations under
-  `<build><plugins>` or `<build><pluginManagement><plugins>`, bounded Maven generator,
-  annotation-processor, generated-source configuration, and build-helper add-source
-  signals, common local generated-source root path presence such as
-  `target/generated-sources`, and direct `@RepositoryRestResource`. Generated-source path
-  warnings record the normalized path only and do not read generated source contents.
-  These warnings do not create endpoint facts, parse OpenAPI schemas, run Maven
-  generation, scan `target/generated-sources` by default, or reconstruct generated APIs.
-- Relationship facts preserve the declared field type and direct source-visible
-  relationship metadata only; target type resolution is explicitly marked uncertain.
-- Tests inventory is limited to test-like Java classes under supported standard Maven or
-  Gradle `src/test/java` roots; helper/support/configuration declarations without clear test
-  naming or direct test-class marker annotations are omitted. Test method inventory is
-  limited to directly declared methods with supported directly visible JUnit Jupiter or
-  JUnit 4 test annotations resolved from a fully qualified annotation name or explicit
-  single-type import. Lifecycle, setup, teardown, helper, support, and configuration
-  methods are not counted as test methods.
-- Test framework signals are limited to directly visible imports and annotations for
-  JUnit Jupiter, JUnit 4, and Spring Test signals where the source origin is trusted.
-  Import evidence is attached only to top-level emitted test classes; nested emitted
-  test classes use their own class or method annotation evidence. These signals do not
-  prove test engine execution, CI behavior, assertion behavior, runtime Spring context
-  startup, or coverage.
-- Spring test slice and mock annotation signals are limited to directly visible
-  supported annotations on emitted test classes. Direct slice annotation class literals
-  may contribute only conservative tested-subject relation/status rows. Slice/mock
-  signals do not reconstruct runtime Spring test contexts, prove MockMvc setup, bean
-  graph contents, database access, Mockito behavior, or slice correctness.
-- Tested-subject rows are conservative inferred/statused hints from supported naming
-  conventions, exact production-class imports, direct test field types, and direct
-  Spring test slice class literals against production classes in the same supported
-  module. Ambiguous, missing, unsupported, or absent signals are represented with
-  explicit relation statuses, low confidence, and uncertainty instead of coverage or
-  runtime claims.
-- Tests inventory does not claim code coverage, test execution results, behavioral
-  assertion analysis, call graph resolution, symbol solving, or complete subject mapping.
-- Quality test-gap and change-risk signals are conservative planning hints derived from
-  existing deterministic facts and inferred tested-subject relations. They do not claim
-  coverage, test execution, assertion behavior, CI results, runtime behavior, production
-  impact, vulnerability, correctness, business priority, or complete subject mapping.
-- `agent-guide.md` is generated from existing deterministic output facts only. It may
-  render compact local Markdown document inventory, bounded heading/chunk navigation
-  references, and uncertain reconciliation hints from structured `documents` facts, but
-  it does not render document bodies, summarize source files or local docs, infer
-  architecture layers, or add claims beyond extracted facts, explicit inferences, and
-  known uncertainty labels.
-- Local Markdown/document ingestion is limited to conservative default-scope document
-  inventory, deterministic ATX heading references, and bounded chunk references with
-  `content_status: "not_serialized"` and resolving `document` evidence for file,
-  heading, chunk, and bounded reconciliation mention observations. Reconciliation rows
-  are low-confidence uncertain inspection hints only; they do not prove stale
-  documentation, missing documentation, coverage, completeness, correctness, or source
-  and document agreement. The current implementation caps emitted local Markdown output
-  at 256 accepted documents, 16 MiB of aggregate accepted Markdown bytes, 4096 heading
-  references, 4096 chunk references, 2048 reconciliation mention observations, and 2048
-  reconciliation rows per scan; cap hits are reported as bounded non-fatal
-  `scan.diagnostics` items and do not create evidence records. The implementation
-  renders local-document guide sections only from structured document facts and
-  evidence; it does not read
-  hidden/private/generated/dependency/maintainer paths, follow symlinks, or summarize or
-  serialize document bodies.
-- Agent profile artifacts are opt-in generated presentations only. They reference
-  existing project facts and evidence, do not add `project-map.json` fields, do not
-  create evidence records, do not replace `agent-guide.md`, and do not modify root
-  repository instruction/config files such as `AGENTS.md`, `CLAUDE.md`, Cursor rules,
-  IDE settings, source files, docs, or config files.
-- AI presentation artifacts are opt-in generated presentations only. With
-  `--ai-presentation mock_no_network`, the tool writes only
-  `.project-memory/ai-presentations/manifest.json` and
-  `.project-memory/ai-presentations/brief.md` from existing generated artifacts, labels
-  them as non-authoritative and non-evidence, and does not add `project-map.json`
-  fields, create `evidence-index.jsonl` records, mutate `source-registry.json`, mutate
-  profile/cache/query artifacts, read raw source or local document bodies as AI input,
-  use credentials, access the network, upload source, or call a real provider.
-- `artifact-set.json` is generated contract/provenance metadata only. It inventories
-  generated artifact names, schema markers, required/optional status, and evidence
-  boundary labels. Only `evidence-index.jsonl` is marked as authoritative
-  source-backed evidence; all other listed surfaces remain non-evidence. The manifest
-  does not create project facts, evidence IDs, evidence records, adapter truth, runtime
-  claims, release evidence, or code-change authority.
-- Root-local scan configuration is limited to the safe YAML schema introduced in v0.9:
-  `version: 1`, optional `features.local_markdown`, reserved
-  `features.generated_sources: false` and `features.follow_symlinks: false`, optional
-  `documents.include`/`documents.exclude` path rules, and disabled-by-default adapter
-  config for local structured import, Git hosting import, or connector import. When
-  explicitly enabled, the selected adapter reads one validated repository-relative
-  regular-file import path under the scan root, parses its bounded documented JSON
-  format, emits `source-registry.json`, and adds `project-map.json` adapter context as
-  provenance-backed external/document context. It does not enable network access,
-  accept credentials, serialize raw bodies or configured import paths, create
-  `evidence-index.jsonl` records, or create Java/Spring project facts. User
-  include/exclude rules apply only to local Markdown discovery through
-  normalized repository-relative paths, cannot override built-in safety exclusions, and
-  are summarized only through redacted counts and statuses in `scan` metadata.
-- `evidence-index.jsonl` currently contains root and child `pom.xml` `build_file`
-  evidence when present, accepted Gradle build-file and static include `build_file`
-  evidence when present, bounded source-visible Maven metadata, dependency, plugin, and
-  module declaration `build_file` evidence, path-oriented `config_file` evidence,
-  bounded Spring MVC endpoint, warning, component stereotype, JPA annotation, Spring
-  Boot application, Spring repository stereotype and interface signal, local
-  OpenAPI/Swagger `api_spec`, generated-source path `path_signal`, tests inventory
-  evidence, and local Markdown `document` evidence for accepted file, heading, chunk,
-  and bounded reconciliation mention observations.
-- The CLI uses only Java standard library argument handling.
-
-For the concise v0.1 scope, evaluation summary, limitations, and validation surface, see
-[docs/product/V0_1_RELEASE_NOTES.md](docs/product/V0_1_RELEASE_NOTES.md).
+- Product scope and non-goals: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
+  [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
+- Current roadmap and release-track history:
+  [docs/product/ROADMAP.md](docs/product/ROADMAP.md) and [CHANGELOG.md](CHANGELOG.md).
+- Generated output semantics:
+  [docs/architecture/OUTPUT_CONTRACT.md](docs/architecture/OUTPUT_CONTRACT.md).
+- Evidence semantics:
+  [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
+- Latest release scope, validation, and asset status:
+  [docs/product/V3_0_RELEASE_NOTES.md](docs/product/V3_0_RELEASE_NOTES.md).
 
 ## License
 
