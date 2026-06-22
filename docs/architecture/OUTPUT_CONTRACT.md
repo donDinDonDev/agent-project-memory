@@ -830,8 +830,12 @@ metadata is:
 
 `connector.source_url` is optional. If emitted, it must be a sanitized provider URL
 without userinfo, credentials, query strings, fragments, authorization material, local
-paths, or unsupported schemes. The URL is provenance metadata only and is not proof that
-the remote service is reachable or current.
+paths, or unsupported schemes. It must also match the provider-specific path for the
+accepted connector source identity, such as Jira `/browse/{issue_key}`, YouTrack
+`/issue/{issue_key_or_id}` or `/articles/{article_id}`, and Confluence
+`/spaces/{space_key}/pages/{page_id}`. Same-host URLs for other connector records are
+rejected rather than serialized. The URL is provenance metadata only and is not proof
+that the remote service is reachable or current.
 
 `connector.record_state`, `exported_at`, and `record_updated_at` are snapshot metadata
 from the local export. They are not current-state claims. Missing, malformed,

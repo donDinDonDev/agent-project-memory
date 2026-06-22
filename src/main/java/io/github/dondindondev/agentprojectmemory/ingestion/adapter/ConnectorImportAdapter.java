@@ -683,10 +683,24 @@ public final class ConnectorImportAdapter {
           || !safeUrlPathSegments(rawPath)) {
         return null;
       }
+      if (!rawPath.equals(expectedSourceUrlPath(identity))) {
+        return null;
+      }
       return uri.toASCIIString();
     } catch (URISyntaxException exception) {
       return null;
     }
+  }
+
+  private String expectedSourceUrlPath(ConnectorRecordIdentity identity) {
+    return switch (identity.sourceType()) {
+      case SOURCE_TYPE_JIRA_ISSUE -> "/browse/" + identity.recordKey();
+      case SOURCE_TYPE_YOUTRACK_ISSUE -> "/issue/" + identity.recordKey();
+      case SOURCE_TYPE_YOUTRACK_ARTICLE -> "/articles/" + identity.recordKey();
+      case SOURCE_TYPE_CONFLUENCE_PAGE -> "/spaces/" + identity.containerKey() + "/pages/"
+          + identity.recordKey();
+      default -> "";
+    };
   }
 
   private boolean safeUrlPathSegments(String rawPath) {

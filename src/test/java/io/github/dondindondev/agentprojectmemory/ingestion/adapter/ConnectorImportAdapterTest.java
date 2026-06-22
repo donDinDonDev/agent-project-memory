@@ -214,6 +214,134 @@ final class ConnectorImportAdapterTest {
   }
 
   @Test
+  void rejectsSameHostSourceUrlsThatDoNotMatchConnectorIdentity() throws Exception {
+    Files.createDirectories(tempDir.resolve("exports"));
+    Files.writeString(tempDir.resolve("exports/connectors.json"), """
+        {
+          "format": "agent-project-memory.connector_export.v1",
+          "records": [
+            {
+              "provider": "jira",
+              "host": "jira.example.com",
+              "record_type": "issue",
+              "project_key": "PROJ",
+              "issue_key": "PROJ-201",
+              "title": "Valid Jira issue URL",
+              "status": "current",
+              "source_url": "https://jira.example.com/browse/PROJ-201"
+            },
+            {
+              "provider": "youtrack",
+              "host": "youtrack.example.com",
+              "record_type": "issue",
+              "project_key": "PROJ",
+              "issue_key": "PROJ-77",
+              "title": "Valid YouTrack issue URL",
+              "status": "current",
+              "source_url": "https://youtrack.example.com/issue/PROJ-77"
+            },
+            {
+              "provider": "youtrack",
+              "host": "youtrack.example.com",
+              "record_type": "article",
+              "project_key": "PROJ",
+              "article_id": "ABC123",
+              "title": "Valid YouTrack article URL",
+              "status": "current",
+              "source_url": "https://youtrack.example.com/articles/ABC123"
+            },
+            {
+              "provider": "confluence",
+              "host": "confluence.example.com",
+              "record_type": "page",
+              "space_key": "ENG",
+              "page_id": "123456",
+              "title": "Valid Confluence page URL",
+              "status": "current",
+              "source_url": "https://confluence.example.com/spaces/ENG/pages/123456"
+            },
+            {
+              "provider": "jira",
+              "host": "jira.example.com",
+              "record_type": "issue",
+              "project_key": "PROJ",
+              "issue_key": "PROJ-202",
+              "title": "Wrong Jira issue URL",
+              "status": "current",
+              "source_url": "https://jira.example.com/browse/PROJ-999"
+            },
+            {
+              "provider": "youtrack",
+              "host": "youtrack.example.com",
+              "record_type": "issue",
+              "project_key": "PROJ",
+              "issue_key": "PROJ-78",
+              "title": "Wrong YouTrack issue URL",
+              "status": "current",
+              "source_url": "https://youtrack.example.com/issue/PROJ-999"
+            },
+            {
+              "provider": "youtrack",
+              "host": "youtrack.example.com",
+              "record_type": "article",
+              "project_key": "PROJ",
+              "article_id": "ABC124",
+              "title": "Wrong YouTrack article URL",
+              "status": "current",
+              "source_url": "https://youtrack.example.com/articles/ABC999"
+            },
+            {
+              "provider": "confluence",
+              "host": "confluence.example.com",
+              "record_type": "page",
+              "space_key": "ENG",
+              "page_id": "123457",
+              "title": "Wrong Confluence page URL",
+              "status": "current",
+              "source_url": "https://confluence.example.com/spaces/ENG/pages/654321"
+            },
+            {
+              "provider": "confluence",
+              "host": "confluence.example.com",
+              "record_type": "page",
+              "space_key": "OPS",
+              "page_id": "123458",
+              "title": "Wrong Confluence space URL",
+              "status": "current",
+              "source_url": "https://confluence.example.com/spaces/ENG/pages/123458"
+            }
+          ]
+        }
+        """);
+
+    AdapterIngestionResult result = adapter.read(
+        tempDir,
+        AdapterLocalImport.connectorImport("exports/connectors.json"));
+    String registryJson = new SourceRegistryJsonSerializer().serialize(result);
+
+    assertAll(
+        () -> assertEquals(4, result.acceptedCount()),
+        () -> assertEquals(5, result.rejectedCount()),
+        () -> assertEquals(
+            5,
+            result.diagnostics().stream()
+                .filter(diagnostic -> "unsafe_source_url_rejected".equals(diagnostic.signal()))
+                .count()),
+        () -> assertTrue(registryJson.contains("https://jira.example.com/browse/PROJ-201")),
+        () -> assertTrue(registryJson.contains("https://youtrack.example.com/issue/PROJ-77")),
+        () -> assertTrue(registryJson.contains("https://youtrack.example.com/articles/ABC123")),
+        () -> assertTrue(registryJson.contains(
+            "https://confluence.example.com/spaces/ENG/pages/123456")),
+        () -> assertFalse(registryJson.contains("https://jira.example.com/browse/PROJ-999")),
+        () -> assertFalse(registryJson.contains("https://youtrack.example.com/issue/PROJ-999")),
+        () -> assertFalse(registryJson.contains("https://youtrack.example.com/articles/ABC999")),
+        () -> assertFalse(registryJson.contains(
+            "https://confluence.example.com/spaces/ENG/pages/654321")),
+        () -> assertFalse(registryJson.contains(
+            "https://confluence.example.com/spaces/ENG/pages/123458")));
+  }
+
+  @Test
   void allRejectedConnectorImportStillUsesConnectorSourceRegistrySchema() throws Exception {
     Files.createDirectories(tempDir.resolve("exports"));
     Files.writeString(tempDir.resolve("exports/connectors.json"), """

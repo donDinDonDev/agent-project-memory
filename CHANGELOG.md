@@ -42,6 +42,9 @@ architecture documents.
 - Manifest-backed query loading now also fails closed if artifact-set metadata promotes
   adapter, AI, generated, profile, cache, workspace, or other non-evidence surfaces to
   authoritative evidence, or demotes `evidence-index.jsonl` from that role.
+- Hardened connector import `source_url` provenance so same-host URLs are serialized
+  only when their provider-specific path matches the accepted Jira, YouTrack, or
+  Confluence connector record identity.
 
 ## [2.9.0] - 2026-06-21
 

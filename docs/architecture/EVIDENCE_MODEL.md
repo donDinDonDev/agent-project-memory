@@ -220,7 +220,8 @@ rows with `source_document_ids` and `provenance_ids` that resolve through
 `source-registry.json`. They intentionally do not carry `evidence_ids`.
 
 Connector provenance can identify provider, host, source family, project key, space key,
-record type, record key or stable record ID, sanitized source URL when safe,
+record type, record key or stable record ID, sanitized source URL when safe and bound
+to the accepted connector record identity path,
 snapshot/export timestamp, and record updated timestamp when known. These values are
 generated provenance metadata and review join keys only. They must not be used as proof
 that the external service is reachable, current, complete, authoritative, or aligned
