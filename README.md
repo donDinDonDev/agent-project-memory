@@ -34,13 +34,12 @@ otherwise appear in generated excerpts or rendered query output, while explicitl
 preserving evidence IDs, normalized repository-relative paths, symbols, line ranges,
 confidence, uncertainty, and claim categories.
 
-The local v3.0.0 release candidate keeps that boundary and adds defense-in-depth checks
+The v3.0.0 release keeps that boundary and adds defense-in-depth checks
 around set-level artifact metadata, OpenAPI operation IDs, connector source URLs, local
 structured source identities, query-rendered path/ID text, and workspace sample
 evidence IDs. These checks protect generated-output and provenance boundaries; they are
 not vulnerability scanning, complete secret discovery, security correctness proof, or a
-guarantee that every sensitive value in a repository will be detected. The v3.0.0
-release candidate is prepared locally and is not published yet.
+guarantee that every sensitive value in a repository will be detected.
 
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
@@ -56,13 +55,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v2.9.0`. Its release artifact is
-`agent-project-memory-2.9.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v3.0.0`. Its release artifact is
+`agent-project-memory-3.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-2.9.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-3.0.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -526,7 +525,7 @@ Compatibility and migration notes:
   credentials, adapter-aware query behavior, raw issue/page/article bodies, comments,
   rendered HTML, attachment details, configured import paths, or local absolute paths
   are serialized by default.
-- The v3.0.0 release candidate adds
+- The v3.0.0 release adds
   `.project-memory/artifact-set.json` with `artifact_set_schema_version: "1.0"` as a
   set-level generated-output manifest. No-adapter `project-map.json` remains on
   `schema_version: "1.0"`, adapter-enabled `project-map.json` remains on
@@ -694,7 +693,7 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v2.9.0`. It ships an executable jar and `SHA256SUMS`
+The latest published release is `v3.0.0`. It ships an executable jar and `SHA256SUMS`
 asset and completes the public v3 preparation design while preserving the GitHub
 Release jar plus `SHA256SUMS` as the supported public distribution baseline. Normal
 no-adapter generated
@@ -750,7 +749,7 @@ The v2.9.0 release freezes the planned v3.0 scope, documents the v3 schema/API
 migration and evidence/provenance boundary, and keeps all v3 schemas, migration
 behavior, runtime surfaces, and distribution-channel changes as future work until a
 later implementation release.
-The local v3.0.0 release candidate starts that implementation path with a generated
+The v3.0.0 release starts that implementation path with a generated
 `.project-memory/artifact-set.json` manifest foundation plus bounded reader/query
 compatibility validation when the manifest is present: no `project-map.json`
 `schema_version: "3.0"` bump, no adapter-aware query expansion, and no evidence

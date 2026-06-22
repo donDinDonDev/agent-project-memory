@@ -11,8 +11,8 @@ architecture documents.
 
 ## [3.0.0] - 2026-06-22
 
-Release status: release candidate. The `v3.0.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v3.0.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Added
 
@@ -36,8 +36,7 @@ and `SHA256SUMS` assets are not published yet.
   artifact sets: regenerate the complete `.project-memory/` output set from source and
   configured local adapter exports instead of mutating generated artifacts in place.
 - Clarified public v3 documentation, migration, security-limitation, and product
-  positioning wording for the local v3.0.0 release candidate while keeping `v2.9.0` as
-  the latest published release.
+  positioning wording for the v3.0.0 release.
 
 ### Security
 
@@ -70,8 +69,7 @@ and `SHA256SUMS` assets are not published yet.
   network connectors, connector credentials, provider AI, server/API/MCP/editor/plugin
   runtime, repository chat, generic RAG, source upload, automatic code modification,
   signing, SBOM publication, package-manager channels, native images, container images,
-  release automation, automatic publication, artifact upload, or GitHub Release
-  publication.
+  release automation, or automatic publication.
 
 ## [2.9.0] - 2026-06-21
 

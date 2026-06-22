@@ -2,8 +2,8 @@
 
 Release date: 2026-06-22
 
-Release status: release candidate. The `v3.0.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v3.0.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v3.0.0 is the first implementation release for the v3 platform
 foundation. It adds a generated artifact-set manifest, validates manifest-present query
@@ -68,9 +68,9 @@ v3.0.0 keeps the local-first security boundary:
 - no server/API/MCP/editor/plugin runtime;
 - no repository chat, generic RAG, or automatic code modification;
 - no signing, SBOM publication, package-manager channel, native image, container image,
-  release automation, artifact upload, tag creation, or GitHub Release publication.
+  or release automation.
 
-The release candidate includes bounded hardening for selected local output and
+The release includes bounded hardening for selected local output and
 provenance surfaces:
 
 - secret-like OpenAPI `operationId` values are redacted in generated and rendered
@@ -88,10 +88,9 @@ These hardening changes do not make the tool a vulnerability scanner, complete s
 detector, secret inventory, security correctness engine, dependency-freshness proof, or
 security certification.
 
-Release preparation remains separate from publication. Tags, GitHub Releases, asset
-uploads, checksum publication, signing, SBOM publication, package-manager publication,
-native image publication, container image publication, and release automation require
-separate explicit maintainer approval and are not part of this release candidate.
+Signing, SBOM publication, package-manager publication, native image publication,
+container image publication, and release automation remain separate future work and are
+not part of this release.
 
 ## Validation
 
@@ -142,5 +141,4 @@ The intended `v3.0.0` release assets are:
 - `agent-project-memory-3.0.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published on the GitHub Release for `v3.0.0`.

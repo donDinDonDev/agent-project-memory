@@ -3,7 +3,7 @@
 ## Supported Versions
 
 The latest published release line is the supported public line for vulnerability
-reports. The latest published release is currently `v2.9.0`.
+reports. The latest published release is currently `v3.0.0`.
 
 Older release lines are generally unsupported unless a maintainer explicitly states
 otherwise in release notes or a security advisory.
@@ -42,7 +42,7 @@ The tool is not a vulnerability scanner, security correctness engine, complete s
 detector, secret inventory, or credential classification tool. Security hardening is
 focused on local path safety, bounded parsing, evidence integrity, and avoiding
 accidental serialization of sensitive-looking values in generated or rendered output.
-The local v3.0.0 release candidate includes additional output and provenance hardening,
+The v3.0.0 release includes additional output and provenance hardening,
 but it should not be read as a broader vulnerability-scanning or security-certification
 claim. The supported public vulnerability-reporting line remains the latest published
 release until a newer release is published.
