@@ -136,7 +136,7 @@ v3.0.0 does not add:
 
 ## Release Assets
 
-The intended `v3.0.0` release assets are:
+The published `v3.0.0` release assets are:
 
 - `agent-project-memory-3.0.0.jar`
 - `SHA256SUMS`

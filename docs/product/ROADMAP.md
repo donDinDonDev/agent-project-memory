@@ -2060,8 +2060,9 @@ Release boundary:
   security-review plan, deprecation notes, compatibility-test plan, and release-readiness
   path. Those plans remain prerequisites for v3.0; they do not change current generated
   artifacts by themselves.
-- The `v2.9.0` release is the current published baseline. It remains a planning/design
-  release and does not ship v3 implementation behavior.
+- The `v2.9.0` release is the published planning/design baseline for v3 preparation. It
+  remains historical after the published `v3.0.0` release and does not ship v3
+  implementation behavior.
 
 Design constraints:
 
