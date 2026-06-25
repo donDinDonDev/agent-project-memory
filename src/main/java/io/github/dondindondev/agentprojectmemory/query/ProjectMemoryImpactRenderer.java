@@ -891,19 +891,19 @@ public final class ProjectMemoryImpactRenderer {
       field(lines, "   ", "match_type", row.matchType(), false);
       field(lines, "   ", "artifact", row.artifact(), false);
       if (row.evidenceId() != null) {
-        field(lines, "   ", "evidence_id", row.evidenceId(), true);
+        fieldLocator(lines, "   ", "evidence_id", row.evidenceId());
       }
       if (row.sourceType() != null) {
         field(lines, "   ", "source_type", row.sourceType(), true);
       }
       if (row.factId() != null) {
-        field(lines, "   ", "fact_id", row.factId(), true);
+        fieldLocator(lines, "   ", "fact_id", row.factId());
       }
       if (row.nodeId() != null) {
-        field(lines, "   ", "node_id", row.nodeId(), true);
+        fieldLocator(lines, "   ", "node_id", row.nodeId());
       }
       if (row.sourceRefId() != null) {
-        field(lines, "   ", "source_ref.id", row.sourceRefId(), true);
+        fieldLocator(lines, "   ", "source_ref.id", row.sourceRefId());
       }
       if (row.matchedField() != null) {
         field(lines, "   ", "matched_field", row.matchedField(), false);
@@ -912,10 +912,10 @@ public final class ProjectMemoryImpactRenderer {
         field(lines, "   ", "matched_path", row.matchedPath(), true);
       }
       if (row.navigation() != null) {
-        field(lines, "   ", "navigation", row.navigation() + " (not evidence)", true);
+        fieldLocator(lines, "   ", "navigation", row.navigation() + " (not evidence)");
       }
       lines.add("   confidence: high");
-      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+      lines.add("   evidence_ids: " + safeLocators(row.evidenceIds()));
     }
     lines.add("");
   }
@@ -930,17 +930,17 @@ public final class ProjectMemoryImpactRenderer {
     for (int index = 0; index < rows.size(); index++) {
       GraphNeighborRow row = rows.get(index);
       lines.add((index + 1) + ". graph_neighbor");
-      field(lines, "   ", "start_node_id", row.startNodeId(), true);
+      fieldLocator(lines, "   ", "start_node_id", row.startNodeId());
       field(lines, "   ", "direction", row.direction(), false);
-      field(lines, "   ", "edge_id", row.edgeId(), true);
+      fieldLocator(lines, "   ", "edge_id", row.edgeId());
       field(lines, "   ", "edge_type", row.edgeType(), false);
-      field(lines, "   ", "source_id", row.sourceId(), true);
-      field(lines, "   ", "target_id", row.targetId(), true);
-      field(lines, "   ", "neighbor_node_id", row.neighborNodeId(), true);
+      fieldLocator(lines, "   ", "source_id", row.sourceId());
+      fieldLocator(lines, "   ", "target_id", row.targetId());
+      fieldLocator(lines, "   ", "neighbor_node_id", row.neighborNodeId());
       field(lines, "   ", "neighbor_kind", row.neighborKind(), false);
       field(lines, "   ", "neighbor_label", row.neighborLabel(), true);
       if (row.neighborSourceRefId() != null) {
-        field(lines, "   ", "neighbor_source_ref.id", row.neighborSourceRefId(), true);
+        fieldLocator(lines, "   ", "neighbor_source_ref.id", row.neighborSourceRefId());
       }
       field(lines, "   ", "claim_category", row.claimCategory(), false);
       field(lines, "   ", "relation_status", row.relationStatus(), false);
@@ -950,7 +950,7 @@ public final class ProjectMemoryImpactRenderer {
       field(lines, "   ", "uncertainty", row.uncertainty(), false);
       field(lines, "   ", "relation_attributes", row.relationAttributes(), true);
       field(lines, "   ", "derivation", row.derivation(), true);
-      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+      lines.add("   evidence_ids: " + safeLocators(row.evidenceIds()));
     }
     lines.add("");
   }
@@ -965,12 +965,12 @@ public final class ProjectMemoryImpactRenderer {
     for (int index = 0; index < rows.size(); index++) {
       RelationStatusRow row = rows.get(index);
       lines.add((index + 1) + ". relation_status");
-      field(lines, "   ", "start_node_id", row.startNodeId(), true);
+      fieldLocator(lines, "   ", "start_node_id", row.startNodeId());
       field(lines, "   ", "direction", row.direction(), false);
-      field(lines, "   ", "status_id", row.statusId(), true);
+      fieldLocator(lines, "   ", "status_id", row.statusId());
       field(lines, "   ", "relation_family", row.relationFamily(), false);
-      field(lines, "   ", "source_id", row.sourceId(), true);
-      field(lines, "   ", "target_id", row.targetId(), true);
+      fieldLocator(lines, "   ", "source_id", row.sourceId());
+      fieldLocator(lines, "   ", "target_id", row.targetId());
       field(lines, "   ", "claim_category", row.claimCategory(), false);
       field(lines, "   ", "relation_status", row.relationStatus(), false);
       field(lines, "   ", "support_type", row.supportType(), false);
@@ -979,7 +979,7 @@ public final class ProjectMemoryImpactRenderer {
       field(lines, "   ", "uncertainty", row.uncertainty(), false);
       field(lines, "   ", "relation_attributes", row.relationAttributes(), true);
       field(lines, "   ", "derivation", row.derivation(), true);
-      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+      lines.add("   evidence_ids: " + safeLocators(row.evidenceIds()));
     }
     lines.add("");
   }
@@ -994,8 +994,8 @@ public final class ProjectMemoryImpactRenderer {
     for (int index = 0; index < rows.size(); index++) {
       PlanningHintRow row = rows.get(index);
       lines.add((index + 1) + ". planning_hint");
-      field(lines, "   ", "hint_id", row.id(), true);
-      field(lines, "   ", "subject_id", row.subjectId(), true);
+      fieldLocator(lines, "   ", "hint_id", row.id());
+      fieldLocator(lines, "   ", "subject_id", row.subjectId());
       field(lines, "   ", "subject_kind", row.subjectKind(), false);
       field(lines, "   ", "subject_name", row.subjectName(), true);
       field(lines, "   ", "signal", row.signal(), false);
@@ -1004,9 +1004,9 @@ public final class ProjectMemoryImpactRenderer {
       field(lines, "   ", "confidence", row.confidence(), false);
       field(lines, "   ", "source_confidence", row.sourceConfidence(), false);
       field(lines, "   ", "uncertainty", row.uncertainty(), false);
-      field(lines, "   ", "tied_node_ids", joinIds(row.tiedNodeIds()), true);
-      field(lines, "   ", "navigation", row.navigation() + " (not evidence)", true);
-      lines.add("   evidence_ids: " + safe(joinIds(row.evidenceIds()), true));
+      fieldLocator(lines, "   ", "tied_node_ids", joinIds(row.tiedNodeIds()));
+      fieldLocator(lines, "   ", "navigation", row.navigation() + " (not evidence)");
+      lines.add("   evidence_ids: " + safeLocators(row.evidenceIds()));
     }
     lines.add("");
   }
@@ -1116,6 +1116,10 @@ public final class ProjectMemoryImpactRenderer {
     lines.add(indent + name + ": " + safe(value, redact));
   }
 
+  private void fieldLocator(List<String> lines, String indent, String name, String value) {
+    lines.add(indent + name + ": " + safeLocator(value));
+  }
+
   private String childPointer(String parent, String fieldName) {
     return (parent == null || parent.isBlank() ? "" : parent) + "/" + escapePointer(fieldName);
   }
@@ -1137,6 +1141,35 @@ public final class ProjectMemoryImpactRenderer {
       return "null";
     }
     String rendered = QueryDisplaySafety.sanitize(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String safeLocators(List<String> values) {
+    if (values.isEmpty()) {
+      return "none";
+    }
+    StringBuilder rendered = new StringBuilder();
+    for (String value : values) {
+      if (!rendered.isEmpty()) {
+        rendered.append(", ");
+      }
+      rendered.append(safeLocator(value));
+      if (rendered.length() > MAX_TEXT_CHARS) {
+        break;
+      }
+    }
+    return boundedDisplay(rendered.toString());
+  }
+
+  private String safeLocator(String value) {
+    if (value == null) {
+      return "null";
+    }
+    String rendered = QueryDisplaySafety.sanitizeLocator(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String boundedDisplay(String rendered) {
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";

@@ -163,7 +163,7 @@ public final class ProjectMemoryAgentContextRenderer {
     List<String> ids = new ArrayList<>();
     int limit = Math.min(evidenceRecords.size(), MAX_EVIDENCE_ID_SAMPLE);
     for (int index = 0; index < limit; index++) {
-      ids.add(text(evidenceRecords.get(index).path("id"), "id"));
+      ids.add(locatorText(evidenceRecords.get(index).path("id")));
     }
     if (evidenceRecords.size() > limit) {
       ids.add("...");
@@ -179,7 +179,7 @@ public final class ProjectMemoryAgentContextRenderer {
         continue;
       }
       for (JsonNode evidenceId : field) {
-        ids.add(text(evidenceId, "id"));
+        ids.add(locatorText(evidenceId));
       }
     }
     return ids.isEmpty() ? "none" : String.join(", ", ids);
@@ -217,12 +217,34 @@ public final class ProjectMemoryAgentContextRenderer {
     return safe(node.toString(), shouldRedactField(fieldName));
   }
 
+  private String locatorText(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+      return safeLocator(node.asText());
+    }
+    return safeLocator(node.toString());
+  }
+
   private String safe(String value) {
     return safe(value, false);
   }
 
   private String safe(String value, boolean redact) {
     String rendered = QueryDisplaySafety.sanitize(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String safeLocator(String value) {
+    if (value == null) {
+      return "null";
+    }
+    String rendered = QueryDisplaySafety.sanitizeLocator(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String boundedDisplay(String rendered) {
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";

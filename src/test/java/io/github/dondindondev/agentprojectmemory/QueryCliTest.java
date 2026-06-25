@@ -1130,6 +1130,224 @@ final class QueryCliTest {
   }
 
   @Test
+  void queryRelationsAndFindPreserveDocumentTokenLocatorsWhileRedactingFreeText()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String evidenceId = "ev:README.md:132-132:document:mention:/password:decl:000038";
+    String factId = "document_reconciliation:document_only_endpoint_mention:README.md:/password:decl:000038";
+    String graphNodeId = "node:" + factId;
+    String targetNodeId = "node:document:README.md:mention:/password:decl:000038";
+    String edgeId = "edge:document_reference:" + graphNodeId + ":" + targetNodeId;
+    String statusId = "relation-status:document_reference:" + factId;
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "documents": {
+            "reconciliation": {
+              "items": [
+                {
+                  "id": "%s",
+                  "signal": "document_only_endpoint_mention",
+                  "subject_kind": "endpoint_like_path",
+                  "subject_name": "password=FAKE_RELATION_FIND_SUBJECT_SECRET",
+                  "status": "document_only",
+                  "confidence": "low",
+                  "uncertainty": "not_source_backed",
+                  "evidence_ids": ["%s"]
+                }
+              ]
+            }
+          }
+        }
+        """.formatted(factId, evidenceId);
+    String graph = """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "%s",
+              "kind": "document_reconciliation",
+              "label": "password=FAKE_RELATION_FIND_NODE_LABEL_SECRET",
+              "claim_category": "uncertain",
+              "module_id": null,
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "documents.reconciliation.items",
+                "id": "%s"
+              },
+              "evidence_ids": ["%s"]
+            },
+            {
+              "id": "%s",
+              "kind": "document_mention",
+              "label": "mention /password",
+              "claim_category": "document_backed",
+              "module_id": null,
+              "source_ref": {
+                "artifact": "evidence-index.jsonl",
+                "section": "records",
+                "id": "%s"
+              },
+              "evidence_ids": ["%s"]
+            }
+          ],
+          "edges": [
+            {
+              "id": "%s",
+              "source_id": "%s",
+              "target_id": "%s",
+              "type": "declares",
+              "relation_family": "document_reference",
+              "claim_category": "uncertain",
+              "relation_status": "derived",
+              "support_type": "project_map_derivation",
+              "confidence": "low",
+              "uncertainty": "not_source_backed",
+              "relation_attributes": {
+                "subject_name": "password=FAKE_RELATION_FIND_EDGE_SECRET"
+              },
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "documents.reconciliation.items",
+                "fields": ["id"]
+              },
+              "evidence_ids": ["%s"]
+            }
+          ],
+          "relation_statuses": [
+            {
+              "id": "%s",
+              "relation_family": "document_reference",
+              "source_id": "%s",
+              "target_id": "%s",
+              "claim_category": "uncertain",
+              "relation_status": "status_only",
+              "support_type": "document_reconciliation",
+              "confidence": "low",
+              "uncertainty": "not_source_backed",
+              "relation_attributes": {
+                "subject_name": "password=FAKE_RELATION_FIND_STATUS_SECRET"
+              },
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "documents.reconciliation.items",
+                "fields": ["id"]
+              },
+              "evidence_ids": ["%s"]
+            }
+          ],
+          "warnings": []
+        }
+        """.formatted(
+            graphNodeId,
+            factId,
+            evidenceId,
+            targetNodeId,
+            evidenceId,
+            evidenceId,
+            edgeId,
+            graphNodeId,
+            targetNodeId,
+            evidenceId,
+            statusId,
+            graphNodeId,
+            targetNodeId,
+            evidenceId);
+    writeArtifacts(
+        artifactRoot,
+        projectMap,
+        evidenceRecord(
+            evidenceId,
+            "document",
+            "README.md",
+            null,
+            null,
+            "mention:/password",
+            132,
+            132,
+            "mention token: /password",
+            "low"));
+    Files.writeString(artifactRoot.resolve("project-graph.json"), graph);
+
+    CliResult relations = runCli("query", repositoryRoot.toString(), "relations", graphNodeId);
+    CliResult findProjectMapFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        factId);
+    CliResult findGraphFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        graphNodeId);
+    CliResult findStatusFact = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "find",
+        "fact",
+        statusId);
+
+    String redactedEvidenceId = OutputRedactor.redact(evidenceId);
+    String redactedFactId = OutputRedactor.redact(factId);
+    String redactedGraphNodeId = OutputRedactor.redact(graphNodeId);
+    String redactedTargetNodeId = OutputRedactor.redact(targetNodeId);
+    String redactedStatusId = OutputRedactor.redact(statusId);
+    assertAll(
+        () -> assertTrue(redactedEvidenceId.contains(OutputRedactor.REDACTION_MARKER), "redacted evidence id"),
+        () -> assertTrue(redactedFactId.contains(OutputRedactor.REDACTION_MARKER), "redacted fact id"),
+        () -> assertTrue(redactedGraphNodeId.contains(OutputRedactor.REDACTION_MARKER), "redacted graph node id"),
+        () -> assertTrue(redactedTargetNodeId.contains(OutputRedactor.REDACTION_MARKER), "redacted target node id"),
+        () -> assertTrue(redactedStatusId.contains(OutputRedactor.REDACTION_MARKER), "redacted status id"),
+        () -> assertEquals(0, relations.exitCode()),
+        () -> assertTrue(relations.stderr().isEmpty()),
+        () -> assertTrue(relations.stdout().contains("Subject: " + graphNodeId), "relations subject"),
+        () -> assertTrue(relations.stdout().contains("Resolved node: " + graphNodeId), "relations resolved node"),
+        () -> assertTrue(relations.stdout().contains("id: " + graphNodeId), "relations node id"),
+        () -> assertTrue(relations.stdout().contains("id=" + factId), "relations source_ref id"),
+        () -> assertTrue(relations.stdout().contains("1. " + edgeId), "relations edge id"),
+        () -> assertTrue(relations.stdout().contains("source_id: " + graphNodeId), "relations source id"),
+        () -> assertTrue(relations.stdout().contains("target_id: " + targetNodeId), "relations target id"),
+        () -> assertTrue(relations.stdout().contains("1. " + statusId), "relations status id"),
+        () -> assertTrue(relations.stdout().contains("evidence_ids: " + evidenceId), "relations evidence ids"),
+        () -> assertFalse(relations.stdout().contains(redactedEvidenceId)),
+        () -> assertFalse(relations.stdout().contains(redactedFactId)),
+        () -> assertFalse(relations.stdout().contains(redactedGraphNodeId)),
+        () -> assertFalse(relations.stdout().contains(redactedTargetNodeId)),
+        () -> assertFalse(relations.stdout().contains(redactedStatusId)),
+        () -> assertTrue(relations.stdout().contains(
+            "subject_name=password=" + OutputRedactor.REDACTION_MARKER), "relations free text redaction"),
+        () -> assertFalse(relations.stdout().contains("FAKE_RELATION_FIND_NODE_LABEL_SECRET")),
+        () -> assertFalse(relations.stdout().contains("FAKE_RELATION_FIND_EDGE_SECRET")),
+        () -> assertFalse(relations.stdout().contains("FAKE_RELATION_FIND_STATUS_SECRET")),
+        () -> assertEquals(0, findProjectMapFact.exitCode()),
+        () -> assertTrue(findProjectMapFact.stderr().isEmpty(), "find project-map stderr"),
+        () -> assertTrue(findProjectMapFact.stdout().contains("1. " + factId), "find project-map title"),
+        () -> assertTrue(findProjectMapFact.stdout().contains("matched_value: " + factId), "find project-map matched value"),
+        () -> assertTrue(findProjectMapFact.stdout().contains("evidence_ids: " + evidenceId), "find project-map evidence ids"),
+        () -> assertFalse(findProjectMapFact.stdout().contains(redactedFactId)),
+        () -> assertFalse(findProjectMapFact.stdout().contains(redactedEvidenceId)),
+        () -> assertEquals(0, findGraphFact.exitCode()),
+        () -> assertTrue(findGraphFact.stderr().isEmpty(), "find graph stderr"),
+        () -> assertTrue(findGraphFact.stdout().contains("1. " + graphNodeId), "find graph title"),
+        () -> assertTrue(findGraphFact.stdout().contains("matched_value: " + graphNodeId), "find graph matched value"),
+        () -> assertTrue(findGraphFact.stdout().contains("id=" + factId), "find graph source_ref id"),
+        () -> assertFalse(findGraphFact.stdout().contains(redactedGraphNodeId)),
+        () -> assertFalse(findGraphFact.stdout().contains(redactedFactId)),
+        () -> assertEquals(0, findStatusFact.exitCode()),
+        () -> assertTrue(findStatusFact.stderr().isEmpty(), "find status stderr"),
+        () -> assertTrue(findStatusFact.stdout().contains("1. " + statusId), "find status title"),
+        () -> assertTrue(findStatusFact.stdout().contains("matched_value: " + statusId), "find status matched value"),
+        () -> assertFalse(findStatusFact.stdout().contains(redactedStatusId)),
+        () -> assertFalse(findProjectMapFact.stdout().contains("FAKE_RELATION_FIND_SUBJECT_SECRET")));
+  }
+
+  @Test
   void queryExplainRedactsUnsafeEvidenceIdWithoutMutatingArtifacts()
       throws Exception {
     Path repositoryRoot = tempDir.resolve("repo");
@@ -1680,6 +1898,227 @@ final class QueryCliTest {
         () -> assertEquals(
             "password=FAKE_IMPACT_SOURCE_READBACK_SECRET",
             Files.readString(sourceFile)));
+  }
+
+  @Test
+  void queryImpactPreservesDocumentTokenEvidenceLocatorsWhileRedactingFreeText()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String evidenceId = "ev:README.md:132-132:document:mention:/password:decl:000038";
+    String factId = "document_reconciliation:document_only_endpoint_mention:README.md:/password:decl:000038";
+    String graphNodeId = "node:" + factId;
+    String hintId = "change-risk:/password:decl:000038";
+    String statusId = "relation-status:document_reference:" + factId;
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "documents": {
+            "reconciliation": {
+              "items": [
+                {
+                  "id": "%s",
+                  "signal": "document_only_endpoint_mention",
+                  "subject_kind": "endpoint_like_path",
+                  "subject_name": "password=FAKE_IMPACT_SUBJECT_SECRET",
+                  "status": "document_only",
+                  "confidence": "low",
+                  "uncertainty": "not_source_backed",
+                  "evidence_ids": ["%s"]
+                }
+              ]
+            }
+          },
+          "quality": {
+            "change_risk_signals": {
+              "items": [
+                {
+                  "id": "%s",
+                  "subject_id": "%s",
+                  "subject_kind": "document_reconciliation",
+                  "subject_name": "password=FAKE_IMPACT_PLANNING_SECRET",
+                  "signal": "document_only_endpoint_mention",
+                  "status": "planning_hint",
+                  "risk_basis": "document_only",
+                  "confidence": "low",
+                  "uncertainty": "not_source_backed",
+                  "evidence_ids": ["%s"]
+                }
+              ]
+            }
+          }
+        }
+        """.formatted(factId, evidenceId, hintId, factId, evidenceId);
+    String graph = """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [
+            {
+              "id": "%s",
+              "kind": "document_reconciliation",
+              "label": "password=FAKE_IMPACT_GRAPH_LABEL_SECRET",
+              "claim_category": "uncertain",
+              "module_id": null,
+              "source_ref": {
+                "artifact": "project-map.json",
+                "section": "documents.reconciliation.items",
+                "id": "%s"
+              },
+              "evidence_ids": ["%s"]
+            }
+          ],
+          "edges": [],
+          "relation_statuses": [
+            {
+              "id": "%s",
+              "relation_family": "document_reference",
+              "source_id": "%s",
+              "target_id": "%s",
+              "claim_category": "uncertain",
+              "relation_status": "status_only",
+              "support_type": "document_reconciliation",
+              "confidence": "low",
+              "uncertainty": "not_source_backed",
+              "relation_attributes": {
+                "subject_name": "password=FAKE_IMPACT_RELATION_SECRET"
+              },
+              "derivation": {
+                "kind": "project_map_field",
+                "artifact": "project-map.json",
+                "section": "documents.reconciliation.items",
+                "fields": ["id"]
+              },
+              "evidence_ids": ["%s"]
+            }
+          ],
+          "warnings": []
+        }
+        """.formatted(graphNodeId, factId, evidenceId, statusId, graphNodeId, graphNodeId, evidenceId);
+    writeArtifacts(
+        artifactRoot,
+        projectMap,
+        evidenceRecord(
+            evidenceId,
+            "document",
+            "README.md",
+            null,
+            null,
+            "mention:/password",
+            132,
+            132,
+            "mention token: /password",
+            "low"));
+    Files.writeString(artifactRoot.resolve("project-graph.json"), graph);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "README.md");
+
+    String redactedEvidenceId = OutputRedactor.redact(evidenceId);
+    String redactedFactId = OutputRedactor.redact(factId);
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains("evidence_id: " + evidenceId)),
+        () -> assertTrue(result.stdout().contains(
+            "navigation: evidence-index.jsonl#/records/" + evidenceId + " (not evidence)")),
+        () -> assertTrue(result.stdout().contains("evidence_ids: " + evidenceId)),
+        () -> assertTrue(result.stdout().contains("fact_id: " + factId)),
+        () -> assertTrue(result.stdout().contains("source_ref.id: " + factId)),
+        () -> assertTrue(result.stdout().contains("status_id: " + statusId)),
+        () -> assertTrue(result.stdout().contains("hint_id: " + hintId)),
+        () -> assertTrue(result.stdout().contains("subject_id: " + factId)),
+        () -> assertFalse(result.stdout().contains(redactedEvidenceId)),
+        () -> assertFalse(result.stdout().contains(redactedFactId)),
+        () -> assertTrue(result.stdout().contains(
+            "subject_name: password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertTrue(result.stdout().contains(
+            "subject_name=password=" + OutputRedactor.REDACTION_MARKER)),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_SUBJECT_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_PLANNING_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_RELATION_SECRET")),
+        () -> assertFalse(result.stdout().contains("FAKE_IMPACT_GRAPH_LABEL_SECRET")),
+        () -> assertFalse(Files.exists(artifactRoot.resolve("impact-report.json"))));
+  }
+
+  @Test
+  void queryImpactBoundsRenderedEvidenceIdLocatorLists()
+      throws Exception {
+    Path repositoryRoot = tempDir.resolve("repo");
+    Path artifactRoot = repositoryRoot.resolve(".project-memory");
+    String factId = "document_reconciliation:bounded_evidence_id_list";
+    List<String> evidenceIds = new ArrayList<>();
+    List<String> quotedEvidenceIds = new ArrayList<>();
+    StringBuilder evidenceIndex = new StringBuilder();
+    for (int index = 0; index < 180; index++) {
+      String evidenceId = "ev:README.md:1-1:document:chunk:section-" + "%06d".formatted(index);
+      evidenceIds.add(evidenceId);
+      quotedEvidenceIds.add("\"" + evidenceId + "\"");
+      evidenceIndex.append(evidenceRecord(
+          evidenceId,
+          "document",
+          "README.md",
+          null,
+          null,
+          "section-" + index,
+          1,
+          1,
+          "chunk boundary",
+          "low"));
+    }
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "documents": {
+            "reconciliation": {
+              "items": [
+                {
+                  "id": "%s",
+                  "signal": "document_only_endpoint_mention",
+                  "subject_kind": "endpoint_like_path",
+                  "subject_name": "bounded evidence id list",
+                  "status": "document_only",
+                  "confidence": "low",
+                  "uncertainty": "not_source_backed",
+                  "evidence_ids": [%s]
+                }
+              ]
+            }
+          }
+        }
+        """.formatted(factId, String.join(", ", quotedEvidenceIds));
+    writeArtifacts(artifactRoot, projectMap, evidenceIndex.toString());
+    Files.writeString(artifactRoot.resolve("project-graph.json"), """
+        {
+          "graph_schema_version": "1.0",
+          "project_map_schema_version": "1.0",
+          "nodes": [],
+          "edges": [],
+          "relation_statuses": [],
+          "warnings": []
+        }
+        """);
+
+    CliResult result = runCli(
+        "query",
+        repositoryRoot.toString(),
+        "impact",
+        "--files",
+        "README.md");
+
+    boolean hasBoundedFactEvidenceIdsLine = result.stdout().lines().anyMatch(line ->
+        line.startsWith("   evidence_ids: " + evidenceIds.get(0) + ", ")
+            && line.contains("...[truncated]")
+            && line.length() < 4200);
+    assertAll(
+        () -> assertEquals(0, result.exitCode()),
+        () -> assertTrue(result.stderr().isEmpty()),
+        () -> assertTrue(result.stdout().contains("fact_id: " + factId)),
+        () -> assertTrue(hasBoundedFactEvidenceIdsLine));
   }
 
   @Test

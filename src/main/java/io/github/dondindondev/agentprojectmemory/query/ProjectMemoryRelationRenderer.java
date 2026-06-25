@@ -99,8 +99,8 @@ public final class ProjectMemoryRelationRenderer {
             + artifacts.evidenceRecords().size()
             + ", project-graph.json graph_schema_version="
             + safe(artifacts.projectGraphSchemaVersion()));
-    lines.add("Subject: " + safe(subjectId, resolvedBySourceRefId(selectedNode, subjectId)));
-    lines.add("Resolved node: " + text(selectedNode.path("id")));
+    lines.add("Subject: " + subjectText(subjectId));
+    lines.add("Resolved node: " + locatorText(selectedNode.path("id")));
     lines.add("Resolved by: " + resolvedBy(selectedNode, subjectId));
     lines.add("Direction: " + direction.label());
     lines.add("Results: " + resultCount);
@@ -115,6 +115,10 @@ public final class ProjectMemoryRelationRenderer {
   private boolean resolvedBySourceRefId(JsonNode node, String subjectId) {
     return !subjectId.equals(rawText(node.path("id")))
         && subjectId.equals(rawText(node.at("/source_ref/id")));
+  }
+
+  private String subjectText(String subjectId) {
+    return safeLocator(subjectId);
   }
 
   private void appendNode(List<String> lines, JsonNode node) {
@@ -137,7 +141,7 @@ public final class ProjectMemoryRelationRenderer {
     }
     for (int index = 0; index < edges.size(); index++) {
       JsonNode edge = edges.get(index);
-      lines.add((index + 1) + ". " + text(edge.path("id")));
+      lines.add((index + 1) + ". " + locatorText(edge.path("id")));
       field(lines, "   ", "direction", relationDirection(edge, selectedNodeId));
       field(lines, "   ", "type", edge.path("type"));
       field(lines, "   ", "source_id", edge.path("source_id"));
@@ -155,7 +159,7 @@ public final class ProjectMemoryRelationRenderer {
     }
     for (int index = 0; index < statuses.size(); index++) {
       JsonNode status = statuses.get(index);
-      lines.add((index + 1) + ". " + text(status.path("id")));
+      lines.add((index + 1) + ". " + locatorText(status.path("id")));
       field(lines, "   ", "direction", relationDirection(status, selectedNodeId));
       field(lines, "   ", "relation_family", status.path("relation_family"));
       field(lines, "   ", "source_id", status.path("source_id"));
@@ -202,7 +206,7 @@ public final class ProjectMemoryRelationRenderer {
             + " section="
             + text(sourceRef.path("section"))
             + " id="
-            + text(sourceRef.path("id"), SOURCE_REF_ID_FIELD)
+            + locatorText(sourceRef.path("id"))
             + " (not evidence)");
   }
 
@@ -255,7 +259,7 @@ public final class ProjectMemoryRelationRenderer {
     }
     List<String> ids = new ArrayList<>();
     for (JsonNode value : values) {
-      ids.add(text(value));
+      ids.add(locatorText(value));
     }
     return String.join(", ", ids);
   }
@@ -289,6 +293,9 @@ public final class ProjectMemoryRelationRenderer {
     if (node == null || node.isMissingNode() || node.isNull()) {
       return "null";
     }
+    if (isLocatorField(fieldName)) {
+      return locatorText(node);
+    }
     if (node.isTextual()) {
       return safe(node.asText(), shouldRedactField(fieldName));
     }
@@ -296,6 +303,16 @@ public final class ProjectMemoryRelationRenderer {
       return node.asText();
     }
     return safe(node.toString(), shouldRedactField(fieldName));
+  }
+
+  private String locatorText(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+      return safeLocator(node.asText());
+    }
+    return safeLocator(node.toString());
   }
 
   private String mapValueText(String key, JsonNode node) {
@@ -318,6 +335,18 @@ public final class ProjectMemoryRelationRenderer {
 
   private String safe(String value, boolean redact) {
     String rendered = QueryDisplaySafety.sanitize(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String safeLocator(String value) {
+    if (value == null) {
+      return "null";
+    }
+    String rendered = QueryDisplaySafety.sanitizeLocator(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String boundedDisplay(String rendered) {
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
@@ -343,6 +372,13 @@ public final class ProjectMemoryRelationRenderer {
     return SOURCE_REF_ID_FIELD.equals(fieldName)
         || OutputRedactor.shouldRedactFreeTextField(fieldName)
         || OutputRedactor.isCredentialKey(fieldName);
+  }
+
+  private boolean isLocatorField(String fieldName) {
+    return "id".equals(fieldName)
+        || "source_id".equals(fieldName)
+        || "target_id".equals(fieldName)
+        || SOURCE_REF_ID_FIELD.equals(fieldName);
   }
 
   public enum Direction {

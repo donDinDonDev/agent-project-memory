@@ -524,7 +524,7 @@ public final class ProjectMemoryListRenderer {
       JsonNode field = node.path(fieldName);
       if (field.isArray()) {
         for (JsonNode evidenceId : field) {
-          values.add(text(evidenceId));
+          values.add(locatorText(evidenceId));
         }
       }
     }
@@ -565,12 +565,34 @@ public final class ProjectMemoryListRenderer {
     return safe(node.toString(), shouldRedactField(fieldName));
   }
 
+  private String locatorText(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+      return safeLocator(node.asText());
+    }
+    return safeLocator(node.toString());
+  }
+
   private String safe(String value) {
     return safe(value, false);
   }
 
   private String safe(String value, boolean redact) {
     String rendered = QueryDisplaySafety.sanitize(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String safeLocator(String value) {
+    if (value == null) {
+      return "null";
+    }
+    String rendered = QueryDisplaySafety.sanitizeLocator(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String boundedDisplay(String rendered) {
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";

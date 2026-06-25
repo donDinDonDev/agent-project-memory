@@ -43,7 +43,7 @@ public final class ProjectMemoryLookupRenderer {
     }
 
     List<String> lines = header(artifacts, "explain evidence", 1);
-    lines.add("1. " + text(evidence.path("id")));
+    lines.add("1. " + locatorText(evidence.path("id")));
     field(lines, "   ", "source_type", evidence.path("source_type"));
     field(lines, "   ", "path", evidence.path("path"));
     field(lines, "   ", "class_name", evidence.path("class_name"));
@@ -206,12 +206,7 @@ public final class ProjectMemoryLookupRenderer {
             + (match.pointer().isBlank() ? "/" : match.pointer())
             + " (not evidence)");
     field(lines, "   ", "matched_field", match.matchedField());
-    field(
-        lines,
-        "   ",
-        "matched_value",
-        match.matchedValue(),
-        shouldRedactField(match.matchedField()));
+    lines.add("   matched_value: " + matchedValueText(match));
     appendCommonFields(lines, match.row());
     if ("project-graph.json".equals(match.artifact())) {
       appendSourceRef(lines, match.row().path("source_ref"));
@@ -261,7 +256,7 @@ public final class ProjectMemoryLookupRenderer {
             + " section="
             + text(sourceRef.path("section"))
             + " id="
-            + text(sourceRef.path("id"), SOURCE_REF_ID_FIELD)
+            + locatorText(sourceRef.path("id"))
             + " (not evidence)");
   }
 
@@ -316,7 +311,7 @@ public final class ProjectMemoryLookupRenderer {
       return;
     }
     for (JsonNode value : node) {
-      values.add(text(value));
+      values.add(locatorText(value));
     }
   }
 
@@ -340,11 +335,11 @@ public final class ProjectMemoryLookupRenderer {
   private String title(JsonNode row) {
     String id = rawText(row.path("id"));
     if (id != null) {
-      return safe(id);
+      return safeLocator(id);
     }
     String moduleId = rawText(row.path("module_id"));
     if (moduleId != null) {
-      return safe(moduleId);
+      return safeLocator(moduleId);
     }
     String className = rawText(row.path("class_name"));
     if (className != null) {
@@ -355,6 +350,13 @@ public final class ProjectMemoryLookupRenderer {
       return safe(symbolName);
     }
     return "matched row";
+  }
+
+  private String matchedValueText(MatchRow match) {
+    if (isLocatorField(match.matchedField())) {
+      return safeLocator(match.matchedValue());
+    }
+    return safe(match.matchedValue(), shouldRedactField(match.matchedField()));
   }
 
   private String rawText(JsonNode node) {
@@ -378,6 +380,9 @@ public final class ProjectMemoryLookupRenderer {
     if (node == null || node.isMissingNode() || node.isNull()) {
       return "null";
     }
+    if (isLocatorField(fieldName)) {
+      return locatorText(node);
+    }
     if (node.isTextual()) {
       return safe(node.asText(), shouldRedactField(fieldName));
     }
@@ -385,6 +390,16 @@ public final class ProjectMemoryLookupRenderer {
       return node.asText();
     }
     return safe(node.toString(), shouldRedactField(fieldName));
+  }
+
+  private String locatorText(JsonNode node) {
+    if (node == null || node.isMissingNode() || node.isNull()) {
+      return "null";
+    }
+    if (node.isTextual() || node.isNumber() || node.isBoolean()) {
+      return safeLocator(node.asText());
+    }
+    return safeLocator(node.toString());
   }
 
   private String finish(List<String> lines) {
@@ -418,6 +433,18 @@ public final class ProjectMemoryLookupRenderer {
 
   private String safe(String value, boolean redact) {
     String rendered = QueryDisplaySafety.sanitize(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String safeLocator(String value) {
+    if (value == null) {
+      return "null";
+    }
+    String rendered = QueryDisplaySafety.sanitizeLocator(value);
+    return boundedDisplay(rendered);
+  }
+
+  private String boundedDisplay(String rendered) {
     String bounded = rendered.length() <= MAX_TEXT_CHARS
         ? rendered
         : rendered.substring(0, MAX_TEXT_CHARS) + "...[truncated]";
@@ -443,6 +470,14 @@ public final class ProjectMemoryLookupRenderer {
     return SOURCE_REF_ID_FIELD.equals(fieldName)
         || OutputRedactor.shouldRedactFreeTextField(fieldName)
         || OutputRedactor.isCredentialKey(fieldName);
+  }
+
+  private boolean isLocatorField(String fieldName) {
+    return "id".equals(fieldName)
+        || "module_id".equals(fieldName)
+        || "source_id".equals(fieldName)
+        || "target_id".equals(fieldName)
+        || SOURCE_REF_ID_FIELD.equals(fieldName);
   }
 
   public enum FindKind {

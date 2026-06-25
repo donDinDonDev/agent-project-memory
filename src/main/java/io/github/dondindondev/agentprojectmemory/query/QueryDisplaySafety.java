@@ -2,8 +2,12 @@ package io.github.dondindondev.agentprojectmemory.query;
 
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 final class QueryDisplaySafety {
   private static final Set<String> SENSITIVE_PATH_SEGMENTS = Set.of(
@@ -25,6 +29,12 @@ final class QueryDisplaySafety {
       "id_rsa",
       "known_hosts",
       "passwd");
+  private static final Pattern SAFE_DECL_TOKEN = Pattern.compile(
+      "(?i)(^|[:=,;()\\[\\]{}\\s\"'`])(/(?:password|passwd|pwd|token|secret|credential|private[-_]?key|"
+          + "api[-_]?key|apikey|client[-_]?secret|access[-_]?key|authorization|auth)"
+          + ":decl:\\d{6})(?=$|[:=,;()\\[\\]{}\\s\"'`])");
+  private static final String PROTECTED_LOCATOR_PREFIX = "__APM_LOCATOR_HOLD_";
+  private static final String PROTECTED_LOCATOR_SUFFIX = "__";
 
   private QueryDisplaySafety() {
   }
@@ -35,6 +45,41 @@ final class QueryDisplaySafety {
     }
     String redacted = OutputRedactor.redact(value);
     return containsUnsafePathOrIdShape(redacted) ? OutputRedactor.REDACTION_MARKER : redacted;
+  }
+
+  static String sanitizeLocator(String value) {
+    if (value == null || value.isEmpty()) {
+      return value;
+    }
+    List<String> protectedTokens = new ArrayList<>();
+    String protectedValue = protectSafeDeclTokens(value, protectedTokens);
+    String redacted = OutputRedactor.redact(protectedValue);
+    if (containsUnsafePathOrIdShape(redacted)) {
+      return OutputRedactor.REDACTION_MARKER;
+    }
+    return restoreSafeDeclTokens(redacted, protectedTokens);
+  }
+
+  private static String protectSafeDeclTokens(String value, List<String> protectedTokens) {
+    Matcher matcher = SAFE_DECL_TOKEN.matcher(value);
+    StringBuffer result = new StringBuffer();
+    while (matcher.find()) {
+      String placeholder = PROTECTED_LOCATOR_PREFIX + protectedTokens.size() + PROTECTED_LOCATOR_SUFFIX;
+      protectedTokens.add(matcher.group(2));
+      matcher.appendReplacement(result, Matcher.quoteReplacement(matcher.group(1) + placeholder));
+    }
+    matcher.appendTail(result);
+    return result.toString();
+  }
+
+  private static String restoreSafeDeclTokens(String value, List<String> protectedTokens) {
+    String restored = value;
+    for (int index = 0; index < protectedTokens.size(); index++) {
+      restored = restored.replace(
+          PROTECTED_LOCATOR_PREFIX + index + PROTECTED_LOCATOR_SUFFIX,
+          protectedTokens.get(index));
+    }
+    return restored;
   }
 
   private static boolean containsUnsafePathOrIdShape(String value) {
