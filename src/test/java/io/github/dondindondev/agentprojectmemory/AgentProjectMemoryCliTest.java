@@ -2679,6 +2679,48 @@ final class AgentProjectMemoryCliTest {
             },
             {
               "source_type": "local_export",
+              "source_identity": "issues/Users/alice/.ssh/id_rsa",
+              "title": "Rejected nested users ssh path",
+              "body": "FAKE_REJECTED_NESTED_USERS_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/home/alice/.ssh/id_ed25519",
+              "title": "Rejected nested home ssh path",
+              "body": "FAKE_REJECTED_NESTED_HOME_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/private/var/log/auth.log",
+              "title": "Rejected nested private auth log path",
+              "body": "FAKE_REJECTED_NESTED_PRIVATE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/D:Projects/client.log",
+              "title": "Rejected nested drive path segment",
+              "body": "FAKE_REJECTED_NESTED_DRIVE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/file:Secrets/report.txt",
+              "title": "Rejected nested file path segment",
+              "body": "FAKE_REJECTED_NESTED_FILE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
+              "source_identity": "issues/~alice/project.log",
+              "title": "Rejected nested tilde path segment",
+              "body": "FAKE_REJECTED_NESTED_TILDE_BODY",
+              "status": "current"
+            },
+            {
+              "source_type": "local_export",
               "source_identity": "services/orders/issues/PM-401",
               "title": "Accepted issue",
               "body": "Accepted imported body",
@@ -2715,26 +2757,26 @@ final class AgentProjectMemoryCliTest {
     assertAll(
         () -> assertEquals(0, result.exitCode()),
         () -> assertTrue(result.stdout()
-            .contains("Generated source-registry.json with 1 source document(s) and 10 adapter diagnostic(s).")),
+            .contains("Generated source-registry.json with 1 source document(s) and 16 adapter diagnostic(s).")),
         () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
         () -> assertEquals(
             "local_import_read_with_partial_rejections",
             projectMap.path("scan").path("features").path("adapters").path("status").asText()),
-        () -> assertEquals(10, projectMap.path("adapter_context").path("diagnostic_count").asInt()),
+        () -> assertEquals(16, projectMap.path("adapter_context").path("diagnostic_count").asInt()),
         () -> assertEquals(1, projectMap.path("adapter_context").path("items").size()),
         () -> assertEquals("services/orders/issues/PM-401", adapterItem.path("source_identity").asText()),
         () -> assertFalse(adapterItem.has("evidence_ids")),
         () -> assertEquals(1, sourceRegistry.path("source_documents").size()),
         () -> assertEquals(1, sourceRegistry.path("provenance").size()),
-        () -> assertEquals(10, sourceRegistry.path("diagnostics").path("items").size()),
+        () -> assertEquals(16, sourceRegistry.path("diagnostics").path("items").size()),
         () -> assertEquals(
             1,
             sourceRegistry.path("adapter_runs").get(0).path("accepted_count").asInt()),
         () -> assertEquals(
-            10,
+            16,
             sourceRegistry.path("adapter_runs").get(0).path("rejected_count").asInt()),
         () -> assertEquals(
-            10,
+            16,
             sourceRegistry.path("adapter_runs").get(0).path("diagnostic_count").asInt()),
         () -> assertFalse(generatedSurfaces.contains("C:/Users/alice")),
         () -> assertFalse(generatedSurfaces.contains("file:/Users/alice")),
@@ -2748,6 +2790,12 @@ final class AgentProjectMemoryCliTest {
             "issues/PM-402=api_key:FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY")),
         () -> assertFalse(generatedSurfaces.contains(
             "issues/PM-402#api_key:FAKE_REJECTED_EMBEDDED_API_KEY")),
+        () -> assertFalse(generatedSurfaces.contains("issues/Users")),
+        () -> assertFalse(generatedSurfaces.contains("issues/home")),
+        () -> assertFalse(generatedSurfaces.contains("issues/private")),
+        () -> assertFalse(generatedSurfaces.contains("issues/D:Projects")),
+        () -> assertFalse(generatedSurfaces.contains("issues/file:Secrets")),
+        () -> assertFalse(generatedSurfaces.contains("issues/~alice")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_DRIVE_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_FILE_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_TOKEN_BODY")),
@@ -2758,6 +2806,12 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_HASH_CLIENT_SECRET_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_EMBEDDED_EQUALS_API_KEY_BODY")),
         () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_EMBEDDED_HASH_API_KEY_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_USERS_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_HOME_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_PRIVATE_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_DRIVE_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_FILE_BODY")),
+        () -> assertFalse(generatedSurfaces.contains("FAKE_REJECTED_NESTED_TILDE_BODY")),
         () -> assertFalse(generatedSurfaces.contains("Rejected drive path")),
         () -> assertFalse(generatedSurfaces.contains("Rejected file path")),
         () -> assertFalse(generatedSurfaces.contains("Rejected token path")),
@@ -2768,6 +2822,12 @@ final class AgentProjectMemoryCliTest {
         () -> assertFalse(generatedSurfaces.contains("Rejected hash client secret")),
         () -> assertFalse(generatedSurfaces.contains("Rejected embedded equals api key")),
         () -> assertFalse(generatedSurfaces.contains("Rejected embedded hash api key")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested users ssh path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested home ssh path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested private auth log path")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested drive path segment")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested file path segment")),
+        () -> assertFalse(generatedSurfaces.contains("Rejected nested tilde path segment")),
         () -> assertTrue(generatedSurfaces.contains("services/orders/issues/PM-401")));
   }
 

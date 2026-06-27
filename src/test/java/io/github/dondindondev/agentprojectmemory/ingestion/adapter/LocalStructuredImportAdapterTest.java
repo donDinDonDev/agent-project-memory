@@ -170,6 +170,12 @@ final class LocalStructuredImportAdapterTest {
         "~/secrets/api_key",
         "/Users/alice/.ssh/id_rsa",
         "Users/alice/.ssh/id_rsa",
+        "issues/Users/alice/.ssh/id_rsa",
+        "issues/home/alice/.ssh/id_ed25519",
+        "issues/private/var/log/auth.log",
+        "issues/D:Projects/client.log",
+        "issues/file:Secrets/report.txt",
+        "issues/~alice/project.log",
         "token/SHOULD_NOT_RENDER_TOKEN",
         "api_key/SHOULD_NOT_RENDER_API_KEY",
         "client-secret/SHOULD_NOT_RENDER_CLIENT_SECRET",
@@ -215,6 +221,12 @@ final class LocalStructuredImportAdapterTest {
         () -> assertFalse(registryJson.contains("file:/Users")),
         () -> assertFalse(registryJson.contains("~/secrets")),
         () -> assertFalse(registryJson.contains("/Users/alice")),
+        () -> assertFalse(registryJson.contains("issues/Users")),
+        () -> assertFalse(registryJson.contains("issues/home")),
+        () -> assertFalse(registryJson.contains("issues/private")),
+        () -> assertFalse(registryJson.contains("issues/D:Projects")),
+        () -> assertFalse(registryJson.contains("issues/file:Secrets")),
+        () -> assertFalse(registryJson.contains("issues/~alice")),
         () -> assertTrue(registryJson.contains("services/orders/issues/PM-300")));
   }
 

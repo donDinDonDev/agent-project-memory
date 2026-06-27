@@ -41,8 +41,11 @@ public final class LocalStructuredImportAdapter {
       "media",
       "mnt",
       "opt",
+      "proc",
       "private",
+      "root",
       "sbin",
+      "sys",
       "system",
       "tmp",
       "users",
@@ -61,6 +64,23 @@ public final class LocalStructuredImportAdapter {
       "cookie",
       "credential",
       "credentials",
+      ".aws",
+      ".azure",
+      ".docker",
+      ".env",
+      ".gcp",
+      ".gnupg",
+      ".kube",
+      ".netrc",
+      ".npmrc",
+      ".pypirc",
+      ".ssh",
+      "authorizedkeys",
+      "iddsa",
+      "idecdsa",
+      "ided25519",
+      "idrsa",
+      "knownhosts",
       "oauthtoken",
       "password",
       "passwd",
@@ -315,11 +335,17 @@ public final class LocalStructuredImportAdapter {
     }
 
     String[] segments = trimmed.split("/", -1);
-    if (segments.length == 0 || localPathRootSegment(segments[0])) {
+    if (segments.length == 0) {
       return false;
     }
     for (String segment : segments) {
       if (segment.isBlank() || ".".equals(segment) || "..".equals(segment)) {
+        return false;
+      }
+      if (unsafeLocalPathPrefixSegment(segment)) {
+        return false;
+      }
+      if (localPathRootSegment(segment)) {
         return false;
       }
       if (sensitiveSourceIdentitySegment(segment)) {
@@ -341,6 +367,13 @@ public final class LocalStructuredImportAdapter {
 
   private static boolean localPathRootSegment(String segment) {
     return LOCAL_PATH_ROOT_SEGMENTS.contains(segment.toLowerCase(Locale.ROOT));
+  }
+
+  private static boolean unsafeLocalPathPrefixSegment(String segment) {
+    String lowerCase = segment.toLowerCase(Locale.ROOT);
+    return segment.startsWith("~")
+        || lowerCase.startsWith("file:")
+        || DRIVE_LETTER_PATH.matcher(segment).matches();
   }
 
   private static boolean sensitiveSourceIdentitySegment(String segment) {
