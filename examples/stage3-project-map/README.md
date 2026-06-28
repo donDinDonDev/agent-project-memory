@@ -49,7 +49,7 @@ and compare the generated base files with this example snapshot:
 mvn package
 workdir="$(mktemp -d)"
 cp -R src/test/resources/fixtures/stage3-project-map "$workdir/stage3-project-map"
-java -jar target/agent-project-memory-2.9.0.jar scan "$workdir/stage3-project-map"
+java -jar target/agent-project-memory-3.0.0.jar scan "$workdir/stage3-project-map"
 
 for file in artifact-set.json project-map.json project-graph.json evidence-index.jsonl endpoints.md agent-guide.md; do
   diff -u \
