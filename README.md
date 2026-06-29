@@ -102,6 +102,40 @@ After `mvn package`, run a scan with the packaged CLI jar:
 java -jar target/agent-project-memory-3.0.0.jar scan /path/to/java-spring-project
 ```
 
+A supported scan writes `.project-memory/` inside the scanned repository. For a first
+read, open these surfaces in this order:
+
+1. `.project-memory/artifact-set.json` for the generated artifact inventory and
+   evidence-authority labels.
+2. `.project-memory/agent-guide.md` for deterministic human/agent orientation when the
+   file is small enough for the task.
+3. `.project-memory/endpoints.md` for API-surface review tasks.
+4. `.project-memory/project-map.json` and `.project-memory/project-graph.json` only
+   when structured fact or relation lookup is needed.
+5. `.project-memory/evidence-index.jsonl` when an important generated fact needs
+   source-backed verification.
+
+For compact coding-agent handoff, give the agent `artifact-set.json` first and ask it to
+respect the authority labels. For small outputs, add `agent-guide.md` and any
+task-relevant Markdown such as `endpoints.md`. For larger outputs, prefer the read-only
+`query <path> agent-context` command as the first compact context view, then use
+targeted query commands for exact evidence, fact, symbol, relation, or impact lookup.
+This recipe is a conservative reading order, not evidence of user outcomes.
+
+Trust legend for generated output:
+
+- Trust as source-backed evidence: records in `.project-memory/evidence-index.jsonl`
+  and the repository source locations they reference.
+- Treat as structured facts that must resolve to evidence for important decisions:
+  `.project-memory/project-map.json`.
+- Treat as navigation or presentation, not evidence: `artifact-set.json`,
+  `project-graph.json`, `endpoints.md`, `agent-guide.md`, `query` output,
+  `agent-context` output, `impact` output, profile Markdown, AI presentation artifacts,
+  cache metadata, workspace output, adapter provenance, release metadata, and
+  downstream coding-agent output.
+- Verify important claims against `evidence-index.jsonl` and source files before using
+  generated output to guide code changes.
+
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
