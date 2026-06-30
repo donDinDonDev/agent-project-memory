@@ -7254,24 +7254,74 @@ documentation, or invent architecture not represented by deterministic facts. Lo
 documentation guide rendering must use the structured `documents` facts and resolving
 evidence already produced by the deterministic analyzer pipeline.
 
-The minimal stable v0.1 section order is:
+The current front-loaded section order is:
 
 ```md
 # Agent Guide
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`.
 
-## Detected Project Layout
-## Detected Spring MVC Endpoints
-## Detected Spring Components
-## Detected JPA Entities
-## Detected Tests
-## Known Uncertainty And Limits
+## Read This First
+## Trust And Verification Legend
 ## Practical Inspection Order For Coding Agents
+## Project Memory Overview
+## Large Artifact Notice
+## Known Uncertainty Snapshot
+## Not Represented In This Scan
+## Detected Project Layout
+## Build And Configuration Orientation
+## API Surface Interpretation
+## Detected Spring MVC Endpoints
+## Spring Application Surface
+## Detected Spring Components
+## Domain And Data Model
+## Detected Tests
+## Quality And Change-Risk Signals
+## Local Project Documentation
+## Generated Source And Codegen Orientation
+## Optional Surface Orientation
+## Detailed Known Uncertainty And Limits
 ```
+
+`Large Artifact Notice` is rendered only when the guide, known generator inputs, or
+known renderer-visible output size crosses a large threshold. `Not Represented In This
+Scan` is rendered only when one or more supported surfaces have no represented rows.
+Sections whose underlying facts are absent may still render concise local status lines
+when that preserves existing cautious guidance, but repeated no-data interpretation
+belongs in the front-loaded summary.
 
 Content rules:
 
+- The `Read This First` section reminds readers to open `artifact-set.json` before this
+  guide, treats this guide as deterministic presentation rather than evidence, points
+  large or unknown outputs toward `agent-context`, targeted query, focused
+  `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source
+  readback, and includes a deterministic guide-size note.
+- The trust legend must keep `evidence-index.jsonl` and cited source locations as the
+  source-backed evidence surface, `project-map.json` as generated facts that require
+  evidence resolution for important use, and generated Markdown/query/profile/AI/cache/
+  workspace/adapter/release/downstream-agent output as non-evidence presentation,
+  navigation, provenance, or execution metadata unless a later public contract changes
+  that boundary.
+- The practical inspection order appears before long detailed inventories. It may
+  suggest evidence paths from generated facts, but it must not introduce unsupported
+  architecture, modules, domain flows, service layers, or source summaries. Long inline
+  evidence path lists should be capped with a suffix that points readers back to
+  `evidence-index.jsonl` for complete source-backed evidence.
+- `Project Memory Overview` is a compact count/status summary generated only from
+  structured project facts and evidence-reference metadata. It must not create new
+  facts, proof claims, runtime claims, productivity claims, or evidence.
+- `Large Artifact Notice`, when present, must stay near the first-pass orientation
+  block and must state that the guide is deterministic presentation, not evidence. It
+  should direct readers to targeted query, focused JSON selection, exact evidence lookup,
+  or source readback instead of asking them to read every row of large artifacts.
+- `Known Uncertainty Snapshot` is a compact count/status summary for warnings,
+  inferred/statused rows, explicit uncertainty labels, and not-analyzed markers. It does
+  not replace the detailed limits section and must preserve inferred, uncertain,
+  warning, and not-analyzed labels.
+- `Not Represented In This Scan`, when present, summarizes supported surfaces with no
+  represented rows and must state that this does not prove runtime absence outside the
+  supported analyzer scope.
 - The project layout section reports the detected build system, root build file, source
   roots, and test roots from `project-map.json`.
 - Evidence-backed entries render readable evidence references by resolving
@@ -7310,20 +7360,21 @@ Content rules:
   signals. `tested_subjects` entries must use `Inferred` wording only for inferred rows,
   render status-only rows as statuses, and show `relation_status`, `relation_type`,
   `support_type`, `confidence`, `candidate_reference`, and `uncertainty` when present.
-- The known-limits section must explicitly call out `Not analyzed`, `Inferred`, and
-  `Uncertain` areas, including Spring runtime behavior, ORM runtime behavior, test
-  execution/coverage/assertion behavior, call graphs, complete subject mapping,
-  connectors, LLM summaries, repository chat, generic RAG, Gradle execution, dynamic
-  buildscript evaluation, effective Gradle model reconstruction, Kotlin source
+- The detailed known-limits section must explicitly call out `Not analyzed`,
+  `Inferred`, and `Uncertain` areas, including Spring runtime behavior, ORM runtime
+  behavior, test execution/coverage/assertion behavior, call graphs, complete subject
+  mapping, connectors, LLM summaries, repository chat, generic RAG, Gradle execution,
+  dynamic buildscript evaluation, effective Gradle model reconstruction, Kotlin source
   analysis, Maven profiles, effective POM reconstruction, dependency graphs, and
-  recursive nested Maven modules. It should also call out that generated sources, OpenAPI operations, generated API
-  reconstruction, classpath-only interfaces, and ambiguous interface endpoint bindings
-  are not analyzed for the v0.1 interface-mapping decision, and that mapped-superclass identifier
-  traversal skips unresolved, ambiguous, cyclic, and non-source-visible branches.
-- The practical inspection order may suggest evidence paths from generated facts, but it
-  must not introduce unsupported architecture, modules, domain flows, service layers, or
-  source summaries. Long inline evidence path lists should be capped with a suffix that
-  points readers back to `evidence-index.jsonl` for the complete source-backed evidence.
+  recursive nested Maven modules. It should also call out that generated sources,
+  OpenAPI operations, generated API reconstruction, classpath-only interfaces, and
+  ambiguous interface endpoint bindings are not analyzed for the v0.1 interface-mapping
+  decision, and that mapped-superclass identifier traversal skips unresolved,
+  ambiguous, cyclic, and non-source-visible branches.
+- Detailed sections may render compact summaries before row-level detail. Large
+  sections may cap presentation rows and point readers to `project-map.json` and
+  `evidence-index.jsonl`; this must not remove complete evidence records from
+  `evidence-index.jsonl` or required evidence IDs from `project-map.json`.
 
 Current v0.2 `agent-guide.md` behavior:
 
@@ -7455,9 +7506,9 @@ Current Spring application surface `agent-guide.md` behavior:
 
 Current v0.6 JPA/domain `agent-guide.md` behavior:
 
-- The guide may expand `Detected JPA Entities` or add a concise `Domain And Data Model`
-  section generated from structured `entities` facts, repository/entity relation
-  statuses, and resolving evidence only.
+- The guide renders a `Domain And Data Model` section generated from structured
+  `entities` facts, repository/entity relation statuses, and resolving evidence only
+  when domain/data facts or inferred repository/entity relations exist.
 - Entity and embeddable entries must be grouped or labeled by module using
   `module_id`. Embeddables must be described as `@Embeddable` source-visible types, not
   as tables or standalone entities.
@@ -7485,11 +7536,11 @@ Current v0.6 JPA/domain `agent-guide.md` behavior:
   database access facts.
 - When no entity facts, embeddable facts, entity relationship facts, or inferred
   repository/entity relation objects are present, the guide omits the full
-  `Detected JPA Entities` section and does not add a persistence inspection-order step
+  `Domain And Data Model` section and does not add a persistence inspection-order step
   that only reports no evidence paths. Domain-bearing outputs still render the JPA/domain
   section and persistence inspection guidance.
-- The known-limits section should explicitly state that v0.6 JPA/domain facts do not
-  perform database introspection, runtime Hibernate metadata analysis, DDL
+- The detailed known-limits section should explicitly state that v0.6 JPA/domain facts
+  do not perform database introspection, runtime Hibernate metadata analysis, DDL
   reconstruction, JPQL semantic parsing, migration interpretation, complete ORM model
   reconstruction, or runtime repository/entity verification.
 

@@ -2,6 +2,50 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `50 KiB`, `380` rendered lines); known generator inputs are `project-map.json` `47 KiB` and `evidence-index.jsonl` `14 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build, module, and layout facts in `pom.xml`, `domain-a/pom.xml`, `domain-b/pom.xml`, `repositories/pom.xml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
+3. For Spring application surface changes, inspect Spring application surface and component evidence in `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For persistence changes, inspect detected entity evidence in `domain-a/src/main/java/com/example/domain/SharedOrder.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java`, `domain-b/src/main/java/com/example/domain/SharedOrder.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
+5. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+6. For quality and change-risk planning, inspect quality signal evidence in `domain-a/src/main/java/com/example/domain/SharedOrder.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java`, `domain-b/src/main/java/com/example/domain/SharedOrder.java`, `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.
+
+## Project Memory Overview
+
+- Build/layout: build system `maven`, modules `3`, source roots `3`, test roots `0`.
+- Source-backed fact surfaces: endpoints `0`, direct Spring components `0`, Spring application surface rows `7`, entities `3`, embeddables `0`, tests `0`.
+- Planning/navigation surfaces: warnings `0`, quality/change-risk hints `15`, local documents `0`, document reconciliation hints `0`.
+- Evidence records: `30` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `0` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `29` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `15` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `13`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `Spring MVC endpoints`, `direct Spring components`, `test classes`, `local project documentation`, `generated-source root metadata`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `maven`
@@ -86,14 +130,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected none.
 
-## Generated Source And Codegen Orientation
-
-- Generated-source metadata status: `analyzed`.
-- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
-- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
-- Generated-source roots: status `analyzed`; detected none.
-- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
-
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -109,6 +145,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Generated-source API warning IDs: status `analyzed`; detected none.
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
+
+## Detected Spring MVC Endpoints
+
+- Detected: no Spring MVC endpoints recorded in `project-map.json`.
 
 ## Spring Application Surface
 
@@ -158,18 +198,15 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
     - Evidence: `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25` (`ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25:com.example.repositories.WildcardGenericOrderRepository:com.example.repositories.WildcardGenericOrderRepository`), `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24` (`ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-24:com.example.repositories.WildcardGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
 - Warnings: detected none.
 
-## Detected Spring MVC Endpoints
-
-- Detected: no Spring MVC endpoints recorded in `project-map.json`.
-
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
 - Detected: no direct Spring stereotype components recorded.
 
-## Detected JPA Entities
+## Domain And Data Model
 
 - Analysis status: `analyzed`
+- Domain summary: detected 3 JPA entity facts and 0 embeddable facts.
 - Domain/data facts are source-visible JPA annotations and Spring Data generic signals only; no database schema, runtime Hibernate metadata, migration interpretation, or provider defaults are claimed.
 - Extracted entity, field, identifier, embeddable, and relationship facts stay separate from inferred repository/entity links, uncertain relationship targets, and explicit not-analyzed composite-id/runtime boundaries.
 
@@ -306,7 +343,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25` (`ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-25:com.example.repositories.WildcardGenericOrderRepository:com.example.repositories.WildcardGenericOrderRepository`), `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24` (`ev:repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java:24-24:com.example.repositories.WildcardGenericOrderRepository:extends:org.springframework.data.jpa.repository.JpaRepository`)
 
 
-## Known Uncertainty And Limits
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
@@ -327,12 +377,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: Security policy, endpoint protection state, authentication behavior, authorization behavior, filter-chain ordering, vulnerabilities, and correctness are not claimed. v0.5 Spring Security configuration warnings are bounded source-visible inspection hints only.
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Not analyzed: supported Maven test roots were not detected.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build, module, and layout facts in `pom.xml`, `domain-a/pom.xml`, `domain-b/pom.xml`, `repositories/pom.xml`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
-3. For Spring application surface changes, inspect Spring application surface and component evidence in `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence in `domain-a/src/main/java/com/example/domain/SharedOrder.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java`, `domain-b/src/main/java/com/example/domain/SharedOrder.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
-5. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
-6. For quality and change-risk planning, inspect quality signal evidence in `domain-a/src/main/java/com/example/domain/SharedOrder.java`, `domain-a/src/main/java/com/example/unique/UniqueOrder.java`, `domain-b/src/main/java/com/example/domain/SharedOrder.java`, `repositories/src/main/java/com/example/repositories/RepositoryEntityRelations.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

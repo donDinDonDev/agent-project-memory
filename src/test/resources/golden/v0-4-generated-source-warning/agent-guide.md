@@ -2,6 +2,48 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `17 KiB`, `170` rendered lines); known generator inputs are `project-map.json` `12 KiB` and `evidence-index.jsonl` `2 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build, module, and layout facts in `pom.xml`, `target/generated-sources`, `target/generated-sources/openapi`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
+3. For Spring application surface changes, inspect Spring application surface and component evidence (no evidence paths recorded) and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+
+## Project Memory Overview
+
+- Build/layout: build system `maven`, modules `1`, source roots `1`, test roots `0`.
+- Source-backed fact surfaces: endpoints `0`, direct Spring components `0`, Spring application surface rows `0`, entities `0`, embeddables `0`, tests `0`.
+- Planning/navigation surfaces: warnings `2`, quality/change-risk hints `0`, local documents `0`, document reconciliation hints `0`.
+- Evidence records: `6` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `2` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `0` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `0` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `10`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `Spring MVC endpoints`, `direct Spring components`, `domain/data model facts`, `test classes`, `quality/change-risk planning hints`, `local project documentation`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `maven`
@@ -36,23 +78,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Detected none.
-- Module warnings: Detected 2 warning signals for this module: `generated_source:generated_source_root_path_detected`, `generated_source:generated_source_root_path_detected`. See `Known Uncertainty And Limits` for warning evidence and messages.
-
-## Generated Source And Codegen Orientation
-
-- Generated-source metadata status: `analyzed`.
-- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
-- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
-- Generated-source roots: status `analyzed`; detected 2 metadata-only roots.
-  - Root: `target/generated-sources` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
-- Module: Detected `module:.` (path: `.`)
-    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources`.
-  - Evidence: `target/generated-sources` (`ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected`)
-  - Root: `target/generated-sources/openapi` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
-- Module: Detected `module:.` (path: `.`)
-    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi`.
-  - Evidence: `target/generated-sources/openapi` (`ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected`)
-- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+- Module warnings: Detected 2 warning signals for this module: `generated_source:generated_source_root_path_detected`, `generated_source:generated_source_root_path_detected`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ## API Surface Interpretation
 
@@ -70,6 +96,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 
+## Detected Spring MVC Endpoints
+
+- Detected: no Spring MVC endpoints recorded in `project-map.json`.
+
 ## Spring Application Surface
 
 - Spring application surface analysis status: `analyzed`
@@ -81,10 +111,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
 - Spring application surface facts: detected none for supported modules.
 
-## Detected Spring MVC Endpoints
-
-- Detected: no Spring MVC endpoints recorded in `project-map.json`.
-
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
@@ -95,7 +121,28 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Analysis status: `not_detected`
 - Not analyzed: no supported test root was detected.
 
-## Known Uncertainty And Limits
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected 2 metadata-only roots.
+  - Root: `target/generated-sources` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
+- Module: Detected `module:.` (path: `.`)
+    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources`.
+  - Evidence: `target/generated-sources` (`ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected`)
+  - Root: `target/generated-sources/openapi` kind `maven_generated_sources`, scope `main`, origin `metadata_only`, content_status `not_scanned`.
+- Module: Detected `module:.` (path: `.`)
+    - Related warnings: `warning:generated_source:generated_source_root_path_detected:path:target/generated-sources/openapi`.
+  - Evidence: `target/generated-sources/openapi` (`ev:target/generated-sources/openapi:unknown:path_signal:generated_source_root_path_detected`)
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Warning: `generated_source` signal `generated_source_root_path_detected` for module `module:.` (path: `.`) at `target/generated-sources`. Generated-source root path detected; the analyzer records the path signal only and does not read generated source contents or create endpoint/API facts.
   - Evidence: `target/generated-sources` (`ev:target/generated-sources:unknown:path_signal:generated_source_root_path_detected`)
@@ -120,10 +167,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
 - Not analyzed: supported Maven test roots were not detected.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build, module, and layout facts in `pom.xml`, `target/generated-sources`, `target/generated-sources/openapi`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
-3. For Spring application surface changes, inspect Spring application surface and component evidence (no evidence paths recorded) and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.

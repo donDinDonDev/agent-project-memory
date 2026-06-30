@@ -2,6 +2,50 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `24 KiB`, `249` rendered lines); known generator inputs are `project-map.json` `18 KiB` and `evidence-index.jsonl` `4 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build, module, and layout facts in `pom.xml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/OrderController.java`.
+3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/web/OrderController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+5. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/web/OrderController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.
+6. For local documentation context, inspect accepted document evidence and reconciliation hints in `README.md`, `src/main/java/com/example/web/OrderController.java` and treat document paths, heading refs, chunk refs, and reconciliation rows as navigation aids only; prefer code-backed facts for implementation truth.
+
+## Project Memory Overview
+
+- Build/layout: build system `maven`, modules `1`, source roots `1`, test roots `0`.
+- Source-backed fact surfaces: endpoints `2`, direct Spring components `1`, Spring application surface rows `0`, entities `0`, embeddables `0`, tests `0`.
+- Planning/navigation surfaces: warnings `0`, quality/change-risk hints `2`, local documents `1`, document reconciliation hints `3`.
+- Evidence records: `12` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `0` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `2` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `5` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `6`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `domain/data model facts`, `test classes`, `generated-source root metadata`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `maven`
@@ -38,14 +82,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Detected none.
 - Module warnings: Detected none.
 
-## Generated Source And Codegen Orientation
-
-- Generated-source metadata status: `analyzed`.
-- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
-- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
-- Generated-source roots: status `analyzed`; detected none.
-- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
-
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -62,18 +98,9 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 
-## Spring Application Surface
-
-- Spring application surface analysis status: `analyzed`
-- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.
-- Spring Data repository interface entries are inferred source-visible extension signals; repository/entity relation rows, when present, are inferred generic links. They do not prove runtime repositories, query method behavior, database access, or runtime repository/entity verification.
-- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
-- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
-- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
-- Spring application surface facts: detected none for supported modules.
-
 ## Detected Spring MVC Endpoints
+
+- Endpoint summary: detected 2 source-visible Spring MVC endpoint facts.
 
 ### `GET /internal`
 
@@ -101,9 +128,21 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Response: Detected `String`
   - Evidence: `src/main/java/com/example/web/OrderController.java:3` (`ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController`), `src/main/java/com/example/web/OrderController.java:5` (`ev:src/main/java/com/example/web/OrderController.java:5-5:com.example.web.OrderController#orders:@GetMapping`)
 
+## Spring Application Surface
+
+- Spring application surface analysis status: `analyzed`
+- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.
+- Spring Data repository interface entries are inferred source-visible extension signals; repository/entity relation rows, when present, are inferred generic links. They do not prove runtime repositories, query method behavior, database access, or runtime repository/entity verification.
+- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
+- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
+- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+- Spring application surface facts: detected none for supported modules.
+
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
+- Component summary: detected 1 direct Spring stereotype component.
 
 ### `com.example.web.OrderController`
 
@@ -172,7 +211,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
     - Source fact: `spring_mvc_endpoint`, `endpoint:com.example.web.OrderController#internal`
     - Evidence: `src/main/java/com/example/web/OrderController.java:3` (`ev:src/main/java/com/example/web/OrderController.java:3-3:com.example.web.OrderController:@RestController`), `src/main/java/com/example/web/OrderController.java:10` (`ev:src/main/java/com/example/web/OrderController.java:10-10:com.example.web.OrderController#internal:@GetMapping`)
 
-## Known Uncertainty And Limits
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
@@ -194,12 +246,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Document-backed: local documentation facts come from default-scope Markdown inventory, heading/chunk navigation references, and uncertain reconciliation hints only. Hidden, private, generated, dependency, maintainer, and `.project-memory/` paths are excluded by default; symlinks are not followed by default; external docs, PDFs, Word documents, connectors, generic RAG, repository chat, and LLM summaries are outside the core analyzer. Document-backed signals do not override code-backed facts.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
 - Not analyzed: supported Maven test roots were not detected.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build, module, and layout facts in `pom.xml`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `src/main/java/com/example/web/OrderController.java`.
-3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/web/OrderController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
-5. For quality and change-risk planning, inspect quality signal evidence in `src/main/java/com/example/web/OrderController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.
-6. For local documentation context, inspect accepted document evidence and reconciliation hints in `README.md`, `src/main/java/com/example/web/OrderController.java` and treat document paths, heading refs, chunk refs, and reconciliation rows as navigation aids only; prefer code-backed facts for implementation truth.

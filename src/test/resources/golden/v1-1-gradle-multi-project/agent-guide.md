@@ -2,6 +2,48 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `27 KiB`, `305` rendered lines); known generator inputs are `project-map.json` `30 KiB` and `evidence-index.jsonl` `4 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build, module, and layout facts in `settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts`, `libs/empty/build.gradle.kts`, `services/orders/build.gradle`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
+3. For Spring application surface changes, inspect Spring application surface and component evidence (no evidence paths recorded) and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.
+
+## Project Memory Overview
+
+- Build/layout: build system `gradle`, modules `5`, source roots `2`, test roots `1`.
+- Source-backed fact surfaces: endpoints `0`, direct Spring components `0`, Spring application surface rows `0`, entities `0`, embeddables `0`, tests `0`.
+- Planning/navigation surfaces: warnings `5`, quality/change-risk hints `0`, local documents `0`, document reconciliation hints `0`.
+- Evidence records: `12` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `5` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `0` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `0` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `50`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `Spring MVC endpoints`, `direct Spring components`, `domain/data model facts`, `test classes`, `quality/change-risk planning hints`, `local project documentation`, `generated-source root metadata`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `gradle`
@@ -116,7 +158,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Detected none.
-- Module warnings: Detected 1 warning signal for this module: `gradle_module:duplicate_project_path`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `gradle_module:duplicate_project_path`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:libs/empty` (path: `libs/empty`)
 
@@ -134,7 +176,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Not analyzed; status `not_detected`.
-- Module warnings: Detected 1 warning signal for this module: `gradle_module:unsupported_module`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `gradle_module:unsupported_module`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:libs/missing` (path: `libs/missing`)
 
@@ -151,7 +193,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Not analyzed; status `not_detected`.
-- Module warnings: Detected 1 warning signal for this module: `gradle_module:missing_project_directory`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `gradle_module:missing_project_directory`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:services/orders` (path: `services/orders`)
 
@@ -175,14 +217,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Spring Boot application signals: Not analyzed; status `not_detected`.
 - Module warnings: Detected none.
 
-## Generated Source And Codegen Orientation
-
-- Generated-source metadata status: `analyzed`.
-- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
-- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
-- Generated-source roots: status `analyzed`; detected none.
-- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
-
 ## API Surface Interpretation
 
 - API surface analysis status: `analyzed`
@@ -199,6 +233,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Repository-rest warning IDs: status `analyzed`; detected none.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 
+## Detected Spring MVC Endpoints
+
+- Detected: no Spring MVC endpoints recorded in `project-map.json`.
+
 ## Spring Application Surface
 
 - Spring application surface analysis status: `analyzed`
@@ -210,10 +248,6 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
 - Spring application surface facts: detected none for supported modules.
 
-## Detected Spring MVC Endpoints
-
-- Detected: no Spring MVC endpoints recorded in `project-map.json`.
-
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
@@ -224,7 +258,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Analysis status: `analyzed`
 - Detected: no test classes recorded.
 
-## Known Uncertainty And Limits
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs none recorded; Maven plugin IDs none recorded.
+
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Warning: `gradle_module` signal `duplicate_project_path` for module `module:app` (path: `app`) at `settings.gradle.kts`. Duplicate Gradle settings include ignored; v1.1 analyzes each normalized Gradle project path once.
   - Evidence: `settings.gradle.kts:2` (`ev:settings.gradle.kts:2-2:build_file:gradle:include:decl:000005`)
@@ -255,10 +302,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: Security policy, endpoint protection state, authentication behavior, authorization behavior, filter-chain ordering, vulnerabilities, and correctness are not claimed. v0.5 Spring Security configuration warnings are bounded source-visible inspection hints only.
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build, module, and layout facts in `settings.gradle.kts`, `build.gradle.kts`, `app/build.gradle.kts`, `libs/empty/build.gradle.kts`, `services/orders/build.gradle`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
-3. For Spring application surface changes, inspect Spring application surface and component evidence (no evidence paths recorded) and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For tests, inspect detected test files and tested-subject relation/status evidence (no evidence paths recorded); do not treat inferred or statused subjects as coverage proof.

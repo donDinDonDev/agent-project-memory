@@ -2,6 +2,50 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `41 KiB`, `402` rendered lines); known generator inputs are `project-map.json` `42 KiB` and `evidence-index.jsonl` `14 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build, module, and layout facts in `pom.xml`, `libraries/shared/pom.xml`, `services/billing/pom.xml`, `services/orders/pom.xml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/resources/openapi.yml`, `services/orders/pom.xml`.
+3. For Spring application surface changes, inspect Spring application surface and component evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For persistence changes, inspect detected entity evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
+5. For tests, inspect detected test files and tested-subject relation/status evidence in `services/billing/src/test/java/com/example/shared/SharedControllerTest.java`, `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/test/java/com/example/shared/SharedControllerTest.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`; do not treat inferred or statused subjects as coverage proof.
+6. For quality and change-risk planning, inspect quality signal evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.
+
+## Project Memory Overview
+
+- Build/layout: build system `maven`, modules `4`, source roots `2`, test roots `2`.
+- Source-backed fact surfaces: endpoints `2`, direct Spring components `4`, Spring application surface rows `0`, entities `2`, embeddables `0`, tests `2`.
+- Planning/navigation surfaces: warnings `7`, quality/change-risk hints `4`, local documents `0`, document reconciliation hints `0`.
+- Evidence records: `36` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `7` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `6` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `4` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `20`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `local project documentation`, `generated-source root metadata`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `maven`
@@ -67,7 +111,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Not analyzed; status `not_detected`.
-- Module warnings: Detected 1 warning signal for this module: `maven_module:unsupported_module`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `maven_module:unsupported_module`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:services/billing` (path: `services/billing`)
 
@@ -81,7 +125,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Detected none.
-- Module warnings: Detected 1 warning signal for this module: `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `hidden_http_surface:repository_rest_resource`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:services/missing` (path: `services/missing`)
 
@@ -94,7 +138,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Resource roots: Not analyzed; status `not_detected`.
 - Config files: Not analyzed; status `not_detected`.
 - Spring Boot application signals: Not analyzed; status `not_detected`.
-- Module warnings: Detected 1 warning signal for this module: `maven_module:missing_child_pom`. See `Known Uncertainty And Limits` for warning evidence and messages.
+- Module warnings: Detected 1 warning signal for this module: `maven_module:missing_child_pom`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ### Module `module:services/orders` (path: `services/orders`)
 
@@ -115,15 +159,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
     - Evidence: recorded in `project-map.json`; no separate resource-root evidence IDs are emitted.
 - Config files: Detected none.
 - Spring Boot application signals: Detected none.
-- Module warnings: Detected 4 warning signals for this module: `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`, `hidden_http_surface:repository_rest_resource`. See `Known Uncertainty And Limits` for warning evidence and messages.
-
-## Generated Source And Codegen Orientation
-
-- Generated-source metadata status: `analyzed`.
-- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
-- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
-- Generated-source roots: status `analyzed`; detected none.
-- Generator/codegen signals: status `analyzed`; warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`; Maven plugin IDs `maven_plugin:module:services/orders:direct:group_id:not_declared:openapi-generator-maven-plugin:decl:000001`.
+- Module warnings: Detected 4 warning signals for this module: `generated_source:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:maven_openapi_swagger_codegen_plugin`, `hidden_http_surface:openapi_spec_file`, `hidden_http_surface:repository_rest_resource`. See `Detailed Known Uncertainty And Limits` for warning evidence and messages.
 
 ## API Surface Interpretation
 
@@ -147,18 +183,9 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Repository-rest warning IDs: status `analyzed`; referenced 2 warning IDs `warning:hidden_http_surface:repository_rest_resource:module:services/billing:com.example.shared.SharedRepository`, `warning:hidden_http_surface:repository_rest_resource:module:services/orders:com.example.shared.SharedRepository`.
 - Hidden HTTP warning IDs: status `analyzed`; detected none.
 
-## Spring Application Surface
-
-- Spring application surface analysis status: `analyzed`
-- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.
-- Spring Data repository interface entries are inferred source-visible extension signals; repository/entity relation rows, when present, are inferred generic links. They do not prove runtime repositories, query method behavior, database access, or runtime repository/entity verification.
-- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
-- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
-- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
-- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
-- Spring application surface facts: detected none for supported modules.
-
 ## Detected Spring MVC Endpoints
+
+- Endpoint summary: detected 2 source-visible Spring MVC endpoint facts.
 
 ### `GET /billing/health`
 
@@ -186,9 +213,21 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Response: Detected `String`
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:3` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:3-3:com.example.shared.SharedController:@RestController`), `services/orders/src/main/java/com/example/shared/SharedController.java:4` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:4-4:com.example.shared.SharedController:@RequestMapping`), `services/orders/src/main/java/com/example/shared/SharedController.java:6` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:6-6:com.example.shared.SharedController#health:@GetMapping`)
 
+## Spring Application Surface
+
+- Spring application surface analysis status: `analyzed`
+- Repository stereotype entries are direct `@Repository` annotation observations; they do not prove runtime bean registration or entity ownership.
+- Spring Data repository interface entries are inferred source-visible extension signals; repository/entity relation rows, when present, are inferred generic links. They do not prove runtime repositories, query method behavior, database access, or runtime repository/entity verification.
+- Configuration classes, configuration-properties types, and `@Bean` methods are source-visible Spring configuration signals; they do not prove runtime bean graphs, binding success, config values, bean scopes, lifecycle, proxy behavior, or dependency graphs.
+- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.
+- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.
+- Subsection statuses: repositories `analyzed`, configuration classes `analyzed`, configuration properties `analyzed`, bean methods `analyzed`, transaction boundaries `analyzed`, scheduled methods `analyzed`, event listeners `analyzed`, messaging listeners `analyzed`, security warnings `analyzed`.
+- Spring application surface facts: detected none for supported modules.
+
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
+- Component summary: detected 4 direct Spring stereotype components.
 
 ### `com.example.shared.SharedController`
 
@@ -214,9 +253,10 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Stereotypes: Detected `@Service`
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:12` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:12-12:com.example.shared.SharedService:@Service`)
 
-## Detected JPA Entities
+## Domain And Data Model
 
 - Analysis status: `analyzed`
+- Domain summary: detected 2 JPA entity facts and 0 embeddable facts.
 - Domain/data facts are source-visible JPA annotations and Spring Data generic signals only; no database schema, runtime Hibernate metadata, migration interpretation, or provider defaults are claimed.
 - Extracted entity, field, identifier, embeddable, and relationship facts stay separate from inferred repository/entity links, uncertain relationship targets, and explicit not-analyzed composite-id/runtime boundaries.
 
@@ -250,6 +290,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Detected Tests
 
 - Analysis status: `analyzed`
+- Test inventory summary: detected 2 test classes, 2 framework signals, 0 Spring test slice signals, 0 mock signals, 2 supported JUnit methods, and 2 tested-subject relation/status rows.
 
 ### `com.example.shared.SharedControllerTest`
 
@@ -312,7 +353,20 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
   - Evidence: `services/orders/src/main/java/com/example/shared/SharedController.java:12` (`ev:services/orders/src/main/java/com/example/shared/SharedController.java:12-12:com.example.shared.SharedService:@Service`)
 
 
-## Known Uncertainty And Limits
+## Generated Source And Codegen Orientation
+
+- Generated-source metadata status: `analyzed`.
+- Policy: content scan `disabled`, default `false`, configurable `false`, content_status `not_scanned`.
+- Generated-source roots are metadata only; they are not production `source_roots`, test roots, endpoint facts, API operation facts, or generated API facts.
+- Generated-source roots: status `analyzed`; detected none.
+- Generator/codegen signals: status `analyzed`; warning IDs `warning:generated_source:maven_openapi_swagger_codegen_plugin:module:services/orders:direct_plugin:decl:000001`; Maven plugin IDs `maven_plugin:module:services/orders:direct:group_id:not_declared:openapi-generator-maven-plugin:decl:000001`.
+
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Warning: `generated_source` signal `maven_openapi_swagger_codegen_plugin` for module `module:services/orders` (path: `services/orders`) at `services/orders/pom.xml`. Maven OpenAPI/Swagger code generation plugin declaration detected; the analyzer does not run code generation, scan generated sources by default, or create endpoint/API facts from this build signal.
   - Evidence: `services/orders/pom.xml:5` (`ev:services/orders/pom.xml:5-5:build_file:maven:plugin:000001:artifactId`)
@@ -345,12 +399,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA field metadata is limited to supported direct field-level source-visible annotations. It is not a complete persistent-property inventory, does not support getter/property access in this slice, and does not fill missing annotation attributes from JPA provider defaults.
 - Not analyzed: v0.5 transaction, scheduling, event listener, and messaging listener facts are annotation-presence change-surface signals only. Transaction propagation, scheduler registration, event delivery, message destinations, broker topology, consumer groups, and delivery semantics are not claimed.
 - Not analyzed: Security policy, endpoint protection state, authentication behavior, authorization behavior, filter-chain ordering, vulnerabilities, and correctness are not claimed. v0.5 Spring Security configuration warnings are bounded source-visible inspection hints only.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build, module, and layout facts in `pom.xml`, `libraries/shared/pom.xml`, `services/billing/pom.xml`, `services/orders/pom.xml`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/resources/openapi.yml`, `services/orders/pom.xml`.
-3. For Spring application surface changes, inspect Spring application surface and component evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For persistence changes, inspect detected entity evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat field metadata as source-visible annotations only, not runtime schema, provider defaults, or complete access-strategy reconstruction; relationship targets remain declared-type-only.
-5. For tests, inspect detected test files and tested-subject relation/status evidence in `services/billing/src/test/java/com/example/shared/SharedControllerTest.java`, `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/test/java/com/example/shared/SharedControllerTest.java`, `services/orders/src/main/java/com/example/shared/SharedController.java`; do not treat inferred or statused subjects as coverage proof.
-6. For quality and change-risk planning, inspect quality signal evidence in `services/billing/src/main/java/com/example/shared/SharedController.java`, `services/orders/src/main/java/com/example/shared/SharedController.java` and treat `no_obvious_test`, warning-oriented, and uncertain statuses as planning hints only, not coverage, runtime, correctness, vulnerability, or business-priority claims.

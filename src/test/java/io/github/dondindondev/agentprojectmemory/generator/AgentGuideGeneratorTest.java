@@ -22,7 +22,13 @@ final class AgentGuideGeneratorTest {
         Files.readString(goldenRoot.resolve("evidence-index.jsonl")));
 
     assertEquals(Files.readString(goldenRoot.resolve("agent-guide.md")), guide);
-    assertTrue(guide.contains("## Detected JPA Entities"));
+    assertTrue(guide.contains("## Domain And Data Model"));
+    assertFrontLoadedOrientationPrecedesDetailedInventory(guide);
+    assertTrue(guide.contains(
+        "Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger;"));
+    assertTrue(guide.contains(
+        "LLM/provider AI output, cache, workspace, adapter output, release metadata, "
+            + "security reports, and downstream-agent output are non-evidence unless"));
     assertTrue(guide.contains(
         "For persistence changes, inspect detected entity evidence in "
             + "`src/main/java/com/example/domain/ProjectEntities.java`"));
@@ -202,11 +208,140 @@ final class AgentGuideGeneratorTest {
 
     String guide = generator.generate(projectMap, evidenceIndex);
 
-    assertFalse(guide.contains("## Detected JPA Entities"));
+    assertFalse(guide.contains("## Domain And Data Model"));
     assertFalse(guide.contains("For persistence changes, inspect detected entity evidence"));
     assertFalse(guide.contains("inspect detected entity evidence (no evidence paths recorded)"));
     assertTrue(guide.contains(
         "`com.example.NoDomainRepository`: `entity_relation_status` is `not_detected`"));
+  }
+
+  @Test
+  void largeProjectMapInputRendersLargeArtifactNoticeNearFrontMatter() throws Exception {
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "padding": "%s",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": [],
+            "modules": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": [],
+            "embeddables": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "tests": {
+            "analysis_status": "not_detected",
+            "items": []
+          }
+        }
+        """.formatted("x".repeat(1024 * 1024 + 1));
+
+    String guide = generator.generate(projectMap, "");
+
+    int overview = guide.indexOf("## Project Memory Overview");
+    int largeNotice = guide.indexOf("## Large Artifact Notice");
+    int uncertaintySnapshot = guide.indexOf("## Known Uncertainty Snapshot");
+    assertTrue(largeNotice > overview, "large notice must follow the overview");
+    assertTrue(uncertaintySnapshot > largeNotice, "uncertainty snapshot must follow the large notice");
+    assertTrue(guide.contains(
+        "Large artifact notice: this guide is deterministic presentation, not evidence."));
+    assertTrue(guide.contains(
+        "Large machine artifacts visible to this renderer: `project-map.json"));
+  }
+
+  @Test
+  void largeTestInventoryRendersSummaryWarningAndCapsDetailedRows() throws Exception {
+    StringBuilder testItems = new StringBuilder();
+    for (int index = 1; index <= 51; index++) {
+      if (index > 1) {
+        testItems.append(",\n");
+      }
+      testItems.append("""
+          {
+            "class_name": "com.example.Test%02d",
+            "source_path": "src/test/java/com/example/Test%02d.java",
+            "evidence_ids": [],
+            "framework_signals": [],
+            "spring_test_slices": [],
+            "mock_signals": [],
+            "methods": [],
+            "tested_subjects": []
+          }""".formatted(index, index));
+    }
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "project": {
+            "build": {
+              "system": "maven",
+              "root_build_file": "pom.xml",
+              "evidence_ids": []
+            },
+            "source_roots": [],
+            "test_roots": ["src/test/java"],
+            "modules": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "endpoints": [],
+          "warnings": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "components": {
+            "analysis_status": "analyzed",
+            "items": []
+          },
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": [],
+            "embeddables": {
+              "analysis_status": "analyzed",
+              "items": []
+            }
+          },
+          "tests": {
+            "analysis_status": "analyzed",
+            "items": [
+              %s
+            ]
+          }
+        }
+        """.formatted(testItems);
+
+    String guide = generator.generate(projectMap, "");
+
+    assertTrue(guide.contains(
+        "- Test inventory summary: detected 51 test classes"));
+    assertTrue(guide.contains(
+        "- Large section: use this summary first. Read detailed rows only when they are task-relevant, and verify important claims through exact evidence IDs."));
+    assertTrue(guide.contains("### `com.example.Test50`"));
+    assertFalse(guide.contains("### `com.example.Test51`"));
+    assertTrue(guide.contains(
+        "  - ... and 1 more test class detail rows in `project-map.json`."));
   }
 
   @Test
@@ -405,7 +540,7 @@ final class AgentGuideGeneratorTest {
     assertFalse(guide.contains("documented prose body"));
     assertFalse(guide.contains("is stale"));
     assertTrue(guide.indexOf("## Local Project Documentation")
-        < guide.indexOf("## Known Uncertainty And Limits"));
+        < guide.indexOf("## Detailed Known Uncertainty And Limits"));
   }
 
   @Test
@@ -928,7 +1063,7 @@ final class AgentGuideGeneratorTest {
         markdownSection(
             guide,
             "## Spring Application Surface",
-            "## Detected Spring MVC Endpoints"));
+            "## Detected Spring Components"));
   }
 
   @Test
@@ -1160,6 +1295,22 @@ final class AgentGuideGeneratorTest {
       return section.substring(0, section.length() - 1);
     }
     return section;
+  }
+
+  private void assertFrontLoadedOrientationPrecedesDetailedInventory(String guide) {
+    int readThisFirst = guide.indexOf("## Read This First");
+    int trustLegend = guide.indexOf("## Trust And Verification Legend");
+    int inspectionOrder = guide.indexOf("## Practical Inspection Order For Coding Agents");
+    int overview = guide.indexOf("## Project Memory Overview");
+    int uncertaintySnapshot = guide.indexOf("## Known Uncertainty Snapshot");
+    int projectLayout = guide.indexOf("## Detected Project Layout");
+
+    assertTrue(readThisFirst > 0, "Read This First must exist");
+    assertTrue(trustLegend > readThisFirst, "trust legend must follow Read This First");
+    assertTrue(inspectionOrder > trustLegend, "inspection order must follow trust legend");
+    assertTrue(overview > inspectionOrder, "overview must follow inspection order");
+    assertTrue(uncertaintySnapshot > overview, "uncertainty snapshot must follow overview");
+    assertTrue(projectLayout > uncertaintySnapshot, "detailed project layout must follow front matter");
   }
 
   private boolean hasLineStartingWith(String markdown, String prefix) {

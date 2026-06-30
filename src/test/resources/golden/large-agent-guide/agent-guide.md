@@ -2,6 +2,48 @@
 
 Generated deterministically from `project-map.json` and `evidence-index.jsonl`. The guide generator does not re-analyze source files.
 
+## Read This First
+
+- Open `artifact-set.json` before this guide and respect its artifact authority labels.
+- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.
+- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.
+- Size note: this guide is `small-guide` (about `16 KiB`, `157` rendered lines); known generator inputs are `project-map.json` `8 KiB` and `evidence-index.jsonl` `7 KiB`.
+
+## Trust And Verification Legend
+
+Trust and verification legend:
+- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.
+- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.
+- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.
+- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
+- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.
+
+## Practical Inspection Order For Coding Agents
+
+1. Start with detected build and layout facts in `pom.xml`.
+2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
+3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/components/ComponentOne.java`, `src/main/java/com/example/components/ComponentTwo.java`, `src/main/java/com/example/components/ComponentThree.java`, `src/main/java/com/example/components/ComponentFour.java`, `src/main/java/com/example/components/ComponentFive.java`, ... and 2 more evidence paths in `evidence-index.jsonl` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
+4. For tests, inspect detected test files and tested-subject relation/status evidence in `src/test/java/com/example/web/LargeControllerTest.java`, `src/main/java/com/example/web/LargeController.java`; do not treat inferred or statused subjects as coverage proof.
+
+## Project Memory Overview
+
+- Build/layout: build system `maven`, modules `0`, source roots `1`, test roots `1`.
+- Source-backed fact surfaces: endpoints `0`, direct Spring components `7`, Spring application surface rows `0`, entities `0`, embeddables `0`, tests `1`.
+- Planning/navigation surfaces: warnings `0`, quality/change-risk hints `0`, local documents `0`, document reconciliation hints `0`.
+- Evidence records: `18` records in `evidence-index.jsonl`; this overview is presentation only.
+- Size band: `small-guide`; large detailed sections should be selected by task and verified through exact evidence IDs.
+
+## Known Uncertainty Snapshot
+
+- Warnings: `0` warning rows; warning evidence and messages stay in the detailed limits section.
+- Inferred or statused rows: `1` rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.
+- Explicit uncertainty labels: `0` values; preserve those caveats with the cited evidence.
+- Not analyzed/out-of-scope status markers: `0`; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.
+
+## Not Represented In This Scan
+
+- No represented rows for: `Spring MVC endpoints`, `domain/data model facts`, `quality/change-risk planning hints`, `local project documentation`, `generated-source root metadata`. This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.
+
 ## Detected Project Layout
 
 - Build system: Detected `maven`
@@ -23,6 +65,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Detected Spring Components
 
 - Analysis status: `analyzed`
+- Component summary: detected 7 direct Spring stereotype components.
 
 ### `com.example.components.ComponentOne`
 
@@ -62,6 +105,7 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 ## Detected Tests
 
 - Analysis status: `analyzed`
+- Test inventory summary: detected 1 test class, 1 framework signal, 0 Spring test slice signals, 0 mock signals, 7 supported JUnit methods, and 1 tested-subject relation/status row.
 
 ### `com.example.web.LargeControllerTest`
 
@@ -87,7 +131,12 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Inferred tested subject: `com.example.web.LargeController` (relation_status: `inferred`, relation_type: `naming_convention`, support_type: `inferred`, confidence: `medium`).
   - Evidence: `src/test/java/com/example/web/LargeControllerTest.java:3` (`ev:src/test/java/com/example/web/LargeControllerTest.java:3-3:com.example.web.LargeControllerTest:test_file`), `src/main/java/com/example/web/LargeController.java:8` (`ev:src/main/java/com/example/web/LargeController.java:8-8:com.example.web.LargeController:code_symbol`)
 
-## Known Uncertainty And Limits
+## Optional Surface Orientation
+
+- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.
+- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.
+
+## Detailed Known Uncertainty And Limits
 
 - Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: "not_scanned"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.
 - Not analyzed: Spring runtime behavior such as component scanning, dependency injection graphs, bean lifecycle, scopes, and conditional configuration is not represented by `components.items`.
@@ -105,10 +154,3 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl`. 
 - Not analyzed: JPA field metadata is limited to supported direct field-level source-visible annotations. It is not a complete persistent-property inventory, does not support getter/property access in this slice, and does not fill missing annotation attributes from JPA provider defaults.
 - Uncertain: no endpoint facts were recorded, so HTTP entry points may be absent or outside the currently supported analyzer scope.
 - Uncertain: no entity facts were recorded, so persistence mappings may be absent or outside the currently supported analyzer scope.
-
-## Practical Inspection Order For Coding Agents
-
-1. Start with detected build and layout facts in `pom.xml`.
-2. For HTTP behavior, inspect detected endpoint and hidden-surface warning evidence (no evidence paths recorded).
-3. For Spring application surface changes, inspect Spring application surface and component evidence in `src/main/java/com/example/components/ComponentOne.java`, `src/main/java/com/example/components/ComponentTwo.java`, `src/main/java/com/example/components/ComponentThree.java`, `src/main/java/com/example/components/ComponentFour.java`, `src/main/java/com/example/components/ComponentFive.java`, ... and 2 more evidence paths in `evidence-index.jsonl` and avoid assuming runtime repository registration, entity ownership, injection graphs, transaction behavior, scheduler registration, event delivery, or messaging topology.
-4. For tests, inspect detected test files and tested-subject relation/status evidence in `src/test/java/com/example/web/LargeControllerTest.java`, `src/main/java/com/example/web/LargeController.java`; do not treat inferred or statused subjects as coverage proof.

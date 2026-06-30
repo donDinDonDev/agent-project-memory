@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -17,6 +18,18 @@ public final class AgentGuideGenerator {
   private static final int MAX_INLINE_INSPECTION_PATHS = 5;
   private static final int MAX_INLINE_BUILD_CONFIG_ITEMS = 5;
   private static final int MAX_INLINE_DOCUMENT_REFS = 3;
+  private static final int KIB = 1024;
+  private static final int MIB = 1024 * KIB;
+  private static final int MEDIUM_GUIDE_BYTES = 100 * KIB;
+  private static final int MEDIUM_GUIDE_LINES = 1_000;
+  private static final int LARGE_GUIDE_BYTES = 250 * KIB;
+  private static final int LARGE_GUIDE_LINES = 1_500;
+  private static final int HUGE_GUIDE_BYTES = MIB;
+  private static final int HUGE_GUIDE_LINES = 5_000;
+  private static final int LARGE_MACHINE_ARTIFACT_BYTES = MIB;
+  private static final int HUGE_KNOWN_OUTPUT_BYTES = 5 * MIB;
+  private static final int LARGE_DETAILED_SECTION_ITEM_COUNT = 50;
+  private static final int MAX_DETAILED_TEST_CLASSES = 50;
 
   public String generate(String projectMapJson, String evidenceIndexJsonl) throws IOException {
     Objects.requireNonNull(projectMapJson, "projectMapJson");
@@ -27,39 +40,427 @@ public final class AgentGuideGenerator {
     List<ModuleInfo> modules = moduleInfos(projectMap.path("project").path("modules"));
     Map<String, ModuleInfo> moduleById = moduleById(modules);
 
-    StringBuilder markdown = new StringBuilder();
-    markdown.append("# Agent Guide\n\n");
-    markdown.append("Generated deterministically from `project-map.json` and ")
-        .append("`evidence-index.jsonl`. The guide generator does not re-analyze source files.\n\n");
+    String header = "# Agent Guide\n\n"
+        + "Generated deterministically from `project-map.json` and "
+        + "`evidence-index.jsonl`. The guide generator does not re-analyze source files.\n\n";
 
-    appendProjectLayout(markdown, projectMap.path("project"), modules, evidenceById);
-    appendBuildAndConfiguration(markdown, projectMap, moduleById, evidenceById);
-    appendGeneratedSourceAndCodegenOrientation(
-        markdown,
-        projectMap.path("generated_sources"),
+    StringBuilder detailedSections = new StringBuilder();
+    appendProjectLayout(detailedSections, projectMap.path("project"), modules, evidenceById);
+    appendBuildAndConfiguration(detailedSections, projectMap, moduleById, evidenceById);
+    appendApiSurfaceInterpretation(
+        detailedSections,
+        projectMap.path("api_surface"),
         moduleById,
         evidenceById);
-    appendApiSurfaceInterpretation(markdown, projectMap.path("api_surface"), moduleById, evidenceById);
+    appendEndpoints(detailedSections, projectMap.path("endpoints"), moduleById, evidenceById);
     appendSpringApplicationSurface(
-        markdown,
+        detailedSections,
         projectMap.path("spring_application_surface"),
         projectMap.path("warnings"),
         moduleById,
         evidenceById);
-    appendEndpoints(markdown, projectMap.path("endpoints"), moduleById, evidenceById);
-    appendComponents(markdown, projectMap.path("components"), moduleById, evidenceById);
-    appendEntities(markdown, projectMap, moduleById, evidenceById);
-    appendTests(markdown, projectMap.path("tests"), moduleById, evidenceById);
-    appendQuality(markdown, projectMap.path("quality"), moduleById, evidenceById);
+    appendComponents(detailedSections, projectMap.path("components"), moduleById, evidenceById);
+    appendEntities(detailedSections, projectMap, moduleById, evidenceById);
+    appendTests(detailedSections, projectMap.path("tests"), moduleById, evidenceById);
+    appendQuality(detailedSections, projectMap.path("quality"), moduleById, evidenceById);
     appendLocalProjectDocumentation(
-        markdown,
+        detailedSections,
         projectMap.path("documents"),
         moduleById,
         evidenceById);
-    appendKnownLimits(markdown, projectMap, moduleById, evidenceById);
-    appendInspectionOrder(markdown, projectMap, evidenceById);
+    appendGeneratedSourceAndCodegenOrientation(
+        detailedSections,
+        projectMap.path("generated_sources"),
+        moduleById,
+        evidenceById);
+    appendOptionalSurfaceOrientation(detailedSections);
+    appendDetailedKnownLimits(detailedSections, projectMap, moduleById, evidenceById);
 
+    return guideWithFrontLoadedOrientation(
+        header,
+        detailedSections.toString(),
+        projectMapJson,
+        evidenceIndexJsonl,
+        projectMap,
+        evidenceById);
+  }
+
+  private String guideWithFrontLoadedOrientation(
+      String header,
+      String detailedSections,
+      String projectMapJson,
+      String evidenceIndexJsonl,
+      JsonNode projectMap,
+      Map<String, EvidenceRecord> evidenceById) {
+    SizeSnapshot snapshot = sizeSnapshot(projectMapJson, evidenceIndexJsonl, header + detailedSections);
+    String orientation = "";
+    for (int attempt = 0; attempt < 3; attempt++) {
+      orientation = frontLoadedOrientation(projectMap, evidenceById, snapshot);
+      SizeSnapshot nextSnapshot = sizeSnapshot(
+          projectMapJson,
+          evidenceIndexJsonl,
+          header + orientation + detailedSections);
+      if (nextSnapshot.equals(snapshot)) {
+        return normalizeMarkdownDocument(header + orientation + detailedSections);
+      }
+      snapshot = nextSnapshot;
+    }
+    orientation = frontLoadedOrientation(projectMap, evidenceById, snapshot);
+    return normalizeMarkdownDocument(header + orientation + detailedSections);
+  }
+
+  private String normalizeMarkdownDocument(String markdown) {
+    int end = markdown.length();
+    while (end > 0 && markdown.charAt(end - 1) == '\n') {
+      end--;
+    }
+    return markdown.substring(0, end) + "\n";
+  }
+
+  private String frontLoadedOrientation(
+      JsonNode projectMap,
+      Map<String, EvidenceRecord> evidenceById,
+      SizeSnapshot snapshot) {
+    StringBuilder markdown = new StringBuilder();
+    appendReadThisFirst(markdown, snapshot);
+    appendTrustAndVerificationLegend(markdown);
+    appendInspectionOrder(markdown, projectMap, evidenceById);
+    appendProjectMemoryOverview(markdown, projectMap, evidenceById.size(), snapshot);
+    if (snapshot.requiresLargeArtifactNotice()) {
+      appendLargeArtifactNotice(markdown, snapshot);
+    }
+    appendKnownUncertaintySnapshot(markdown, projectMap);
+    appendNotRepresentedInThisScan(markdown, projectMap);
     return markdown.toString();
+  }
+
+  private void appendReadThisFirst(StringBuilder markdown, SizeSnapshot snapshot) {
+    markdown.append("## Read This First\n\n");
+    markdown.append("- Open `artifact-set.json` before this guide and respect its artifact authority labels.\n");
+    markdown.append("- Use this guide as deterministic orientation only. It is not evidence and does not re-analyze source files.\n");
+    markdown.append("- For large or unknown outputs, prefer `query <path> agent-context`, targeted query commands, focused `project-map.json` selection, exact `evidence-index.jsonl` lookup, and source readback instead of reading every row.\n");
+    if (snapshot.requiresLargeArtifactNotice()) {
+      markdown.append("- Large artifact notice: this guide or known generator inputs cross a large threshold; read this top block first and select task-relevant detailed sections.\n");
+    }
+    markdown.append("- Size note: this guide is ")
+        .append(code(snapshot.guideBand()))
+        .append(" (about ")
+        .append(code(formatBytes(snapshot.guideBytes())))
+        .append(", ")
+        .append(code(Long.toString(snapshot.guideLines())))
+        .append(" rendered lines); known generator inputs are `project-map.json` ")
+        .append(code(formatBytes(snapshot.projectMapBytes())))
+        .append(" and `evidence-index.jsonl` ")
+        .append(code(formatBytes(snapshot.evidenceIndexBytes())))
+        .append(".\n\n");
+  }
+
+  private void appendTrustAndVerificationLegend(StringBuilder markdown) {
+    markdown.append("## Trust And Verification Legend\n\n");
+    markdown.append("Trust and verification legend:\n");
+    markdown.append("- Use `evidence-index.jsonl` as the authoritative source-backed evidence ledger; verify important claims against its exact records and the repository source locations they cite.\n");
+    markdown.append("- Generated project facts: `project-map.json` facts; verify important use through their evidence IDs.\n");
+    markdown.append("- Deterministic presentation: this guide, `endpoints.md`, and query stdout help with orientation; they are not evidence.\n");
+    markdown.append("- Navigation, provenance, or execution metadata: `artifact-set.json`, `project-graph.json`, `source-registry.json`, profiles, LLM/provider AI output, cache, workspace, adapter output, release metadata, security reports, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.\n");
+    markdown.append("- Before code changes, review findings, public/security/release wording, or architecture decisions, resolve exact evidence IDs and read the cited source.\n\n");
+  }
+
+  private void appendProjectMemoryOverview(
+      StringBuilder markdown,
+      JsonNode projectMap,
+      int evidenceRecordCount,
+      SizeSnapshot snapshot) {
+    int moduleCount = arraySize(projectMap.path("project").path("modules").path("items"));
+    int sourceRootCount = arraySize(projectMap.path("project").path("source_roots"));
+    int testRootCount = arraySize(projectMap.path("project").path("test_roots"));
+    int endpointCount = arraySize(projectMap.path("endpoints"));
+    int componentCount = arraySize(projectMap.path("components").path("items"));
+    int springSurfaceCount = springSurfaceFactCount(projectMap.path("spring_application_surface"));
+    int entityCount = arraySize(projectMap.path("entities").path("items"));
+    int embeddableCount = arraySize(projectMap.path("entities").path("embeddables").path("items"));
+    int testCount = arraySize(projectMap.path("tests").path("items"));
+    int qualitySignalCount = qualitySignalCount(projectMap.path("quality"));
+    int documentCount = arraySize(projectMap.path("documents").path("items"));
+    int reconciliationCount = arraySize(
+        projectMap.path("documents").path("reconciliation").path("items"));
+    int warningCount = arraySize(projectMap.path("warnings").path("items"));
+
+    markdown.append("## Project Memory Overview\n\n");
+    markdown.append("- Build/layout: build system ")
+        .append(code(text(projectMap.path("project").path("build"), "system")))
+        .append(", modules ")
+        .append(code(Integer.toString(moduleCount)))
+        .append(", source roots ")
+        .append(code(Integer.toString(sourceRootCount)))
+        .append(", test roots ")
+        .append(code(Integer.toString(testRootCount)))
+        .append(".\n");
+    markdown.append("- Source-backed fact surfaces: endpoints ")
+        .append(code(Integer.toString(endpointCount)))
+        .append(", direct Spring components ")
+        .append(code(Integer.toString(componentCount)))
+        .append(", Spring application surface rows ")
+        .append(code(Integer.toString(springSurfaceCount)))
+        .append(", entities ")
+        .append(code(Integer.toString(entityCount)))
+        .append(", embeddables ")
+        .append(code(Integer.toString(embeddableCount)))
+        .append(", tests ")
+        .append(code(Integer.toString(testCount)))
+        .append(".\n");
+    markdown.append("- Planning/navigation surfaces: warnings ")
+        .append(code(Integer.toString(warningCount)))
+        .append(", quality/change-risk hints ")
+        .append(code(Integer.toString(qualitySignalCount)))
+        .append(", local documents ")
+        .append(code(Integer.toString(documentCount)))
+        .append(", document reconciliation hints ")
+        .append(code(Integer.toString(reconciliationCount)))
+        .append(".\n");
+    markdown.append("- Evidence records: ")
+        .append(code(Integer.toString(evidenceRecordCount)))
+        .append(" records in `evidence-index.jsonl`; this overview is presentation only.\n");
+    markdown.append("- Size band: ")
+        .append(code(snapshot.guideBand()))
+        .append("; large detailed sections should be selected by task and verified through exact evidence IDs.\n\n");
+  }
+
+  private void appendLargeArtifactNotice(StringBuilder markdown, SizeSnapshot snapshot) {
+    markdown.append("## Large Artifact Notice\n\n");
+    markdown.append("Large artifact notice: this guide is deterministic presentation, not evidence. For first-pass orientation, read this top block first. For large detailed sections, prefer targeted query, focused JSON selection, exact evidence lookup, or source readback instead of reading every row.\n");
+    markdown.append("- Guide band: ")
+        .append(code(snapshot.guideBand()))
+        .append(" (about ")
+        .append(code(formatBytes(snapshot.guideBytes())))
+        .append(", ")
+        .append(code(Long.toString(snapshot.guideLines())))
+        .append(" rendered lines).\n");
+    List<String> largeArtifacts = new ArrayList<>();
+    if (snapshot.projectMapBytes() > LARGE_MACHINE_ARTIFACT_BYTES) {
+      largeArtifacts.add("project-map.json " + formatBytes(snapshot.projectMapBytes()));
+    }
+    if (snapshot.evidenceIndexBytes() > LARGE_MACHINE_ARTIFACT_BYTES) {
+      largeArtifacts.add("evidence-index.jsonl " + formatBytes(snapshot.evidenceIndexBytes()));
+    }
+    if (largeArtifacts.isEmpty()) {
+      markdown.append("- Large machine artifacts visible to this renderer: none among `project-map.json` and `evidence-index.jsonl`.\n");
+    } else {
+      markdown.append("- Large machine artifacts visible to this renderer: ")
+          .append(codeList(largeArtifacts))
+          .append(". Use `artifact-set.json` for the complete generated artifact inventory.\n");
+    }
+    if (snapshot.knownOutputBytes() > HUGE_KNOWN_OUTPUT_BYTES) {
+      markdown.append("- Known renderer inputs plus this guide exceed ")
+          .append(code("5 MiB"))
+          .append("; make a task-specific artifact reading plan before opening full machine artifacts.\n");
+    }
+    markdown.append("\n");
+  }
+
+  private void appendKnownUncertaintySnapshot(StringBuilder markdown, JsonNode projectMap) {
+    int warningCount = arraySize(projectMap.path("warnings").path("items"));
+    int inferredOrStatusedCount = inferredOrStatusedRowCount(projectMap);
+    int uncertaintyLabelCount = fieldValueCount(projectMap, "uncertainty");
+    int notAnalyzedStatusCount = statusValueCount(projectMap, "analysis_status", Set.of(
+        "not_analyzed",
+        "not_detected",
+        "unsupported"));
+
+    markdown.append("## Known Uncertainty Snapshot\n\n");
+    markdown.append("- Warnings: ")
+        .append(code(Integer.toString(warningCount)))
+        .append(" warning rows; warning evidence and messages stay in the detailed limits section.\n");
+    markdown.append("- Inferred or statused rows: ")
+        .append(code(Integer.toString(inferredOrStatusedCount)))
+        .append(" rows; keep `inferred`, `ambiguous`, `not_detected`, `unsupported`, and similar labels attached to any use.\n");
+    markdown.append("- Explicit uncertainty labels: ")
+        .append(code(Integer.toString(uncertaintyLabelCount)))
+        .append(" values; preserve those caveats with the cited evidence.\n");
+    markdown.append("- Not analyzed/out-of-scope status markers: ")
+        .append(code(Integer.toString(notAnalyzedStatusCount)))
+        .append("; runtime behavior, generated-source contents, test execution/coverage, source/spec agreement, connectors, and LLM summaries remain outside source-backed evidence unless a later contract says otherwise.\n\n");
+  }
+
+  private void appendNotRepresentedInThisScan(StringBuilder markdown, JsonNode projectMap) {
+    List<String> absent = new ArrayList<>();
+    if (arraySize(projectMap.path("endpoints")) == 0) {
+      absent.add("Spring MVC endpoints");
+    }
+    if (arraySize(projectMap.path("components").path("items")) == 0) {
+      absent.add("direct Spring components");
+    }
+    if (!hasDomainGuideContent(projectMap)) {
+      absent.add("domain/data model facts");
+    }
+    if (arraySize(projectMap.path("tests").path("items")) == 0) {
+      absent.add("test classes");
+    }
+    if (!hasQualitySignals(projectMap.path("quality"))) {
+      absent.add("quality/change-risk planning hints");
+    }
+    if (!hasLocalDocumentationGuideContent(projectMap.path("documents"))) {
+      absent.add("local project documentation");
+    }
+    if (arraySize(projectMap.path("generated_sources").path("roots").path("items")) == 0) {
+      absent.add("generated-source root metadata");
+    }
+    if (absent.isEmpty()) {
+      return;
+    }
+
+    markdown.append("## Not Represented In This Scan\n\n");
+    markdown.append("- No represented rows for: ")
+        .append(codeList(absent))
+        .append(". This means the current deterministic scan emitted no rows for those surfaces; it does not prove the runtime behavior is absent outside the supported analyzer scope.\n\n");
+  }
+
+  private void appendOptionalSurfaceOrientation(StringBuilder markdown) {
+    markdown.append("## Optional Surface Orientation\n\n");
+    markdown.append("- Use `artifact-set.json` to confirm whether adapter provenance, agent profiles, AI presentation, cache metadata, or workspace output belong to the generated artifact set.\n");
+    markdown.append("- Treat optional surfaces as provenance, navigation, execution metadata, or presentation. They are not `evidence-index.jsonl` evidence and must not create Java/Spring project facts.\n\n");
+  }
+
+  private SizeSnapshot sizeSnapshot(
+      String projectMapJson,
+      String evidenceIndexJsonl,
+      String guideMarkdown) {
+    long projectMapBytes = utf8Bytes(projectMapJson);
+    long evidenceIndexBytes = utf8Bytes(evidenceIndexJsonl);
+    long guideBytes = utf8Bytes(guideMarkdown);
+    long guideLines = guideMarkdown.isEmpty() ? 0 : guideMarkdown.lines().count();
+    String guideBand = guideBand(guideBytes, guideLines);
+    return new SizeSnapshot(
+        projectMapBytes,
+        evidenceIndexBytes,
+        guideBytes,
+        guideLines,
+        projectMapBytes + evidenceIndexBytes + guideBytes,
+        guideBand);
+  }
+
+  private String guideBand(long guideBytes, long guideLines) {
+    if (guideBytes > HUGE_GUIDE_BYTES || guideLines > HUGE_GUIDE_LINES) {
+      return "huge-guide";
+    }
+    if (guideBytes > LARGE_GUIDE_BYTES || guideLines > LARGE_GUIDE_LINES) {
+      return "large-guide";
+    }
+    if (guideBytes > MEDIUM_GUIDE_BYTES || guideLines > MEDIUM_GUIDE_LINES) {
+      return "medium-guide";
+    }
+    return "small-guide";
+  }
+
+  private long utf8Bytes(String value) {
+    return value.getBytes(StandardCharsets.UTF_8).length;
+  }
+
+  private String formatBytes(long bytes) {
+    long kib = (bytes + KIB - 1) / KIB;
+    return kib + " KiB";
+  }
+
+  private int arraySize(JsonNode node) {
+    return node.isArray() ? node.size() : 0;
+  }
+
+  private int springSurfaceFactCount(JsonNode springApplicationSurface) {
+    if (!springApplicationSurface.isObject()) {
+      return 0;
+    }
+    return arraySize(springApplicationSurface.path("repositories").path("items"))
+        + arraySize(
+            springApplicationSurface.path("configuration").path("configuration_classes").path("items"))
+        + arraySize(
+            springApplicationSurface.path("configuration").path("configuration_properties").path("items"))
+        + arraySize(
+            springApplicationSurface.path("configuration").path("bean_methods").path("items"))
+        + arraySize(
+            springApplicationSurface.path("behavior").path("transaction_boundaries").path("items"))
+        + arraySize(
+            springApplicationSurface.path("behavior").path("scheduled_methods").path("items"))
+        + arraySize(
+            springApplicationSurface.path("behavior").path("event_listeners").path("items"))
+        + arraySize(
+            springApplicationSurface.path("messaging").path("listener_signals").path("items"))
+        + arraySize(
+            springApplicationSurface.path("security").path("configuration_warnings").path("warning_ids"));
+  }
+
+  private int qualitySignalCount(JsonNode quality) {
+    if (!quality.isObject()) {
+      return 0;
+    }
+    return arraySize(quality.path("test_gap_signals").path("items"))
+        + arraySize(quality.path("change_risk_signals").path("items"));
+  }
+
+  private int inferredOrStatusedRowCount(JsonNode projectMap) {
+    int count = 0;
+    for (JsonNode repository : items(
+        projectMap.path("spring_application_surface").path("repositories"))) {
+      if ("inferred".equals(text(repository, "support_type"))) {
+        count++;
+      }
+      if (!text(repository, "entity_relation_status").isBlank()) {
+        count++;
+      }
+    }
+    for (JsonNode test : items(projectMap.path("tests"))) {
+      count += arraySize(test.path("tested_subjects"));
+    }
+    return count + qualitySignalCount(projectMap.path("quality"));
+  }
+
+  private int fieldValueCount(JsonNode node, String fieldName) {
+    if (node.isObject()) {
+      int count = 0;
+      var fields = node.fields();
+      while (fields.hasNext()) {
+        Map.Entry<String, JsonNode> field = fields.next();
+        if (fieldName.equals(field.getKey())) {
+          JsonNode value = field.getValue();
+          if (!value.isMissingNode() && !value.isNull() && !value.asText().isBlank()) {
+            count++;
+          }
+        } else {
+          count += fieldValueCount(field.getValue(), fieldName);
+        }
+      }
+      return count;
+    }
+    if (node.isArray()) {
+      int count = 0;
+      for (JsonNode item : node) {
+        count += fieldValueCount(item, fieldName);
+      }
+      return count;
+    }
+    return 0;
+  }
+
+  private int statusValueCount(JsonNode node, String fieldName, Set<String> statuses) {
+    if (node.isObject()) {
+      int count = 0;
+      var fields = node.fields();
+      while (fields.hasNext()) {
+        Map.Entry<String, JsonNode> field = fields.next();
+        if (fieldName.equals(field.getKey()) && statuses.contains(field.getValue().asText())) {
+          count++;
+        } else {
+          count += statusValueCount(field.getValue(), fieldName, statuses);
+        }
+      }
+      return count;
+    }
+    if (node.isArray()) {
+      int count = 0;
+      for (JsonNode item : node) {
+        count += statusValueCount(item, fieldName, statuses);
+      }
+      return count;
+    }
+    return 0;
   }
 
   private void appendProjectLayout(
@@ -1397,7 +1798,7 @@ public final class AgentGuideGenerator {
         .append(warningSignals.size() == 1 ? "" : "s")
         .append(" for this module: ")
         .append(cappedCodeList(warningSignals, MAX_INLINE_BUILD_CONFIG_ITEMS, "warning signals"))
-        .append(". See `Known Uncertainty And Limits` for warning evidence and messages.\n");
+        .append(". See `Detailed Known Uncertainty And Limits` for warning evidence and messages.\n");
   }
 
   private void appendEndpoints(
@@ -1412,6 +1813,13 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    markdown.append("- Endpoint summary: detected ")
+        .append(endpoints.size())
+        .append(" source-visible Spring MVC endpoint fact")
+        .append(endpoints.size() == 1 ? "" : "s")
+        .append(".\n");
+    appendLargeSectionWarning(markdown, endpoints.size());
+    markdown.append("\n");
     for (JsonNode endpoint : endpoints) {
       markdown.append("### ").append(code(endpointLabel(endpoint))).append("\n\n");
       appendModuleLine(markdown, endpoint, moduleById);
@@ -1448,6 +1856,12 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    markdown.append("- Component summary: detected ")
+        .append(items.size())
+        .append(" direct Spring stereotype component")
+        .append(items.size() == 1 ? "" : "s")
+        .append(".\n");
+    appendLargeSectionWarning(markdown, items.size());
     markdown.append("\n");
     for (JsonNode component : items) {
       markdown.append("### ").append(code(text(component, "class_name"))).append("\n\n");
@@ -1470,10 +1884,20 @@ public final class AgentGuideGenerator {
     }
 
     JsonNode entities = projectMap.path("entities");
-    markdown.append("## Detected JPA Entities\n\n");
+    markdown.append("## Domain And Data Model\n\n");
     markdown.append("- Analysis status: ").append(code(text(entities, "analysis_status"))).append("\n");
     JsonNode items = entities.path("items");
     JsonNode embeddableItems = entities.path("embeddables").path("items");
+    markdown.append("- Domain summary: detected ")
+        .append(arraySize(items))
+        .append(" JPA entity fact")
+        .append(arraySize(items) == 1 ? "" : "s")
+        .append(" and ")
+        .append(arraySize(embeddableItems))
+        .append(" embeddable fact")
+        .append(arraySize(embeddableItems) == 1 ? "" : "s")
+        .append(".\n");
+    appendLargeSectionWarning(markdown, arraySize(items));
     boolean hasDomainData = items.isArray() && !items.isEmpty()
         || embeddableItems.isArray() && !embeddableItems.isEmpty();
     if (hasDomainData) {
@@ -1851,8 +2275,48 @@ public final class AgentGuideGenerator {
       return;
     }
 
-    markdown.append("\n");
+    int frameworkSignalCount = 0;
+    int springTestSliceCount = 0;
+    int mockSignalCount = 0;
+    int testMethodCount = 0;
+    int testedSubjectCount = 0;
     for (JsonNode test : items) {
+      frameworkSignalCount += arraySize(test.path("framework_signals"));
+      springTestSliceCount += arraySize(test.path("spring_test_slices"));
+      mockSignalCount += arraySize(test.path("mock_signals"));
+      testMethodCount += arraySize(test.path("methods"));
+      testedSubjectCount += arraySize(test.path("tested_subjects"));
+    }
+    markdown.append("- Test inventory summary: detected ")
+        .append(items.size())
+        .append(" test class")
+        .append(items.size() == 1 ? "" : "es")
+        .append(", ")
+        .append(frameworkSignalCount)
+        .append(" framework signal")
+        .append(frameworkSignalCount == 1 ? "" : "s")
+        .append(", ")
+        .append(springTestSliceCount)
+        .append(" Spring test slice signal")
+        .append(springTestSliceCount == 1 ? "" : "s")
+        .append(", ")
+        .append(mockSignalCount)
+        .append(" mock signal")
+        .append(mockSignalCount == 1 ? "" : "s")
+        .append(", ")
+        .append(testMethodCount)
+        .append(" supported JUnit method")
+        .append(testMethodCount == 1 ? "" : "s")
+        .append(", and ")
+        .append(testedSubjectCount)
+        .append(" tested-subject relation/status row")
+        .append(testedSubjectCount == 1 ? "" : "s")
+        .append(".\n");
+    appendLargeSectionWarning(markdown, items.size());
+    int visibleCount = Math.min(items.size(), MAX_DETAILED_TEST_CLASSES);
+    markdown.append("\n");
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode test = items.get(index);
       markdown.append("### ").append(code(text(test, "class_name"))).append("\n\n");
       appendModuleLine(markdown, test, moduleById);
       markdown.append("- Test class: Detected ")
@@ -1867,6 +2331,7 @@ public final class AgentGuideGenerator {
       appendTestedSubjects(markdown, test.path("tested_subjects"), moduleById, evidenceById);
       markdown.append("\n");
     }
+    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "test class detail rows");
   }
 
   private void appendFrameworkSignals(
@@ -2433,12 +2898,12 @@ public final class AgentGuideGenerator {
         .append(".\n");
   }
 
-  private void appendKnownLimits(
+  private void appendDetailedKnownLimits(
       StringBuilder markdown,
       JsonNode projectMap,
       Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
-    markdown.append("## Known Uncertainty And Limits\n\n");
+    markdown.append("## Detailed Known Uncertainty And Limits\n\n");
     appendWarnings(markdown, projectMap.path("warnings"), moduleById, evidenceById);
     markdown.append("- Not scanned: Generated-source roots are metadata-only path/codegen observations with `content_status: \"not_scanned\"`; generated source contents, generator execution, generated API reconstruction, runtime freshness checks, dependency/task resolution, and custom Gradle generated-source graph reconstruction are not performed.\n");
     markdown.append("- Not analyzed: Spring runtime behavior such as component scanning, dependency ")
@@ -2623,6 +3088,7 @@ public final class AgentGuideGenerator {
       markdown.append(" and treat document paths, heading refs, chunk refs, and reconciliation rows ")
           .append("as navigation aids only; prefer code-backed facts for implementation truth.\n");
     }
+    markdown.append("\n");
   }
 
   private boolean hasLocalDocumentationGuideContent(JsonNode documents) {
@@ -2955,6 +3421,13 @@ public final class AgentGuideGenerator {
         .append(".\n");
   }
 
+  private void appendLargeSectionWarning(StringBuilder markdown, int itemCount) {
+    if (itemCount <= LARGE_DETAILED_SECTION_ITEM_COUNT) {
+      return;
+    }
+    markdown.append("- Large section: use this summary first. Read detailed rows only when they are task-relevant, and verify important claims through exact evidence IDs.\n");
+  }
+
   private Map<String, EvidenceRecord> evidenceById(String evidenceIndexJsonl) throws IOException {
     return EvidenceReferenceRenderer.evidenceById(evidenceIndexJsonl);
   }
@@ -3156,6 +3629,22 @@ public final class AgentGuideGenerator {
   private record SpringSurfaceWarningFact(
       String warningId,
       JsonNode warning) {
+  }
+
+  private record SizeSnapshot(
+      long projectMapBytes,
+      long evidenceIndexBytes,
+      long guideBytes,
+      long guideLines,
+      long knownOutputBytes,
+      String guideBand) {
+    private boolean requiresLargeArtifactNotice() {
+      return "large-guide".equals(guideBand)
+          || "huge-guide".equals(guideBand)
+          || projectMapBytes > LARGE_MACHINE_ARTIFACT_BYTES
+          || evidenceIndexBytes > LARGE_MACHINE_ARTIFACT_BYTES
+          || knownOutputBytes > HUGE_KNOWN_OUTPUT_BYTES;
+    }
   }
 
   private record ModuleInfo(
