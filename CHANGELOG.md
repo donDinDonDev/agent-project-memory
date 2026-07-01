@@ -9,6 +9,44 @@ architecture documents.
 
 ## [Unreleased]
 
+## [3.2.0] - 2026-07-01
+
+Release status: release candidate. The `v3.2.0` tag, GitHub Release, executable jar,
+and `SHA256SUMS` assets are not published yet.
+
+### Changed
+
+- Front-loaded generated `agent-guide.md` with a compact first-pass reading path,
+  trust and verification legend, practical inspection order, project-memory overview,
+  conditional large-artifact notice, uncertainty snapshot, and absent-surface summary
+  before detailed inventories.
+- Added sparse non-evidence authority wording to selected optional handoff surfaces,
+  including generated agent profile Markdown and `query <path> agent-context`, while
+  keeping `evidence-index.jsonl` as the authoritative source-backed evidence artifact.
+- Added deterministic large-section summaries and presentation-only row caps for large
+  `agent-guide.md` `Detected Tests`, `Quality And Change-Risk Signals`,
+  `Spring Application Surface`, and `Domain And Data Model` sections. Omitted-row
+  notices point readers back to complete generated facts in `project-map.json`.
+- Synchronized `docs/architecture/OUTPUT_CONTRACT.md`, focused generator/query tests,
+  and golden generated Markdown/profile outputs for the v3.2 presentation behavior.
+
+### Security
+
+- Preserved the existing evidence boundary: generated Markdown, query output,
+  `agent-context`, profile Markdown, AI presentation artifacts, cache metadata,
+  workspace output, adapter provenance, release metadata, and downstream-agent output
+  remain non-evidence presentation, navigation, provenance, or execution metadata unless
+  a later public contract changes that boundary.
+
+### Not Included
+
+- JSON/JSONL schema marker changes, evidence field changes, evidence type changes,
+  adapter-backed evidence, adapter-aware query support, live network connectors,
+  connector credentials, provider AI, server/API/MCP/editor/plugin runtime, repository
+  chat, generic RAG, source upload, automatic code modification, signing, SBOM
+  publication, package-manager channels, native images, container images, release
+  automation, automatic publication, artifact upload, or GitHub Release publication.
+
 ## [3.0.0] - 2026-06-22
 
 Release status: published. The `v3.0.0` tag, GitHub Release, executable jar, and

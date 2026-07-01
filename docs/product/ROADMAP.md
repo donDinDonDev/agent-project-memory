@@ -88,6 +88,14 @@ provenance-boundary changes, not vulnerability scanning, complete secret discove
 security correctness proof, live connector behavior, provider AI, or release
 automation.
 
+The local v3.2.0 release candidate improves generated agent-facing presentation
+readability over the published v3.0.0 product line. It front-loads `agent-guide.md`
+with compact handoff and trust guidance, labels selected optional handoff surfaces as
+non-evidence presentation, and adds deterministic large-section summaries and
+presentation-only caps for row-heavy guide sections. It does not change JSON/JSONL
+schema markers, evidence semantics, adapter behavior, query authority, distribution
+channels, or publication state.
+
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
 `agent-guide.md` remain
@@ -2244,3 +2252,50 @@ Current behavior boundary:
 - Current query support remains focused on no-adapter v1-compatible artifact sets unless
   a later release explicitly documents adapter-aware or v3-aware query behavior.
 - This section describes the published v3.0.0 release boundary.
+
+## v3.2.0: Guide And Handoff Readability
+
+Release status: local release candidate. The `v3.2.0` tag, GitHub Release, executable
+jar, and `SHA256SUMS` assets are not published yet.
+
+Product outcome:
+
+v3.2.0 makes generated human-readable and agent-facing Markdown easier to consume after
+the v3 artifact-set manifest and evidence-authority boundaries are established.
+
+Included v3.2.0 scope:
+
+- `agent-guide.md` starts with `Read This First`, a trust and verification legend,
+  practical inspection order, project-memory overview, conditional large-artifact
+  notice, uncertainty snapshot, and absent-surface summary before detailed inventories.
+- Selected optional handoff surfaces, including generated agent profile Markdown and
+  `query <path> agent-context`, explicitly label generated Markdown/query/profile
+  surfaces as deterministic presentation rather than evidence.
+- Large `agent-guide.md` sections can render deterministic summaries and
+  presentation-only caps for `Detected Tests`, `Quality And Change-Risk Signals`,
+  `Spring Application Surface`, and `Domain And Data Model`.
+- Omitted-row notices point readers to complete generated facts in `project-map.json`;
+  displayed rows keep evidence references where evidence exists.
+- `evidence-index.jsonl` remains the authoritative source-backed evidence artifact.
+
+Compatibility notes:
+
+- No-adapter `project-map.json` remains on `schema_version: "1.0"`.
+- Adapter-enabled `project-map.json` remains on `schema_version: "2.0"` with
+  `source-registry.json` when explicitly enabled adapter input is accepted.
+- `artifact-set.json` remains on `artifact_set_schema_version: "1.0"`.
+- `evidence-index.jsonl` keeps its existing field set and evidence semantics.
+- The compatibility impact is limited to deterministic human-readable presentation
+  surfaces. Consumers that parse generated Markdown as an undocumented machine
+  interface should use the documented JSON/JSONL artifacts instead.
+
+Excluded or deferred from v3.2.0:
+
+- JSON/JSONL schema marker changes, evidence field changes, evidence type changes, or
+  adapter-backed evidence.
+- Adapter-aware query behavior, live network connectors, connector credentials,
+  provider AI, server/API/MCP/editor/plugin runtime, repository chat, generic RAG,
+  source upload, or automatic code modification.
+- Signing, SBOM publication, package-manager channels, installed-command distribution,
+  native images, container images, release automation, automatic publication, artifact
+  upload, or GitHub Release publication.
