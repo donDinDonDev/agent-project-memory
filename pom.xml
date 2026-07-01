@@ -131,6 +131,9 @@
                   <arg value="${smoke.project}"/>
                 </java>
                 <available
+                    file="${smoke.project}/.project-memory/artifact-set.json"
+                    property="smoke.artifact.set.generated"/>
+                <available
                     file="${smoke.project}/.project-memory/project-map.json"
                     property="smoke.project.map.generated"/>
                 <available
@@ -146,6 +149,9 @@
                     file="${smoke.project}/.project-memory/agent-guide.md"
                     property="smoke.agent.guide.generated"/>
                 <fail
+                    unless="smoke.artifact.set.generated"
+                    message="Packaged CLI smoke test did not generate artifact-set.json"/>
+                <fail
                     unless="smoke.project.map.generated"
                     message="Packaged CLI smoke test did not generate project-map.json"/>
                 <fail
@@ -160,6 +166,13 @@
                 <fail
                     unless="smoke.agent.guide.generated"
                     message="Packaged CLI smoke test did not generate agent-guide.md"/>
+                <java
+                    classname="io.github.dondindondev.agentprojectmemory.release.PackagedCliSmokeAssertions"
+                    fork="true"
+                    failonerror="true">
+                  <classpath refid="maven.test.classpath"/>
+                  <arg value="${smoke.project}/.project-memory"/>
+                </java>
                 <java
                     jar="${project.build.directory}/${project.build.finalName}.jar"
                     fork="true"
