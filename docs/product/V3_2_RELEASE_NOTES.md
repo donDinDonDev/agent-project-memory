@@ -2,8 +2,8 @@
 
 Release date: 2026-07-01
 
-Release status: release candidate. The `v3.2.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v3.2.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v3.2.0 is a generated presentation and agent handoff maturity
 release. It improves deterministic `agent-guide.md`, selected agent profile Markdown,
@@ -71,14 +71,14 @@ The generated presentation changes do not make the tool a vulnerability scanner,
 complete secret detector, secret inventory, security correctness engine,
 dependency-freshness proof, or security certification.
 
-Release preparation remains separate from publication. Tags, GitHub Releases, asset
-uploads, checksum publication, signing, SBOM publication, package-manager publication,
-native image publication, container image publication, and release automation require
-separate explicit maintainer approval and are not part of this release candidate.
+Release preparation remains separate from future publication work. Signing, SBOM
+publication, package-manager publication, native image publication, container image
+publication, and release automation require separate explicit maintainer approval and
+are not part of this release.
 
 ## Validation
 
-The v3.2.0 release-candidate validation passed:
+The v3.2.0 release validation passed:
 
 - Full local Maven test suite: 603 tests, 0 failures, 0 errors, 0 skipped.
 - Maven package build: 603 tests, 0 failures, 0 errors, 0 skipped, including the
@@ -124,5 +124,4 @@ The intended `v3.2.0` release assets are:
 - `agent-project-memory-3.2.0.jar`
 - `SHA256SUMS`
 
-These assets are not published yet. Publication requires the separate release
-publication workflow after release-prep review.
+These assets are published with the `v3.2.0` GitHub Release.

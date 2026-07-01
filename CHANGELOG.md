@@ -9,10 +9,15 @@ architecture documents.
 
 ## [Unreleased]
 
+### Changed
+
+- Updated post-release documentation status to mark `v3.2.0` as published with release
+  assets.
+
 ## [3.2.0] - 2026-07-01
 
-Release status: release candidate. The `v3.2.0` tag, GitHub Release, executable jar,
-and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v3.2.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Changed
 

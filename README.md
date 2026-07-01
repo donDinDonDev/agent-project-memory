@@ -41,7 +41,7 @@ evidence IDs. These checks protect generated-output and provenance boundaries; t
 not vulnerability scanning, complete secret discovery, security correctness proof, or a
 guarantee that every sensitive value in a repository will be detected.
 
-The local v3.2.0 release candidate keeps the same security boundary while improving
+The v3.2.0 release keeps the same security boundary while improving
 deterministic agent-facing Markdown orientation, optional-surface authority labels, and
 large `agent-guide.md` section readability. It does not add security scanning,
 security proof, release automation, network behavior, provider AI, or source upload.
@@ -60,13 +60,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v3.0.0`. Its release artifact is
-`agent-project-memory-3.0.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v3.2.0`. Its release artifact is
+`agent-project-memory-3.2.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-3.0.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-3.2.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -96,8 +96,7 @@ mvn package
 target/agent-project-memory-3.2.0.jar
 ```
 
-Local build examples below use the prepared v3.2.0 release-candidate version. Published
-download instructions remain on `v3.0.0` until a newer release is published.
+Local build examples below use the current v3.2.0 release version.
 
 Release artifact and checksum verification expectations are documented in
 [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
@@ -575,7 +574,7 @@ Compatibility and migration notes:
   evidence artifact. Current query, `agent-context`, and impact loading validate the
   manifest when it is present, accept only coherent no-adapter `schema_version: "1.0"`
   query input sets, and fail closed on unsupported or mixed artifact-set state.
-- The local v3.2.0 release candidate keeps those generated artifact schemas and evidence
+- The v3.2.0 release keeps those generated artifact schemas and evidence
   semantics unchanged while changing deterministic presentation surfaces: `agent-guide.md`
   now starts with compact handoff and trust guidance, large detailed sections may render
   summaries with presentation-only caps, and optional profile or `agent-context` output
@@ -692,17 +691,15 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v3.0.0`. The `v3.0.0` tag, GitHub Release,
+The latest published release is `v3.2.0`. The `v3.2.0` tag, GitHub Release,
 executable jar, and `SHA256SUMS` assets are published. The supported public
 distribution remains the GitHub Release executable jar plus `SHA256SUMS`; signing,
 SBOM publication, package-manager channels, native images, container images, release
 automation, and automatic publication are not included.
 
-A local v3.2.0 release candidate is prepared in this checkout. It improves generated
-agent-facing Markdown readability and authority labels without changing JSON/JSONL
-schema markers, evidence semantics, adapter behavior, query authority, or the supported
-public distribution channel. The `v3.2.0` tag, GitHub Release, executable jar, and
-`SHA256SUMS` assets are not published yet.
+The v3.2.0 release improves generated agent-facing Markdown readability and authority
+labels without changing JSON/JSONL schema markers, evidence semantics, adapter behavior,
+query authority, or the supported public distribution channel.
 
 The current implementation is a local Java 21 CLI for Java/Spring repositories. It
 scans local source and configuration inputs, then writes deterministic `.project-memory/`

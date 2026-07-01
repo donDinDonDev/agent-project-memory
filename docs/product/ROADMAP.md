@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v3.0.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v3.2.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -88,13 +88,12 @@ provenance-boundary changes, not vulnerability scanning, complete secret discove
 security correctness proof, live connector behavior, provider AI, or release
 automation.
 
-The local v3.2.0 release candidate improves generated agent-facing presentation
-readability over the published v3.0.0 product line. It front-loads `agent-guide.md`
-with compact handoff and trust guidance, labels selected optional handoff surfaces as
-non-evidence presentation, and adds deterministic large-section summaries and
-presentation-only caps for row-heavy guide sections. It does not change JSON/JSONL
-schema markers, evidence semantics, adapter behavior, query authority, distribution
-channels, or publication state.
+The v3.2.0 release improves generated agent-facing presentation readability over the
+published v3.0.0 product line. It front-loads `agent-guide.md` with compact handoff and
+trust guidance, labels selected optional handoff surfaces as non-evidence presentation,
+and adds deterministic large-section summaries and presentation-only caps for row-heavy
+guide sections. It does not change JSON/JSONL schema markers, evidence semantics,
+adapter behavior, query authority, or distribution channels.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2255,8 +2254,8 @@ Current behavior boundary:
 
 ## v3.2.0: Guide And Handoff Readability
 
-Release status: local release candidate. The `v3.2.0` tag, GitHub Release, executable
-jar, and `SHA256SUMS` assets are not published yet.
+Release status: published. The `v3.2.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 Product outcome:
 
