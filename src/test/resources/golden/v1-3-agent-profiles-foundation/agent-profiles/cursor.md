@@ -5,10 +5,16 @@ Generated deterministically from `project-map.json` and `evidence-index.jsonl` f
 ## Profile Operating Notes
 
 - Intended use: Editor-grounded navigation from generated facts to source files.
-- First-pass reading order: `project-map.json`, `endpoints.md`, `agent-guide.md`, `evidence-index.jsonl`
+- First-pass reading order: `artifact-set.json`, `project-map.json`, `endpoints.md`, `agent-guide.md`, `evidence-index.jsonl`
 - Change posture: Use evidence paths as navigation targets; verify source before relying on a generated presentation.
 - Evidence posture: Treat profile text as navigation glue over existing evidence records, not as a source of truth.
 - Selector: `cursor`; artifact path: `agent-profiles/cursor.md`
+
+## Authority Summary
+
+- `evidence-index.jsonl` is the source-backed evidence ledger; this profile only points to existing evidence and does not create evidence records.
+- `artifact-set.json` is the manifest/provenance inventory for generated artifact authority labels; use it to confirm optional adapter, profile, AI, cache, and workspace surfaces.
+- This profile, generated Markdown, query/`agent-context`/`impact` output, graph navigation, AI presentation, cache/workspace metadata, adapter provenance, release metadata, and downstream-agent output are non-evidence unless a later public contract explicitly changes that.
 
 ## Source Artifacts
 

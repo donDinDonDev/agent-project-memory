@@ -37,6 +37,7 @@ public final class AgentProfileMarkdownGenerator {
         .append(" profile. The profile generator does not re-analyze source files.\n\n");
 
     appendProfileOperatingNotes(markdown, profile, profileCopy);
+    appendAuthoritySummary(markdown);
     appendSourceArtifacts(markdown, profile);
     appendProjectSnapshot(markdown, projectMap, evidenceById);
     appendEvidencePointers(markdown, projectMap, evidenceById);
@@ -67,6 +68,20 @@ public final class AgentProfileMarkdownGenerator {
         .append("; artifact path: ")
         .append(code(profile.artifactPath()))
         .append("\n\n");
+  }
+
+  private void appendAuthoritySummary(StringBuilder markdown) {
+    markdown.append("## Authority Summary\n\n");
+    markdown.append("- `evidence-index.jsonl` is the source-backed evidence ledger; ")
+        .append("this profile only points to existing evidence and does not create ")
+        .append("evidence records.\n");
+    markdown.append("- `artifact-set.json` is the manifest/provenance inventory for ")
+        .append("generated artifact authority labels; use it to confirm optional ")
+        .append("adapter, profile, AI, cache, and workspace surfaces.\n");
+    markdown.append("- This profile, generated Markdown, query/`agent-context`/`impact` ")
+        .append("output, graph navigation, AI presentation, cache/workspace metadata, ")
+        .append("adapter provenance, release metadata, and downstream-agent output are ")
+        .append("non-evidence unless a later public contract explicitly changes that.\n\n");
   }
 
   private void appendSourceArtifacts(StringBuilder markdown, AgentOutputProfile profile) {
@@ -412,7 +427,12 @@ public final class AgentProfileMarkdownGenerator {
     return switch (profile) {
       case CODEX -> new ProfileCopy(
           "Local coding-agent implementation, review, and verification planning.",
-          List.of("agent-guide.md", "project-map.json", "evidence-index.jsonl", "endpoints.md"),
+          List.of(
+              "artifact-set.json",
+              "agent-guide.md",
+              "project-map.json",
+              "evidence-index.jsonl",
+              "endpoints.md"),
           "Inspect cited evidence before edits; keep changes tied to existing facts "
               + "and explicit uncertainty.",
           "Prefer file/line evidence references over narrative claims; do not treat "
@@ -426,7 +446,12 @@ public final class AgentProfileMarkdownGenerator {
                   + "`uncertain_planning_hint` as planning hints, not coverage proof."));
       case CLAUDE -> new ProfileCopy(
           "Long-context repository explanation, careful review, and handoff notes.",
-          List.of("agent-guide.md", "project-map.json", "endpoints.md", "evidence-index.jsonl"),
+          List.of(
+              "artifact-set.json",
+              "agent-guide.md",
+              "project-map.json",
+              "endpoints.md",
+              "evidence-index.jsonl"),
           "Keep explanations bounded by extracted facts, inferred/statused rows, "
               + "and cited evidence IDs.",
           "Quote or cite evidence locations when making claims; preserve uncertainty "
@@ -440,7 +465,12 @@ public final class AgentProfileMarkdownGenerator {
                   + "general framework knowledge."));
       case CURSOR -> new ProfileCopy(
           "Editor-grounded navigation from generated facts to source files.",
-          List.of("project-map.json", "endpoints.md", "agent-guide.md", "evidence-index.jsonl"),
+          List.of(
+              "artifact-set.json",
+              "project-map.json",
+              "endpoints.md",
+              "agent-guide.md",
+              "evidence-index.jsonl"),
           "Use evidence paths as navigation targets; verify source before relying on "
               + "a generated presentation.",
           "Treat profile text as navigation glue over existing evidence records, not "
@@ -454,7 +484,12 @@ public final class AgentProfileMarkdownGenerator {
                   + "explicitly records them as source facts."));
       case GENERIC -> new ProfileCopy(
           "Tool-neutral repository orientation for deterministic project memory consumers.",
-          List.of("project-map.json", "evidence-index.jsonl", "agent-guide.md", "endpoints.md"),
+          List.of(
+              "artifact-set.json",
+              "project-map.json",
+              "evidence-index.jsonl",
+              "agent-guide.md",
+              "endpoints.md"),
           "Consume machine-readable facts first and use Markdown only as a cautious "
               + "presentation layer.",
           "Resolve every important claim through existing evidence IDs; do not create "

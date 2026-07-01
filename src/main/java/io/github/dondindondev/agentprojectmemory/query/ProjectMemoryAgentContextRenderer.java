@@ -27,6 +27,9 @@ public final class ProjectMemoryAgentContextRenderer {
             + safe(artifacts.projectMapSchemaVersion())
             + ", evidence-index.jsonl records="
             + artifacts.evidenceRecords().size());
+    lines.add(
+        "Manifest: artifact-set.json is validated when present; it is contract/provenance "
+            + "metadata, not evidence");
     if (artifacts.hasProjectGraph()) {
       lines.add(
           "Optional graph: project-graph.json graph_schema_version="
@@ -41,16 +44,19 @@ public final class ProjectMemoryAgentContextRenderer {
 
   private void appendReadingOrder(List<String> lines, ProjectMemoryArtifacts artifacts) {
     lines.add("Artifact reading order");
-    lines.add("1. project-map.json: generated facts for this no-adapter query surface.");
     lines.add(
-        "2. evidence-index.jsonl: existing evidence records; inspect exact records with "
+        "1. artifact-set.json, when present: generated manifest and authority labels; "
+            + "metadata only, not evidence.");
+    lines.add("2. project-map.json: generated facts for this no-adapter query surface.");
+    lines.add(
+        "3. evidence-index.jsonl: existing evidence records; inspect exact records with "
             + "`query <path> explain evidence <evidence-id>`.");
     if (artifacts.hasProjectGraph()) {
       lines.add(
-          "3. project-graph.json: optional one-hop navigation metadata; graph derivation "
+          "4. project-graph.json: optional one-hop navigation metadata; graph derivation "
               + "remains non-evidence.");
     } else {
-      lines.add("3. project-graph.json: optional; absent or not requested for source facts.");
+      lines.add("4. project-graph.json: optional; absent or not requested for source facts.");
     }
     lines.add("");
   }
@@ -123,6 +129,9 @@ public final class ProjectMemoryAgentContextRenderer {
   private void appendBoundaries(List<String> lines) {
     lines.add("Authority and boundaries");
     lines.add("- agent-context output is navigation and presentation only; it is not evidence.");
+    lines.add(
+        "- artifact-set.json is manifest/provenance metadata; its labels do not make "
+            + "optional surfaces evidence.");
     lines.add("- existing evidence IDs are preserved; no evidence records or evidence IDs are created.");
     lines.add("- graph derivation, query output, generated Markdown, profiles, cache metadata, "
         + "adapter diagnostics, AI presentation, downstream agent output, and LLM output remain non-evidence.");

@@ -1682,6 +1682,14 @@ final class QueryCliTest {
         () -> assertTrue(first.stdout().contains(
             "Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=")),
         () -> assertTrue(first.stdout().contains(
+            "Manifest: artifact-set.json is validated when present; it is contract/provenance "
+                + "metadata, not evidence")),
+        () -> assertTrue(first.stdout().contains(
+            "1. artifact-set.json, when present: generated manifest and authority labels; "
+                + "metadata only, not evidence.")),
+        () -> assertTrue(first.stdout().contains(
+            "2. project-map.json: generated facts for this no-adapter query surface.")),
+        () -> assertTrue(first.stdout().contains(
             "Optional graph: project-graph.json graph_schema_version=1.0 (navigation metadata, not evidence)")),
         () -> assertTrue(first.stdout().contains("query <path> list modules")),
         () -> assertTrue(first.stdout().contains("query <path> explain evidence <evidence-id>")),
@@ -1694,6 +1702,9 @@ final class QueryCliTest {
         () -> assertTrue(first.stdout().contains("- edges: 3")),
         () -> assertTrue(first.stdout().contains(
             "- source_ref and derivation fields are navigation metadata, not evidence.")),
+        () -> assertTrue(first.stdout().contains(
+            "- artifact-set.json is manifest/provenance metadata; its labels do not make "
+                + "optional surfaces evidence.")),
         () -> assertTrue(first.stdout().contains(
             "- existing evidence IDs are preserved; no evidence records or evidence IDs are created.")),
         () -> assertFalse(first.stdout().contains(repositoryRoot.toString())),

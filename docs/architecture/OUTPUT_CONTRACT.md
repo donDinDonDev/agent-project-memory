@@ -4749,12 +4749,17 @@ Manifest rules:
 Profile Markdown content boundary:
 
 - Profile Markdown files include profile-specific operating notes, generated artifact
-  reading order, source artifact orientation, a compact project snapshot,
-  evidence-visible fact pointers, a fact-boundary map, and profile-specific checklist
-  guidance.
+  reading order, a concise authority summary, source artifact orientation, a compact
+  project snapshot, evidence-visible fact pointers, a fact-boundary map, and
+  profile-specific checklist guidance.
 - Common content may include a profile-specific reading order for generated
   project-memory artifacts, concise evidence-visible orientation, known limits, and
   practical inspection guidance.
+- The profile authority summary keeps `evidence-index.jsonl` as the source-backed
+  evidence ledger, points readers to `artifact-set.json` for generated artifact
+  authority labels and optional-surface presence, and states that profile Markdown and
+  other optional generated surfaces remain non-evidence unless a later public contract
+  explicitly changes that boundary.
 - Profile-specific differences are limited to wording, heading structure, reading order,
   and copyable snippets tailored to the selected agent. They must not alter underlying
   fact meanings or evidence requirements.
@@ -6218,9 +6223,10 @@ Output policy:
 - Output is deterministic stdout for agent/editor consumption. It is not a generated
   project-memory artifact, not evidence, and not a stable parser interface unless a
   later release explicitly defines a machine-readable output format.
-- Successful output may include a source-artifact summary, reading order, supported
-  query commands, bounded project orientation from generated facts, graph navigation
-  hints when available, and existing evidence IDs.
+- Successful output may include a source-artifact summary, manifest validation note,
+  manifest-first artifact reading order, supported query commands, bounded project
+  orientation from generated facts, graph navigation hints when available, and existing
+  evidence IDs.
 - Successful output must not open referenced source files to expand evidence excerpts,
   fill missing line ranges, infer additional symbols, validate runtime behavior, or
   reinterpret generated facts.
@@ -6239,6 +6245,9 @@ Authority and evidence policy:
   references, connector truth, security findings, vulnerability proof, runtime claims,
   source/spec agreement claims, documentation-freshness claims, release evidence, or
   code-change authority.
+- `artifact-set.json`, when present, is set-level contract/provenance metadata. It may
+  be rendered first in the artifact reading order, but its labels do not make optional
+  surfaces evidence.
 - Existing evidence IDs remain the only evidence references. The command may point to
   `query <path> explain evidence <evidence-id>` for exact evidence inspection, but it
   must not repair, synthesize, or strengthen evidence.

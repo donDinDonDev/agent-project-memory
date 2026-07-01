@@ -645,6 +645,14 @@ final class AgentProjectMemoryCliTest {
         () -> assertTrue(manifest.contains(
             "\"evidence_policy\": \"references_existing_evidence_only\"")),
         () -> assertTrue(codexProfile.contains("# Codex Agent Profile")),
+        () -> assertTrue(codexProfile.contains("## Authority Summary")),
+        () -> assertTrue(codexProfile.contains(
+            "artifact-set.json` is the manifest/provenance inventory")),
+        () -> assertTrue(codexProfile.contains(
+            "This profile, generated Markdown, query/`agent-context`/`impact` output")),
+        () -> assertTrue(codexProfile.contains(
+            "First-pass reading order: `artifact-set.json`, `agent-guide.md`, "
+                + "`project-map.json`, `evidence-index.jsonl`, `endpoints.md`")),
         () -> assertTrue(codexProfile.contains("## Project Snapshot")),
         () -> assertTrue(codexProfile.contains("## Evidence-Visible Fact Pointers")),
         () -> assertTrue(codexProfile.contains("does not add evidence records")));
