@@ -337,11 +337,254 @@ final class AgentGuideGeneratorTest {
     assertTrue(guide.contains(
         "- Test inventory summary: detected 51 test classes"));
     assertTrue(guide.contains(
-        "- Large section: use this summary first. Read detailed rows only when they are task-relevant, and verify important claims through exact evidence IDs."));
+        "- Large section: use this summary first. Detailed rows are deterministic presentation only; full generated facts remain in `project-map.json`, and source-backed evidence remains in `evidence-index.jsonl`."));
+    assertTrue(guide.contains(
+        "- Test detail cap: showing 50 of 51 test classes. This is a Markdown presentation cap only; omitted test classes, methods, framework signals, mock signals, and tested-subject statuses remain in `project-map.json`."));
     assertTrue(guide.contains("### `com.example.Test50`"));
     assertFalse(guide.contains("### `com.example.Test51`"));
     assertTrue(guide.contains(
-        "  - ... and 1 more test class detail rows in `project-map.json`."));
+        "  - ... and 1 more test classes in `project-map.json` (`tests.items`)."));
+  }
+
+  @Test
+  void largeQualitySignalsRenderSummaryCapsAndProjectMapPointers() throws Exception {
+    StringBuilder testGapSignals = new StringBuilder();
+    StringBuilder changeRiskSignals = new StringBuilder();
+    StringBuilder evidenceIndex = new StringBuilder();
+    for (int index = 1; index <= 51; index++) {
+      if (index > 1) {
+        testGapSignals.append(",\n");
+        changeRiskSignals.append(",\n");
+      }
+      String gapStatus = index == 51 ? "warning_oriented_planning_hint" : "planning_hint";
+      String riskStatus = index == 51 ? "warning_oriented_planning_hint" : "planning_hint";
+      testGapSignals.append(qualitySignalJson(
+          "quality-test-gap-%02d".formatted(index),
+          "endpoint_without_obvious_test",
+          "endpoint",
+          "GapSubject%02d".formatted(index),
+          gapStatus,
+          "bounded_test_inventory",
+          "inference_basis",
+          "ev:gap:%02d".formatted(index)));
+      changeRiskSignals.append(qualitySignalJson(
+          "quality-change-risk-%02d".formatted(index),
+          index == 51 ? "spring_security_configuration_warning" : "transactional_change_surface",
+          index == 51 ? "spring_security_warning" : "spring_application_surface",
+          "RiskSubject%02d".formatted(index),
+          riskStatus,
+          "existing_deterministic_fact",
+          "risk_basis",
+          "ev:risk:%02d".formatted(index)));
+      evidenceIndex.append(evidenceLine("ev:gap:%02d".formatted(index), "src/main/java/com/example/Gap%02d.java".formatted(index)));
+      evidenceIndex.append(evidenceLine("ev:risk:%02d".formatted(index), "src/main/java/com/example/Risk%02d.java".formatted(index)));
+    }
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "project": {
+            "build": {"system": "maven", "root_build_file": "pom.xml", "evidence_ids": []},
+            "source_roots": ["src/main/java"],
+            "test_roots": ["src/test/java"],
+            "modules": {"analysis_status": "analyzed", "items": []}
+          },
+          "endpoints": [],
+          "warnings": {"analysis_status": "analyzed", "items": []},
+          "components": {"analysis_status": "analyzed", "items": []},
+          "entities": {"analysis_status": "analyzed", "items": [], "embeddables": {"analysis_status": "analyzed", "items": []}},
+          "tests": {"analysis_status": "analyzed", "items": []},
+          "quality": {
+            "analysis_status": "analyzed",
+            "test_gap_signals": {"analysis_status": "analyzed", "items": [%s]},
+            "change_risk_signals": {"analysis_status": "analyzed", "items": [%s]}
+          }
+        }
+        """.formatted(testGapSignals, changeRiskSignals);
+
+    String guide = generator.generate(projectMap, evidenceIndex.toString());
+
+    assertTrue(guide.contains(
+        "- Quality detail cap: showing 50 of 51 test-gap hints and 50 of 51 change-risk hints. These rows are conservative planning hints, not coverage, execution, assertion, CI, runtime, correctness, vulnerability, production impact, or business-priority evidence."));
+    assertTrue(guide.contains(
+        "- Evidence visibility: displayed rows keep evidence references where available; omitted rows remain inspectable by resolving their `evidence_ids` from `project-map.json` into `evidence-index.jsonl`."));
+    assertTrue(guide.contains("`GapSubject51`"));
+    assertFalse(guide.contains("`GapSubject50`"));
+    assertTrue(guide.contains("`RiskSubject51`"));
+    assertFalse(guide.contains("`RiskSubject50`"));
+    assertFalse(guide.contains("`src/main/java/com/example/Gap50.java:1` (`ev:gap:50`)"));
+    assertFalse(guide.contains("`src/main/java/com/example/Risk50.java:1` (`ev:risk:50`)"));
+    assertTrue(guide.contains(
+        "  - ... and 1 more test-gap signal rows in `project-map.json` (`quality.test_gap_signals.items`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more change-risk signal rows in `project-map.json` (`quality.change_risk_signals.items`)."));
+    assertTrue(guide.contains("`src/main/java/com/example/Gap51.java:1` (`ev:gap:51`)"));
+  }
+
+  @Test
+  void largeSpringSurfaceRendersModuleSummaryAndCapsDetailedGroups() throws Exception {
+    StringBuilder modules = new StringBuilder();
+    StringBuilder repositories = new StringBuilder();
+    StringBuilder evidenceIndex = new StringBuilder();
+    for (int index = 1; index <= 51; index++) {
+      if (index > 1) {
+        modules.append(",\n");
+        repositories.append(",\n");
+      }
+      modules.append("""
+          {
+            "module_id": "module:m%02d",
+            "module_path": "m%02d",
+            "pom_path": "m%02d/pom.xml",
+            "support_status": "supported",
+            "declaration_kind": "root_declared_module",
+            "declared_path": "m%02d",
+            "source_roots": ["m%02d/src/main/java"],
+            "test_roots": [],
+            "declaration_evidence_ids": [],
+            "pom_evidence_ids": []
+          }""".formatted(index, index, index, index, index));
+      repositories.append("""
+          {
+            "id": "spring_repository_stereotype:module:m%02d:com.example.m%02d.Repository%02d",
+            "module_id": "module:m%02d",
+            "surface_category": "spring_repository_stereotype",
+            "support_type": "extracted",
+            "class_name": "com.example.m%02d.Repository%02d",
+            "source_path": "m%02d/src/main/java/com/example/m%02d/Repository%02d.java",
+            "repository_signal": "direct_repository_stereotype",
+            "evidence_ids": ["ev:spring:%02d"]
+          }""".formatted(index, index, index, index, index, index, index, index, index, index));
+      evidenceIndex.append(evidenceLine(
+          "ev:spring:%02d".formatted(index),
+          "m%02d/src/main/java/com/example/m%02d/Repository%02d.java".formatted(index, index, index)));
+    }
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "project": {
+            "build": {"system": "maven", "root_build_file": "pom.xml", "evidence_ids": []},
+            "source_roots": [],
+            "test_roots": [],
+            "modules": {"analysis_status": "analyzed", "items": [%s]}
+          },
+          "endpoints": [],
+          "warnings": {"analysis_status": "analyzed", "items": []},
+          "components": {"analysis_status": "analyzed", "items": []},
+          "entities": {"analysis_status": "analyzed", "items": [], "embeddables": {"analysis_status": "analyzed", "items": []}},
+          "tests": {"analysis_status": "not_detected", "items": []},
+          "spring_application_surface": {
+            "analysis_status": "analyzed",
+            "repositories": {"analysis_status": "analyzed", "items": [%s]},
+            "configuration": {
+              "configuration_classes": {"analysis_status": "analyzed", "items": []},
+              "configuration_properties": {"analysis_status": "analyzed", "items": []},
+              "bean_methods": {"analysis_status": "analyzed", "items": []}
+            },
+            "behavior": {
+              "transaction_boundaries": {"analysis_status": "analyzed", "items": []},
+              "scheduled_methods": {"analysis_status": "analyzed", "items": []},
+              "event_listeners": {"analysis_status": "analyzed", "items": []}
+            },
+            "messaging": {"listener_signals": {"analysis_status": "analyzed", "items": []}},
+            "security": {"configuration_warnings": {"analysis_status": "analyzed", "warning_ids": []}}
+          }
+        }
+        """.formatted(modules, repositories);
+
+    String guide = generator.generate(projectMap, evidenceIndex.toString());
+
+    assertTrue(guide.contains(
+        "- Spring surface detail cap: showing detailed rows for 20 of 51 modules. The cap is Markdown presentation only; omitted module rows remain in `project-map.json`, and displayed evidence references resolve through `evidence-index.jsonl`."));
+    assertTrue(guide.contains(
+        "  - ... and 26 more module summary rows in `project-map.json` (`spring_application_surface`)."));
+    String springSection = markdownSection(guide, "## Spring Application Surface");
+    assertTrue(springSection.contains("### Module `module:m20` (path: `m20`)"));
+    assertEquals(20, occurrenceCount(springSection, "\n### Module `module:m"));
+    assertFalse(springSection.contains("### Module `module:m21` (path: `m21`)"));
+    assertFalse(springSection.contains(
+        "`m21/src/main/java/com/example/m21/Repository21.java:1` (`ev:spring:21`)"));
+    assertTrue(guide.contains(
+        "  - ... and 31 more Spring application surface module groups in `project-map.json` (`spring_application_surface`)."));
+    assertTrue(guide.contains("`m01/src/main/java/com/example/m01/Repository01.java:1` (`ev:spring:01`)"));
+  }
+
+  @Test
+  void largeDomainModelRendersSummaryCapsAndNestedOmittedRows() throws Exception {
+    StringBuilder entities = new StringBuilder();
+    StringBuilder embeddables = new StringBuilder();
+    StringBuilder evidenceIndex = new StringBuilder();
+    for (int index = 1; index <= 51; index++) {
+      if (index > 1) {
+        entities.append(",\n");
+      }
+      entities.append(domainEntityJson(index, index == 1));
+      evidenceIndex.append(evidenceLine(
+          "ev:entity:%02d".formatted(index),
+          "src/main/java/com/example/domain/Entity%02d.java".formatted(index)));
+    }
+    for (int index = 1; index <= 26; index++) {
+      if (index > 1) {
+        embeddables.append(",\n");
+      }
+      embeddables.append("""
+          {
+            "id": "embeddable:com.example.domain.Value%02d",
+            "module_id": "module:.",
+            "class_name": "com.example.domain.Value%02d",
+            "source_path": "src/main/java/com/example/domain/Value%02d.java",
+            "fields": [],
+            "evidence_ids": ["ev:embeddable:%02d"]
+          }""".formatted(index, index, index, index));
+      evidenceIndex.append(evidenceLine(
+          "ev:embeddable:%02d".formatted(index),
+          "src/main/java/com/example/domain/Value%02d.java".formatted(index)));
+    }
+    String projectMap = """
+        {
+          "schema_version": "1.0",
+          "project": {
+            "build": {"system": "maven", "root_build_file": "pom.xml", "evidence_ids": []},
+            "source_roots": ["src/main/java"],
+            "test_roots": [],
+            "modules": {"analysis_status": "analyzed", "items": []}
+          },
+          "endpoints": [],
+          "warnings": {"analysis_status": "analyzed", "items": []},
+          "components": {"analysis_status": "analyzed", "items": []},
+          "entities": {
+            "analysis_status": "analyzed",
+            "items": [%s],
+            "embeddables": {"analysis_status": "analyzed", "items": [%s]}
+          },
+          "tests": {"analysis_status": "not_detected", "items": []}
+        }
+        """.formatted(entities, embeddables);
+
+    String guide = generator.generate(projectMap, evidenceIndex.toString());
+
+    assertTrue(guide.contains(
+        "- Domain detail cap: showing 50 of 51 entity rows and 25 of 26 embeddable rows. Domain rows are source-visible JPA presentation only; omitted field, identifier, relationship, and embeddable details remain in `project-map.json`."));
+    assertTrue(guide.contains("### `com.example.domain.Entity50`"));
+    assertFalse(guide.contains("### `com.example.domain.Entity51`"));
+    assertTrue(guide.contains("- Embeddable: Detected `com.example.domain.Value25`"));
+    assertFalse(guide.contains("- Embeddable: Detected `com.example.domain.Value26`"));
+    assertFalse(guide.contains("`src/main/java/com/example/domain/Entity51.java:1` (`ev:entity:51`)"));
+    assertFalse(guide.contains(
+        "`src/main/java/com/example/domain/Value26.java:1` (`ev:embeddable:26`)"));
+    assertTrue(guide.contains(
+        "  - ... and 1 more entity detail rows in `project-map.json` (`entities.items`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more embeddable detail rows in `project-map.json` (`entities.embeddables.items`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more field metadata rows for this owning type in `project-map.json` (`owning entity or embeddable object`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more identifier rows for this owning entity in `project-map.json` (`owning entity object`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more relationship rows for this owning entity in `project-map.json` (`owning entity object`)."));
+    assertTrue(guide.contains(
+        "  - ... and 1 more join columns for this relationship in `project-map.json` (`owning relationship object`)."));
+    assertTrue(guide.contains("  - uncertainty: `target_type_not_resolved`"));
+    assertTrue(guide.contains("`src/main/java/com/example/domain/Entity01.java:1` (`ev:entity:01`)"));
   }
 
   @Test
@@ -1256,6 +1499,181 @@ final class AgentGuideGeneratorTest {
 
     assertTrue(guide.contains(
         "`pom.xml\\u2028line\\u2029paragraph:1` (`ev:root-build`)"));
+  }
+
+  private String qualitySignalJson(
+      String id,
+      String signal,
+      String subjectKind,
+      String subjectName,
+      String status,
+      String basis,
+      String basisField,
+      String evidenceId) {
+    return """
+        {
+          "id": "%s",
+          "module_id": "module:.",
+          "signal": "%s",
+          "subject_kind": "%s",
+          "subject_id": "%s:id",
+          "subject_name": "%s",
+          "subject_class_name": "com.example.%s",
+          "subject_member_name": null,
+          "status": "%s",
+          "%s": "%s",
+          "confidence": "low",
+          "uncertainty": "%s",
+          "evidence_ids": ["%s"]
+        }""".formatted(
+            id,
+            signal,
+            subjectKind,
+            id,
+            subjectName,
+            subjectName,
+            status,
+            basisField,
+            basis,
+            status.contains("warning") ? "bounded_generated_memory_only" : "",
+            evidenceId);
+  }
+
+  private int occurrenceCount(String text, String needle) {
+    int count = 0;
+    int offset = 0;
+    while (true) {
+      int index = text.indexOf(needle, offset);
+      if (index < 0) {
+        return count;
+      }
+      count++;
+      offset = index + needle.length();
+    }
+  }
+
+  private String markdownSection(String markdown, String heading) {
+    int start = markdown.indexOf(heading);
+    assertTrue(start >= 0, "missing Markdown section: " + heading);
+    int next = markdown.indexOf("\n## ", start + heading.length());
+    if (next < 0) {
+      return markdown.substring(start);
+    }
+    return markdown.substring(start, next);
+  }
+
+  private String domainEntityJson(int index, boolean withNestedCaps) {
+    if (!withNestedCaps) {
+      return """
+          {
+            "id": "entity:com.example.domain.Entity%02d",
+            "module_id": "module:.",
+            "class_name": "com.example.domain.Entity%02d",
+            "source_path": "src/main/java/com/example/domain/Entity%02d.java",
+            "table_name": "entity_%02d",
+            "fields": [],
+            "identifier_fields": [],
+            "relationships": [],
+            "evidence_ids": ["ev:entity:%02d"]
+          }""".formatted(index, index, index, index, index);
+    }
+
+    StringBuilder fields = new StringBuilder();
+    StringBuilder identifiers = new StringBuilder();
+    StringBuilder relationships = new StringBuilder();
+    for (int fieldIndex = 1; fieldIndex <= 9; fieldIndex++) {
+      if (fieldIndex > 1) {
+        fields.append(",\n");
+      }
+      fields.append("""
+          {
+            "field_name": "field%02d",
+            "java_type": "String",
+            "persistence_role": "%s",
+            "annotations": ["@Column"],
+            "column": {"name": "field_%02d"},
+            "evidence_ids": []
+          }""".formatted(
+              fieldIndex,
+              fieldIndex == 1 ? "embedded_id" : "basic",
+              fieldIndex));
+    }
+    for (int identifierIndex = 1; identifierIndex <= 6; identifierIndex++) {
+      if (identifierIndex > 1) {
+        identifiers.append(",\n");
+      }
+      identifiers.append("""
+          {
+            "field_name": "id%02d",
+            "java_type": "Long",
+            "declaring_class": "com.example.domain.Entity01",
+            "source_kind": "%s",
+            "identifier_kind": "simple_id",
+            "evidence_ids": []
+          }""".formatted(
+              identifierIndex,
+              identifierIndex == 1 ? "mapped_superclass" : "entity"));
+    }
+    for (int relationshipIndex = 1; relationshipIndex <= 9; relationshipIndex++) {
+      if (relationshipIndex > 1) {
+        relationships.append(",\n");
+      }
+      relationships.append("""
+          {
+            "field_name": "relation%02d",
+            "annotation": "@ManyToOne",
+            "cardinality": "many_to_one",
+            "java_type": "Related%02d",
+            "target": {
+              "target_resolution": "declared_type_only",
+              "uncertainty": "target_type_not_resolved"
+            },
+            "join_columns": [%s],
+            "evidence_ids": ["ev:entity:01"]
+          }""".formatted(
+              relationshipIndex,
+              relationshipIndex,
+              relationshipIndex == 1 ? joinColumnsJson() : ""));
+    }
+    return """
+        {
+          "id": "entity:com.example.domain.Entity01",
+          "module_id": "module:.",
+          "class_name": "com.example.domain.Entity01",
+          "source_path": "src/main/java/com/example/domain/Entity01.java",
+          "table_name": "entity_01",
+          "id_class": {
+            "type_name": "com.example.domain.Entity01Id",
+            "field_matching_status": "not_analyzed",
+            "semantic_reconstruction_status": "not_analyzed",
+            "evidence_ids": []
+          },
+          "fields": [%s],
+          "identifier_fields": [%s],
+          "relationships": [%s],
+          "evidence_ids": ["ev:entity:01"]
+        }""".formatted(fields, identifiers, relationships);
+  }
+
+  private String joinColumnsJson() {
+    StringBuilder joinColumns = new StringBuilder();
+    for (int index = 1; index <= 6; index++) {
+      if (index > 1) {
+        joinColumns.append(",\n");
+      }
+      joinColumns.append("""
+          {
+            "name": "related_id_%02d",
+            "referenced_column_name": "id"
+          }""".formatted(index));
+    }
+    return joinColumns.toString();
+  }
+
+  private String evidenceLine(String id, String path) {
+    return """
+        {"id":"%s","source_type":"annotation","path":"%s","class_name":"com.example.Generated","method_name":null,"symbol_name":"@Generated","line_start":1,"line_end":1,"excerpt":"@Generated","confidence":"high"}
+        """.formatted(id, path);
   }
 
   private void assertEvidenceIsAttachedToDetectedClaims(String guide) {

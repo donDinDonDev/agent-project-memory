@@ -7341,6 +7341,27 @@ Content rules:
   inline and add a suffix such as `... and N more evidence references in
   evidence-index.jsonl`. This does not remove or alter complete evidence records in
   `evidence-index.jsonl` or evidence IDs in `project-map.json`.
+- Large detailed guide sections may render a deterministic summary before detail rows
+  and apply Markdown-only presentation caps. A supported detailed section is considered
+  large when its rendered form exceeds 500 lines or 100 KiB, when its primary detail-row
+  family exceeds 50 rows, or when it crosses the very-large thresholds of 1,500 lines or
+  250 KiB. The affected presentation sections are `Detected Tests`, `Quality And
+  Change-Risk Signals`, `Spring Application Surface`, and `Domain And Data Model`.
+- Large-section summaries must state that `agent-guide.md` is deterministic
+  presentation, that complete generated facts remain in `project-map.json`, and that
+  source-backed evidence remains in `evidence-index.jsonl`. Displayed rows keep evidence
+  references where available. Omitted-row notices must include a count and a
+  `project-map.json` pointer such as `tests.items`, `quality.test_gap_signals.items`,
+  `quality.change_risk_signals.items`, `spring_application_surface`, `entities.items`,
+  or `entities.embeddables.items`.
+- Current large-section presentation caps are: 50 test classes; 10 test methods per
+  test class; 5 test framework, Spring test-slice, mock, and tested-subject rows per
+  test class; 50 test-gap hints; 50 change-risk hints; 25 Spring module summary rows;
+  detailed Spring rows for 20 modules; 50 entity rows; 25 embeddable rows; 8 field rows
+  per entity or embeddable; 5 identifier rows per entity; 8 relationship rows per
+  entity; and 5 join-column rows per relationship or join-table side. These caps do not
+  change `project-map.json`, `evidence-index.jsonl`, evidence IDs, evidence semantics,
+  or machine-readable artifact authority.
 - Facts without dedicated evidence IDs, such as current source-root and test-root lists,
   must say that they are recorded in `project-map.json` and that no separate evidence ID
   is emitted by the current implementation.

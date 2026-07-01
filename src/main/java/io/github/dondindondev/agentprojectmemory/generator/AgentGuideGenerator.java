@@ -6,12 +6,14 @@ import io.github.dondindondev.agentprojectmemory.OutputRedactor;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 
 public final class AgentGuideGenerator {
   private static final ObjectMapper JSON = new ObjectMapper();
@@ -28,8 +30,27 @@ public final class AgentGuideGenerator {
   private static final int HUGE_GUIDE_LINES = 5_000;
   private static final int LARGE_MACHINE_ARTIFACT_BYTES = MIB;
   private static final int HUGE_KNOWN_OUTPUT_BYTES = 5 * MIB;
+  private static final int LARGE_DETAILED_SECTION_LINES = 500;
+  private static final int LARGE_DETAILED_SECTION_BYTES = 100 * KIB;
+  private static final int VERY_LARGE_DETAILED_SECTION_LINES = 1_500;
+  private static final int VERY_LARGE_DETAILED_SECTION_BYTES = 250 * KIB;
   private static final int LARGE_DETAILED_SECTION_ITEM_COUNT = 50;
   private static final int MAX_DETAILED_TEST_CLASSES = 50;
+  private static final int MAX_LARGE_TEST_METHODS_PER_CLASS = 10;
+  private static final int MAX_LARGE_TEST_FRAMEWORK_SIGNALS_PER_CLASS = 5;
+  private static final int MAX_LARGE_TEST_SLICES_PER_CLASS = 5;
+  private static final int MAX_LARGE_TEST_MOCK_SIGNALS_PER_CLASS = 5;
+  private static final int MAX_LARGE_TESTED_SUBJECTS_PER_CLASS = 5;
+  private static final int MAX_LARGE_QUALITY_TEST_GAP_SIGNALS = 50;
+  private static final int MAX_LARGE_QUALITY_CHANGE_RISK_SIGNALS = 50;
+  private static final int MAX_LARGE_SPRING_MODULE_SUMMARY_ROWS = 25;
+  private static final int MAX_LARGE_SPRING_DETAILED_MODULES = 20;
+  private static final int MAX_LARGE_DOMAIN_ENTITIES = 50;
+  private static final int MAX_LARGE_DOMAIN_EMBEDDABLES = 25;
+  private static final int MAX_LARGE_DOMAIN_FIELDS_PER_TYPE = 8;
+  private static final int MAX_LARGE_DOMAIN_IDENTIFIERS_PER_ENTITY = 5;
+  private static final int MAX_LARGE_DOMAIN_RELATIONSHIPS_PER_ENTITY = 8;
+  private static final int MAX_LARGE_DOMAIN_JOIN_COLUMNS_PER_RELATIONSHIP = 5;
 
   public String generate(String projectMapJson, String evidenceIndexJsonl) throws IOException {
     Objects.requireNonNull(projectMapJson, "projectMapJson");
@@ -355,6 +376,77 @@ public final class AgentGuideGenerator {
     return value.getBytes(StandardCharsets.UTF_8).length;
   }
 
+  private boolean isLargeDetailedSection(String renderedSection, int primaryDetailRows) {
+    long lineCount = renderedSection.isEmpty() ? 0 : renderedSection.lines().count();
+    long byteCount = utf8Bytes(renderedSection);
+    return primaryDetailRows > LARGE_DETAILED_SECTION_ITEM_COUNT
+        || lineCount > LARGE_DETAILED_SECTION_LINES
+        || byteCount > LARGE_DETAILED_SECTION_BYTES
+        || lineCount > VERY_LARGE_DETAILED_SECTION_LINES
+        || byteCount > VERY_LARGE_DETAILED_SECTION_BYTES;
+  }
+
+  private void appendLargeSectionSummaryBoundary(StringBuilder markdown) {
+    markdown.append("- Large section: use this summary first. Detailed rows are deterministic ")
+        .append("presentation only; full generated facts remain in `project-map.json`, and ")
+        .append("source-backed evidence remains in `evidence-index.jsonl`.\n");
+  }
+
+  private void appendLargeSectionEvidenceVisibility(StringBuilder markdown) {
+    markdown.append("- Evidence visibility: displayed rows keep evidence references where available; ")
+        .append("omitted rows remain inspectable by resolving their `evidence_ids` from ")
+        .append("`project-map.json` into `evidence-index.jsonl`.\n");
+  }
+
+  private void appendOmittedRows(
+      StringBuilder markdown,
+      String indent,
+      int omittedCount,
+      String rowDescription,
+      String projectMapPointer) {
+    if (omittedCount <= 0) {
+      return;
+    }
+    markdown.append(indent)
+        .append("- ... and ")
+        .append(omittedCount)
+        .append(" more ")
+        .append(MarkdownRenderer.text(rowDescription))
+        .append(" in ")
+        .append(code("project-map.json"));
+    if (projectMapPointer != null && !projectMapPointer.isBlank()) {
+      markdown.append(" (").append(code(projectMapPointer)).append(")");
+    }
+    markdown.append(".\n");
+  }
+
+  private List<JsonNode> jsonArrayItems(JsonNode values) {
+    if (!values.isArray() || values.isEmpty()) {
+      return List.of();
+    }
+    List<JsonNode> items = new ArrayList<>();
+    for (JsonNode value : values) {
+      items.add(value);
+    }
+    return List.copyOf(items);
+  }
+
+  private <T> List<T> prioritizedRows(List<T> rows, ToIntFunction<T> priorityFunction) {
+    List<PrioritizedRow<T>> prioritized = new ArrayList<>();
+    for (int index = 0; index < rows.size(); index++) {
+      T row = rows.get(index);
+      prioritized.add(new PrioritizedRow<>(row, priorityFunction.applyAsInt(row), index));
+    }
+    prioritized.sort(Comparator
+        .comparingInt(PrioritizedRow<T>::priority)
+        .thenComparingInt(PrioritizedRow<T>::originalIndex));
+    List<T> ordered = new ArrayList<>();
+    for (PrioritizedRow<T> row : prioritized) {
+      ordered.add(row.value());
+    }
+    return List.copyOf(ordered);
+  }
+
   private String formatBytes(long bytes) {
     long kib = (bytes + KIB - 1) / KIB;
     return kib + " KiB";
@@ -393,6 +485,446 @@ public final class AgentGuideGenerator {
     }
     return arraySize(quality.path("test_gap_signals").path("items"))
         + arraySize(quality.path("change_risk_signals").path("items"));
+  }
+
+  private int testPrimaryDetailRowCount(JsonNode tests) {
+    int count = 0;
+    for (JsonNode test : items(tests)) {
+      count++;
+      count += arraySize(test.path("framework_signals"));
+      count += arraySize(test.path("spring_test_slices"));
+      count += arraySize(test.path("mock_signals"));
+      count += arraySize(test.path("methods"));
+      count += arraySize(test.path("tested_subjects"));
+    }
+    return count;
+  }
+
+  private int largeTestPriority(JsonNode test) {
+    if (hasArrayEntries(test.path("spring_test_slices"))) {
+      return 0;
+    }
+    if (hasArrayEntries(test.path("mock_signals"))) {
+      return 1;
+    }
+    for (JsonNode subject : jsonArrayItems(test.path("tested_subjects"))) {
+      if ("inferred".equals(textOrFallback(subject, "relation_status", "inferred"))) {
+        return 2;
+      }
+    }
+    for (JsonNode subject : jsonArrayItems(test.path("tested_subjects"))) {
+      String status = textOrFallback(subject, "relation_status", "inferred");
+      if ("ambiguous".equals(status)
+          || "unsupported".equals(status)
+          || "unresolved".equals(status)
+          || "not_detected".equals(status)
+          || "not_analyzed".equals(status)) {
+        return 3;
+      }
+    }
+    return 4;
+  }
+
+  private int largeQualitySignalPriority(JsonNode signal) {
+    String status = text(signal, "status");
+    String uncertainty = nullableText(signal, "uncertainty");
+    if (status.contains("warning")
+        || status.contains("uncertain")
+        || (uncertainty != null && !uncertainty.isBlank() && !"null".equals(uncertainty))) {
+      return 0;
+    }
+    String subjectKind = text(signal, "subject_kind");
+    String signalName = text(signal, "signal");
+    if (subjectKind.contains("endpoint")
+        || subjectKind.contains("spring")
+        || subjectKind.contains("jpa")
+        || subjectKind.contains("entity")
+        || subjectKind.contains("repository")
+        || signalName.contains("security")) {
+      return 1;
+    }
+    String basis = text(signal, "inference_basis") + " " + text(signal, "risk_basis");
+    if (basis.contains("tested_subject") || basis.contains("inferred")) {
+      return 2;
+    }
+    return 3;
+  }
+
+  private void appendLargeQualitySummary(
+      StringBuilder markdown,
+      JsonNode quality,
+      Map<String, ModuleInfo> moduleById) {
+    List<JsonNode> testGapSignals = items(quality.path("test_gap_signals"));
+    List<JsonNode> changeRiskSignals = items(quality.path("change_risk_signals"));
+    List<JsonNode> combined = new ArrayList<>();
+    combined.addAll(testGapSignals);
+    combined.addAll(changeRiskSignals);
+
+    appendLargeSectionSummaryBoundary(markdown);
+    markdown.append("- Quality summary: test-gap hints ")
+        .append(code(Integer.toString(testGapSignals.size())))
+        .append(", change-risk hints ")
+        .append(code(Integer.toString(changeRiskSignals.size())))
+        .append("; signals ")
+        .append(countSummary(countByField(combined, "signal"), moduleById))
+        .append("; subject_kind ")
+        .append(countSummary(countByField(combined, "subject_kind"), moduleById))
+        .append(".\n");
+    markdown.append("- Quality status summary: status ")
+        .append(countSummary(countByField(combined, "status"), moduleById))
+        .append("; confidence ")
+        .append(countSummary(countByField(combined, "confidence"), moduleById))
+        .append("; uncertainty ")
+        .append(countSummary(countByField(combined, "uncertainty"), moduleById))
+        .append("; modules ")
+        .append(countSummary(countByModule(combined, moduleById), moduleById))
+        .append(".\n");
+    markdown.append("- Quality detail cap: showing ")
+        .append(Math.min(testGapSignals.size(), MAX_LARGE_QUALITY_TEST_GAP_SIGNALS))
+        .append(" of ")
+        .append(testGapSignals.size())
+        .append(" test-gap hints and ")
+        .append(Math.min(changeRiskSignals.size(), MAX_LARGE_QUALITY_CHANGE_RISK_SIGNALS))
+        .append(" of ")
+        .append(changeRiskSignals.size())
+        .append(" change-risk hints. These rows are conservative planning hints, not ")
+        .append("coverage, execution, assertion, CI, runtime, correctness, vulnerability, ")
+        .append("production impact, or business-priority evidence.\n");
+    appendLargeSectionEvidenceVisibility(markdown);
+    markdown.append("\n");
+  }
+
+  private Map<String, Integer> seededModuleCountMap(Map<String, ModuleInfo> moduleById) {
+    Map<String, Integer> counts = new LinkedHashMap<>();
+    for (String moduleId : moduleById.keySet()) {
+      counts.put(moduleId, 0);
+    }
+    return counts;
+  }
+
+  private Map<String, Integer> countByModule(
+      List<JsonNode> rows,
+      Map<String, ModuleInfo> moduleById) {
+    Map<String, Integer> counts = seededModuleCountMap(moduleById);
+    for (JsonNode row : rows) {
+      incrementCount(counts, moduleCountKey(nullableText(row, "module_id")));
+    }
+    return counts;
+  }
+
+  private Map<String, Integer> countByField(List<JsonNode> rows, String fieldName) {
+    Map<String, Integer> counts = new LinkedHashMap<>();
+    for (JsonNode row : rows) {
+      incrementCount(counts, textOrFallback(row, fieldName, "not_recorded"));
+    }
+    return counts;
+  }
+
+  private void incrementCount(Map<String, Integer> counts, String key) {
+    counts.put(key, counts.getOrDefault(key, 0) + 1);
+  }
+
+  private String moduleCountKey(String moduleId) {
+    if (moduleId == null || moduleId.isBlank()) {
+      return "module not recorded";
+    }
+    return moduleId;
+  }
+
+  private String textOrFallback(JsonNode node, String fieldName, String fallback) {
+    String value = nullableText(node, fieldName);
+    if (value == null || value.isBlank()) {
+      return fallback;
+    }
+    return value;
+  }
+
+  private String countSummary(Map<String, Integer> counts, Map<String, ModuleInfo> moduleById) {
+    List<String> values = new ArrayList<>();
+    for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+      if (entry.getValue() <= 0) {
+        continue;
+      }
+      String label = entry.getKey();
+      if (moduleById.containsKey(label)) {
+        ModuleInfo module = moduleById.get(label);
+        label = label + " path " + module.modulePath();
+      }
+      values.add(label + "=" + entry.getValue());
+    }
+    if (values.isEmpty()) {
+      return code("none");
+    }
+    return codeList(values);
+  }
+
+  private int visibleNestedCount(JsonNode values, boolean largeMode, int cap) {
+    if (!values.isArray()) {
+      return 0;
+    }
+    if (!largeMode) {
+      return values.size();
+    }
+    return Math.min(values.size(), cap);
+  }
+
+  private List<SpringSurfaceModuleGroup> springSurfaceVisibleGroups(
+      Map<String, SpringSurfaceModuleGroup> groups) {
+    return groups.values().stream()
+        .filter(SpringSurfaceModuleGroup::hasContent)
+        .toList();
+  }
+
+  private int springSurfacePrimaryDetailRowCount(Map<String, SpringSurfaceModuleGroup> groups) {
+    int count = 0;
+    for (SpringSurfaceModuleGroup group : groups.values()) {
+      count += group.extractedFacts().size();
+      count += group.inferredSignals().size();
+      count += group.inferredRelations().size();
+      count += group.uncertainStatuses().size();
+      count += group.warningFacts().size();
+    }
+    return count;
+  }
+
+  private void appendLargeSpringSurfaceSummary(
+      StringBuilder markdown,
+      List<SpringSurfaceModuleGroup> groups,
+      Map<String, ModuleInfo> moduleById) {
+    appendLargeSectionSummaryBoundary(markdown);
+    int extractedFacts = 0;
+    int inferredSignals = 0;
+    int inferredRelations = 0;
+    int uncertainStatuses = 0;
+    int warnings = 0;
+    for (SpringSurfaceModuleGroup group : groups) {
+      extractedFacts += group.extractedFacts().size();
+      inferredSignals += group.inferredSignals().size();
+      inferredRelations += group.inferredRelations().size();
+      uncertainStatuses += group.uncertainStatuses().size();
+      warnings += group.warningFacts().size();
+    }
+    int detailedCount = Math.min(groups.size(), MAX_LARGE_SPRING_DETAILED_MODULES);
+    markdown.append("- Spring surface summary: modules with rows ")
+        .append(code(Integer.toString(groups.size())))
+        .append(", extracted facts ")
+        .append(code(Integer.toString(extractedFacts)))
+        .append(", inferred repository interface signals ")
+        .append(code(Integer.toString(inferredSignals)))
+        .append(", inferred repository/entity relations ")
+        .append(code(Integer.toString(inferredRelations)))
+        .append(", uncertain/not-analyzed statuses ")
+        .append(code(Integer.toString(uncertainStatuses)))
+        .append(", warnings ")
+        .append(code(Integer.toString(warnings)))
+        .append(".\n");
+    markdown.append("- Spring surface detail cap: showing detailed rows for ")
+        .append(detailedCount)
+        .append(" of ")
+        .append(groups.size())
+        .append(" modules. The cap is Markdown presentation only; omitted module rows ")
+        .append("remain in `project-map.json`, and displayed evidence references resolve ")
+        .append("through `evidence-index.jsonl`.\n");
+    appendLargeSectionEvidenceVisibility(markdown);
+    markdown.append("- Module/category summary rows:\n");
+    int summaryCount = Math.min(groups.size(), MAX_LARGE_SPRING_MODULE_SUMMARY_ROWS);
+    for (int index = 0; index < summaryCount; index++) {
+      SpringSurfaceModuleGroup group = groups.get(index);
+      markdown.append("  - ")
+          .append(code(springSurfaceModuleSummaryLabel(group.moduleId(), moduleById)))
+          .append(": extracted ")
+          .append(code(Integer.toString(group.extractedFacts().size())))
+          .append(", inferred signals ")
+          .append(code(Integer.toString(group.inferredSignals().size())))
+          .append(", inferred relations ")
+          .append(code(Integer.toString(group.inferredRelations().size())))
+          .append(", uncertain/not-analyzed ")
+          .append(code(Integer.toString(group.uncertainStatuses().size())))
+          .append(", warnings ")
+          .append(code(Integer.toString(group.warningFacts().size())))
+          .append(".\n");
+    }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        groups.size() - summaryCount,
+        "module summary rows",
+        "spring_application_surface");
+  }
+
+  private String springSurfaceModuleSummaryLabel(
+      String moduleId,
+      Map<String, ModuleInfo> moduleById) {
+    if (moduleId == null || moduleId.isBlank()) {
+      return "module not recorded";
+    }
+    ModuleInfo module = moduleById.get(moduleId);
+    if (module == null) {
+      return moduleId + " (module path not recorded)";
+    }
+    return moduleId + " (path: " + module.modulePath() + ")";
+  }
+
+  private int largeSpringModulePriority(SpringSurfaceModuleGroup group) {
+    if (!group.warningFacts().isEmpty()) {
+      return 0;
+    }
+    if (!group.uncertainStatuses().isEmpty()) {
+      return 1;
+    }
+    if (!group.inferredRelations().isEmpty()) {
+      return 2;
+    }
+    for (JsonNode fact : group.extractedFacts()) {
+      String category = text(fact, "surface_category");
+      if (category.contains("transaction")
+          || category.contains("scheduled")
+          || category.contains("event_listener")
+          || category.contains("messaging_listener")) {
+        return 3;
+      }
+    }
+    return 4;
+  }
+
+  private int domainPrimaryDetailRowCount(JsonNode projectMap) {
+    int count = 0;
+    JsonNode entities = projectMap.path("entities");
+    for (JsonNode entity : items(entities)) {
+      count++;
+      count += arraySize(entity.path("fields"));
+      count += arraySize(entity.path("identifier_fields"));
+      for (JsonNode relationship : jsonArrayItems(entity.path("relationships"))) {
+        count++;
+        count += arraySize(relationship.path("join_columns"));
+        count += arraySize(relationship.path("join_table").path("join_columns"));
+        count += arraySize(relationship.path("join_table").path("inverse_join_columns"));
+      }
+    }
+    for (JsonNode embeddable : items(entities.path("embeddables"))) {
+      count++;
+      count += arraySize(embeddable.path("fields"));
+    }
+    return count;
+  }
+
+  private Set<String> inferredRepositoryEntityTargetClasses(JsonNode projectMap) {
+    Set<String> targetClasses = new LinkedHashSet<>();
+    for (JsonNode repository : items(
+        projectMap.path("spring_application_surface").path("repositories"))) {
+      if (!"inferred".equals(text(repository, "entity_relation_status"))) {
+        continue;
+      }
+      String targetClassName = nullableText(repository.path("entity_relation"), "target_class_name");
+      if (targetClassName != null && !targetClassName.isBlank()) {
+        targetClasses.add(targetClassName);
+      }
+    }
+    return targetClasses;
+  }
+
+  private int largeDomainEntityPriority(JsonNode entity, Set<String> relationTargets) {
+    for (JsonNode relationship : jsonArrayItems(entity.path("relationships"))) {
+      JsonNode target = relationship.path("target");
+      String targetResolution = text(target, "target_resolution");
+      String uncertainty = nullableText(target, "uncertainty");
+      if ("declared_type_only".equals(targetResolution)
+          || (uncertainty != null && !uncertainty.isBlank())) {
+        return 0;
+      }
+    }
+    if (entity.path("id_class").isObject() || hasEmbeddedIdentifierSignal(entity)) {
+      return 1;
+    }
+    for (JsonNode identifier : jsonArrayItems(entity.path("identifier_fields"))) {
+      if ("mapped_superclass".equals(text(identifier, "source_kind"))) {
+        return 2;
+      }
+    }
+    if (relationTargets.contains(text(entity, "class_name"))) {
+      return 3;
+    }
+    return 4;
+  }
+
+  private boolean hasEmbeddedIdentifierSignal(JsonNode entity) {
+    for (JsonNode field : jsonArrayItems(entity.path("fields"))) {
+      JsonNode embedded = field.path("embedded");
+      if (embedded.isObject()
+          && ("@EmbeddedId".equals(text(embedded, "annotation"))
+              || "embedded_id".equals(text(field, "persistence_role")))) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private void appendLargeDomainSummary(
+      StringBuilder markdown,
+      List<JsonNode> entities,
+      List<JsonNode> embeddables,
+      Map<String, ModuleInfo> moduleById) {
+    appendLargeSectionSummaryBoundary(markdown);
+    Map<String, Integer> moduleCounts = seededModuleCountMap(moduleById);
+    int fieldRows = 0;
+    int identifierRows = 0;
+    int relationshipRows = 0;
+    int uncertainRelationshipTargets = 0;
+    int embeddedSignals = 0;
+    int embeddedIdSignals = 0;
+    int idClassSignals = 0;
+    for (JsonNode entity : entities) {
+      incrementCount(moduleCounts, moduleCountKey(nullableText(entity, "module_id")));
+      fieldRows += arraySize(entity.path("fields"));
+      identifierRows += arraySize(entity.path("identifier_fields"));
+      relationshipRows += arraySize(entity.path("relationships"));
+      if (entity.path("id_class").isObject()) {
+        idClassSignals++;
+      }
+      for (JsonNode field : jsonArrayItems(entity.path("fields"))) {
+        JsonNode embedded = field.path("embedded");
+        if (embedded.isObject()) {
+          embeddedSignals++;
+          if ("@EmbeddedId".equals(text(embedded, "annotation"))
+              || "embedded_id".equals(text(field, "persistence_role"))) {
+            embeddedIdSignals++;
+          }
+        }
+      }
+      for (JsonNode relationship : jsonArrayItems(entity.path("relationships"))) {
+        JsonNode target = relationship.path("target");
+        String uncertainty = nullableText(target, "uncertainty");
+        if ("declared_type_only".equals(text(target, "target_resolution"))
+            || (uncertainty != null && !uncertainty.isBlank())) {
+          uncertainRelationshipTargets++;
+        }
+      }
+    }
+    for (JsonNode embeddable : embeddables) {
+      incrementCount(moduleCounts, moduleCountKey(nullableText(embeddable, "module_id")));
+      fieldRows += arraySize(embeddable.path("fields"));
+    }
+    markdown.append("- Domain/JPA summary: modules ")
+        .append(countSummary(moduleCounts, moduleById))
+        .append("; entity facts ")
+        .append(code(Integer.toString(entities.size())))
+        .append("; embeddable facts ")
+        .append(code(Integer.toString(embeddables.size())))
+        .append("; field metadata rows ")
+        .append(code(Integer.toString(fieldRows)))
+        .append("; identifier rows ")
+        .append(code(Integer.toString(identifierRows)))
+        .append("; relationship rows ")
+        .append(code(Integer.toString(relationshipRows)))
+        .append("; uncertain relationship targets ")
+        .append(code(Integer.toString(uncertainRelationshipTargets)))
+        .append("; embedded signals ")
+        .append(code(Integer.toString(embeddedSignals)))
+        .append("; embedded-id signals ")
+        .append(code(Integer.toString(embeddedIdSignals)))
+        .append("; id-class signals ")
+        .append(code(Integer.toString(idClassSignals)))
+        .append(".\n");
   }
 
   private int inferredOrStatusedRowCount(JsonNode projectMap) {
@@ -1312,6 +1844,35 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    Map<String, SpringSurfaceModuleGroup> groups = springSurfaceModuleGroups(
+        springApplicationSurface,
+        warnings,
+        moduleById);
+    String normalSection = renderSpringApplicationSurfaceSection(
+        springApplicationSurface,
+        groups,
+        moduleById,
+        evidenceById,
+        false);
+    if (!isLargeDetailedSection(normalSection, springSurfacePrimaryDetailRowCount(groups))) {
+      markdown.append(normalSection);
+      return;
+    }
+    markdown.append(renderSpringApplicationSurfaceSection(
+        springApplicationSurface,
+        groups,
+        moduleById,
+        evidenceById,
+        true));
+  }
+
+  private String renderSpringApplicationSurfaceSection(
+      JsonNode springApplicationSurface,
+      Map<String, SpringSurfaceModuleGroup> groups,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
+    StringBuilder markdown = new StringBuilder();
     markdown.append("## Spring Application Surface\n\n");
     markdown.append("- Spring application surface analysis status: ")
         .append(code(text(springApplicationSurface, "analysis_status")))
@@ -1322,8 +1883,13 @@ public final class AgentGuideGenerator {
     markdown.append("- Transaction, scheduled, event listener, and messaging listener entries are source-visible operational change-surface signals; they do not prove runtime transaction behavior, scheduler registration, event delivery, message destinations, or broker topology.\n");
     markdown.append("- Spring Security configuration warnings are inspection hints and change-risk signals; they do not prove security policy, endpoint protection, authentication behavior, authorization behavior, vulnerability, or correctness.\n");
     appendSpringSurfaceStatusSummary(markdown, springApplicationSurface);
-    appendSpringSurfaceModuleGroups(markdown, springApplicationSurface, warnings, moduleById, evidenceById);
+    List<SpringSurfaceModuleGroup> visibleGroups = springSurfaceVisibleGroups(groups);
+    if (largeMode && !visibleGroups.isEmpty()) {
+      appendLargeSpringSurfaceSummary(markdown, visibleGroups, moduleById);
+    }
+    appendSpringSurfaceModuleGroups(markdown, visibleGroups, moduleById, evidenceById, largeMode);
     markdown.append("\n");
+    return markdown.toString();
   }
 
   private void appendSpringSurfaceStatusSummary(
@@ -1366,24 +1932,24 @@ public final class AgentGuideGenerator {
 
   private void appendSpringSurfaceModuleGroups(
       StringBuilder markdown,
-      JsonNode springApplicationSurface,
-      JsonNode warnings,
+      List<SpringSurfaceModuleGroup> visibleGroups,
       Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
-    Map<String, SpringSurfaceModuleGroup> groups = springSurfaceModuleGroups(
-        springApplicationSurface,
-        warnings,
-        moduleById);
-    List<SpringSurfaceModuleGroup> visibleGroups = groups.values().stream()
-        .filter(SpringSurfaceModuleGroup::hasContent)
-        .toList();
-
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (visibleGroups.isEmpty()) {
       markdown.append("- Spring application surface facts: detected none for supported modules.\n");
       return;
     }
 
-    for (SpringSurfaceModuleGroup group : visibleGroups) {
+    List<SpringSurfaceModuleGroup> detailedGroups = visibleGroups;
+    if (largeMode) {
+      detailedGroups = prioritizedRows(visibleGroups, this::largeSpringModulePriority);
+      detailedGroups = detailedGroups.subList(
+          0,
+          Math.min(detailedGroups.size(), MAX_LARGE_SPRING_DETAILED_MODULES));
+    }
+
+    for (SpringSurfaceModuleGroup group : detailedGroups) {
       markdown.append("\n### ")
           .append(springSurfaceModuleHeading(group.moduleId(), moduleById))
           .append("\n\n");
@@ -1393,6 +1959,12 @@ public final class AgentGuideGenerator {
       appendSpringUncertainStatuses(markdown, group.uncertainStatuses(), evidenceById);
       appendSpringWarningFacts(markdown, group.warningFacts(), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        visibleGroups.size() - detailedGroups.size(),
+        "Spring application surface module groups",
+        "spring_application_surface");
   }
 
   private Map<String, SpringSurfaceModuleGroup> springSurfaceModuleGroups(
@@ -1883,23 +2455,35 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    String normalSection = renderEntitiesSection(projectMap, moduleById, evidenceById, false);
+    if (!isLargeDetailedSection(normalSection, domainPrimaryDetailRowCount(projectMap))) {
+      markdown.append(normalSection);
+      return;
+    }
+    markdown.append(renderEntitiesSection(projectMap, moduleById, evidenceById, true));
+  }
+
+  private String renderEntitiesSection(
+      JsonNode projectMap,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
+    StringBuilder markdown = new StringBuilder();
     JsonNode entities = projectMap.path("entities");
     markdown.append("## Domain And Data Model\n\n");
     markdown.append("- Analysis status: ").append(code(text(entities, "analysis_status"))).append("\n");
-    JsonNode items = entities.path("items");
-    JsonNode embeddableItems = entities.path("embeddables").path("items");
+    List<JsonNode> entityItems = items(entities);
+    List<JsonNode> embeddableItems = items(entities.path("embeddables"));
     markdown.append("- Domain summary: detected ")
-        .append(arraySize(items))
+        .append(entityItems.size())
         .append(" JPA entity fact")
-        .append(arraySize(items) == 1 ? "" : "s")
+        .append(entityItems.size() == 1 ? "" : "s")
         .append(" and ")
-        .append(arraySize(embeddableItems))
+        .append(embeddableItems.size())
         .append(" embeddable fact")
-        .append(arraySize(embeddableItems) == 1 ? "" : "s")
+        .append(embeddableItems.size() == 1 ? "" : "s")
         .append(".\n");
-    appendLargeSectionWarning(markdown, arraySize(items));
-    boolean hasDomainData = items.isArray() && !items.isEmpty()
-        || embeddableItems.isArray() && !embeddableItems.isEmpty();
+    boolean hasDomainData = !entityItems.isEmpty() || !embeddableItems.isEmpty();
     if (hasDomainData) {
       markdown.append("- Domain/data facts are source-visible JPA annotations and Spring Data generic ")
           .append("signals only; no database schema, runtime Hibernate metadata, migration ")
@@ -1909,11 +2493,51 @@ public final class AgentGuideGenerator {
           .append("and explicit not-analyzed composite-id/runtime boundaries.\n");
     }
 
-    if (!items.isArray() || items.isEmpty()) {
+    List<JsonNode> visibleEntities = entityItems;
+    List<JsonNode> visibleEmbeddables = embeddableItems;
+    if (largeMode) {
+      Set<String> relationTargets = inferredRepositoryEntityTargetClasses(projectMap);
+      visibleEntities = prioritizedRows(
+          entityItems,
+          entity -> largeDomainEntityPriority(entity, relationTargets));
+      visibleEntities = visibleEntities.subList(
+          0,
+          Math.min(visibleEntities.size(), MAX_LARGE_DOMAIN_ENTITIES));
+      visibleEmbeddables = visibleEmbeddables.subList(
+          0,
+          Math.min(visibleEmbeddables.size(), MAX_LARGE_DOMAIN_EMBEDDABLES));
+      appendLargeDomainSummary(markdown, entityItems, embeddableItems, moduleById);
+      markdown.append("- Domain detail cap: showing ")
+          .append(visibleEntities.size())
+          .append(" of ")
+          .append(entityItems.size())
+          .append(" entity rows and ")
+          .append(visibleEmbeddables.size())
+          .append(" of ")
+          .append(embeddableItems.size())
+          .append(" embeddable rows. Domain rows are source-visible JPA presentation ")
+          .append("only; omitted field, identifier, relationship, and embeddable ")
+          .append("details remain in `project-map.json`.\n");
+      appendLargeSectionEvidenceVisibility(markdown);
+      appendOmittedRows(
+          markdown,
+          "  ",
+          entityItems.size() - visibleEntities.size(),
+          "entity detail rows",
+          "entities.items");
+      appendOmittedRows(
+          markdown,
+          "  ",
+          embeddableItems.size() - visibleEmbeddables.size(),
+          "embeddable detail rows",
+          "entities.embeddables.items");
+    }
+
+    if (entityItems.isEmpty()) {
       markdown.append("- Detected: no direct JPA entities recorded.\n\n");
     } else {
       markdown.append("\n");
-      for (JsonNode entity : items) {
+      for (JsonNode entity : visibleEntities) {
         markdown.append("### ").append(code(text(entity, "class_name"))).append("\n\n");
         appendModuleLine(markdown, entity, moduleById);
         String tableName = nullableText(entity, "table_name");
@@ -1934,13 +2558,25 @@ public final class AgentGuideGenerator {
           appendEvidenceLine(markdown, tableEvidenceIds, evidenceById);
         }
         appendIdClass(markdown, entity.path("id_class"), evidenceById);
-        appendEntityFields(markdown, entity.path("fields"), evidenceById);
-        appendIdentifierFields(markdown, entity.path("identifier_fields"), evidenceById);
-        appendRelationships(markdown, entity.path("relationships"), evidenceById);
+        appendEntityFields(markdown, entity.path("fields"), evidenceById, largeMode);
+        appendIdentifierFields(
+            markdown,
+            entity.path("identifier_fields"),
+            evidenceById,
+            largeMode);
+        appendRelationships(markdown, entity.path("relationships"), evidenceById, largeMode);
         markdown.append("\n");
       }
     }
-    appendEmbeddables(markdown, entities.path("embeddables"), moduleById, evidenceById);
+    appendEmbeddables(
+        markdown,
+        entities.path("embeddables"),
+        visibleEmbeddables,
+        embeddableItems.size(),
+        moduleById,
+        evidenceById,
+        largeMode);
+    return markdown.toString();
   }
 
   private void appendIdClass(
@@ -1964,8 +2600,11 @@ public final class AgentGuideGenerator {
   private void appendEmbeddables(
       StringBuilder markdown,
       JsonNode embeddables,
+      List<JsonNode> visibleItems,
+      int totalItemCount,
       Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!embeddables.isObject()) {
       return;
     }
@@ -1974,13 +2613,12 @@ public final class AgentGuideGenerator {
     markdown.append("- Analysis status: ")
         .append(code(text(embeddables, "analysis_status")))
         .append("\n");
-    JsonNode items = embeddables.path("items");
-    if (!items.isArray() || items.isEmpty()) {
+    if (totalItemCount == 0) {
       markdown.append("- Detected: no direct `@Embeddable` classes recorded.\n\n");
       return;
     }
 
-    for (JsonNode embeddable : items) {
+    for (JsonNode embeddable : visibleItems) {
       markdown.append("- Embeddable: Detected ")
           .append(code(text(embeddable, "class_name")))
           .append("\n");
@@ -1989,21 +2627,30 @@ public final class AgentGuideGenerator {
           .append(code(text(embeddable, "source_path")))
           .append("\n");
       appendEvidenceLine(markdown, embeddable.path("evidence_ids"), evidenceById);
-      appendEntityFields(markdown, embeddable.path("fields"), evidenceById);
+      appendEntityFields(markdown, embeddable.path("fields"), evidenceById, largeMode);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        totalItemCount - visibleItems.size(),
+        "embeddable rows",
+        "entities.embeddables.items");
     markdown.append("\n");
   }
 
   private void appendEntityFields(
       StringBuilder markdown,
       JsonNode fields,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!fields.isArray() || fields.isEmpty()) {
       markdown.append("- Field metadata: Detected none.\n");
       return;
     }
 
-    for (JsonNode field : fields) {
+    int visibleCount = visibleNestedCount(fields, largeMode, MAX_LARGE_DOMAIN_FIELDS_PER_TYPE);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode field = fields.get(index);
       markdown.append("- Field metadata: Source-visible ")
           .append(code(text(field, "field_name")))
           .append(" (")
@@ -2020,6 +2667,12 @@ public final class AgentGuideGenerator {
       appendEmbeddedAttributes(markdown, field.path("embedded"));
       appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        fields.size() - visibleCount,
+        "field metadata rows for this owning type",
+        "owning entity or embeddable object");
   }
 
   private void appendColumnAttributes(StringBuilder markdown, JsonNode column) {
@@ -2105,13 +2758,19 @@ public final class AgentGuideGenerator {
   private void appendIdentifierFields(
       StringBuilder markdown,
       JsonNode identifierFields,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!identifierFields.isArray() || identifierFields.isEmpty()) {
       markdown.append("- Identifier fields: Detected none.\n");
       return;
     }
 
-    for (JsonNode field : identifierFields) {
+    int visibleCount = visibleNestedCount(
+        identifierFields,
+        largeMode,
+        MAX_LARGE_DOMAIN_IDENTIFIERS_PER_ENTITY);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode field = identifierFields.get(index);
       markdown.append("- Identifier field: Detected ")
           .append(code(text(field, "field_name")))
           .append(" (")
@@ -2136,18 +2795,30 @@ public final class AgentGuideGenerator {
       }
       appendEvidenceLine(markdown, field.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        identifierFields.size() - visibleCount,
+        "identifier rows for this owning entity",
+        "owning entity object");
   }
 
   private void appendRelationships(
       StringBuilder markdown,
       JsonNode relationships,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!relationships.isArray() || relationships.isEmpty()) {
       markdown.append("- Relationships: Detected none.\n");
       return;
     }
 
-    for (JsonNode relationship : relationships) {
+    int visibleCount = visibleNestedCount(
+        relationships,
+        largeMode,
+        MAX_LARGE_DOMAIN_RELATIONSHIPS_PER_ENTITY);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode relationship = relationships.get(index);
       JsonNode target = relationship.path("target");
       String targetResolution = text(target, "target_resolution");
       if (targetResolution.isBlank()) {
@@ -2173,10 +2844,16 @@ public final class AgentGuideGenerator {
           .append(code(nullDisplay(uncertainty)))
           .append("\n");
       appendRelationshipAttributes(markdown, relationship);
-      appendRelationshipJoinColumns(markdown, relationship.path("join_columns"));
-      appendRelationshipJoinTable(markdown, relationship.path("join_table"));
+      appendRelationshipJoinColumns(markdown, relationship.path("join_columns"), largeMode);
+      appendRelationshipJoinTable(markdown, relationship.path("join_table"), largeMode);
       appendEvidenceLine(markdown, relationship.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        relationships.size() - visibleCount,
+        "relationship rows for this owning entity",
+        "owning entity object");
   }
 
   private void appendRelationshipAttributes(StringBuilder markdown, JsonNode relationship) {
@@ -2197,19 +2874,36 @@ public final class AgentGuideGenerator {
     }
   }
 
-  private void appendRelationshipJoinColumns(StringBuilder markdown, JsonNode joinColumns) {
+  private void appendRelationshipJoinColumns(
+      StringBuilder markdown,
+      JsonNode joinColumns,
+      boolean largeMode) {
     if (!joinColumns.isArray() || joinColumns.isEmpty()) {
       return;
     }
 
-    for (JsonNode joinColumn : joinColumns) {
+    int visibleCount = visibleNestedCount(
+        joinColumns,
+        largeMode,
+        MAX_LARGE_DOMAIN_JOIN_COLUMNS_PER_RELATIONSHIP);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode joinColumn = joinColumns.get(index);
       markdown.append("  - Join column: Source-visible ")
           .append(codeList(joinColumnAttributes(joinColumn)))
           .append("\n");
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        joinColumns.size() - visibleCount,
+        "join columns for this relationship",
+        "owning relationship object");
   }
 
-  private void appendRelationshipJoinTable(StringBuilder markdown, JsonNode joinTable) {
+  private void appendRelationshipJoinTable(
+      StringBuilder markdown,
+      JsonNode joinTable,
+      boolean largeMode) {
     if (!joinTable.isObject()) {
       return;
     }
@@ -2221,25 +2915,41 @@ public final class AgentGuideGenerator {
     markdown.append("  - Join table: Source-visible ")
         .append(codeList(attributes))
         .append("\n");
-    appendJoinTableColumns(markdown, "join_columns", joinTable.path("join_columns"));
-    appendJoinTableColumns(markdown, "inverse_join_columns", joinTable.path("inverse_join_columns"));
+    appendJoinTableColumns(markdown, "join_columns", joinTable.path("join_columns"), largeMode);
+    appendJoinTableColumns(
+        markdown,
+        "inverse_join_columns",
+        joinTable.path("inverse_join_columns"),
+        largeMode);
   }
 
   private void appendJoinTableColumns(
       StringBuilder markdown,
       String label,
-      JsonNode joinColumns) {
+      JsonNode joinColumns,
+      boolean largeMode) {
     if (!joinColumns.isArray() || joinColumns.isEmpty()) {
       return;
     }
 
-    for (JsonNode joinColumn : joinColumns) {
+    int visibleCount = visibleNestedCount(
+        joinColumns,
+        largeMode,
+        MAX_LARGE_DOMAIN_JOIN_COLUMNS_PER_RELATIONSHIP);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode joinColumn = joinColumns.get(index);
       markdown.append("    - ")
           .append(label)
           .append(": Source-visible ")
           .append(codeList(joinColumnAttributes(joinColumn)))
           .append("\n");
     }
+    appendOmittedRows(
+        markdown,
+        "    ",
+        joinColumns.size() - visibleCount,
+        label + " rows for this relationship",
+        "owning relationship object");
   }
 
   private List<String> joinColumnAttributes(JsonNode joinColumn) {
@@ -2261,18 +2971,32 @@ public final class AgentGuideGenerator {
       JsonNode tests,
       Map<String, ModuleInfo> moduleById,
       Map<String, EvidenceRecord> evidenceById) {
+    String normalSection = renderTestsSection(tests, moduleById, evidenceById, false);
+    if (!isLargeDetailedSection(normalSection, testPrimaryDetailRowCount(tests))) {
+      markdown.append(normalSection);
+      return;
+    }
+    markdown.append(renderTestsSection(tests, moduleById, evidenceById, true));
+  }
+
+  private String renderTestsSection(
+      JsonNode tests,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
+    StringBuilder markdown = new StringBuilder();
     markdown.append("## Detected Tests\n\n");
     String analysisStatus = text(tests, "analysis_status");
     markdown.append("- Analysis status: ").append(code(analysisStatus)).append("\n");
 
-    JsonNode items = tests.path("items");
-    if (!items.isArray() || items.isEmpty()) {
+    List<JsonNode> testItems = items(tests);
+    if (testItems.isEmpty()) {
       if ("not_detected".equals(analysisStatus)) {
         markdown.append("- Not analyzed: no supported test root was detected.\n\n");
       } else {
         markdown.append("- Detected: no test classes recorded.\n\n");
       }
-      return;
+      return markdown.toString();
     }
 
     int frameworkSignalCount = 0;
@@ -2280,17 +3004,26 @@ public final class AgentGuideGenerator {
     int mockSignalCount = 0;
     int testMethodCount = 0;
     int testedSubjectCount = 0;
-    for (JsonNode test : items) {
+    Map<String, Integer> moduleCounts = seededModuleCountMap(moduleById);
+    Map<String, Integer> relationStatusCounts = new LinkedHashMap<>();
+    for (JsonNode test : testItems) {
       frameworkSignalCount += arraySize(test.path("framework_signals"));
       springTestSliceCount += arraySize(test.path("spring_test_slices"));
       mockSignalCount += arraySize(test.path("mock_signals"));
       testMethodCount += arraySize(test.path("methods"));
-      testedSubjectCount += arraySize(test.path("tested_subjects"));
+      List<JsonNode> testedSubjects = jsonArrayItems(test.path("tested_subjects"));
+      testedSubjectCount += testedSubjects.size();
+      incrementCount(moduleCounts, moduleCountKey(nullableText(test, "module_id")));
+      for (JsonNode subject : testedSubjects) {
+        incrementCount(
+            relationStatusCounts,
+            textOrFallback(subject, "relation_status", "inferred"));
+      }
     }
     markdown.append("- Test inventory summary: detected ")
-        .append(items.size())
+        .append(testItems.size())
         .append(" test class")
-        .append(items.size() == 1 ? "" : "es")
+        .append(testItems.size() == 1 ? "" : "es")
         .append(", ")
         .append(frameworkSignalCount)
         .append(" framework signal")
@@ -2312,11 +3045,35 @@ public final class AgentGuideGenerator {
         .append(" tested-subject relation/status row")
         .append(testedSubjectCount == 1 ? "" : "s")
         .append(".\n");
-    appendLargeSectionWarning(markdown, items.size());
-    int visibleCount = Math.min(items.size(), MAX_DETAILED_TEST_CLASSES);
+    List<JsonNode> visibleTests = testItems;
+    if (largeMode) {
+      visibleTests = prioritizedRows(testItems, this::largeTestPriority);
+      visibleTests = visibleTests.subList(
+          0,
+          Math.min(visibleTests.size(), MAX_DETAILED_TEST_CLASSES));
+      appendLargeSectionSummaryBoundary(markdown);
+      markdown.append("- Test large-section summary: modules ")
+          .append(countSummary(moduleCounts, moduleById))
+          .append("; relation_status counts ")
+          .append(countSummary(relationStatusCounts, moduleById))
+          .append(".\n");
+      markdown.append("- Test detail cap: showing ")
+          .append(visibleTests.size())
+          .append(" of ")
+          .append(testItems.size())
+          .append(" test classes. This is a Markdown presentation cap only; omitted ")
+          .append("test classes, methods, framework signals, mock signals, and ")
+          .append("tested-subject statuses remain in `project-map.json`.\n");
+      appendLargeSectionEvidenceVisibility(markdown);
+      appendOmittedRows(
+          markdown,
+          "  ",
+          testItems.size() - visibleTests.size(),
+          "test classes",
+          "tests.items");
+    }
     markdown.append("\n");
-    for (int index = 0; index < visibleCount; index++) {
-      JsonNode test = items.get(index);
+    for (JsonNode test : visibleTests) {
       markdown.append("### ").append(code(text(test, "class_name"))).append("\n\n");
       appendModuleLine(markdown, test, moduleById);
       markdown.append("- Test class: Detected ")
@@ -2324,26 +3081,37 @@ public final class AgentGuideGenerator {
           .append("\n");
       appendEvidenceLine(markdown, test.path("evidence_ids"), evidenceById);
       markdown.append("- Source: Detected ").append(code(text(test, "source_path"))).append("\n");
-      appendFrameworkSignals(markdown, test.path("framework_signals"), evidenceById);
-      appendSpringTestSlices(markdown, test.path("spring_test_slices"), evidenceById);
-      appendMockSignals(markdown, test.path("mock_signals"), evidenceById);
-      appendTestMethods(markdown, test.path("methods"), evidenceById);
-      appendTestedSubjects(markdown, test.path("tested_subjects"), moduleById, evidenceById);
+      appendFrameworkSignals(markdown, test.path("framework_signals"), evidenceById, largeMode);
+      appendSpringTestSlices(markdown, test.path("spring_test_slices"), evidenceById, largeMode);
+      appendMockSignals(markdown, test.path("mock_signals"), evidenceById, largeMode);
+      appendTestMethods(markdown, test.path("methods"), evidenceById, largeMode);
+      appendTestedSubjects(
+          markdown,
+          test.path("tested_subjects"),
+          moduleById,
+          evidenceById,
+          largeMode);
       markdown.append("\n");
     }
-    appendOmittedBuildConfigItems(markdown, items.size() - visibleCount, "test class detail rows");
+    return markdown.toString();
   }
 
   private void appendFrameworkSignals(
       StringBuilder markdown,
       JsonNode frameworkSignals,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!frameworkSignals.isArray() || frameworkSignals.isEmpty()) {
       markdown.append("- Framework signals: Detected none.\n");
       return;
     }
 
-    for (JsonNode signal : frameworkSignals) {
+    int visibleCount = visibleNestedCount(
+        frameworkSignals,
+        largeMode,
+        MAX_LARGE_TEST_FRAMEWORK_SIGNALS_PER_CLASS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode signal = frameworkSignals.get(index);
       markdown.append("- Framework signal: Detected ")
           .append(code(text(signal, "name")))
           .append(" (signal_kind: ")
@@ -2352,17 +3120,29 @@ public final class AgentGuideGenerator {
           .append("\n");
       appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        frameworkSignals.size() - visibleCount,
+        "framework signals for this test class",
+        "tests.items");
   }
 
   private void appendSpringTestSlices(
       StringBuilder markdown,
       JsonNode springTestSlices,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!springTestSlices.isArray() || springTestSlices.isEmpty()) {
       return;
     }
 
-    for (JsonNode slice : springTestSlices) {
+    int visibleCount = visibleNestedCount(
+        springTestSlices,
+        largeMode,
+        MAX_LARGE_TEST_SLICES_PER_CLASS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode slice = springTestSlices.get(index);
       markdown.append("- Spring test slice signal: Detected ")
           .append(code(text(slice, "annotation")))
           .append(" (slice_kind: ")
@@ -2373,17 +3153,29 @@ public final class AgentGuideGenerator {
           .append("\n");
       appendEvidenceLine(markdown, slice.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        springTestSlices.size() - visibleCount,
+        "Spring test slice signals for this test class",
+        "tests.items");
   }
 
   private void appendMockSignals(
       StringBuilder markdown,
       JsonNode mockSignals,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!mockSignals.isArray() || mockSignals.isEmpty()) {
       return;
     }
 
-    for (JsonNode signal : mockSignals) {
+    int visibleCount = visibleNestedCount(
+        mockSignals,
+        largeMode,
+        MAX_LARGE_TEST_MOCK_SIGNALS_PER_CLASS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode signal = mockSignals.get(index);
       markdown.append("- Mock annotation signal: Detected ")
           .append(code(text(signal, "annotation")))
           .append(" on ")
@@ -2398,18 +3190,27 @@ public final class AgentGuideGenerator {
           .append("\n");
       appendEvidenceLine(markdown, signal.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        mockSignals.size() - visibleCount,
+        "mock signals for this test class",
+        "tests.items");
   }
 
   private void appendTestMethods(
       StringBuilder markdown,
       JsonNode methods,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!methods.isArray() || methods.isEmpty()) {
       markdown.append("- Test methods: Detected none with supported direct JUnit test annotations.\n");
       return;
     }
 
-    for (JsonNode method : methods) {
+    int visibleCount = visibleNestedCount(methods, largeMode, MAX_LARGE_TEST_METHODS_PER_CLASS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode method = methods.get(index);
       markdown.append("- Test method: Detected ")
           .append(code(text(method, "method_name")))
           .append(" annotated with ")
@@ -2423,19 +3224,31 @@ public final class AgentGuideGenerator {
       markdown.append(")\n");
       appendEvidenceLine(markdown, method.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        methods.size() - visibleCount,
+        "test methods for this test class",
+        "tests.items");
   }
 
   private void appendTestedSubjects(
       StringBuilder markdown,
       JsonNode testedSubjects,
       Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     if (!testedSubjects.isArray() || testedSubjects.isEmpty()) {
       markdown.append("- Inferred tested subjects: none recorded.\n");
       return;
     }
 
-    for (JsonNode subject : testedSubjects) {
+    int visibleCount = visibleNestedCount(
+        testedSubjects,
+        largeMode,
+        MAX_LARGE_TESTED_SUBJECTS_PER_CLASS);
+    for (int index = 0; index < visibleCount; index++) {
+      JsonNode subject = testedSubjects.get(index);
       String relationStatus = text(subject, "relation_status");
       if (relationStatus.isBlank() && nullableText(subject, "support_type") != null) {
         relationStatus = "inferred";
@@ -2490,6 +3303,12 @@ public final class AgentGuideGenerator {
       markdown.append(".\n");
       appendEvidenceLine(markdown, subject.path("evidence_ids"), evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        testedSubjects.size() - visibleCount,
+        "tested-subject rows for this test class",
+        "tests.items");
   }
 
   private void appendQuality(
@@ -2501,6 +3320,20 @@ public final class AgentGuideGenerator {
       return;
     }
 
+    String normalSection = renderQualitySection(quality, moduleById, evidenceById, false);
+    if (!isLargeDetailedSection(normalSection, qualitySignalCount(quality))) {
+      markdown.append(normalSection);
+      return;
+    }
+    markdown.append(renderQualitySection(quality, moduleById, evidenceById, true));
+  }
+
+  private String renderQualitySection(
+      JsonNode quality,
+      Map<String, ModuleInfo> moduleById,
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
+    StringBuilder markdown = new StringBuilder();
     markdown.append("## Quality And Change-Risk Signals\n\n");
     markdown.append("- Quality analysis status: ")
         .append(code(text(quality, "analysis_status")))
@@ -2508,27 +3341,50 @@ public final class AgentGuideGenerator {
     markdown.append("- Test-gap signals are absence-sensitive planning hints from the bounded test inventory and inferred tested-subject relations. They do not prove coverage gaps, execution behavior, assertion behavior, CI status, or complete subject mapping.\n");
     markdown.append("- Change-risk signals are warning-oriented or uncertain planning hints from existing deterministic facts. They do not prove production impact, vulnerability, business priority, correctness, runtime behavior, or test priority.\n\n");
 
-    appendTestGapSignals(markdown, quality.path("test_gap_signals"), moduleById, evidenceById);
-    appendChangeRiskSignals(markdown, quality.path("change_risk_signals"), moduleById, evidenceById);
+    if (largeMode) {
+      appendLargeQualitySummary(markdown, quality, moduleById);
+    }
+
+    appendTestGapSignals(
+        markdown,
+        quality.path("test_gap_signals"),
+        moduleById,
+        evidenceById,
+        largeMode);
+    appendChangeRiskSignals(
+        markdown,
+        quality.path("change_risk_signals"),
+        moduleById,
+        evidenceById,
+        largeMode);
     markdown.append("\n");
+    return markdown.toString();
   }
 
   private void appendTestGapSignals(
       StringBuilder markdown,
       JsonNode testGapSignals,
       Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     markdown.append("### Test-Gap Signals\n\n");
     markdown.append("- Analysis status: ")
         .append(code(text(testGapSignals, "analysis_status")))
         .append("\n");
-    JsonNode items = testGapSignals.path("items");
-    if (!items.isArray() || items.isEmpty()) {
+    List<JsonNode> signalItems = items(testGapSignals);
+    if (signalItems.isEmpty()) {
       markdown.append("- Test-gap signals: none recorded.\n\n");
       return;
     }
 
-    for (JsonNode signal : items) {
+    List<JsonNode> visibleSignals = signalItems;
+    if (largeMode) {
+      visibleSignals = prioritizedRows(signalItems, this::largeQualitySignalPriority);
+      visibleSignals = visibleSignals.subList(
+          0,
+          Math.min(visibleSignals.size(), MAX_LARGE_QUALITY_TEST_GAP_SIGNALS));
+    }
+    for (JsonNode signal : visibleSignals) {
       markdown.append("- Test-gap signal: ")
           .append(code(text(signal, "signal")))
           .append(" for ")
@@ -2546,6 +3402,12 @@ public final class AgentGuideGenerator {
           .append("). No coverage, execution, assertion, CI, or runtime relation is claimed.\n");
       appendQualitySignalDetails(markdown, signal, moduleById, evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        signalItems.size() - visibleSignals.size(),
+        "test-gap signal rows",
+        "quality.test_gap_signals.items");
     markdown.append("\n");
   }
 
@@ -2553,18 +3415,26 @@ public final class AgentGuideGenerator {
       StringBuilder markdown,
       JsonNode changeRiskSignals,
       Map<String, ModuleInfo> moduleById,
-      Map<String, EvidenceRecord> evidenceById) {
+      Map<String, EvidenceRecord> evidenceById,
+      boolean largeMode) {
     markdown.append("### Change-Risk Signals\n\n");
     markdown.append("- Analysis status: ")
         .append(code(text(changeRiskSignals, "analysis_status")))
         .append("\n");
-    JsonNode items = changeRiskSignals.path("items");
-    if (!items.isArray() || items.isEmpty()) {
+    List<JsonNode> signalItems = items(changeRiskSignals);
+    if (signalItems.isEmpty()) {
       markdown.append("- Change-risk signals: none recorded.\n\n");
       return;
     }
 
-    for (JsonNode signal : items) {
+    List<JsonNode> visibleSignals = signalItems;
+    if (largeMode) {
+      visibleSignals = prioritizedRows(signalItems, this::largeQualitySignalPriority);
+      visibleSignals = visibleSignals.subList(
+          0,
+          Math.min(visibleSignals.size(), MAX_LARGE_QUALITY_CHANGE_RISK_SIGNALS));
+    }
+    for (JsonNode signal : visibleSignals) {
       markdown.append("- Change-risk signal: ")
           .append(code(text(signal, "signal")))
           .append(" for ")
@@ -2582,6 +3452,12 @@ public final class AgentGuideGenerator {
           .append("). No production impact, vulnerability, correctness, runtime behavior, or business priority is claimed.\n");
       appendQualitySignalDetails(markdown, signal, moduleById, evidenceById);
     }
+    appendOmittedRows(
+        markdown,
+        "  ",
+        signalItems.size() - visibleSignals.size(),
+        "change-risk signal rows",
+        "quality.change_risk_signals.items");
     markdown.append("\n");
   }
 
@@ -3645,6 +4521,12 @@ public final class AgentGuideGenerator {
           || evidenceIndexBytes > LARGE_MACHINE_ARTIFACT_BYTES
           || knownOutputBytes > HUGE_KNOWN_OUTPUT_BYTES;
     }
+  }
+
+  private record PrioritizedRow<T>(
+      T value,
+      int priority,
+      int originalIndex) {
   }
 
   private record ModuleInfo(
