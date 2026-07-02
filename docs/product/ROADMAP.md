@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v3.2.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v3.3.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -94,6 +94,14 @@ trust guidance, labels selected optional handoff surfaces as non-evidence presen
 and adds deterministic large-section summaries and presentation-only caps for row-heavy
 guide sections. It does not change JSON/JSONL schema markers, evidence semantics,
 adapter behavior, query authority, or distribution channels.
+
+The v3.3.0 release adds validation and regression hardening over the published v3.2.0
+line. It strengthens package-phase validation for the generated artifact-set manifest,
+adds static golden coverage for current workspace-map aggregation output, and adds
+full-output golden coverage for the safe local structured import fixture while keeping
+adapter context provenance-only. It does not change product behavior, CLI commands or
+flags, JSON/JSONL schema markers, evidence semantics, adapter behavior, query
+authority, or distribution channels.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2296,5 +2304,52 @@ Excluded or deferred from v3.2.0:
   provider AI, server/API/MCP/editor/plugin runtime, repository chat, generic RAG,
   source upload, or automatic code modification.
 - Signing, SBOM publication, package-manager channels, installed-command distribution,
-  native images, container images, release automation, automatic publication, artifact
-  upload, or GitHub Release publication.
+  native images, container images, release automation, automatic publication, or
+  package publication.
+
+## v3.3.0: Validation And Regression Hardening
+
+Release status: published. The `v3.3.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
+
+Product outcome:
+
+v3.3.0 hardens validation around the current generated artifact set and provenance
+boundaries established by the v3 line.
+
+Included v3.3.0 scope:
+
+- Package-phase smoke validation requires generated `.project-memory/artifact-set.json`
+  and verifies selected manifest/evidence-boundary fields.
+- Static golden coverage protects the current `.project-memory/workspace-map.json`
+  aggregation output shape, including workspace schema marker, logical repository
+  identity, workspace-relative artifact paths, artifact schema summaries, sample
+  evidence references, relation status, and diagnostics.
+- Full-output golden coverage protects the safe local structured import fixture,
+  including `project-map.json`, `project-graph.json`, `evidence-index.jsonl`,
+  `endpoints.md`, and `agent-guide.md`.
+- Adapter context remains provenance-only external context with `source_document_ids`
+  and `provenance_ids`; adapter-backed rows are not promoted to `evidence_ids`.
+
+Compatibility notes:
+
+- No-adapter `project-map.json` remains on `schema_version: "1.0"`.
+- Adapter-enabled `project-map.json` remains on `schema_version: "2.0"` with
+  `source-registry.json` when explicitly enabled adapter input is accepted.
+- `artifact-set.json` remains on `artifact_set_schema_version: "1.0"`.
+- `workspace-map.json` keeps its current schema marker and aggregation semantics.
+- `evidence-index.jsonl` keeps its existing field set and evidence semantics.
+- Existing generated-output consumers do not need a migration for v3.3.0 beyond
+  regenerating `.project-memory/` outputs with the current release when desired.
+
+Excluded or deferred from v3.3.0:
+
+- Product behavior changes, CLI command or flag changes, generated artifact additions
+  or removals, JSON/JSONL schema marker changes, evidence field changes, evidence type
+  changes, or adapter-backed evidence.
+- Adapter-aware query behavior, live network connectors, connector credentials,
+  provider AI, server/API/MCP/editor/plugin runtime, repository chat, generic RAG,
+  source upload, or automatic code modification.
+- Signing, SBOM publication, package-manager channels, installed-command distribution,
+  native images, container images, release automation, automatic publication, or
+  package publication.

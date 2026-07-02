@@ -9,10 +9,36 @@ architecture documents.
 
 ## [Unreleased]
 
+## [3.3.0] - 2026-07-02
+
+Release status: published. The `v3.3.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
+
 ### Changed
 
-- Updated post-release documentation status to mark `v3.2.0` as published with release
-  assets.
+- Added package-phase smoke validation for generated `.project-memory/artifact-set.json`
+  presence and selected manifest/evidence-boundary fields.
+- Added static golden coverage for current `.project-memory/workspace-map.json`
+  aggregation output.
+- Added full-output golden coverage for the safe local structured import fixture,
+  covering current adapter provenance output while preserving provenance-only adapter
+  context without adapter-backed `evidence_ids`.
+
+### Security
+
+- Preserved the existing local-first evidence boundary: `evidence-index.jsonl` remains
+  the source-backed evidence artifact, while generated artifact metadata, workspace
+  aggregation, adapter provenance, generated Markdown, graph metadata, release metadata,
+  and downstream-agent output remain non-evidence surfaces.
+
+### Not Included
+
+- Product behavior changes, CLI command or flag changes, generated artifact additions or
+  removals, JSON/JSONL schema marker changes, evidence field changes, evidence type
+  changes, adapter-backed evidence, adapter-aware query support, live network
+  connectors, provider AI, source upload, signing, SBOM publication, package-manager
+  channels, native images, container images, release automation, automatic publication,
+  or automatic code modification.
 
 ## [3.2.0] - 2026-07-01
 
