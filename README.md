@@ -93,10 +93,10 @@ mvn package
 `mvn package` produces an executable shaded jar with dependencies and a CLI manifest at:
 
 ```text
-target/agent-project-memory-3.3.0.jar
+target/agent-project-memory-3.4.0.jar
 ```
 
-Local build examples below use the current v3.3.0 release version.
+Local build examples below use the current v3.4.0 release-prep version.
 
 Release artifact and checksum verification expectations are documented in
 [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
@@ -106,7 +106,7 @@ Release artifact and checksum verification expectations are documented in
 After `mvn package`, run a scan with the packaged CLI jar:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project
 ```
 
 A supported scan writes `.project-memory/` inside the scanned repository. For a first
@@ -146,19 +146,19 @@ Trust legend for generated output:
 The packaged CLI also supports help and version commands without scanning:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar --help
-java -jar target/agent-project-memory-3.3.0.jar help
-java -jar target/agent-project-memory-3.3.0.jar scan --help
-java -jar target/agent-project-memory-3.3.0.jar --version
-java -jar target/agent-project-memory-3.3.0.jar version
+java -jar target/agent-project-memory-3.4.0.jar --help
+java -jar target/agent-project-memory-3.4.0.jar help
+java -jar target/agent-project-memory-3.4.0.jar scan --help
+java -jar target/agent-project-memory-3.4.0.jar --version
+java -jar target/agent-project-memory-3.4.0.jar version
 ```
 
 Current builds also support opt-in local policy profile selection:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --policy-profile guarded-local
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --policy-profile docs-focused
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --policy-profile adapter-local
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --policy-profile guarded-local
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --policy-profile docs-focused
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --policy-profile adapter-local
 ```
 
 Supported policy profiles are `guarded-local`, `docs-focused`, and `adapter-local`.
@@ -174,8 +174,8 @@ profiles, adapter enablement outside `adapter-local`, document path-rule expansi
 Current builds also support opt-in agent profile artifact selection:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --agent-profile codex
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --agent-profile all
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --agent-profile codex
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --agent-profile all
 ```
 
 Supported profile selectors are `codex`, `claude`, `cursor`, `generic`, and `all`.
@@ -190,7 +190,7 @@ Current builds also support explicitly enabled mock/no-network AI presentation
 artifacts:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --ai-presentation mock_no_network
 ```
 
 Default scans do not create AI presentation artifacts. When enabled, the mock/no-network
@@ -208,7 +208,7 @@ presentation slice runs a full scan and skips incremental cache metadata refresh
 Current builds also support opt-in incremental scan mode:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar scan /path/to/java-spring-project --incremental
+java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project --incremental
 ```
 
 `--incremental` reuses the existing generated output set only after validating cache
@@ -226,18 +226,18 @@ Current builds also include read-only query commands over existing
 no-adapter generated artifacts:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project list modules
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project list endpoints
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project list api-operations
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project list entities
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project list tests
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project find fact <term>
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project find symbol <term>
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project relations <id>
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project relations <id> --direction incoming
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project agent-context
-java -jar target/agent-project-memory-3.3.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project list modules
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project list endpoints
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project list api-operations
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project list entities
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project list tests
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project explain evidence <evidence-id>
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project find fact <term>
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project find symbol <term>
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project relations <id>
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project relations <id> --direction incoming
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project agent-context
+java -jar target/agent-project-memory-3.4.0.jar query /path/to/java-spring-project impact --files src/main/java/com/example/Foo.java
 ```
 
 `query <path> ...` accepts either a repository directory containing
@@ -304,7 +304,7 @@ Current builds also include workspace map aggregation over explicitly configured
 member roots:
 
 ```sh
-java -jar target/agent-project-memory-3.3.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
+java -jar target/agent-project-memory-3.4.0.jar workspace scan /path/to/workspace/agent-project-memory-workspace.yml
 ```
 
 The accepted workspace config shape is an explicit local YAML file:
@@ -578,6 +578,11 @@ Compatibility and migration notes:
   unchanged while strengthening package-phase, workspace-map, and local structured
   import full-output regression coverage for the current artifact and provenance
   boundaries.
+- The v3.4.0 release-prep line keeps generated artifact schemas and evidence semantics
+  unchanged while improving deterministic query presentation: evidence lookup names
+  `evidence-index.jsonl` as the source-backed authority, evidence-bearing navigation
+  outputs point readers to exact evidence lookup, and `agent-context` includes the
+  path-first impact query in its compact verification loop.
 - Downstream consumers that are not v2-adapter-aware should keep consuming no-adapter
   `schema_version: "1.0"` outputs. Consumers that encounter
   `schema_version: "2.0"` or `source-registry.json` should explicitly handle or reject
@@ -645,6 +650,8 @@ Start here:
   roadmap, output, and evidence docs below.
 - Latest release:
   [docs/product/V3_3_RELEASE_NOTES.md](docs/product/V3_3_RELEASE_NOTES.md).
+- Current release-prep notes:
+  [docs/product/V3_4_RELEASE_NOTES.md](docs/product/V3_4_RELEASE_NOTES.md).
 - Release history: [CHANGELOG.md](CHANGELOG.md). Detailed historical release notes live
   under `docs/product/`, and public evaluation summaries are linked from the relevant
   release notes.
@@ -698,6 +705,11 @@ The v3.3.0 release adds validation and regression hardening for package smoke,
 workspace-map, and local structured import full-output coverage without changing
 JSON/JSONL schema markers, evidence semantics, adapter behavior, query authority, or
 the supported public distribution channel.
+
+The current v3.4.0 release-prep line improves query verification wording while keeping
+query output as deterministic navigation and presentation, not evidence. It does not
+change generated JSON/JSONL schema markers, evidence fields, evidence semantics,
+adapter behavior, query grammar, or the supported public distribution channel.
 
 The current implementation is a local Java 21 CLI for Java/Spring repositories. It
 scans local source and configuration inputs, then writes deterministic `.project-memory/`

@@ -103,6 +103,13 @@ adapter context provenance-only. It does not change product behavior, CLI comman
 flags, JSON/JSONL schema markers, evidence semantics, adapter behavior, query
 authority, or distribution channels.
 
+The current v3.4.0 release-prep line improves query verification wording over the
+existing read-only query surface. It keeps query output as deterministic navigation and
+presentation, while making the evidence lookup and compact handoff verification path
+clearer. It does not change query grammar, generated JSON/JSONL schema markers,
+evidence fields, evidence semantics, adapter behavior, query authority, or distribution
+channels.
+
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
 `agent-guide.md` remain
@@ -2350,6 +2357,59 @@ Excluded or deferred from v3.3.0:
 - Adapter-aware query behavior, live network connectors, connector credentials,
   provider AI, server/API/MCP/editor/plugin runtime, repository chat, generic RAG,
   source upload, or automatic code modification.
+- Signing, SBOM publication, package-manager channels, installed-command distribution,
+  native images, container images, release automation, automatic publication, or
+  package publication.
+
+## v3.4.0: Query Verification Guidance
+
+Release status: prepared for release review. The `v3.4.0` tag, GitHub Release,
+executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
+
+Product outcome:
+
+v3.4.0 improves query verification wording for the existing read-only query surface
+without changing generated artifact schemas, evidence semantics, or the query authority
+model.
+
+Included v3.4.0 scope:
+
+- Successful `query <path> explain evidence <id>` output identifies
+  `evidence-index.jsonl` as the authoritative source-backed evidence artifact.
+- Evidence lookup output states that query stdout is deterministic presentation of the
+  evidence record, not source-file readback, and routes important claims to the cited
+  source path and locator.
+- Evidence-bearing `list`, `find`, and `relations` outputs include a compact
+  verification hint that points readers to `explain evidence <id>` and source readback.
+- `query <path> agent-context` includes `impact --files <changed-file> [...]` as a
+  follow-up command and describes the compact navigation-to-evidence-to-source
+  verification loop.
+- Focused query tests cover the new wording and preserve the existing read-only,
+  no-adapter query boundary.
+
+Compatibility notes:
+
+- No-adapter `project-map.json` remains on `schema_version: "1.0"`.
+- Adapter-enabled `project-map.json` remains on `schema_version: "2.0"` with
+  `source-registry.json` when explicitly enabled adapter input is accepted.
+- `artifact-set.json` remains on `artifact_set_schema_version: "1.0"`.
+- `project-graph.json` keeps its current graph schema marker and navigation semantics.
+- `workspace-map.json` keeps its current schema marker and aggregation semantics.
+- `evidence-index.jsonl` keeps its existing field set and evidence semantics.
+- The compatibility impact is limited to deterministic human-readable query
+  presentation. Consumers should not parse query stdout as a stable machine interface.
+
+Excluded or deferred from v3.4.0:
+
+- New query commands or flags, stable JSON query output, source readback from query,
+  generated artifact mutation, adapter-aware query behavior, or workspace query
+  behavior.
+- Generated artifact additions or removals, JSON/JSONL schema marker changes, evidence
+  field changes, evidence type changes, evidence semantic changes, or adapter-backed
+  evidence.
+- Live network connectors, connector credentials, provider AI, server/API/MCP/editor/
+  plugin runtime, repository chat, generic RAG, source upload, or automatic code
+  modification.
 - Signing, SBOM publication, package-manager channels, installed-command distribution,
   native images, container images, release automation, automatic publication, or
   package publication.

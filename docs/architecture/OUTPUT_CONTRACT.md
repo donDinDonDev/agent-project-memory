@@ -6002,9 +6002,13 @@ Evidence explain behavior:
   v1.6.0.
 - `explain evidence <evidence-id>` performs an exact evidence ID lookup in
   `evidence-index.jsonl`.
-- Successful output renders only the existing evidence record fields: `id`,
-  `source_type`, `path`, `class_name`, `method_name`, `symbol_name`, `line_start`,
-  `line_end`, `excerpt`, and `confidence`.
+- Current successful text output may include compact authority wording that identifies
+  `evidence-index.jsonl` as the authoritative source-backed evidence artifact, states
+  that query stdout is deterministic presentation rather than source-file readback, and
+  routes important claims to the cited source path and locator.
+- Apart from that authority wording, successful output renders only the existing
+  evidence record fields: `id`, `source_type`, `path`, `class_name`, `method_name`,
+  `symbol_name`, `line_start`, `line_end`, `excerpt`, and `confidence`.
 - The command must not open the referenced source file to expand excerpts, fill missing
   line ranges, infer additional symbols, or validate runtime behavior.
 - A missing evidence ID is a no-result lookup, not an invitation to scan source files.
@@ -6063,6 +6067,11 @@ Text output and future JSON output behavior:
 - Text output is the default and only implemented v1.6 output mode. It is deterministic,
   concise, human-readable, and safe for terminal use, but exact text layout is not the
   stable parser interface unless a later contract documents a specific text structure.
+- Current evidence-bearing `list`, `find`, and `relations` text outputs may include a
+  compact verification hint that says query output is navigation or presentation rather
+  than evidence, points displayed evidence IDs to
+  `query <path> explain evidence <evidence-id>`, and preserves source readback as the
+  final check for important claims.
 - `--format text` and `--format json` are not implemented in v1.6.0. A future JSON
   mode, if added, should emit a stable machine-readable query result envelope.
 - Successful results go to stdout. Successful commands should not print to stderr.
@@ -6227,6 +6236,11 @@ Output policy:
   manifest-first artifact reading order, supported query commands, bounded project
   orientation from generated facts, graph navigation hints when available, and existing
   evidence IDs.
+- Current successful output may list supported follow-up query commands including
+  `impact --files <changed-file> [...]`, and may include a compact verification loop:
+  use `list`, `find`, `relations`, or `impact` for candidate navigation; resolve
+  evidence IDs with `query <path> explain evidence <evidence-id>`; and read back cited
+  source locations for important claims.
 - Successful output must not open referenced source files to expand evidence excerpts,
   fill missing line ranges, infer additional symbols, validate runtime behavior, or
   reinterpret generated facts.

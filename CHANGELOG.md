@@ -9,6 +9,44 @@ architecture documents.
 
 ## [Unreleased]
 
+## [3.4.0] - 2026-07-02
+
+Release status: prepared for release review. The `v3.4.0` tag, GitHub Release,
+executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
+
+### Changed
+
+- Added authority wording to successful `query <path> explain evidence <id>` output:
+  the rendered record comes from `evidence-index.jsonl`, query stdout is deterministic
+  presentation of that record, and important claims should be verified against the
+  cited repository source path and locator.
+- Added compact verification hints to evidence-bearing `list`, `find`, and `relations`
+  query outputs so readers use `explain evidence <id>` for canonical evidence records
+  instead of treating navigation rows as evidence.
+- Updated `query <path> agent-context` follow-up guidance to include
+  `impact --files <changed-file> [...]` and a compact navigation-to-evidence-to-source
+  verification loop.
+- Synchronized public release-prep documentation, query output contract wording, and
+  the Maven project version for the v3.4.0 release-prep line.
+
+### Security
+
+- Preserved the existing local-first evidence boundary: `evidence-index.jsonl` remains
+  the authoritative source-backed evidence artifact, while query stdout,
+  `agent-context`, impact output, generated Markdown, graph metadata, adapter
+  provenance, release metadata, and downstream-agent output remain non-evidence
+  presentation or navigation surfaces.
+
+### Not Included
+
+- New query commands or flags, stable JSON query output, source readback from query,
+  generated artifact mutation, adapter-aware query behavior, workspace query behavior,
+  JSON/JSONL schema marker changes, evidence field changes, evidence type changes,
+  evidence semantic changes, live network connectors, provider AI, source upload,
+  repository chat, generic RAG, signing, SBOM publication, package-manager channels,
+  native images, container images, release automation, automatic publication, or
+  automatic code modification.
+
 ## [3.3.0] - 2026-07-02
 
 Release status: published. The `v3.3.0` tag, GitHub Release, executable jar, and
