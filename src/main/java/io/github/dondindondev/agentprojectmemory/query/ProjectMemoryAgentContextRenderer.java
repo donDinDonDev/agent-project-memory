@@ -73,6 +73,12 @@ public final class ProjectMemoryAgentContextRenderer {
     lines.add("- query <path> find symbol <term>");
     lines.add("- query <path> relations <id> [--direction incoming|outgoing|both]"
         + (artifacts.hasProjectGraph() ? "" : " (requires valid project-graph.json)"));
+    lines.add("- query <path> impact --files <changed-file> [...]");
+    lines.add("");
+    lines.add("Verification loop");
+    lines.add("1. Use list, find, relations, or impact for candidate navigation.");
+    lines.add("2. Copy evidence IDs into `query <path> explain evidence <evidence-id>`.");
+    lines.add("3. Read back cited source locations for important claims.");
     lines.add("");
   }
 

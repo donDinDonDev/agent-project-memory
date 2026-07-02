@@ -31,13 +31,17 @@ public final class ProjectMemoryRelationRenderer {
         artifacts.projectGraph().path("relation_statuses"),
         selectedNodeId,
         direction);
+    boolean includeVerificationHint = QueryVerificationText.hasEvidenceIds(selectedNode)
+        || QueryVerificationText.hasAnyEvidenceIds(edges)
+        || QueryVerificationText.hasAnyEvidenceIds(statuses);
 
     List<String> lines = header(
         artifacts,
         subjectId,
         selectedNode,
         direction,
-        edges.size() + statuses.size());
+        edges.size() + statuses.size(),
+        includeVerificationHint);
     appendNode(lines, selectedNode);
     appendEdges(lines, selectedNodeId, edges);
     appendStatuses(lines, selectedNodeId, statuses);
@@ -89,7 +93,8 @@ public final class ProjectMemoryRelationRenderer {
       String subjectId,
       JsonNode selectedNode,
       Direction direction,
-      int resultCount) {
+      int resultCount,
+      boolean includeVerificationHint) {
     List<String> lines = new ArrayList<>();
     lines.add("Query: relations");
     lines.add(
@@ -104,6 +109,9 @@ public final class ProjectMemoryRelationRenderer {
     lines.add("Resolved by: " + resolvedBy(selectedNode, subjectId));
     lines.add("Direction: " + direction.label());
     lines.add("Results: " + resultCount);
+    if (includeVerificationHint) {
+      lines.add(QueryVerificationText.navigationHint());
+    }
     lines.add("");
     return lines;
   }

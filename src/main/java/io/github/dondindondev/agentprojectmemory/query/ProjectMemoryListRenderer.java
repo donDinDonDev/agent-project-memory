@@ -23,7 +23,11 @@ public final class ProjectMemoryListRenderer {
 
   private String renderModules(ProjectMemoryArtifacts artifacts) {
     List<JsonNode> modules = arrayAt(artifacts.projectMap(), "/project/modules/items");
-    List<String> lines = header(artifacts, "modules", modules.size());
+    List<String> lines = header(
+        artifacts,
+        "modules",
+        modules.size(),
+        QueryVerificationText.hasAnyEvidenceIds(modules));
     if (modules.isEmpty()) {
       lines.add("No modules found.");
       return finish(lines);
@@ -47,7 +51,11 @@ public final class ProjectMemoryListRenderer {
 
   private String renderEndpoints(ProjectMemoryArtifacts artifacts) {
     List<JsonNode> endpoints = arrayAt(artifacts.projectMap(), "/endpoints");
-    List<String> lines = header(artifacts, "endpoints", endpoints.size());
+    List<String> lines = header(
+        artifacts,
+        "endpoints",
+        endpoints.size(),
+        QueryVerificationText.hasAnyEvidenceIds(endpoints));
     if (endpoints.isEmpty()) {
       lines.add("No endpoints found.");
       return finish(lines);
@@ -84,7 +92,11 @@ public final class ProjectMemoryListRenderer {
     List<JsonNode> operations = arrayAt(
         artifacts.projectMap(),
         "/api_surface/openapi/operations/items");
-    List<String> lines = header(artifacts, "api-operations", operations.size());
+    List<String> lines = header(
+        artifacts,
+        "api-operations",
+        operations.size(),
+        QueryVerificationText.hasAnyEvidenceIds(operations));
     if (operations.isEmpty()) {
       lines.add("No api-operations found.");
       return finish(lines);
@@ -112,7 +124,13 @@ public final class ProjectMemoryListRenderer {
     List<JsonNode> embeddables = arrayAt(artifacts.projectMap(), "/entities/embeddables/items");
     List<JsonNode> repositoryRelations = repositoryRelationRows(artifacts.projectMap());
     int resultCount = entities.size() + embeddables.size() + repositoryRelations.size();
-    List<String> lines = header(artifacts, "entities", resultCount);
+    List<String> lines = header(
+        artifacts,
+        "entities",
+        resultCount,
+        QueryVerificationText.hasAnyEvidenceIds(entities)
+            || QueryVerificationText.hasAnyEvidenceIds(embeddables)
+            || QueryVerificationText.hasAnyEvidenceIds(repositoryRelations));
     lines.add("Entities: " + entities.size());
     lines.add("Embeddables: " + embeddables.size());
     lines.add("Repository/entity relation rows: " + repositoryRelations.size());
@@ -199,7 +217,11 @@ public final class ProjectMemoryListRenderer {
 
   private String renderTests(ProjectMemoryArtifacts artifacts) {
     List<JsonNode> tests = arrayAt(artifacts.projectMap(), "/tests/items");
-    List<String> lines = header(artifacts, "tests", tests.size());
+    List<String> lines = header(
+        artifacts,
+        "tests",
+        tests.size(),
+        QueryVerificationText.hasAnyEvidenceIds(tests));
     if (tests.isEmpty()) {
       lines.add("No tests found.");
       return finish(lines);
@@ -444,7 +466,11 @@ public final class ProjectMemoryListRenderer {
     return values.isEmpty() ? "none" : String.join(", ", values);
   }
 
-  private List<String> header(ProjectMemoryArtifacts artifacts, String subject, int resultCount) {
+  private List<String> header(
+      ProjectMemoryArtifacts artifacts,
+      String subject,
+      int resultCount,
+      boolean includeVerificationHint) {
     List<String> lines = new ArrayList<>();
     lines.add("Query: list " + subject);
     lines.add(
@@ -453,6 +479,9 @@ public final class ProjectMemoryListRenderer {
             + ", evidence-index.jsonl records="
             + artifacts.evidenceRecords().size());
     lines.add("Results: " + resultCount);
+    if (includeVerificationHint) {
+      lines.add(QueryVerificationText.navigationHint());
+    }
     if (resultCount > 0) {
       lines.add("");
     }

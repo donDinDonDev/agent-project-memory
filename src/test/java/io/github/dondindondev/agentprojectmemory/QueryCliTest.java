@@ -16,6 +16,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 final class QueryCliTest {
+  private static final String VERIFICATION_HINT =
+      "Verification: query output is navigation/presentation, not evidence. "
+          + "Resolve displayed evidence IDs with `query <path> explain evidence <evidence-id>` "
+          + "and read back cited source locations for important claims.";
+
   @TempDir
   private Path tempDir;
 
@@ -56,6 +61,7 @@ final class QueryCliTest {
         Query: list modules
         Source artifacts: project-map.json schema_version=1.0, evidence-index.jsonl records=1
         Results: 1
+        Verification: query output is navigation/presentation, not evidence. Resolve displayed evidence IDs with `query <path> explain evidence <evidence-id>` and read back cited source locations for important claims.
 
         1. module:.
            module_path: .
@@ -375,6 +381,7 @@ final class QueryCliTest {
         () -> assertEquals(0, projectMapFact.exitCode()),
         () -> assertTrue(projectMapFact.stdout().contains("Query: find fact")),
         () -> assertTrue(projectMapFact.stdout().contains("Results: 1")),
+        () -> assertTrue(projectMapFact.stdout().contains(VERIFICATION_HINT)),
         () -> assertTrue(projectMapFact.stdout().contains("navigation: project-map.json#/endpoints/0 (not evidence)")),
         () -> assertFalse(projectMapFact.stdout().contains("navigation: project-graph.json")),
         () -> assertFalse(projectMapFact.stdout().contains("source_ref: artifact=project-map.json section=endpoints id=endpoint:com.example.web.OrderController#getOrder (not evidence)")),
@@ -388,6 +395,7 @@ final class QueryCliTest {
         () -> assertTrue(graphFact.stdout().contains("type: owns")),
         () -> assertTrue(graphFact.stdout().contains("relation_status: derived")),
         () -> assertTrue(graphFact.stdout().contains("derivation: kind=project_map_field artifact=project-map.json section=endpoints (not evidence)")),
+        () -> assertFalse(graphFact.stdout().contains(VERIFICATION_HINT)),
         () -> assertFalse(graphFact.stdout().contains("incoming")),
         () -> assertTrue(graphFact.stderr().isEmpty()));
   }
@@ -515,6 +523,7 @@ final class QueryCliTest {
         () -> assertTrue(result.stdout().contains("Resolved by: node id")),
         () -> assertTrue(result.stdout().contains("Direction: both")),
         () -> assertTrue(result.stdout().contains("Results: 3")),
+        () -> assertTrue(result.stdout().contains(VERIFICATION_HINT)),
         () -> assertTrue(result.stdout().contains("Node\n   id: node:type:root:com.example.web.OrderController")),
         () -> assertTrue(result.stdout().contains("Edges: 3")),
         () -> assertTrue(result.stdout().contains("type: owns")),
@@ -1699,6 +1708,14 @@ final class QueryCliTest {
             "Optional graph: project-graph.json graph_schema_version=1.0 (navigation metadata, not evidence)")),
         () -> assertTrue(first.stdout().contains("query <path> list modules")),
         () -> assertTrue(first.stdout().contains("query <path> explain evidence <evidence-id>")),
+        () -> assertTrue(first.stdout().contains("query <path> impact --files <changed-file> [...]")),
+        () -> assertTrue(first.stdout().contains("Verification loop")),
+        () -> assertTrue(first.stdout().contains(
+            "1. Use list, find, relations, or impact for candidate navigation.")),
+        () -> assertTrue(first.stdout().contains(
+            "2. Copy evidence IDs into `query <path> explain evidence <evidence-id>`.")),
+        () -> assertTrue(first.stdout().contains(
+            "3. Read back cited source locations for important claims.")),
         () -> assertTrue(first.stdout().contains(
             "- source-visible endpoints: 1 (first: endpoint:com.example.web.OrderController#getOrder; evidence_ids: ev:endpoint:controller, ev:endpoint:mapping)")),
         () -> assertTrue(first.stdout().contains("- evidence records: ")),

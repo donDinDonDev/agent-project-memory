@@ -74,7 +74,11 @@ public final class ProjectMemoryLookupRenderer {
       return LookupResult.noResult("No exact " + kind.label() + " match found.");
     }
 
-    List<String> lines = header(artifacts, "find " + kind.label(), matches.size());
+    String verificationHint = matches.stream()
+        .anyMatch(match -> QueryVerificationText.hasEvidenceIds(match.row()))
+            ? QueryVerificationText.navigationHint()
+            : null;
+    List<String> lines = header(artifacts, "find " + kind.label(), matches.size(), verificationHint);
     for (int index = 0; index < matches.size(); index++) {
       appendMatch(lines, index + 1, matches.get(index));
     }
