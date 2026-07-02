@@ -1,0 +1,373 @@
+{
+  "schema_version": "2.0",
+  "scan": {
+    "config": {
+      "analysis_status": "analyzed",
+      "source": "config_file",
+      "config_file_path": "agent-project-memory.yml",
+      "config_file_status": "applied",
+      "cli_overrides_applied": false,
+      "raw_values_serialized": false
+    },
+    "features": {
+      "local_markdown": {
+        "enabled": true,
+        "source": "default"
+      },
+      "generated_sources": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "follow_symlinks": {
+        "enabled": false,
+        "status": "reserved_disabled"
+      },
+      "adapters": {
+        "enabled": true,
+        "selected_count": 1,
+        "local_import_count": 1,
+        "network_access": "disabled",
+        "status": "local_import_read_with_partial_rejections"
+      }
+    },
+    "path_policy": {
+      "path_format": "normalized_repository_relative",
+      "case_sensitivity": "case_sensitive",
+      "symlink_policy": "skip_symlinks",
+      "default_exclusions_applied": true,
+      "default_exclusion_override": "not_supported",
+      "user_includes_applied": false,
+      "user_include_count": 0,
+      "user_excludes_applied": false,
+      "user_exclude_count": 0
+    },
+    "diagnostics": {
+      "analysis_status": "analyzed",
+      "items": []
+    }
+  },
+  "generated_sources": {
+    "analysis_status": "not_detected",
+    "policy": {
+      "content_scan": "disabled",
+      "content_scan_default": false,
+      "content_scan_configurable": false,
+      "content_status": "not_scanned"
+    },
+    "roots": {
+      "analysis_status": "analyzed",
+      "items": []
+    },
+    "generator_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": [],
+      "maven_plugin_ids": []
+    }
+  },
+  "adapter_context": {
+    "analysis_status": "analyzed",
+    "context_kind": "provenance_backed_external_context",
+    "source_registry": "source-registry.json",
+    "diagnostic_count": 2,
+    "items": [
+      {
+        "id": "adapter_context:source-document%3Asha256%3A5c29c5a53f1d051160b88a63663e3f5c5bdbae79d3f906f8ebd245c3c6d8672b",
+        "context_kind": "external_document_context",
+        "source_type": "local_export",
+        "source_identity": "issues/PM-100",
+        "title": "First imported issue",
+        "content_status": "not_serialized",
+        "support_type": "provenance_only",
+        "confidence": "low",
+        "source_document_ids": [
+          "source-document:sha256:5c29c5a53f1d051160b88a63663e3f5c5bdbae79d3f906f8ebd245c3c6d8672b"
+        ],
+        "provenance_ids": [
+          "source-provenance:sha256:45a03c8df24cad79ecd71ce606fd823a8dc08426cd75a9918243b4c73f68c70d"
+        ]
+      },
+      {
+        "id": "adapter_context:source-document%3Asha256%3A5f2d50ff6c10852c7e6b85d08790db9f89d7d81c3b7e0a3ff97319d9e69f5eec",
+        "context_kind": "external_document_context",
+        "source_type": "local_export",
+        "source_identity": "issues/PM-200",
+        "title": "Second imported issue",
+        "content_status": "not_serialized",
+        "support_type": "provenance_only",
+        "confidence": "low",
+        "source_document_ids": [
+          "source-document:sha256:5f2d50ff6c10852c7e6b85d08790db9f89d7d81c3b7e0a3ff97319d9e69f5eec"
+        ],
+        "provenance_ids": [
+          "source-provenance:sha256:6953b31cfe45fe916116b484b9ea378efb1d7f84956d6be18840c9ab0d676b03"
+        ]
+      }
+    ]
+
+  },
+  "project": {
+    "root": ".",
+    "build": {
+      "system": "maven",
+      "root_build_file": "pom.xml",
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    },
+    "source_roots": [],
+    "test_roots": [],
+    "modules": {
+      "analysis_status": "analyzed",
+      "items": [
+        {
+          "module_id": "module:.",
+          "module_path": ".",
+          "pom_path": "pom.xml",
+          "source_roots": [],
+          "test_roots": [],
+          "support_status": "unsupported",
+          "declaration_kind": "scan_root",
+          "declared_path": ".",
+          "declaration_evidence_ids": [],
+          "pom_evidence_ids": [
+            "ev:pom.xml:1-1:build_file:pom.xml"
+          ],
+          "build_config": {
+            "analysis_status": "analyzed",
+            "maven": {
+              "metadata": {
+                "analysis_status": "analyzed",
+                "group_id": {
+                  "value": "com.example",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:3-3:build_file:maven:project:groupId"
+                  ]
+                },
+                "artifact_id": {
+                  "value": "local-structured-import-fixture",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:4-4:build_file:maven:project:artifactId"
+                  ]
+                },
+                "version": {
+                  "value": "1.0.0",
+                  "value_kind": "literal",
+                  "evidence_ids": [
+                    "ev:pom.xml:5-5:build_file:maven:project:version"
+                  ]
+                },
+                "packaging": {
+                  "value": null,
+                  "value_kind": "not_declared",
+                  "evidence_ids": []
+                },
+                "parent": {
+                  "analysis_status": "not_detected",
+                  "group_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "artifact_id": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "version": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  },
+                  "relative_path": {
+                    "value": null,
+                    "value_kind": "not_declared",
+                    "evidence_ids": []
+                  }
+                }
+              },
+              "dependencies": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "dependency_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugins": {
+                "analysis_status": "analyzed",
+                "items": []
+              },
+              "plugin_management": {
+                "analysis_status": "analyzed",
+                "items": []
+              }
+            },
+            "resources": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "config_files": {
+              "analysis_status": "not_detected",
+              "items": []
+            },
+            "spring_boot_applications": {
+              "analysis_status": "not_detected",
+              "items": []
+            }
+          }
+        }
+      ]
+    }
+  },
+  "endpoints": [],
+  "api_surface": {
+    "analysis_status": "analyzed",
+    "source_visible_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "interface_declared_spring_mvc_endpoints": {
+      "analysis_status": "analyzed",
+      "endpoint_ids": []
+    },
+    "openapi": {
+      "spec_files": {
+        "analysis_status": "analyzed",
+        "items": []
+      },
+      "operations": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "generated_source_api_signals": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "repository_rest_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    },
+    "hidden_http_warnings": {
+      "analysis_status": "analyzed",
+      "warning_ids": []
+    }
+  },
+  "spring_application_surface": {
+    "analysis_status": "not_detected",
+    "repositories": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "configuration": {
+      "configuration_classes": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "configuration_properties": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "bean_methods": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "behavior": {
+      "transaction_boundaries": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "scheduled_methods": {
+        "analysis_status": "not_detected",
+        "items": []
+      },
+      "event_listeners": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "messaging": {
+      "listener_signals": {
+        "analysis_status": "not_detected",
+        "items": []
+      }
+    },
+    "security": {
+      "configuration_warnings": {
+        "analysis_status": "not_detected",
+        "warning_ids": []
+      }
+    }
+  },
+  "warnings": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "components": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "entities": {
+    "analysis_status": "not_detected",
+    "items": [],
+    "embeddables": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "tests": {
+    "analysis_status": "not_detected",
+    "items": []
+  },
+  "documents": {
+    "analysis_status": "not_detected",
+    "discovery": {
+      "scope": "default_local_markdown",
+      "path_policy": "repository_relative_in_root",
+      "symlink_policy": "skip_symlinks",
+      "included_patterns": [
+        "README.md",
+        "README.markdown",
+        "<module>/README.md",
+        "<module>/README.markdown",
+        "docs/**/*.md",
+        "adr/**/*.md",
+        "adrs/**/*.md"
+      ],
+      "excluded_patterns": [
+        ".git/**",
+        ".project-memory/**",
+        "**/.*/**",
+        "target/**",
+        "build/**",
+        "out/**",
+        "dist/**",
+        "node_modules/**",
+        "**/generated/**",
+        "**/maintainer/**",
+        "docs/internal/**",
+        "docs/private/**",
+        "**/secrets/**"
+      ]
+    },
+    "items": [],
+    "reconciliation": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  },
+  "quality": {
+    "analysis_status": "not_detected",
+    "test_gap_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    },
+    "change_risk_signals": {
+      "analysis_status": "not_detected",
+      "items": []
+    }
+  }
+}

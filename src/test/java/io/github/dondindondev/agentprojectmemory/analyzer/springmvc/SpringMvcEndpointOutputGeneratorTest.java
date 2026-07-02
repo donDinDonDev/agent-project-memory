@@ -144,7 +144,7 @@ final class SpringMvcEndpointOutputGeneratorTest {
   }
 
   @Test
-  void localStructuredImportSourceRegistryMatchesGoldenFile() throws Exception {
+  void localStructuredImportFullOutputSetMatchesGoldenFiles() throws Exception {
     Path projectPath = tempDir.resolve("v2-local-structured-import");
     Path outputDirectory = projectPath.resolve(".project-memory");
     copyDirectory(localStructuredImportFixtureRoot(), projectPath);
@@ -167,8 +167,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
         outputDirectory,
         scanConfiguration,
         List.of());
-    JsonNode projectMap = JSON.readTree(Files.readString(outputDirectory.resolve("project-map.json")));
-    JsonNode manifest = JSON.readTree(Files.readString(outputDirectory.resolve("artifact-set.json")));
+    String artifactSet = Files.readString(outputDirectory.resolve("artifact-set.json"));
+    String projectMapJson = Files.readString(outputDirectory.resolve("project-map.json"));
+    String sourceRegistry = Files.readString(outputDirectory.resolve("source-registry.json"));
+    JsonNode projectMap = JSON.readTree(projectMapJson);
+    JsonNode manifest = JSON.readTree(artifactSet);
     JsonNode sourceRegistryArtifact =
         objectWithText(manifest.path("artifacts"), "path", "source-registry.json");
 
@@ -178,9 +181,25 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertEquals(2, result.sourceDocumentCount()),
         () -> assertEquals(2, result.adapterDiagnosticCount()),
         () -> assertEquals("2.0", projectMap.path("schema_version").asText()),
+        () -> assertAdapterContextUsesProvenanceOnly(projectMap),
         () -> assertEquals(
             expected("v2-local-structured-import", "artifact-set.json"),
-            Files.readString(outputDirectory.resolve("artifact-set.json"))),
+            artifactSet),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "project-map.json"),
+            projectMapJson),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "project-graph.json"),
+            Files.readString(outputDirectory.resolve("project-graph.json"))),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "evidence-index.jsonl"),
+            Files.readString(outputDirectory.resolve("evidence-index.jsonl"))),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "endpoints.md"),
+            Files.readString(outputDirectory.resolve("endpoints.md"))),
+        () -> assertEquals(
+            expected("v2-local-structured-import", "agent-guide.md"),
+            Files.readString(outputDirectory.resolve("agent-guide.md"))),
         () -> assertEquals("present", sourceRegistryArtifact.path("status").asText()),
         () -> assertEquals(
             "source_registry_schema_version",
@@ -192,7 +211,11 @@ final class SpringMvcEndpointOutputGeneratorTest {
         () -> assertFalse(sourceRegistryArtifact.path("authoritative_evidence").asBoolean()),
         () -> assertEquals(
             expected("v2-local-structured-import", "source-registry.json"),
-            Files.readString(outputDirectory.resolve("source-registry.json"))));
+            sourceRegistry),
+        () -> assertFalse(projectMapJson.contains("First imported body")),
+        () -> assertFalse(projectMapJson.contains("Second imported body")),
+        () -> assertFalse(sourceRegistry.contains("First imported body")),
+        () -> assertFalse(sourceRegistry.contains("Second imported body")));
   }
 
   @Test
@@ -3362,6 +3385,31 @@ final class SpringMvcEndpointOutputGeneratorTest {
 
   private String expected(String goldenName, String fileName) throws Exception {
     return Files.readString(goldenRoot(goldenName).resolve(fileName));
+  }
+
+  private void assertAdapterContextUsesProvenanceOnly(JsonNode projectMap) {
+    JsonNode adapterContext = projectMap.path("adapter_context");
+    JsonNode items = adapterContext.path("items");
+
+    assertAll(
+        () -> assertEquals("analyzed", adapterContext.path("analysis_status").asText()),
+        () -> assertEquals(
+            "provenance_backed_external_context",
+            adapterContext.path("context_kind").asText()),
+        () -> assertEquals("source-registry.json", adapterContext.path("source_registry").asText()),
+        () -> assertEquals(2, items.size()));
+    for (JsonNode item : items) {
+      assertAll(
+          () -> assertEquals("external_document_context", item.path("context_kind").asText()),
+          () -> assertEquals("not_serialized", item.path("content_status").asText()),
+          () -> assertEquals("provenance_only", item.path("support_type").asText()),
+          () -> assertEquals("low", item.path("confidence").asText()),
+          () -> assertTrue(item.path("source_document_ids").isArray()),
+          () -> assertTrue(item.path("source_document_ids").size() > 0),
+          () -> assertTrue(item.path("provenance_ids").isArray()),
+          () -> assertTrue(item.path("provenance_ids").size() > 0),
+          () -> assertFalse(item.has("evidence_ids")));
+    }
   }
 
   private Path fixtureRoot() throws Exception {

@@ -1,0 +1,34 @@
+{
+  "graph_schema_version": "1.0",
+  "project_map_schema_version": "2.0",
+  "graph_kind": "lightweight_relation_graph",
+  "source_artifacts": [
+    "project-map.json",
+    "evidence-index.jsonl"
+  ],
+  "limits": {
+    "max_nodes": 20000,
+    "max_edges": 50000,
+    "max_relation_statuses": 10000
+  },
+  "nodes": [
+    {
+      "id": "node:module:root",
+      "kind": "module",
+      "label": "root",
+      "claim_category": "structural",
+      "module_id": "module:.",
+      "source_ref": {
+        "artifact": "project-map.json",
+        "section": "project.modules.items",
+        "id": "module:."
+      },
+      "evidence_ids": [
+        "ev:pom.xml:1-1:build_file:pom.xml"
+      ]
+    }
+  ],
+  "edges": [],
+  "relation_statuses": [],
+  "warnings": []
+}
