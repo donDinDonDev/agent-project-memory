@@ -9,6 +9,10 @@ import java.util.Set;
 public final class ProjectMemoryLookupRenderer {
   private static final int MAX_TEXT_CHARS = 4096;
   private static final String SOURCE_REF_ID_FIELD = "source_ref.id";
+  private static final String EVIDENCE_AUTHORITY_NOTE =
+      "Authority: evidence-index.jsonl is the authoritative source-backed evidence artifact. "
+          + "This query output is deterministic presentation of that record, not a source-file readback. "
+          + "Verify important claims against the cited source path and locator.";
   private static final Set<String> SYMBOL_FIELDS = Set.of(
       "annotation",
       "annotation_symbol",
@@ -42,7 +46,7 @@ public final class ProjectMemoryLookupRenderer {
       return LookupResult.noResult("No evidence record matched the requested id.");
     }
 
-    List<String> lines = header(artifacts, "explain evidence", 1);
+    List<String> lines = header(artifacts, "explain evidence", 1, EVIDENCE_AUTHORITY_NOTE);
     lines.add("1. " + locatorText(evidence.path("id")));
     field(lines, "   ", "source_type", evidence.path("source_type"));
     field(lines, "   ", "path", evidence.path("path"));
@@ -275,6 +279,14 @@ public final class ProjectMemoryLookupRenderer {
   }
 
   private List<String> header(ProjectMemoryArtifacts artifacts, String query, int resultCount) {
+    return header(artifacts, query, resultCount, null);
+  }
+
+  private List<String> header(
+      ProjectMemoryArtifacts artifacts,
+      String query,
+      int resultCount,
+      String headerNote) {
     List<String> lines = new ArrayList<>();
     lines.add("Query: " + query);
     lines.add(
@@ -288,6 +300,9 @@ public final class ProjectMemoryLookupRenderer {
               + safe(artifacts.projectGraphSchemaVersion()));
     }
     lines.add("Results: " + resultCount);
+    if (headerNote != null) {
+      lines.add(headerNote);
+    }
     if (resultCount > 0) {
       lines.add("");
     }

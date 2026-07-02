@@ -328,6 +328,12 @@ final class QueryCliTest {
         () -> assertEquals(0, found.exitCode()),
         () -> assertTrue(found.stdout().contains("Query: explain evidence")),
         () -> assertTrue(found.stdout().contains("Results: 1")),
+        () -> assertTrue(found.stdout().contains(
+            "Results: 1\n"
+                + "Authority: evidence-index.jsonl is the authoritative source-backed evidence artifact. "
+                + "This query output is deterministic presentation of that record, not a source-file readback. "
+                + "Verify important claims against the cited source path and locator.\n\n"
+                + "1. ev:endpoint:mapping")),
         () -> assertTrue(found.stdout().contains("1. ev:endpoint:mapping")),
         () -> assertTrue(found.stdout().contains("source_type: annotation")),
         () -> assertTrue(found.stdout().contains("path: src/main/java/com/example/web/OrderController.java")),
