@@ -46,6 +46,11 @@ workspace-map, and adapter full-output regression coverage for the current gener
 artifact and provenance contracts. It does not add security scanning, security proof,
 release automation, network behavior, provider AI, or source upload.
 
+The v3.4.0 release keeps the same security boundary while improving deterministic
+query verification wording. It does not change generated artifact schemas, evidence
+semantics, adapter behavior, query grammar, distribution channels, network behavior,
+provider AI, or source upload.
+
 See [SECURITY.md](SECURITY.md) for vulnerability reporting and
 [docs/development/THREAT_MODEL.md](docs/development/THREAT_MODEL.md) for the public
 product threat model and security limitations.
@@ -60,13 +65,13 @@ product threat model and security limitations.
 Published release artifacts are available on the
 [GitHub Releases page](https://github.com/donDinDonDev/agent-project-memory/releases).
 
-The latest published release is `v3.3.0`. Its release artifact is
-`agent-project-memory-3.3.0.jar`; release assets use `SHA256SUMS` for optional checksum
+The latest published release is `v3.4.0`. Its release artifact is
+`agent-project-memory-3.4.0.jar`; release assets use `SHA256SUMS` for optional checksum
 verification.
 
 ```sh
 shasum -a 256 -c SHA256SUMS
-java -jar agent-project-memory-3.3.0.jar scan /path/to/java-spring-project
+java -jar agent-project-memory-3.4.0.jar scan /path/to/java-spring-project
 ```
 
 For published releases, the supported installation path is the executable jar from
@@ -96,7 +101,7 @@ mvn package
 target/agent-project-memory-3.4.0.jar
 ```
 
-Local build examples below use the current v3.4.0 release-prep version.
+Local build examples below use the current v3.4.0 release version.
 
 Release artifact and checksum verification expectations are documented in
 [docs/development/RELEASE_PROCESS.md](docs/development/RELEASE_PROCESS.md).
@@ -578,7 +583,7 @@ Compatibility and migration notes:
   unchanged while strengthening package-phase, workspace-map, and local structured
   import full-output regression coverage for the current artifact and provenance
   boundaries.
-- The v3.4.0 release-prep line keeps generated artifact schemas and evidence semantics
+- The v3.4.0 release keeps generated artifact schemas and evidence semantics
   unchanged while improving deterministic query presentation: evidence lookup names
   `evidence-index.jsonl` as the source-backed authority, evidence-bearing navigation
   outputs point readers to exact evidence lookup, and `agent-context` includes the
@@ -649,8 +654,6 @@ Start here:
   [AGENTS.md](AGENTS.md) first, then this README and the task-relevant product,
   roadmap, output, and evidence docs below.
 - Latest release:
-  [docs/product/V3_3_RELEASE_NOTES.md](docs/product/V3_3_RELEASE_NOTES.md).
-- Current release-prep notes:
   [docs/product/V3_4_RELEASE_NOTES.md](docs/product/V3_4_RELEASE_NOTES.md).
 - Release history: [CHANGELOG.md](CHANGELOG.md). Detailed historical release notes live
   under `docs/product/`, and public evaluation summaries are linked from the relevant
@@ -695,21 +698,21 @@ presentation plumbing and no real AI provider integration.
 
 ## Project Status
 
-The latest published release is `v3.3.0`. The `v3.3.0` tag, GitHub Release,
+The latest published release is `v3.4.0`. The `v3.4.0` tag, GitHub Release,
 executable jar, and `SHA256SUMS` assets are published. The supported public
 distribution remains the GitHub Release executable jar plus `SHA256SUMS`; signing,
 SBOM publication, package-manager channels, native images, container images, release
 automation, and automatic publication are not included.
 
-The v3.3.0 release adds validation and regression hardening for package smoke,
+The v3.3.0 release added validation and regression hardening for package smoke,
 workspace-map, and local structured import full-output coverage without changing
 JSON/JSONL schema markers, evidence semantics, adapter behavior, query authority, or
 the supported public distribution channel.
 
-The current v3.4.0 release-prep line improves query verification wording while keeping
-query output as deterministic navigation and presentation, not evidence. It does not
-change generated JSON/JSONL schema markers, evidence fields, evidence semantics,
-adapter behavior, query grammar, or the supported public distribution channel.
+The v3.4.0 release improves query verification wording while keeping query output as
+deterministic navigation and presentation, not evidence. It does not change generated
+JSON/JSONL schema markers, evidence fields, evidence semantics, adapter behavior, query
+grammar, or the supported public distribution channel.
 
 The current implementation is a local Java 21 CLI for Java/Spring repositories. It
 scans local source and configuration inputs, then writes deterministic `.project-memory/`

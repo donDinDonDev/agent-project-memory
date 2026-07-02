@@ -3,7 +3,7 @@
 ## Supported Versions
 
 The latest published release line is the supported public line for vulnerability
-reports. The latest published release is currently `v3.3.0`.
+reports. The latest published release is currently `v3.4.0`.
 
 Older release lines are generally unsupported unless a maintainer explicitly states
 otherwise in release notes or a security advisory.
@@ -42,8 +42,8 @@ The tool is not a vulnerability scanner, security correctness engine, complete s
 detector, secret inventory, or credential classification tool. Security hardening is
 focused on local path safety, bounded parsing, evidence integrity, and avoiding
 accidental serialization of sensitive-looking values in generated or rendered output.
-The v3.3.0 release keeps the local-first security boundary while adding validation and
-regression coverage for current package, workspace-map, and adapter provenance output.
+The v3.4.0 release keeps the local-first security boundary while improving deterministic
+query verification wording for existing read-only query output.
 It should not be read as a broader vulnerability-scanning or security-certification
 claim.
 

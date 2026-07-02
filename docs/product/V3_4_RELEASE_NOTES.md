@@ -2,8 +2,8 @@
 
 Release date: 2026-07-02
 
-Release status: prepared for release review. The `v3.4.0` tag, GitHub Release,
-executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
+Release status: published. The `v3.4.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 `agent-project-memory` v3.4.0 improves query verification wording for the existing
 read-only query surface. It makes the path from compact navigation output to canonical
@@ -69,7 +69,7 @@ not part of this release.
 
 ## Validation
 
-The v3.4.0 release-prep validation passed:
+The v3.4.0 release validation passed:
 
 - Full local Maven test suite: 603 tests, 0 failures, 0 errors, 0 skipped.
 - Maven package build: 603 tests, 0 failures, 0 errors, 0 skipped, including the
@@ -116,4 +116,4 @@ Expected v3.4.0 release assets are:
 - `agent-project-memory-3.4.0.jar`
 - `SHA256SUMS`
 
-These assets are not published by this checkpoint.
+These assets are published with the `v3.4.0` GitHub Release.

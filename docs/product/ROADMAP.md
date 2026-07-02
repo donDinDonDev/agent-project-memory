@@ -2,7 +2,7 @@
 
 ## Current Status
 
-The latest published release is `v3.3.0`, with executable jar and `SHA256SUMS` assets.
+The latest published release is `v3.4.0`, with executable jar and `SHA256SUMS` assets.
 Normal no-adapter generated `project-map.json` files use
 `schema_version: "1.0"` as the stable-line marker. The v1.5.0 lightweight relation
 graph expansion is additive, the v1.6.0 query
@@ -103,12 +103,11 @@ adapter context provenance-only. It does not change product behavior, CLI comman
 flags, JSON/JSONL schema markers, evidence semantics, adapter behavior, query
 authority, or distribution channels.
 
-The current v3.4.0 release-prep line improves query verification wording over the
-existing read-only query surface. It keeps query output as deterministic navigation and
-presentation, while making the evidence lookup and compact handoff verification path
-clearer. It does not change query grammar, generated JSON/JSONL schema markers,
-evidence fields, evidence semantics, adapter behavior, query authority, or distribution
-channels.
+The v3.4.0 release improves query verification wording over the existing read-only
+query surface. It keeps query output as deterministic navigation and presentation,
+while making the evidence lookup and compact handoff verification path clearer. It does
+not change query grammar, generated JSON/JSONL schema markers, evidence fields,
+evidence semantics, adapter behavior, query authority, or distribution channels.
 
 The v1.x stable-line compatibility policy treats `project-map.json` and
 `evidence-index.jsonl` as the stable machine-readable surface. `endpoints.md` and
@@ -2363,8 +2362,8 @@ Excluded or deferred from v3.3.0:
 
 ## v3.4.0: Query Verification Guidance
 
-Release status: prepared for release review. The `v3.4.0` tag, GitHub Release,
-executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
+Release status: published. The `v3.4.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 Product outcome:
 

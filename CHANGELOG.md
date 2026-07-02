@@ -11,8 +11,8 @@ architecture documents.
 
 ## [3.4.0] - 2026-07-02
 
-Release status: prepared for release review. The `v3.4.0` tag, GitHub Release,
-executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
+Release status: published. The `v3.4.0` tag, GitHub Release, executable jar, and
+`SHA256SUMS` assets are published.
 
 ### Changed
 
@@ -26,8 +26,8 @@ executable jar, and `SHA256SUMS` assets are not published by this checkpoint.
 - Updated `query <path> agent-context` follow-up guidance to include
   `impact --files <changed-file> [...]` and a compact navigation-to-evidence-to-source
   verification loop.
-- Synchronized public release-prep documentation, query output contract wording, and
-  the Maven project version for the v3.4.0 release-prep line.
+- Synchronized public release documentation, query output contract wording, and the
+  Maven project version for the v3.4.0 release line.
 
 ### Security
 
