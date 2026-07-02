@@ -1,0 +1,60 @@
+{
+  "workspace_schema_version": "1.0",
+  "workspace": {
+    "root_kind": "config_directory",
+    "config_source": {
+      "path": "agent-project-memory-workspace.yml",
+      "path_kind": "workspace_relative_file",
+      "content_status": "not_serialized"
+    },
+    "member_count": 2
+  },
+  "members": [
+    {
+      "repo_id": "orders",
+      "root_path": "repos/orders",
+      "root_path_kind": "workspace_relative_directory",
+      "artifact_root": "repos/orders/.project-memory",
+      "artifact_status": "present",
+      "project_map_schema_version": "1.0",
+      "graph_schema_version": "1.0",
+      "source_registry_schema_version": null,
+      "evidence_record_count": 2,
+      "sample_evidence_references": [
+        {
+          "repo_id": "orders",
+          "evidence_id": "ev:pom.xml:1-1:build_file:pom.xml",
+          "artifact": "evidence-index.jsonl"
+        },
+        {
+          "repo_id": "orders",
+          "evidence_id": "ev:src/main/java/com/example/orders/OrderController.java:20-20:code_symbol:com.example.orders.OrderController",
+          "artifact": "evidence-index.jsonl"
+        }
+      ]
+    },
+    {
+      "repo_id": "billing",
+      "root_path": "repos/billing",
+      "root_path_kind": "workspace_relative_directory",
+      "artifact_root": "repos/billing/.project-memory",
+      "artifact_status": "present",
+      "project_map_schema_version": "2.0",
+      "graph_schema_version": "1.0",
+      "source_registry_schema_version": "1.2",
+      "evidence_record_count": 1,
+      "sample_evidence_references": [
+        {
+          "repo_id": "billing",
+          "evidence_id": "ev:pom.xml:1-1:build_file:pom.xml",
+          "artifact": "evidence-index.jsonl"
+        }
+      ]
+    }
+  ],
+  "relations": {
+    "analysis_status": "not_analyzed",
+    "items": []
+  },
+  "diagnostics": []
+}

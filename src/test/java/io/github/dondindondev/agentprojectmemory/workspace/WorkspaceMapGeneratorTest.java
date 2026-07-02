@@ -15,6 +15,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -60,12 +61,15 @@ final class WorkspaceMapGeneratorTest {
 
     WorkspaceMapGenerator.Result result = generator.generate(loader.load(config.toString()));
 
-    JsonNode workspaceMap = readWorkspaceMap(workspaceRoot);
+    String workspaceMapJson = Files.readString(
+        workspaceRoot.resolve(".project-memory/workspace-map.json"));
+    JsonNode workspaceMap = JSON.readTree(workspaceMapJson);
     JsonNode firstMember = workspaceMap.path("members").get(0);
     JsonNode secondMember = workspaceMap.path("members").get(1);
     Map<String, Path> memberRoots = Map.of("orders", orders, "billing", billing);
 
     assertAll(
+        () -> assertEquals(expectedWorkspaceMap(), JSON.readTree(workspaceMapJson)),
         () -> assertEquals(2, result.memberCount()),
         () -> assertEquals(0, result.diagnosticCount()),
         () -> assertEquals("1.0", workspaceMap.path("workspace_schema_version").asText()),
@@ -373,6 +377,11 @@ final class WorkspaceMapGeneratorTest {
 
   private JsonNode readWorkspaceMap(Path workspaceRoot) throws IOException {
     return JSON.readTree(Files.readString(workspaceRoot.resolve(".project-memory/workspace-map.json")));
+  }
+
+  private JsonNode expectedWorkspaceMap() throws Exception {
+    return JSON.readTree(Files.readString(Path.of(Objects.requireNonNull(
+        getClass().getResource("/golden/v2-5-workspace-map/workspace-map.json")).toURI())));
   }
 
   private void writeMemberArtifacts(
