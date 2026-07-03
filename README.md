@@ -114,6 +114,12 @@ After `mvn package`, run a scan with the packaged CLI jar:
 java -jar target/agent-project-memory-3.4.0.jar scan /path/to/java-spring-project
 ```
 
+For a small fake input included in this repository, run:
+
+```sh
+java -jar target/agent-project-memory-3.4.0.jar scan examples/quickstart-demo
+```
+
 A supported scan writes `.project-memory/` inside the scanned repository. For a first
 read, open these surfaces in this order:
 
@@ -660,6 +666,8 @@ Start here:
   release notes.
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
+- Runnable quickstart demo input:
+  [examples/quickstart-demo/README.md](examples/quickstart-demo/README.md).
 - Product scope and boundaries: [docs/product/MVP_SPEC.md](docs/product/MVP_SPEC.md) and
   [docs/product/NON_GOALS.md](docs/product/NON_GOALS.md).
 - Product direction and release tracks:
@@ -740,7 +748,7 @@ For authoritative details, use the owner documents:
 - Evidence semantics:
   [docs/architecture/EVIDENCE_MODEL.md](docs/architecture/EVIDENCE_MODEL.md).
 - Latest release scope, validation, and asset status:
-  [docs/product/V3_0_RELEASE_NOTES.md](docs/product/V3_0_RELEASE_NOTES.md).
+  [docs/product/V3_4_RELEASE_NOTES.md](docs/product/V3_4_RELEASE_NOTES.md).
 
 ## License
 
