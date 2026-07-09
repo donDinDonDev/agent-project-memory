@@ -664,6 +664,8 @@ Start here:
 - Release history: [CHANGELOG.md](CHANGELOG.md). Detailed historical release notes live
   under `docs/product/`, and public evaluation summaries are linked from the relevant
   release notes.
+- Narrow public evaluation summary:
+  [v3.4 evidence-handoff and repeatability observations](docs/development/evaluations/v3.4-evidence-handoff-repeatability_SUMMARY.md).
 - Generated-output example:
   [examples/stage3-project-map/README.md](examples/stage3-project-map/README.md).
 - Runnable quickstart demo input:
