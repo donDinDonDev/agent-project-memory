@@ -9,6 +9,16 @@ architecture documents.
 
 ## [Unreleased]
 
+### Security
+
+- Updated the shipped Jackson Databind runtime from the closed `2.17` line to
+  `2.18.9` on the supported `2.18` LTS line. This moves the packaged CLI above the
+  `2.18.8` patched boundary recorded for `GHSA-j3rv-43j4-c7qm`,
+  `GHSA-rmj7-2vxq-3g9f`, and `GHSA-hgj6-7826-r7m5`, and outside the `<2.18.9`
+  affected range recorded for `GHSA-5jmj-h7xm-6q6v`. The CLI does not enable Jackson
+  default/polymorphic typing, but removing the vulnerable runtime version keeps the
+  shipped dependency boundary current without changing output or evidence contracts.
+
 ## [3.4.0] - 2026-07-02
 
 Release status: published. The `v3.4.0` tag, GitHub Release, executable jar, and

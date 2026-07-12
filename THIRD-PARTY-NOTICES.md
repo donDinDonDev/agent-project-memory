@@ -12,9 +12,9 @@ artifact. The jar also carries dependency-provided license and notice resources 
 
 | Component | Version | License |
 | --- | --- | --- |
-| `com.fasterxml.jackson.core:jackson-databind` | `2.17.2` | Apache License, Version 2.0 |
-| `com.fasterxml.jackson.core:jackson-core` | `2.17.2` | Apache License, Version 2.0 |
-| `com.fasterxml.jackson.core:jackson-annotations` | `2.17.2` | Apache License, Version 2.0 |
+| `com.fasterxml.jackson.core:jackson-databind` | `2.18.9` | Apache License, Version 2.0 |
+| `com.fasterxml.jackson.core:jackson-core` | `2.18.9` | Apache License, Version 2.0 |
+| `com.fasterxml.jackson.core:jackson-annotations` | `2.18.9` | Apache License, Version 2.0 |
 | `com.github.javaparser:javaparser-core` | `3.28.2` | Dual license declared by its Maven POM: GNU Lesser General Public License and Apache License, Version 2.0. This project uses the Apache License, Version 2.0 option. |
 | `org.yaml:snakeyaml` | `2.6` | Apache License, Version 2.0 |
 
@@ -25,8 +25,8 @@ The shaded jar contains dependency-provided notice/license resources such as:
 - `META-INF/LICENSE`
 - `META-INF/NOTICE`
 - `META-INF/FastDoubleParser-LICENSE`
-- `META-INF/FastDoubleParser-NOTICE`
-- `META-INF/thirdparty-LICENSE`
+- `META-INF/FastDoubleParser-ThirdParty-LICENSE`
+- `META-INF/Schubfach-LICENSE`
 
 These resources are preserved from dependencies and should remain present in release
 artifacts.
