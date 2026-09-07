@@ -24,7 +24,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <jackson.version>2.18.9</jackson.version>
     <javaparser.version>3.28.2</javaparser.version>
-    <snakeyaml.version>2.6</snakeyaml.version>
+    <snakeyaml.version>2.7</snakeyaml.version>
     <junit.jupiter.version>6.1.0</junit.jupiter.version>
   </properties>
 
